@@ -10,15 +10,15 @@ JWT_EXPIRES_IN = "7d"
 [[d1_databases]]
 binding = "DB"
 database_name = "parthub-db"
-database_id = "REPLACE_WITH_YOUR_D1_ID"
+database_id = "d0adb5e3-5e96-4bed-bbab-304b1e61fa91"
 
 [[r2_buckets]]
 binding = "MEDIA"
 bucket_name = "parthub-media"
 
-[[kv_namespaces]]
-binding = "KV"
-id = "REPLACE_WITH_YOUR_KV_ID"
+#[[kv_namespaces]]
+#binding = "KV"
+#id = "REPLACE_WITH_YOUR_KV_ID"
 
 [env.development]
 name = "parthub-api-dev"
