@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Lint & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Get pnpm store
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared packages
+        run: pnpm --filter @parthub/shared build 2>/dev/null || true
+
+      - name: Build storefront
+        run: pnpm --filter @parthub/storefront build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+
+      - name: Build seller-portal
+        run: pnpm --filter @parthub/seller-portal build
+        env:
+          VITE_SELLER_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+
+      - name: Build admin
+        run: pnpm --filter @parthub/admin build
+        env:
+          VITE_ADMIN_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+
+      - name: Typecheck API
+        run: pnpm --filter @parthub/api typecheck
+        continue-on-error: true

@@ -1,0 +1,28 @@
+name: Deploy Notes
+
+# Manual deployment guide – not auto-triggered
+# Run deploy commands manually from Termux:
+#
+# API Worker:
+#   cd workers/api && wrangler deploy
+#
+# Storefront (Cloudflare Pages):
+#   cd apps/storefront && pnpm build
+#   wrangler pages deploy dist --project-name=parthub-storefront
+#
+# Seller Portal:
+#   cd apps/seller-portal && pnpm build
+#   wrangler pages deploy dist --project-name=parthub-seller
+#
+# Admin:
+#   cd apps/admin && pnpm build
+#   wrangler pages deploy dist --project-name=parthub-admin
+
+on:
+  workflow_dispatch:
+
+jobs:
+  info:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "See deploy-notes.yml for manual deploy instructions"

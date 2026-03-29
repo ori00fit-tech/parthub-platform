@@ -1,0 +1,10 @@
+{
+  "name": "@parthub/config",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    "./tailwind": "./tailwind/base.js",
+    "./prettier": "./prettier/index.js",
+    "./vite": "./vite/base.js"
+  }
+}
