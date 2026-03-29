@@ -1,17 +1,17 @@
 import { Hono } from "hono";
 
-const catalog = new Hono();
+export const catalogRoutes = new Hono();
 
 function ok(data: unknown, meta: unknown = null) {
   return {
     ok: true,
     data,
     meta,
-    error: null
+    error: null,
   };
 }
 
-catalog.get("/parts", async (c) => {
+catalogRoutes.get("/parts", async (c) => {
   const search = c.req.query("search")?.trim() || "";
   const category = c.req.query("category")?.trim() || "";
   const brand = c.req.query("brand")?.trim() || "";
@@ -80,12 +80,12 @@ catalog.get("/parts", async (c) => {
     ok(result.results || [], {
       currency: "GBP",
       locale: "en-GB",
-      market: "United Kingdom"
+      market: "United Kingdom",
     })
   );
 });
 
-catalog.get("/parts/:slug", async (c) => {
+catalogRoutes.get("/parts/:slug", async (c) => {
   const slug = c.req.param("slug");
 
   const sql = `
@@ -135,8 +135,8 @@ catalog.get("/parts/:slug", async (c) => {
         meta: null,
         error: {
           code: "NOT_FOUND",
-          message: "Part not found"
-        }
+          message: "Part not found",
+        },
       },
       404
     );
@@ -146,12 +146,12 @@ catalog.get("/parts/:slug", async (c) => {
     ok(result, {
       currency: "GBP",
       locale: "en-GB",
-      market: "United Kingdom"
+      market: "United Kingdom",
     })
   );
 });
 
-catalog.get("/categories", async (c) => {
+catalogRoutes.get("/categories", async (c) => {
   const sql = `
     select id, name, slug
     from categories
@@ -161,12 +161,12 @@ catalog.get("/categories", async (c) => {
 
   return c.json(
     ok(result.results || [], {
-      market: "United Kingdom"
+      market: "United Kingdom",
     })
   );
 });
 
-catalog.get("/brands", async (c) => {
+catalogRoutes.get("/brands", async (c) => {
   const sql = `
     select id, name, slug
     from brands
@@ -176,9 +176,7 @@ catalog.get("/brands", async (c) => {
 
   return c.json(
     ok(result.results || [], {
-      market: "United Kingdom"
+      market: "United Kingdom",
     })
   );
 });
-
-export default catalog;
