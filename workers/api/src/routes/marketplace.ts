@@ -1,163 +1,199 @@
 import { Hono } from "hono";
-import type { Env, HonoVariables } from "../types";
-import { authMiddleware } from "../middlewares/auth";
-import { sellerGuard } from "../middlewares/seller";
-import { ok, created, fail, notFound, paginated } from "../utils/response";
-import { dbFirst, dbAll, dbRun, dbCount } from "../utils/db";
-import { parsePagination } from "../utils/pagination";
-import { slugify } from "../utils/slug";
 
-export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
+export const marketplaceRoutes = new Hono();
 
-// ── Seller Profile (public) ──────────────────────────────
+function success(data: unknown, meta: unknown = null) {
+  return {
+    ok: true,
+    data,
+    meta,
+    error: null,
+  };
+}
 
-// GET /api/v1/marketplace/sellers/:slug
-marketplaceRoutes.get("/sellers/:slug", async (c) => {
-  const slug = c.req.param("slug");
-  const seller = await dbFirst(
-    c.env.DB,
-    `SELECT s.*, ROUND(AVG(r.rating),1) as rating_avg, COUNT(DISTINCT r.id) as rating_count,
-            COUNT(DISTINCT p.id) as parts_count
-     FROM sellers s
-     LEFT JOIN parts p ON p.seller_id = s.id AND p.status = 'active'
-     LEFT JOIN reviews r ON r.part_id = p.id AND r.status = 'approved'
-     WHERE s.slug = ? AND s.status = 'active'
-     GROUP BY s.id`,
-    [slug]
+function failure(code: string, message: string) {
+  return {
+    ok: false,
+    data: null,
+    meta: null,
+    error: { code, message },
+  };
+}
+
+marketplaceRoutes.get("/health", (c) => {
+  return c.json(
+    success({
+      service: "marketplace",
+      status: "ok",
+    })
   );
-  if (!seller) return notFound(c, "Seller");
-  return ok(c, seller);
 });
 
-// ── Seller Onboarding ────────────────────────────────────
+marketplaceRoutes.post("/parts", async (c) => {
+  try {
+    const body = await c.req.json();
 
-// POST /api/v1/marketplace/sellers/onboard
-marketplaceRoutes.post("/sellers/onboard", authMiddleware, async (c) => {
-  const userId = c.get("user_id");
-  const role = c.get("user_role");
+    const {
+      seller_id,
+      category_id,
+      brand_id,
+      slug,
+      title,
+      description,
+      sku,
+      price,
+      compare_price,
+      condition,
+      quantity,
+      weight_kg,
+      status,
+      featured,
+      image_url,
+    } = body ?? {};
 
-  if (role !== "seller") return fail(c, "Only seller accounts can onboard");
+    if (!seller_id) {
+      return c.json(failure("SELLER_ID_REQUIRED", "seller_id is required"), 400);
+    }
 
-  const existing = await dbFirst(c.env.DB, "SELECT id FROM sellers WHERE user_id = ?", [userId]);
-  if (existing) return fail(c, "Seller profile already exists", 409);
+    if (!category_id) {
+      return c.json(failure("CATEGORY_ID_REQUIRED", "category_id is required"), 400);
+    }
 
-  const body = await c.req.json<{ name: string; description?: string; phone?: string; location?: string }>();
-  if (!body.name) return fail(c, "Store name is required");
+    if (!slug) {
+      return c.json(failure("SLUG_REQUIRED", "slug is required"), 400);
+    }
 
-  const slug = slugify(body.name);
-  const result = await dbRun(
-    c.env.DB,
-    "INSERT INTO sellers (user_id, name, slug, description, phone, location) VALUES (?, ?, ?, ?, ?, ?)",
-    [userId, body.name, slug, body.description ?? null, body.phone ?? null, body.location ?? null]
-  );
+    if (!title) {
+      return c.json(failure("TITLE_REQUIRED", "title is required"), 400);
+    }
 
-  const seller = await dbFirst(c.env.DB, "SELECT * FROM sellers WHERE id = ?", [result.lastRowId]);
-  return created(c, seller);
-});
+    if (price == null || Number.isNaN(Number(price))) {
+      return c.json(failure("PRICE_REQUIRED", "price is required"), 400);
+    }
 
-// ── Seller Parts CRUD ────────────────────────────────────
+    const existing = await c.env.DB.prepare(
+      "select id from parts where slug = ?1 limit 1"
+    )
+      .bind(String(slug).trim())
+      .first();
 
-// GET /api/v1/marketplace/parts
-marketplaceRoutes.get("/parts", authMiddleware, sellerGuard, async (c) => {
-  const sellerId = c.get("seller_id");
-  const { page, limit, offset } = parsePagination(c.req.query());
+    if (existing) {
+      return c.json(failure("SLUG_EXISTS", "A part with this slug already exists"), 409);
+    }
 
-  const total = await dbCount(c.env.DB, "SELECT COUNT(*) as total FROM parts WHERE seller_id = ?", [sellerId]);
-  const parts = await dbAll(
-    c.env.DB,
-    `SELECT p.*, (SELECT url FROM part_images WHERE part_id = p.id AND is_featured = 1 LIMIT 1) as thumbnail
-     FROM parts p WHERE p.seller_id = ? ORDER BY p.created_at DESC LIMIT ? OFFSET ?`,
-    [sellerId, limit, offset]
-  );
+    const insertPart = await c.env.DB.prepare(
+      `
+      insert into parts (
+        seller_id,
+        category_id,
+        brand_id,
+        slug,
+        title,
+        description,
+        sku,
+        price,
+        compare_price,
+        condition,
+        quantity,
+        weight_kg,
+        status,
+        featured
+      ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
+      `
+    )
+      .bind(
+        Number(seller_id),
+        Number(category_id),
+        brand_id ? Number(brand_id) : null,
+        String(slug).trim(),
+        String(title).trim(),
+        description ? String(description).trim() : null,
+        sku ? String(sku).trim() : null,
+        Number(price),
+        compare_price != null && compare_price !== "" ? Number(compare_price) : null,
+        condition ? String(condition).trim() : "new",
+        quantity != null && quantity !== "" ? Number(quantity) : 1,
+        weight_kg != null && weight_kg !== "" ? Number(weight_kg) : null,
+        status ? String(status).trim() : "active",
+        featured ? 1 : 0
+      )
+      .run();
 
-  return paginated(c, parts, { page, limit, total });
-});
+    const partId = insertPart.meta.last_row_id;
 
-// POST /api/v1/marketplace/parts
-marketplaceRoutes.post("/parts", authMiddleware, sellerGuard, async (c) => {
-  const sellerId = c.get("seller_id");
-  const body = await c.req.json<{
-    title: string; description?: string; category_id: number;
-    price: number; condition: string; quantity: number; sku?: string;
-  }>();
+    if (image_url) {
+      await c.env.DB.prepare(
+        `
+        insert into part_images (
+          part_id,
+          url,
+          alt_text,
+          sort_order,
+          is_featured
+        ) values (?1, ?2, ?3, 1, 1)
+        `
+      )
+        .bind(
+          Number(partId),
+          String(image_url).trim(),
+          String(title).trim()
+        )
+        .run();
+    }
 
-  if (!body.title || !body.category_id || !body.price) {
-    return fail(c, "title, category_id, and price are required");
+    const created = await c.env.DB.prepare(
+      `
+      select
+        p.id,
+        p.slug,
+        p.title,
+        p.description,
+        p.sku,
+        p.price,
+        p.compare_price,
+        p.condition,
+        p.quantity,
+        p.status,
+        p.featured,
+        p.created_at,
+        b.name as brand_name,
+        b.slug as brand_slug,
+        c2.name as category_name,
+        c2.slug as category_slug,
+        s.name as seller_name,
+        s.slug as seller_slug,
+        s.location as seller_location,
+        (
+          select pi.url
+          from part_images pi
+          where pi.part_id = p.id
+          order by pi.is_featured desc, pi.sort_order asc, pi.id asc
+          limit 1
+        ) as image_url
+      from parts p
+      left join brands b on b.id = p.brand_id
+      left join categories c2 on c2.id = p.category_id
+      left join sellers s on s.id = p.seller_id
+      where p.id = ?1
+      limit 1
+      `
+    )
+      .bind(Number(partId))
+      .first();
+
+    return c.json(
+      success(created, {
+        message: "Part created successfully",
+      }),
+      201
+    );
+  } catch (error) {
+    return c.json(
+      failure(
+        "CREATE_PART_FAILED",
+        error instanceof Error ? error.message : "Unknown create part error"
+      ),
+      500
+    );
   }
-
-  const result = await dbRun(
-    c.env.DB,
-    `INSERT INTO parts (seller_id, title, slug, description, category_id, price, condition, quantity, sku, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
-    [sellerId, body.title, slugify(body.title), body.description ?? null,
-     body.category_id, body.price, body.condition ?? "new", body.quantity ?? 1, body.sku ?? null]
-  );
-
-  const part = await dbFirst(c.env.DB, "SELECT * FROM parts WHERE id = ?", [result.lastRowId]);
-  return created(c, part);
-});
-
-// PUT /api/v1/marketplace/parts/:id
-marketplaceRoutes.put("/parts/:id", authMiddleware, sellerGuard, async (c) => {
-  const sellerId = c.get("seller_id");
-  const partId = c.req.param("id");
-
-  const part = await dbFirst<{ id: number; seller_id: number }>(
-    c.env.DB, "SELECT id, seller_id FROM parts WHERE id = ?", [partId]
-  );
-  if (!part) return notFound(c, "Part");
-  if (part.seller_id !== sellerId) return fail(c, "Forbidden", 403);
-
-  const body = await c.req.json<Record<string, unknown>>();
-  const allowed = ["title", "description", "price", "compare_price", "condition", "quantity", "sku", "status"];
-  const updates = Object.entries(body)
-    .filter(([k]) => allowed.includes(k))
-    .map(([k, v]) => ({ k, v }));
-
-  if (!updates.length) return fail(c, "No valid fields to update");
-
-  const set = updates.map(({ k }) => `${k} = ?`).join(", ");
-  const vals = updates.map(({ v }) => v);
-
-  await dbRun(c.env.DB, `UPDATE parts SET ${set}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [...vals, partId]);
-  const updated = await dbFirst(c.env.DB, "SELECT * FROM parts WHERE id = ?", [partId]);
-  return ok(c, updated);
-});
-
-// DELETE /api/v1/marketplace/parts/:id
-marketplaceRoutes.delete("/parts/:id", authMiddleware, sellerGuard, async (c) => {
-  const sellerId = c.get("seller_id");
-  const partId = c.req.param("id");
-
-  const part = await dbFirst<{ seller_id: number }>(c.env.DB, "SELECT seller_id FROM parts WHERE id = ?", [partId]);
-  if (!part) return notFound(c, "Part");
-  if (part.seller_id !== sellerId) return fail(c, "Forbidden", 403);
-
-  await dbRun(c.env.DB, "UPDATE parts SET status = 'archived' WHERE id = ?", [partId]);
-  return ok(c, { message: "Part archived" });
-});
-
-// GET /api/v1/marketplace/orders
-marketplaceRoutes.get("/orders", authMiddleware, sellerGuard, async (c) => {
-  const sellerId = c.get("seller_id");
-  const { page, limit, offset } = parsePagination(c.req.query());
-
-  const total = await dbCount(
-    c.env.DB,
-    "SELECT COUNT(DISTINCT o.id) as total FROM orders o JOIN order_items oi ON oi.order_id = o.id WHERE oi.seller_id = ?",
-    [sellerId]
-  );
-  const orders = await dbAll(
-    c.env.DB,
-    `SELECT DISTINCT o.id, o.reference, o.status, o.total, o.created_at,
-            u.name as buyer_name
-     FROM orders o
-     JOIN order_items oi ON oi.order_id = o.id
-     JOIN users u ON u.id = o.buyer_id
-     WHERE oi.seller_id = ?
-     ORDER BY o.created_at DESC LIMIT ? OFFSET ?`,
-    [sellerId, limit, offset]
-  );
-
-  return paginated(c, orders, { page, limit, total });
 });
