@@ -1,14 +1,7 @@
 export function formatPriceGBP(value) {
-  if (value == null) return "";
+  const amount = Number(value || 0) / 100;
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
-    currency: "GBP"
-  }).format(value);
-}
-
-export function formatGBP(price) {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP"
-  }).format(price / 100);
+    currency: "GBP",
+  }).format(amount);
 }

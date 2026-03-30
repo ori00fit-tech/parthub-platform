@@ -1,35 +1,21 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-async function request(path, options = {}) {
-  const res = await fetch(BASE_URL + path, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-
-  if (!res.ok) {
-    throw new Error("API error");
+async function parseJson(res) {
+  const text = await res.text();
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return {};
   }
-
-  return res.json();
 }
 
-export const api = {
-  get: (path) => request(path),
-  post: (path, body) =>
-    request(path, {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
-  put: (path, body) =>
-    request(path, {
-      method: "PUT",
-      body: JSON.stringify(body),
-    }),
-  delete: (path) =>
-    request(path, {
-      method: "DELETE",
-    }),
-};
+export async function apiGet(path) {
+  const res = await fetch(`${BASE_URL}${path}`);
+  const data = await parseJson(res);
+
+  if (!res.ok) {
+    throw new Error(data?.error?.message || data?.error || "API error");
+  }
+
+  return data;
+}

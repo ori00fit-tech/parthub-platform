@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { Env, HonoVariables } from "./types";
-
+import marketplacePartsRoutes from "./routes/marketplace.parts";
 import { corsMiddleware } from "./middlewares/cors";
 import { loggingMiddleware } from "./middlewares/logging";
 import { errorHandler } from "./middlewares/error-handler";
@@ -25,6 +25,7 @@ app.onError(errorHandler);
 
 // ── Routes ─────────────────────────────────────────
 app.route("/health", healthRoutes);
+app.route("/api/v1/marketplace", marketplacePartsRoutes);
 app.route("/api/v1/auth", authRoutes);
 app.route("/api/v1/catalog", catalogRoutes);
 app.route("/api/v1/marketplace", marketplaceRoutes);

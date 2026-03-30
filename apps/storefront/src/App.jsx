@@ -1,27 +1,16 @@
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "./components/layout/MainLayout";
+import HomePage from "./pages/HomePage";
 import PartsPage from "./pages/PartsPage";
-
-function Home() {
-  return (
-    <div>
-      <h1 className="text-3xl font-bold mb-3">
-        Find the Right Part for Your Vehicle
-      </h1>
-
-      <p className="text-gray-600">
-        UK marketplace for auto parts — fast delivery across Great Britain.
-      </p>
-    </div>
-  );
-}
+import PartDetailsPage from "./pages/PartDetailsPage";
 
 export default function App() {
   return (
     <MainLayout>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/parts" element={<PartsPage />} />
+        <Route path="/parts/:slug" element={<PartDetailsPage />} />
       </Routes>
     </MainLayout>
   );
