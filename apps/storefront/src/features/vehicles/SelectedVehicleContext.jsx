@@ -4,45 +4,65 @@ const STORAGE_KEY = "parthub_selected_vehicle";
 
 const SelectedVehicleContext = createContext(null);
 
+function safeRead() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function SelectedVehicleProvider({ children }) {
-  const [vehicle, setVehicleState] = useState(null);
+  const [selectedVehicle, setSelectedVehicleState] = useState(() => safeRead());
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        setVehicleState(JSON.parse(raw));
-      }
-    } catch {
-      setVehicleState(null);
-    }
-  }, []);
-
-  function setVehicle(nextVehicle) {
-    setVehicleState(nextVehicle);
-    try {
-      if (nextVehicle) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextVehicle));
+      if (selectedVehicle) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedVehicle));
       } else {
         localStorage.removeItem(STORAGE_KEY);
       }
-    } catch {}
-  }
+    } catch {
+      // ignore
+    }
+  }, [selectedVehicle]);
 
-  function clearVehicle() {
-    setVehicle(null);
-  }
+  const value = useMemo(() => {
+    function setSelectedVehicle(vehicle) {
+      if (!vehicle) {
+        setSelectedVehicleState(null);
+        return;
+      }
 
-  const value = useMemo(
-    () => ({
-      vehicle,
-      setVehicle,
+      const label =
+        vehicle.label ||
+        [
+          vehicle.year,
+          vehicle.make_name || vehicle.make,
+          vehicle.model_name || vehicle.model,
+          vehicle.engine_name || vehicle.engine,
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+      setSelectedVehicleState({
+        ...vehicle,
+        label,
+      });
+    }
+
+    function clearVehicle() {
+      setSelectedVehicleState(null);
+    }
+
+    return {
+      selectedVehicle,
+      setSelectedVehicle,
       clearVehicle,
-      hasVehicle:
-        !!vehicle?.make && !!vehicle?.model && !!vehicle?.year,
-    }),
-    [vehicle]
-  );
+      hasVehicle: Boolean(selectedVehicle),
+    };
+  }, [selectedVehicle]);
 
   return (
     <SelectedVehicleContext.Provider value={value}>
@@ -53,10 +73,8 @@ export function SelectedVehicleProvider({ children }) {
 
 export function useSelectedVehicle() {
   const ctx = useContext(SelectedVehicleContext);
-
   if (!ctx) {
-    throw new Error("useSelectedVehicle must be used inside SelectedVehicleProvider");
+    throw new Error("useSelectedVehicle must be used within SelectedVehicleProvider");
   }
-
   return ctx;
 }

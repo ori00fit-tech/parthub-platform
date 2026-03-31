@@ -4,13 +4,19 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./styles/globals.css";
 import { SelectedVehicleProvider } from "./features/vehicles/SelectedVehicleContext";
+import { CartProvider } from "./features/cart/CartContext";
+import { AuthProvider } from "./features/auth/AuthContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
-      <SelectedVehicleProvider>
-        <App />
-      </SelectedVehicleProvider>
+      <AuthProvider>
+        <SelectedVehicleProvider>
+          <CartProvider>
+            <App />
+          </CartProvider>
+        </SelectedVehicleProvider>
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
 );
