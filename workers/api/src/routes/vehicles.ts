@@ -17,17 +17,25 @@ vehiclesRoutes.get("/makes", async (c) => {
 });
 
 vehiclesRoutes.get("/models", async (c) => {
-  const make = c.req.query("make");
+  const make = c.req.query("make")?.trim();
 
   if (!make) {
-    return c.json({ ok: false, error: "make is required" }, 400);
+    return c.json(
+      {
+        ok: false,
+        data: [],
+        error: { message: "make is required" },
+      },
+      400
+    );
   }
 
   const result = await c.env.DB.prepare(`
-    select id, slug, name
-    from vehicle_models
-    where make_slug = ?1
-    order by name asc
+    select vm.id, vm.slug, vm.name
+    from vehicle_models vm
+    inner join vehicle_makes mk on mk.id = vm.make_id
+    where lower(mk.slug) = lower(?1)
+    order by vm.name asc
   `).bind(make).all();
 
   return c.json({
@@ -38,17 +46,25 @@ vehiclesRoutes.get("/models", async (c) => {
 });
 
 vehiclesRoutes.get("/years", async (c) => {
-  const model = c.req.query("model");
+  const model = c.req.query("model")?.trim();
 
   if (!model) {
-    return c.json({ ok: false, error: "model is required" }, 400);
+    return c.json(
+      {
+        ok: false,
+        data: [],
+        error: { message: "model is required" },
+      },
+      400
+    );
   }
 
   const result = await c.env.DB.prepare(`
-    select id, year
-    from vehicle_years
-    where model_slug = ?1
-    order by year desc
+    select vy.id, vy.year
+    from vehicle_years vy
+    inner join vehicle_models vm on vm.id = vy.model_id
+    where lower(vm.slug) = lower(?1)
+    order by vy.year desc
   `).bind(model).all();
 
   return c.json({
