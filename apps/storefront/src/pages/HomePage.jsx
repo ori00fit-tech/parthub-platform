@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { apiGet } from "../lib/api";
 import { formatPriceGBP } from "../lib/formatters";
+import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 
 export default function HomePage() {
+  const navigate = useNavigate();
+  const { selectedVehicle } = useSelectedVehicle();
+
   const [parts, setParts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [query, setQuery] = useState("");
@@ -53,24 +57,43 @@ export default function HomePage() {
     return filtered.slice(0, 6);
   }, [parts, query]);
 
+  function handleSearchSubmit(e) {
+    e.preventDefault();
+    const normalized = query.trim();
+    navigate(normalized ? `/parts?search=${encodeURIComponent(normalized)}` : "/parts");
+  }
+
+  const vehicleLabel = selectedVehicle?.label || "";
+  const heroTitle = vehicleLabel
+    ? `Find parts for ${vehicleLabel}`
+    : "Find the right auto part for your vehicle.";
+
   return (
     <div className="space-y-8">
       <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 text-white shadow-xl">
         <div className="space-y-6 px-5 py-8 sm:px-8 sm:py-10">
-          <div className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-blue-100">
-            UK-focused marketplace • Cloudflare powered
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-blue-100">
+              UK-focused marketplace • Cloudflare powered
+            </div>
+
+            {selectedVehicle ? (
+              <div className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white">
+                Vehicle: {selectedVehicle.label}
+              </div>
+            ) : null}
           </div>
 
           <div className="max-w-2xl space-y-3">
             <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
-              Find the right auto part for your vehicle.
+              {heroTitle}
             </h1>
             <p className="max-w-xl text-sm text-blue-100 sm:text-base">
               Search fast, compare prices in GBP, and buy from trusted UK sellers.
             </p>
           </div>
 
-          <div className="rounded-2xl bg-white p-3 shadow-lg">
+          <form onSubmit={handleSearchSubmit} className="rounded-2xl bg-white p-3 shadow-lg">
             <div className="flex flex-col gap-3 sm:flex-row">
               <input
                 value={query}
@@ -78,13 +101,29 @@ export default function HomePage() {
                 placeholder="Search brake pads, oil filter, Bosch, FLT-2002..."
                 className="h-12 flex-1 rounded-xl border border-gray-200 px-4 text-sm text-gray-900 outline-none ring-0 placeholder:text-gray-400 focus:border-blue-500"
               />
-              <Link
-                to="/parts"
+              <button
+                type="submit"
                 className="inline-flex h-12 items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
               >
                 Search parts
-              </Link>
+              </button>
             </div>
+          </form>
+
+          <div className="flex flex-wrap gap-3">
+            <Link
+              to="/vehicle-selector"
+              className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+            >
+              {selectedVehicle ? "Change selected vehicle" : "Select your vehicle"}
+            </Link>
+
+            <Link
+              to="/parts"
+              className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
+            >
+              Browse all parts
+            </Link>
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
@@ -106,11 +145,13 @@ export default function HomePage() {
 
       <section className="grid gap-4 sm:grid-cols-3">
         <Link
-          to="/parts"
-          className="rounded-2xl bg-blue-600 px-5 py-4 text-white shadow-sm transition hover:bg-blue-700"
+          to="/vehicle-selector"
+          className="rounded-2xl bg-slate-950 px-5 py-4 text-white shadow-sm transition hover:bg-black"
         >
-          <p className="text-sm text-blue-100">Quick start</p>
-          <p className="mt-1 text-lg font-semibold">Browse all parts</p>
+          <p className="text-sm text-white/70">Vehicle-first</p>
+          <p className="mt-1 text-lg font-semibold">
+            {selectedVehicle ? "Update vehicle context" : "Choose your vehicle"}
+          </p>
         </Link>
 
         <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
@@ -151,7 +192,9 @@ export default function HomePage() {
 
       <section className="space-y-4">
         <div>
-          <h2 className="text-2xl font-bold">Available parts</h2>
+          <h2 className="text-2xl font-bold">
+            {selectedVehicle ? "Suggested parts for your selected vehicle" : "Available parts"}
+          </h2>
           <p className="text-sm text-gray-500">Fresh results from your live D1 inventory.</p>
         </div>
 

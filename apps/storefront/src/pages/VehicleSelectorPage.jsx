@@ -4,15 +4,19 @@ import { apiGet } from "../lib/api";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 
 export default function VehicleSelectorPage() {
-  const { vehicle, setVehicle, clearVehicle } = useSelectedVehicle();
+  const {
+    selectedVehicle,
+    setSelectedVehicle,
+    clearVehicle,
+  } = useSelectedVehicle();
 
   const [makes, setMakes] = useState([]);
   const [models, setModels] = useState([]);
   const [years, setYears] = useState([]);
 
-  const [selectedMake, setSelectedMake] = useState(vehicle?.make || "");
-  const [selectedModel, setSelectedModel] = useState(vehicle?.model || "");
-  const [selectedYear, setSelectedYear] = useState(vehicle?.year || "");
+  const [selectedMake, setSelectedMake] = useState(selectedVehicle?.make || "");
+  const [selectedModel, setSelectedModel] = useState(selectedVehicle?.model || "");
+  const [selectedYear, setSelectedYear] = useState(selectedVehicle?.year || "");
 
   const [loadingMakes, setLoadingMakes] = useState(true);
   const [loadingModels, setLoadingModels] = useState(false);
@@ -22,12 +26,20 @@ export default function VehicleSelectorPage() {
   const [saved, setSaved] = useState(false);
 
   const selectedMakeName = useMemo(() => {
-    return makes.find((item) => item.slug === selectedMake)?.name || vehicle?.makeName || "";
-  }, [makes, selectedMake, vehicle]);
+    return (
+      makes.find((item) => item.slug === selectedMake)?.name ||
+      selectedVehicle?.make_name ||
+      ""
+    );
+  }, [makes, selectedMake, selectedVehicle]);
 
   const selectedModelName = useMemo(() => {
-    return models.find((item) => item.slug === selectedModel)?.name || vehicle?.modelName || "";
-  }, [models, selectedModel, vehicle]);
+    return (
+      models.find((item) => item.slug === selectedModel)?.name ||
+      selectedVehicle?.model_name ||
+      ""
+    );
+  }, [models, selectedModel, selectedVehicle]);
 
   useEffect(() => {
     let active = true;
@@ -69,9 +81,7 @@ export default function VehicleSelectorPage() {
       try {
         setLoadingModels(true);
         setError("");
-        const res = await apiGet(
-          `/api/v1/vehicles/models?make=${encodeURIComponent(selectedMake)}`
-        );
+        const res = await apiGet("/api/v1/vehicles/models", { make: selectedMake });
         if (!active) return;
 
         const nextModels = Array.isArray(res?.data) ? res.data : [];
@@ -95,7 +105,7 @@ export default function VehicleSelectorPage() {
     return () => {
       active = false;
     };
-  }, [selectedMake]);
+  }, [selectedMake, selectedModel]);
 
   useEffect(() => {
     if (!selectedModel) {
@@ -110,9 +120,7 @@ export default function VehicleSelectorPage() {
       try {
         setLoadingYears(true);
         setError("");
-        const res = await apiGet(
-          `/api/v1/vehicles/years?model=${encodeURIComponent(selectedModel)}`
-        );
+        const res = await apiGet("/api/v1/vehicles/years", { model: selectedModel });
         if (!active) return;
 
         const nextYears = Array.isArray(res?.data) ? res.data : [];
@@ -134,7 +142,7 @@ export default function VehicleSelectorPage() {
     return () => {
       active = false;
     };
-  }, [selectedModel]);
+  }, [selectedModel, selectedYear]);
 
   function handleMakeChange(e) {
     setError("");
@@ -161,11 +169,11 @@ export default function VehicleSelectorPage() {
     }
 
     setError("");
-    setVehicle({
+    setSelectedVehicle({
       make: selectedMake,
-      makeName: selectedMakeName,
+      make_name: selectedMakeName,
       model: selectedModel,
-      modelName: selectedModelName,
+      model_name: selectedModelName,
       year: String(selectedYear),
     });
 
@@ -249,7 +257,7 @@ export default function VehicleSelectorPage() {
                     {loadingMakes ? "Loading makes..." : "Select make"}
                   </option>
                   {makes.map((make) => (
-                    <option key={make.id} value={make.slug}>
+                    <option key={make.id || make.slug} value={make.slug}>
                       {make.name}
                     </option>
                   ))}
@@ -268,11 +276,11 @@ export default function VehicleSelectorPage() {
                     {!selectedMake
                       ? "Choose make first"
                       : loadingModels
-                      ? "Loading models..."
-                      : "Select model"}
+                        ? "Loading models..."
+                        : "Select model"}
                   </option>
                   {models.map((model) => (
-                    <option key={model.id} value={model.slug}>
+                    <option key={model.id || model.slug} value={model.slug}>
                       {model.name}
                     </option>
                   ))}
@@ -291,11 +299,11 @@ export default function VehicleSelectorPage() {
                     {!selectedModel
                       ? "Choose model first"
                       : loadingYears
-                      ? "Loading years..."
-                      : "Select year"}
+                        ? "Loading years..."
+                        : "Select year"}
                   </option>
                   {years.map((item) => (
-                    <option key={item.id} value={item.year}>
+                    <option key={item.id || item.year} value={item.year}>
                       {item.year}
                     </option>
                   ))}
@@ -338,21 +346,21 @@ export default function VehicleSelectorPage() {
               <div className="rounded-2xl bg-gray-50 p-4">
                 <p className="text-xs uppercase tracking-wide text-gray-400">Make</p>
                 <p className="mt-1 font-semibold text-gray-900">
-                  {selectedMakeName || vehicle?.makeName || "-"}
+                  {selectedMakeName || selectedVehicle?.make_name || "-"}
                 </p>
               </div>
 
               <div className="rounded-2xl bg-gray-50 p-4">
                 <p className="text-xs uppercase tracking-wide text-gray-400">Model</p>
                 <p className="mt-1 font-semibold text-gray-900">
-                  {selectedModelName || vehicle?.modelName || "-"}
+                  {selectedModelName || selectedVehicle?.model_name || "-"}
                 </p>
               </div>
 
               <div className="rounded-2xl bg-gray-50 p-4">
                 <p className="text-xs uppercase tracking-wide text-gray-400">Year</p>
                 <p className="mt-1 font-semibold text-gray-900">
-                  {selectedYear || vehicle?.year || "-"}
+                  {selectedYear || selectedVehicle?.year || "-"}
                 </p>
               </div>
             </div>
