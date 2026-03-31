@@ -1,132 +1,187 @@
 import { Hono } from "hono";
-import type { Env, HonoVariables } from "../types";
-import { ok, fail } from "../utils/response";
 
-export const catalogRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
+export const catalogRoutes = new Hono();
+
+function ok(data: unknown, meta: unknown = null) {
+  return {
+    ok: true,
+    data,
+    meta,
+    error: null,
+  };
+}
 
 catalogRoutes.get("/parts", async (c) => {
-  const search = c.req.query("search")?.trim() ?? "";
-  const category = c.req.query("category")?.trim() ?? "";
-  const make = c.req.query("make")?.trim() ?? "";
-  const model = c.req.query("model")?.trim() ?? "";
-  const year = c.req.query("year")?.trim() ?? "";
+  const search = c.req.query("search")?.trim() || "";
+  const category = c.req.query("category")?.trim() || "";
+  const brand = c.req.query("brand")?.trim() || "";
 
-  const where: string[] = ["p.is_active = 1"];
+  const conditions: string[] = ["p.status = 'active'"];
   const bindings: unknown[] = [];
 
   if (search) {
-    where.push("(p.title LIKE ? OR p.sku LIKE ? OR p.brand LIKE ?)");
-    bindings.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    bindings.push(`%${search}%`);
+    const idx = bindings.length;
+    conditions.push(
+      `(p.title like ?${idx} or p.slug like ?${idx} or p.sku like ?${idx})`
+    );
   }
 
   if (category) {
-    where.push("p.category_slug = ?");
     bindings.push(category);
+    conditions.push(`c.slug = ?${bindings.length}`);
   }
 
-  if (make) {
-    where.push("EXISTS (SELECT 1 FROM part_compatibility pc WHERE pc.part_id = p.id AND pc.make_slug = ?)");
-    bindings.push(make);
+  if (brand) {
+    bindings.push(brand);
+    conditions.push(`b.slug = ?${bindings.length}`);
   }
 
-  if (model) {
-    where.push("EXISTS (SELECT 1 FROM part_compatibility pc WHERE pc.part_id = p.id AND pc.model_slug = ?)");
-    bindings.push(model);
-  }
-
-  if (year) {
-    where.push("EXISTS (SELECT 1 FROM part_compatibility pc WHERE pc.part_id = p.id AND ? BETWEEN pc.year_from AND pc.year_to)");
-    bindings.push(Number(year));
-  }
+  const whereClause = conditions.length ? `where ${conditions.join(" and ")}` : "";
 
   const sql = `
-    SELECT
+    select
       p.id,
       p.slug,
       p.title,
+      p.description,
       p.sku,
-      p.brand,
       p.price,
-      p.sale_price,
-      p.currency,
-      p.stock_qty,
+      p.compare_price,
       p.condition,
-      p.category_slug,
+      p.quantity,
+      p.status,
+      p.featured,
+      p.created_at,
+      b.name as brand_name,
+      b.slug as brand_slug,
+      c.name as category_name,
+      c.slug as category_slug,
+      s.name as seller_name,
+      s.slug as seller_slug,
+      s.location as seller_location,
       (
-        SELECT pm.file_url
-        FROM part_media pm
-        WHERE pm.part_id = p.id
-        ORDER BY pm.sort_order ASC, pm.id ASC
-        LIMIT 1
-      ) AS image_url
-    FROM parts p
-    WHERE ${where.join(" AND ")}
-    ORDER BY p.id DESC
-    LIMIT 60
+        select pi.url
+        from part_images pi
+        where pi.part_id = p.id
+        order by pi.is_featured desc, pi.sort_order asc, pi.id asc
+        limit 1
+      ) as image_url
+    from parts p
+    left join brands b on b.id = p.brand_id
+    left join categories c on c.id = p.category_id
+    left join sellers s on s.id = p.seller_id
+    ${whereClause}
+    order by p.featured desc, p.created_at desc
+    limit 60;
   `;
 
-  const stmt = c.env.DB.prepare(sql).bind(...bindings);
-  const result = await stmt.all();
+  const stmt = c.env.DB.prepare(sql);
+  const result = bindings.length ? await stmt.bind(...bindings).all() : await stmt.all();
 
-  return ok(c, {
-    items: result.results ?? [],
-    total: (result.results ?? []).length,
-  });
+  return c.json(
+    ok(result.results || [], {
+      currency: "GBP",
+      locale: "en-GB",
+      market: "United Kingdom",
+      vehicle_filter: null
+    })
+  );
 });
 
 catalogRoutes.get("/parts/:slug", async (c) => {
   const slug = c.req.param("slug");
 
   const sql = `
-    SELECT
-      p.*,
-      s.store_name,
-      s.slug AS seller_slug
-    FROM parts p
-    LEFT JOIN sellers s ON s.id = p.seller_id
-    WHERE p.slug = ?
-    LIMIT 1
+    select
+      p.id,
+      p.slug,
+      p.title,
+      p.description,
+      p.sku,
+      p.price,
+      p.compare_price,
+      p.condition,
+      p.quantity,
+      p.status,
+      p.featured,
+      p.created_at,
+      p.updated_at,
+      p.weight_kg,
+      b.name as brand_name,
+      b.slug as brand_slug,
+      c.name as category_name,
+      c.slug as category_slug,
+      s.name as seller_name,
+      s.slug as seller_slug,
+      s.location as seller_location,
+      (
+        select pi.url
+        from part_images pi
+        where pi.part_id = p.id
+        order by pi.is_featured desc, pi.sort_order asc, pi.id asc
+        limit 1
+      ) as image_url
+    from parts p
+    left join brands b on b.id = p.brand_id
+    left join categories c on c.id = p.category_id
+    left join sellers s on s.id = p.seller_id
+    where p.slug = ?1
+    limit 1;
   `;
 
   const result = await c.env.DB.prepare(sql).bind(slug).first();
-  if (!result) return fail(c, "Part not found", 404);
 
-  const media = await c.env.DB.prepare(
-    `
-      SELECT id, file_url, alt_text, sort_order
-      FROM part_media
-      WHERE part_id = ?
-      ORDER BY sort_order ASC, id ASC
-    `
-  ).bind((result as { id: number }).id).all();
+  if (!result) {
+    return c.json(
+      {
+        ok: false,
+        data: null,
+        meta: null,
+        error: {
+          code: "NOT_FOUND",
+          message: "Part not found",
+        },
+      },
+      404
+    );
+  }
 
-  return ok(c, {
-    ...(result as Record<string, unknown>),
-    media: media.results ?? [],
-  });
+  return c.json(
+    ok(result, {
+      currency: "GBP",
+      locale: "en-GB",
+      market: "United Kingdom",
+    })
+  );
 });
 
 catalogRoutes.get("/categories", async (c) => {
-  const result = await c.env.DB.prepare(
-    `
-      SELECT id, name, slug, icon, parent_id
-      FROM categories
-      ORDER BY name ASC
-    `
-  ).all();
+  const sql = `
+    select id, name, slug
+    from categories
+    order by name asc;
+  `;
+  const result = await c.env.DB.prepare(sql).all();
 
-  return ok(c, result.results ?? []);
+  return c.json(
+    ok(result.results || [], {
+      market: "United Kingdom",
+    })
+  );
 });
 
 catalogRoutes.get("/brands", async (c) => {
-  const result = await c.env.DB.prepare(
-    `
-      SELECT DISTINCT brand
-      FROM parts
-      WHERE brand IS NOT NULL AND brand != ''
-      ORDER BY brand ASC
-    `
-  ).all();
+  const sql = `
+    select id, name, slug
+    from brands
+    order by name asc;
+  `;
+  const result = await c.env.DB.prepare(sql).all();
 
-  return ok(c, result.results ?? []);
+  return c.json(
+    ok(result.results || [], {
+      market: "United Kingdom",
+    })
+  );
 });
