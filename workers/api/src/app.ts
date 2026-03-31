@@ -3,6 +3,13 @@ import { cors } from "hono/cors";
 import { authRoutes } from "./routes/auth";
 import { vehiclesRoutes } from "./routes/vehicles";
 import { catalogRoutes } from "./routes/catalog";
+import { marketplaceRoutes } from "./routes/marketplace";
+import { marketplacePartsRoutes } from "./routes/marketplace.parts";
+import { mediaRoutes } from "./routes/media";
+import { commerceRoutes } from "./routes/commerce";
+import { adminRoutes } from "./routes/admin";
+import { healthRoutes } from "./routes/health";
+import { whatsappRoutes } from "./routes/whatsapp";
 
 const app = new Hono();
 
@@ -22,9 +29,16 @@ app.get("/health", (c) => {
   });
 });
 
+app.route("/api/v1/health", healthRoutes);
 app.route("/api/v1/auth", authRoutes);
 app.route("/api/v1/vehicles", vehiclesRoutes);
 app.route("/api/v1/catalog", catalogRoutes);
+app.route("/api/v1/catalog/parts", marketplacePartsRoutes);
+app.route("/api/v1/marketplace", marketplaceRoutes);
+app.route("/api/v1/media", mediaRoutes);
+app.route("/api/v1/commerce", commerceRoutes);
+app.route("/api/v1/admin", adminRoutes);
+app.route("/api/v1/whatsapp", whatsappRoutes);
 
 app.notFound((c) => {
   return c.json(
