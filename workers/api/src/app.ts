@@ -14,7 +14,7 @@ import { adminRoutes } from "./routes/admin";
 import { mediaRoutes } from "./routes/media";
 import { whatsappRoutes } from "./routes/whatsapp";
 import { healthRoutes } from "./routes/health";
-import { vehiclesRoutes } from "./routes/vehicles";
+import vehiclesRoutes from "./routes/vehicles";
 
 export const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
