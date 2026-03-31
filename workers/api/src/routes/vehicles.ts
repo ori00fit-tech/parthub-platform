@@ -1,127 +1,59 @@
 import { Hono } from "hono";
 
-const router = new Hono();
+export const vehiclesRoutes = new Hono();
 
-/**
- * GET /vehicles/makes
- */
-router.get("/makes", async (c) => {
-  try {
-    const db = c.env.DB;
+vehiclesRoutes.get("/makes", async (c) => {
+  const result = await c.env.DB.prepare(`
+    select id, slug, name, logo_url
+    from vehicle_makes
+    order by name asc
+  `).all();
 
-    const result = await db
-      .prepare("SELECT id, slug, name, logo_url FROM vehicle_makes ORDER BY name ASC")
-      .all();
-
-    return c.json({
-      ok: true,
-      data: result.results || [],
-      error: null,
-    });
-  } catch (err) {
-    return c.json(
-      {
-        ok: false,
-        data: null,
-        error: {
-          message: err.message || "Failed to fetch makes",
-        },
-      },
-      500
-    );
-  }
+  return c.json({
+    ok: true,
+    data: result.results || [],
+    error: null,
+  });
 });
 
-/**
- * GET /vehicles/models?make=audi
- */
-router.get("/models", async (c) => {
-  try {
-    const db = c.env.DB;
+vehiclesRoutes.get("/models", async (c) => {
+  const make = c.req.query("make");
 
-    const url = new URL(c.req.url);
-    const make = url.searchParams.get("make");
-
-    if (!make) {
-      return c.json({ ok: true, data: [] });
-    }
-
-    const result = await db
-      .prepare(
-        `
-        SELECT vm.id, vm.slug, vm.name
-        FROM vehicle_models vm
-        JOIN vehicle_makes mk ON mk.id = vm.make_id
-        WHERE mk.slug = ?
-        ORDER BY vm.name ASC
-      `
-      )
-      .bind(make)
-      .all();
-
-    return c.json({
-      ok: true,
-      data: result.results || [],
-      error: null,
-    });
-  } catch (err) {
-    return c.json(
-      {
-        ok: false,
-        data: null,
-        error: {
-          message: err.message || "Failed to fetch models",
-        },
-      },
-      500
-    );
+  if (!make) {
+    return c.json({ ok: false, error: "make is required" }, 400);
   }
+
+  const result = await c.env.DB.prepare(`
+    select id, slug, name
+    from vehicle_models
+    where make_slug = ?1
+    order by name asc
+  `).bind(make).all();
+
+  return c.json({
+    ok: true,
+    data: result.results || [],
+    error: null,
+  });
 });
 
-/**
- * GET /vehicles/years?model=a3
- */
-router.get("/years", async (c) => {
-  try {
-    const db = c.env.DB;
+vehiclesRoutes.get("/years", async (c) => {
+  const model = c.req.query("model");
 
-    const url = new URL(c.req.url);
-    const model = url.searchParams.get("model");
-
-    if (!model) {
-      return c.json({ ok: true, data: [] });
-    }
-
-    const result = await db
-      .prepare(
-        `
-        SELECT vy.id, vy.year
-        FROM vehicle_years vy
-        JOIN vehicle_models vm ON vm.id = vy.model_id
-        WHERE vm.slug = ?
-        ORDER BY vy.year DESC
-      `
-      )
-      .bind(model)
-      .all();
-
-    return c.json({
-      ok: true,
-      data: result.results || [],
-      error: null,
-    });
-  } catch (err) {
-    return c.json(
-      {
-        ok: false,
-        data: null,
-        error: {
-          message: err.message || "Failed to fetch years",
-        },
-      },
-      500
-    );
+  if (!model) {
+    return c.json({ ok: false, error: "model is required" }, 400);
   }
-});
 
-export default router;
+  const result = await c.env.DB.prepare(`
+    select id, year
+    from vehicle_years
+    where model_slug = ?1
+    order by year desc
+  `).bind(model).all();
+
+  return c.json({
+    ok: true,
+    data: result.results || [],
+    error: null,
+  });
+});
