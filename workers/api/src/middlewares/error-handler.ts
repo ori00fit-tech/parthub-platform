@@ -24,7 +24,7 @@ export const errorHandler: ErrorHandler<{
     {
       success: false,
       error:
-        process.env.NODE_ENV === "development"
+        c.env.APP_ENV === "development"
           ? err.message
           : "Internal server error",
     },

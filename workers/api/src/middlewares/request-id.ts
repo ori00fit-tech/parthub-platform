@@ -12,5 +12,5 @@ export const requestIdMiddleware: MiddlewareHandler<{
   c.set("request_id", id);
   c.header("X-Request-ID", id);
 
-  await next();
+  return await next();
 };

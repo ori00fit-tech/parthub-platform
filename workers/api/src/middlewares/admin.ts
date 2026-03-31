@@ -11,5 +11,5 @@ export const adminGuard: MiddlewareHandler<{
     return c.json({ success: false, error: "Forbidden: admins only" }, 403);
   }
 
-  await next();
+  return await next();
 };

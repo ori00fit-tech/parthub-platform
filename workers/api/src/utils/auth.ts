@@ -8,15 +8,19 @@ export interface JwtPayload {
   iat: number;
 }
 
-function base64url(data: ArrayBuffer): string {
-  return btoa(String.fromCharCode(...new Uint8Array(data)))
+function base64url(data: BufferSource): string {
+  const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+
+  return btoa(String.fromCharCode(...bytes))
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
 }
 
 function decodeBase64url(str: string): string {
-  return atob(str.replace(/-/g, "+").replace(/_/g, "/"));
+  const normalized = str.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+  return atob(padded);
 }
 
 async function importKey(secret: string): Promise<CryptoKey> {
@@ -32,7 +36,7 @@ async function importKey(secret: string): Promise<CryptoKey> {
 export async function signToken(
   payload: Omit<JwtPayload, "iat" | "exp">,
   secret: string,
-  expiresInSeconds = 604800 // 7 days
+  expiresInSeconds = 604800
 ): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const fullPayload: JwtPayload = { ...payload, iat: now, exp: now + expiresInSeconds };

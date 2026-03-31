@@ -7,7 +7,6 @@ import { dbFirst, dbRun } from "../utils/db";
 
 export const authRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
-// POST /api/v1/auth/register
 authRoutes.post("/register", async (c) => {
   const body = await c.req.json<{
     name: string;
@@ -42,7 +41,6 @@ authRoutes.post("/register", async (c) => {
   return created(c, { user });
 });
 
-// POST /api/v1/auth/login
 authRoutes.post("/login", async (c) => {
   const body = await c.req.json<{ email: string; password: string }>();
 
@@ -74,10 +72,12 @@ authRoutes.post("/login", async (c) => {
   const valid = await verifyPassword(body.password, user.password_hash);
   if (!valid) return fail(c, "Invalid credentials", 401);
 
-  const token = await signToken(
-    { user_id: user.id, role: user.role, seller_id: user.seller_id ?? undefined },
-    c.env.JWT_SECRET
-  );
+  const payload =
+    user.seller_id != null
+      ? { user_id: user.id, role: user.role, seller_id: user.seller_id }
+      : { user_id: user.id, role: user.role };
+
+  const token = await signToken(payload, c.env.JWT_SECRET);
 
   return ok(c, {
     access_token: token,
@@ -91,7 +91,6 @@ authRoutes.post("/login", async (c) => {
   });
 });
 
-// GET /api/v1/auth/me
 authRoutes.get("/me", authMiddleware, async (c) => {
   const userId = c.get("user_id");
   const user = await dbFirst(
@@ -103,8 +102,6 @@ authRoutes.get("/me", authMiddleware, async (c) => {
   return ok(c, user);
 });
 
-// POST /api/v1/auth/logout
 authRoutes.post("/logout", authMiddleware, (c) => {
-  // Stateless JWT — client drops the token
   return ok(c, { message: "Logged out" });
 });

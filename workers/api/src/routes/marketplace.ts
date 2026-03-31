@@ -1,6 +1,7 @@
 import { Hono } from "hono";
+import type { Env, HonoVariables } from "../types";
 
-export const marketplaceRoutes = new Hono();
+export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
 function success(data: unknown, meta: unknown = null) {
   return {
@@ -78,7 +79,7 @@ marketplaceRoutes.get("/health", (c) => {
 
 marketplaceRoutes.post("/parts", async (c) => {
   try {
-    const body = await c.req.json();
+    const body = await c.req.json<Record<string, unknown>>();
 
     const {
       seller_id,
@@ -219,7 +220,7 @@ marketplaceRoutes.put("/parts/:id", async (c) => {
       return c.json(failure("INVALID_ID", "Invalid part id"), 400);
     }
 
-    const body = await c.req.json();
+    const body = await c.req.json<Record<string, unknown>>();
     const {
       category_id,
       brand_id,
@@ -322,7 +323,7 @@ marketplaceRoutes.post("/parts/:id/images", async (c) => {
       return c.json(failure("INVALID_ID", "Invalid part id"), 400);
     }
 
-    const body = await c.req.json();
+    const body = await c.req.json<Record<string, unknown>>();
     const {
       url,
       alt_text,
@@ -338,7 +339,7 @@ marketplaceRoutes.post("/parts/:id/images", async (c) => {
       "select id, title from parts where id = ?1 limit 1"
     )
       .bind(partId)
-      .first();
+      .first<{ id: number; title: string }>();
 
     if (!part) {
       return c.json(failure("NOT_FOUND", "Part not found"), 404);

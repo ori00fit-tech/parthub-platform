@@ -23,5 +23,5 @@ export const authMiddleware: MiddlewareHandler<{
     return c.json({ success: false, error: "Invalid or expired token" }, 401);
   }
 
-  await next();
+  return await next();
 };

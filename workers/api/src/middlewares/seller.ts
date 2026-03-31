@@ -11,5 +11,5 @@ export const sellerGuard: MiddlewareHandler<{
     return c.json({ success: false, error: "Forbidden: sellers only" }, 403);
   }
 
-  await next();
+  return await next();
 };
