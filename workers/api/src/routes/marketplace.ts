@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { Env, HonoVariables } from "../types";
+import { authMiddleware } from "../middlewares/auth";
 
 export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -493,4 +494,339 @@ marketplaceRoutes.delete("/parts/:id/images/:imageId", async (c) => {
       500
     );
   }
+});
+
+// ================================
+// SELLER SELF / ONBOARDING / DASHBOARD
+// ================================
+
+marketplaceRoutes.get("/dashboard", authMiddleware, async (c) => {
+  const sellerId = c.get("seller_id");
+
+  if (!sellerId) {
+    return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  }
+
+  const [activeParts, totalOrders, pendingOrders, avgRating] = await Promise.all([
+    c.env.DB.prepare(
+      "select count(*) as n from parts where seller_id = ?1 and status = 'active'"
+    ).bind(sellerId).first<{ n: number }>(),
+
+    c.env.DB.prepare(`
+      select count(distinct o.id) as n
+      from orders o
+      join order_items oi on oi.order_id = o.id
+      join parts p on p.id = oi.part_id
+      where p.seller_id = ?1
+    `).bind(sellerId).first<{ n: number }>(),
+
+    c.env.DB.prepare(`
+      select count(distinct o.id) as n
+      from orders o
+      join order_items oi on oi.order_id = o.id
+      join parts p on p.id = oi.part_id
+      where p.seller_id = ?1 and o.status = 'pending'
+    `).bind(sellerId).first<{ n: number }>(),
+
+    c.env.DB.prepare(`
+      select avg(r.rating) as n
+      from reviews r
+      join parts p on p.id = r.part_id
+      where p.seller_id = ?1
+    `).bind(sellerId).first<{ n: number }>(),
+  ]);
+
+  return c.json(
+    success({
+      active_parts: activeParts?.n ?? 0,
+      total_orders: totalOrders?.n ?? 0,
+      pending_orders: pendingOrders?.n ?? 0,
+      avg_rating: avgRating?.n ?? 0,
+    })
+  );
+});
+
+marketplaceRoutes.get("/me", authMiddleware, async (c) => {
+  const sellerId = c.get("seller_id");
+  const userId = c.get("user_id");
+
+  if (!userId) {
+    return c.json(failure("UNAUTHORIZED", "Authentication required"), 401);
+  }
+
+  if (!sellerId) {
+    return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  }
+
+  const seller = await c.env.DB.prepare(`
+    select
+      s.*,
+      u.name as user_name,
+      u.email as user_email,
+      u.phone as user_phone
+    from sellers s
+    join users u on u.id = s.user_id
+    where s.id = ?1
+    limit 1
+  `).bind(sellerId).first();
+
+  if (!seller) {
+    return c.json(failure("SELLER_NOT_FOUND", "Seller profile not found"), 404);
+  }
+
+  return c.json(success(seller));
+});
+
+marketplaceRoutes.post("/onboarding", authMiddleware, async (c) => {
+  const userId = c.get("user_id");
+
+  if (!userId) {
+    return c.json(failure("UNAUTHORIZED", "Authentication required"), 401);
+  }
+
+  const body = await c.req.json<Record<string, unknown>>();
+  const displayName = String(body.display_name ?? "").trim();
+  const slug = String(body.slug ?? "").trim();
+  const phone = String(body.phone ?? "").trim();
+  const city = String(body.city ?? "").trim();
+  const description = String(body.description ?? "").trim();
+
+  if (!displayName) return c.json(failure("DISPLAY_NAME_REQUIRED", "display_name is required"), 400);
+  if (!slug) return c.json(failure("SLUG_REQUIRED", "slug is required"), 400);
+  if (!city) return c.json(failure("CITY_REQUIRED", "city is required"), 400);
+
+  const existingSeller = await c.env.DB.prepare(
+    "select id from sellers where user_id = ?1 limit 1"
+  ).bind(userId).first<{ id: number }>();
+
+  if (existingSeller) {
+    return c.json(failure("SELLER_EXISTS", "Seller profile already exists"), 409);
+  }
+
+  const slugConflict = await c.env.DB.prepare(
+    "select id from sellers where slug = ?1 limit 1"
+  ).bind(slug).first();
+
+  if (slugConflict) {
+    return c.json(failure("SLUG_EXISTS", "A seller with this slug already exists"), 409);
+  }
+
+  const inserted = await c.env.DB.prepare(`
+    insert into sellers (
+      user_id,
+      name,
+      slug,
+      phone,
+      location,
+      description,
+      status
+    ) values (?1, ?2, ?3, ?4, ?5, ?6, 'active')
+  `)
+    .bind(userId, displayName, slug, phone || null, city, description || null)
+    .run();
+
+  const sellerId = Number(inserted.meta.last_row_id);
+
+  const seller = await c.env.DB.prepare(`
+    select
+      s.*,
+      u.name as user_name,
+      u.email as user_email,
+      u.phone as user_phone
+    from sellers s
+    join users u on u.id = s.user_id
+    where s.id = ?1
+    limit 1
+  `).bind(sellerId).first();
+
+  return c.json(success(seller, { message: "Seller onboarding completed" }), 201);
+});
+
+marketplaceRoutes.put("/onboarding", authMiddleware, async (c) => {
+  const sellerId = c.get("seller_id");
+
+  if (!sellerId) {
+    return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  }
+
+  const body = await c.req.json<Record<string, unknown>>();
+  const displayName = String(body.display_name ?? "").trim();
+  const slug = String(body.slug ?? "").trim();
+  const phone = String(body.phone ?? "").trim();
+  const city = String(body.city ?? "").trim();
+  const description = String(body.description ?? "").trim();
+
+  if (!displayName) return c.json(failure("DISPLAY_NAME_REQUIRED", "display_name is required"), 400);
+  if (!slug) return c.json(failure("SLUG_REQUIRED", "slug is required"), 400);
+  if (!city) return c.json(failure("CITY_REQUIRED", "city is required"), 400);
+
+  const slugConflict = await c.env.DB.prepare(
+    "select id from sellers where slug = ?1 and id != ?2 limit 1"
+  ).bind(slug, sellerId).first();
+
+  if (slugConflict) {
+    return c.json(failure("SLUG_EXISTS", "A seller with this slug already exists"), 409);
+  }
+
+  await c.env.DB.prepare(`
+    update sellers
+    set
+      name = ?1,
+      slug = ?2,
+      phone = ?3,
+      location = ?4,
+      description = ?5
+    where id = ?6
+  `)
+    .bind(displayName, slug, phone || null, city, description || null, sellerId)
+    .run();
+
+  const seller = await c.env.DB.prepare(`
+    select
+      s.*,
+      u.name as user_name,
+      u.email as user_email,
+      u.phone as user_phone
+    from sellers s
+    join users u on u.id = s.user_id
+    where s.id = ?1
+    limit 1
+  `).bind(sellerId).first();
+
+  return c.json(success(seller, { message: "Seller profile updated" }));
+});
+
+marketplaceRoutes.get("/me/parts", authMiddleware, async (c) => {
+  const sellerId = c.get("seller_id");
+
+  if (!sellerId) {
+    return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  }
+
+  const parts = await c.env.DB.prepare(`
+    select
+      p.*,
+      b.name as brand_name,
+      c.name as category_name,
+      (
+        select pi.url
+        from part_images pi
+        where pi.part_id = p.id
+        order by pi.is_featured desc, pi.sort_order asc, pi.id asc
+        limit 1
+      ) as image_url
+    from parts p
+    left join brands b on b.id = p.brand_id
+    left join categories c on c.id = p.category_id
+    where p.seller_id = ?1
+    order by p.created_at desc
+  `).bind(sellerId).all();
+
+  return c.json(success(parts.results || []));
+});
+
+marketplaceRoutes.get("/me/orders", authMiddleware, async (c) => {
+  const sellerId = c.get("seller_id");
+
+  if (!sellerId) {
+    return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  }
+
+  const orders = await c.env.DB.prepare(`
+    select
+      o.id,
+      o.order_number,
+      o.status,
+      o.payment_status,
+      o.shipping_status,
+      o.total,
+      o.created_at,
+      u.name as buyer_name,
+      u.email as buyer_email
+    from orders o
+    join users u on u.id = o.buyer_id
+    join order_items oi on oi.order_id = o.id
+    join parts p on p.id = oi.part_id
+    where p.seller_id = ?1
+    group by o.id
+    order by o.created_at desc
+  `).bind(sellerId).all();
+
+  return c.json(success(orders.results || []));
+});
+
+marketplaceRoutes.get("/me/orders/:id", authMiddleware, async (c) => {
+  const sellerId = c.get("seller_id");
+  const id = c.req.param("id");
+
+  if (!sellerId) {
+    return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  }
+
+  const order = await c.env.DB.prepare(`
+    select
+      o.*,
+      u.name as buyer_name,
+      u.email as buyer_email,
+      u.phone as buyer_phone
+    from orders o
+    join users u on u.id = o.buyer_id
+    where o.id = ?1
+    limit 1
+  `).bind(id).first();
+
+  if (!order) {
+    return c.json(failure("NOT_FOUND", "Order not found"), 404);
+  }
+
+  const items = await c.env.DB.prepare(`
+    select
+      oi.*,
+      p.title as part_title,
+      p.sku,
+      (
+        select pi.url
+        from part_images pi
+        where pi.part_id = p.id
+        order by pi.is_featured desc, pi.sort_order asc, pi.id asc
+        limit 1
+      ) as image_url
+    from order_items oi
+    join parts p on p.id = oi.part_id
+    where oi.order_id = ?1 and p.seller_id = ?2
+    order by oi.id asc
+  `).bind(id, sellerId).all();
+
+  return c.json(
+    success({
+      ...(order as Record<string, unknown>),
+      items: items.results || [],
+    })
+  );
+});
+
+marketplaceRoutes.get("/me/reviews", authMiddleware, async (c) => {
+  const sellerId = c.get("seller_id");
+
+  if (!sellerId) {
+    return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  }
+
+  const reviews = await c.env.DB.prepare(`
+    select
+      r.id,
+      r.rating,
+      r.comment,
+      r.created_at,
+      u.name as buyer_name,
+      u.email as buyer_email,
+      p.title as part_title
+    from reviews r
+    join parts p on p.id = r.part_id
+    join users u on u.id = r.buyer_id
+    where p.seller_id = ?1
+    order by r.created_at desc
+  `).bind(sellerId).all();
+
+  return c.json(success(reviews.results || []));
 });
