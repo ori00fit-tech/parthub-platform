@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { authRoutes } from "./routes/auth";
 import { vehiclesRoutes } from "./routes/vehicles";
 import { catalogRoutes } from "./routes/catalog";
 
@@ -21,6 +22,7 @@ app.get("/health", (c) => {
   });
 });
 
+app.route("/api/v1/auth", authRoutes);
 app.route("/api/v1/vehicles", vehiclesRoutes);
 app.route("/api/v1/catalog", catalogRoutes);
 
