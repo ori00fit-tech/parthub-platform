@@ -21,19 +21,27 @@ export default function VehicleSelectorPage() {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
 
+  const selectedMakeName = useMemo(() => {
+    return makes.find((item) => item.slug === selectedMake)?.name || vehicle?.makeName || "";
+  }, [makes, selectedMake, vehicle]);
+
+  const selectedModelName = useMemo(() => {
+    return models.find((item) => item.slug === selectedModel)?.name || vehicle?.modelName || "";
+  }, [models, selectedModel, vehicle]);
+
   useEffect(() => {
     let active = true;
 
     async function loadMakes() {
       try {
-        setError("");
         setLoadingMakes(true);
+        setError("");
         const res = await apiGet("/api/v1/vehicles/makes");
         if (!active) return;
-        setMakes(res?.data || []);
+        setMakes(Array.isArray(res?.data) ? res.data : []);
       } catch (err) {
         if (!active) return;
-        setError(err.message || "Failed to load vehicle makes");
+        setError(err?.message || "Failed to load vehicle makes");
       } finally {
         if (active) setLoadingMakes(false);
       }
@@ -59,13 +67,14 @@ export default function VehicleSelectorPage() {
 
     async function loadModels() {
       try {
-        setError("");
         setLoadingModels(true);
+        setError("");
         const res = await apiGet(
           `/api/v1/vehicles/models?make=${encodeURIComponent(selectedMake)}`
         );
         if (!active) return;
-        const nextModels = res?.data || [];
+
+        const nextModels = Array.isArray(res?.data) ? res.data : [];
         setModels(nextModels);
 
         if (!nextModels.some((item) => item.slug === selectedModel)) {
@@ -75,7 +84,7 @@ export default function VehicleSelectorPage() {
         }
       } catch (err) {
         if (!active) return;
-        setError(err.message || "Failed to load vehicle models");
+        setError(err?.message || "Failed to load vehicle models");
       } finally {
         if (active) setLoadingModels(false);
       }
@@ -99,13 +108,14 @@ export default function VehicleSelectorPage() {
 
     async function loadYears() {
       try {
-        setError("");
         setLoadingYears(true);
+        setError("");
         const res = await apiGet(
           `/api/v1/vehicles/years?model=${encodeURIComponent(selectedModel)}`
         );
         if (!active) return;
-        const nextYears = res?.data || [];
+
+        const nextYears = Array.isArray(res?.data) ? res.data : [];
         setYears(nextYears);
 
         if (!nextYears.some((item) => String(item.year) === String(selectedYear))) {
@@ -113,7 +123,7 @@ export default function VehicleSelectorPage() {
         }
       } catch (err) {
         if (!active) return;
-        setError(err.message || "Failed to load vehicle years");
+        setError(err?.message || "Failed to load vehicle years");
       } finally {
         if (active) setLoadingYears(false);
       }
@@ -126,13 +136,23 @@ export default function VehicleSelectorPage() {
     };
   }, [selectedModel]);
 
-  const selectedMakeName = useMemo(() => {
-    return makes.find((item) => item.slug === selectedMake)?.name || "";
-  }, [makes, selectedMake]);
+  function handleMakeChange(e) {
+    setError("");
+    setSaved(false);
+    setSelectedMake(e.target.value);
+  }
 
-  const selectedModelName = useMemo(() => {
-    return models.find((item) => item.slug === selectedModel)?.name || "";
-  }, [models, selectedModel]);
+  function handleModelChange(e) {
+    setError("");
+    setSaved(false);
+    setSelectedModel(e.target.value);
+  }
+
+  function handleYearChange(e) {
+    setError("");
+    setSaved(false);
+    setSelectedYear(e.target.value);
+  }
 
   function handleSave() {
     if (!selectedMake || !selectedModel || !selectedYear) {
@@ -151,6 +171,17 @@ export default function VehicleSelectorPage() {
 
     setSaved(true);
     setTimeout(() => setSaved(false), 1800);
+  }
+
+  function handleClearVehicle() {
+    setError("");
+    setSaved(false);
+    setSelectedMake("");
+    setSelectedModel("");
+    setSelectedYear("");
+    setModels([]);
+    setYears([]);
+    clearVehicle();
   }
 
   return (
@@ -210,7 +241,7 @@ export default function VehicleSelectorPage() {
                 <span className="text-sm font-medium text-gray-700">Make</span>
                 <select
                   value={selectedMake}
-                  onChange={(e) => setSelectedMake(e.target.value)}
+                  onChange={handleMakeChange}
                   disabled={loadingMakes}
                   className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
                 >
@@ -229,7 +260,7 @@ export default function VehicleSelectorPage() {
                 <span className="text-sm font-medium text-gray-700">Model</span>
                 <select
                   value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
+                  onChange={handleModelChange}
                   disabled={!selectedMake || loadingModels}
                   className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
                 >
@@ -252,7 +283,7 @@ export default function VehicleSelectorPage() {
                 <span className="text-sm font-medium text-gray-700">Year</span>
                 <select
                   value={selectedYear}
-                  onChange={(e) => setSelectedYear(e.target.value)}
+                  onChange={handleYearChange}
                   disabled={!selectedModel || loadingYears}
                   className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
                 >
@@ -290,7 +321,7 @@ export default function VehicleSelectorPage() {
 
               <button
                 type="button"
-                onClick={clearVehicle}
+                onClick={handleClearVehicle}
                 className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100"
               >
                 Clear vehicle
