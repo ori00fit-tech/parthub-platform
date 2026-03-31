@@ -77,6 +77,10 @@ authRoutes.post("/login", async (c) => {
       ? { user_id: user.id, role: user.role, seller_id: user.seller_id }
       : { user_id: user.id, role: user.role };
 
+  if (!c.env.JWT_SECRET) {
+    return fail(c, "JWT_SECRET is not configured", 500);
+  }
+
   const token = await signToken(payload, c.env.JWT_SECRET);
 
   return ok(c, {
