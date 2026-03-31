@@ -1,107 +1,313 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { vehiclesApi } from "../features/vehicles/api";
-import { useVehicle } from "../features/vehicles/VehicleContext";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { apiGet } from "../lib/api";
+import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 
 export default function VehicleSelectorPage() {
-  const navigate = useNavigate();
-  const { selectVehicle, selectedVehicle, clearVehicle } = useVehicle();
+  const { setVehicle } = useSelectedVehicle();
 
   const [makes, setMakes] = useState([]);
   const [models, setModels] = useState([]);
   const [years, setYears] = useState([]);
-  const [sel, setSel] = useState({ make_id: "", make: "", model_id: "", model: "", year: "" });
+
+  const [selectedMake, setSelectedMake] = useState("");
+  const [selectedModel, setSelectedModel] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
+
+  const [loadingMakes, setLoadingMakes] = useState(true);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [loadingYears, setLoadingYears] = useState(false);
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    vehiclesApi.getMakes().then((r) => setMakes(r.data)).catch(() => {});
+    let active = true;
+
+    apiGet("/api/v1/vehicles/makes")
+      .then((res) => {
+        if (!active) return;
+        setMakes(res?.data || []);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err.message || "Failed to load vehicle makes");
+      })
+      .finally(() => {
+        if (active) setLoadingMakes(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
-  async function onMakeChange(e) {
-    const opt = makes.find((m) => m.id === Number(e.target.value));
-    setSel({ make_id: e.target.value, make: opt?.name ?? "", model_id: "", model: "", year: "" });
-    setModels([]); setYears([]);
-    if (e.target.value) {
-      const r = await vehiclesApi.getModels(e.target.value);
-      setModels(r.data);
+  useEffect(() => {
+    if (!selectedMake) {
+      setModels([]);
+      setSelectedModel("");
+      setYears([]);
+      setSelectedYear("");
+      return;
     }
-  }
 
-  async function onModelChange(e) {
-    const opt = models.find((m) => m.id === Number(e.target.value));
-    setSel((p) => ({ ...p, model_id: e.target.value, model: opt?.name ?? "", year: "" }));
+    let active = true;
+    setLoadingModels(true);
+    setSelectedModel("");
     setYears([]);
-    if (e.target.value) {
-      const r = await vehiclesApi.getYears(e.target.value);
-      setYears(r.data);
+    setSelectedYear("");
+
+    apiGet(`/api/v1/vehicles/models?make=${encodeURIComponent(selectedMake)}`)
+      .then((res) => {
+        if (!active) return;
+        setModels(res?.data || []);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err.message || "Failed to load vehicle models");
+      })
+      .finally(() => {
+        if (active) setLoadingModels(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedMake]);
+
+  useEffect(() => {
+    if (!selectedModel) {
+      setYears([]);
+      setSelectedYear("");
+      return;
     }
-  }
 
-  function onApply() {
-    if (!sel.make || !sel.model || !sel.year) return;
-    selectVehicle({
-      make_id: Number(sel.make_id),
-      make: sel.make,
-      model_id: Number(sel.model_id),
-      model: sel.model,
-      year: Number(sel.year),
-      display_label: `${sel.year} ${sel.make} ${sel.model}`,
-      id: `${sel.make_id}-${sel.model_id}-${sel.year}`,
-      is_primary: true,
-      saved_at: new Date().toISOString(),
+    let active = true;
+    setLoadingYears(true);
+    setSelectedYear("");
+
+    apiGet(`/api/v1/vehicles/years?model=${encodeURIComponent(selectedModel)}`)
+      .then((res) => {
+        if (!active) return;
+        setYears(res?.data || []);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err.message || "Failed to load vehicle years");
+      })
+      .finally(() => {
+        if (active) setLoadingYears(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedModel]);
+
+  const selectedMakeName = useMemo(
+    () => makes.find((m) => m.slug === selectedMake)?.name || "",
+    [makes, selectedMake]
+  );
+
+  const selectedModelName = useMemo(
+    () => models.find((m) => m.slug === selectedModel)?.name || "",
+    [models, selectedModel]
+  );
+
+  function handleSave() {
+    if (!selectedMake || !selectedModel || !selectedYear) {
+      setError("Please choose make, model, and year.");
+      return;
+    }
+
+    setVehicle({
+      make: selectedMake,
+      makeName: selectedMakeName,
+      model: selectedModel,
+      modelName: selectedModelName,
+      year: selectedYear,
     });
-    navigate(`/parts?make=${sel.make}&model=${sel.model}&year=${sel.year}`);
-  }
 
-  const selectCls = "w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400";
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
 
   return (
-    <div className="container-app py-12 max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Select Your Vehicle</h1>
-      <p className="text-gray-500 text-sm mb-8">Find parts that fit your exact vehicle.</p>
-
-      {selectedVehicle && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
-          <div>
-            <p className="text-xs text-blue-500 font-medium mb-0.5">Current vehicle</p>
-            <p className="text-blue-800 font-semibold">{selectedVehicle.display_label}</p>
+    <section className="space-y-6 pb-10">
+      <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
+        <div className="max-w-3xl">
+          <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
+            Vehicle Selector PRO MAX
           </div>
-          <button onClick={clearVehicle} className="text-xs text-red-500 hover:underline">Clear</button>
-        </div>
-      )}
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Make</label>
-          <select value={sel.make_id} onChange={onMakeChange} className={selectCls}>
-            <option value="">Select make…</option>
-            {makes.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-          </select>
+          <h1 className="text-3xl font-bold sm:text-5xl">
+            Choose your vehicle first
+          </h1>
+
+          <p className="mt-3 text-sm text-blue-100 sm:text-base">
+            Select make, model, and year to browse parts faster and improve fitment accuracy.
+          </p>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-          <select value={sel.model_id} onChange={onModelChange} disabled={!models.length} className={selectCls}>
-            <option value="">Select model…</option>
-            {models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-          </select>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm">
+            ✔ 30 makes
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm">
+            ✔ 150 models
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm">
+            ✔ 3300 year entries
+          </div>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-          <select value={sel.year} onChange={(e) => setSel((p) => ({ ...p, year: e.target.value }))} disabled={!years.length} className={selectCls}>
-            <option value="">Select year…</option>
-            {years.map((y) => <option key={y.year} value={y.year}>{y.year}</option>)}
-          </select>
-        </div>
-
-        <button
-          onClick={onApply}
-          disabled={!sel.make || !sel.model || !sel.year}
-          className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Find Parts for My Vehicle
-        </button>
       </div>
-    </div>
+
+      {error ? (
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-5 text-red-700 shadow-sm">
+          {error}
+        </div>
+      ) : null}
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+        <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Select your vehicle</h2>
+              <p className="text-sm text-gray-500">
+                Start with the make, then model, then year.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <label className="space-y-2">
+                <span className="text-sm font-medium text-gray-700">Make</span>
+                <select
+                  value={selectedMake}
+                  onChange={(e) => setSelectedMake(e.target.value)}
+                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
+                  disabled={loadingMakes}
+                >
+                  <option value="">
+                    {loadingMakes ? "Loading makes..." : "Select make"}
+                  </option>
+                  {makes.map((make) => (
+                    <option key={make.id} value={make.slug}>
+                      {make.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-sm font-medium text-gray-700">Model</span>
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
+                  disabled={!selectedMake || loadingModels}
+                >
+                  <option value="">
+                    {!selectedMake
+                      ? "Choose make first"
+                      : loadingModels
+                      ? "Loading models..."
+                      : "Select model"}
+                  </option>
+                  {models.map((model) => (
+                    <option key={model.id} value={model.slug}>
+                      {model.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-sm font-medium text-gray-700">Year</span>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
+                  disabled={!selectedModel || loadingYears}
+                >
+                  <option value="">
+                    {!selectedModel
+                      ? "Choose model first"
+                      : loadingYears
+                      ? "Loading years..."
+                      : "Select year"}
+                  </option>
+                  {years.map((year) => (
+                    <option key={year.id} value={year.year}>
+                      {year.year}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleSave}
+                className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                Save vehicle
+              </button>
+
+              <Link
+                to="/parts"
+                className="rounded-2xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+              >
+                Browse parts
+              </Link>
+            </div>
+
+            {saved ? (
+              <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+                Vehicle saved successfully.
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-bold text-gray-900">Current selection</h2>
+
+            <div className="mt-4 space-y-3">
+              <div className="rounded-2xl bg-gray-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-400">Make</p>
+                <p className="mt-1 font-semibold text-gray-900">
+                  {selectedMakeName || "-"}
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-gray-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-400">Model</p>
+                <p className="mt-1 font-semibold text-gray-900">
+                  {selectedModelName || "-"}
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-gray-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-400">Year</p>
+                <p className="mt-1 font-semibold text-gray-900">
+                  {selectedYear || "-"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-bold text-gray-900">Why this matters</h2>
+            <div className="mt-3 space-y-2 text-sm text-gray-600">
+              <p>✔ Faster catalog browsing</p>
+              <p>✔ Better fitment workflows</p>
+              <p>✔ Stronger vehicle-specific search foundation</p>
+              <p>✔ Ready for VIN / plate lookup later</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

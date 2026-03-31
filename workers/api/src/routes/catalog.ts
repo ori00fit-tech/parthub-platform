@@ -15,23 +15,56 @@ catalogRoutes.get("/parts", async (c) => {
   const search = c.req.query("search")?.trim() || "";
   const category = c.req.query("category")?.trim() || "";
   const brand = c.req.query("brand")?.trim() || "";
+  const make = c.req.query("make")?.trim() || "";
+  const model = c.req.query("model")?.trim() || "";
+  const yearRaw = c.req.query("year")?.trim() || "";
+  const year = yearRaw ? Number(yearRaw) : null;
 
   const conditions: string[] = ["p.status = 'active'"];
   const bindings: unknown[] = [];
 
   if (search) {
-    conditions.push("(p.title like ?1 or p.slug like ?1 or p.sku like ?1)");
     bindings.push(`%${search}%`);
+    const idx = bindings.length;
+    conditions.push(`(p.title like ?${idx} or p.slug like ?${idx} or p.sku like ?${idx})`);
   }
 
   if (category) {
-    conditions.push(`c.slug = ?${bindings.length + 1}`);
     bindings.push(category);
+    conditions.push(`c.slug = ?${bindings.length}`);
   }
 
   if (brand) {
-    conditions.push(`b.slug = ?${bindings.length + 1}`);
     bindings.push(brand);
+    conditions.push(`b.slug = ?${bindings.length}`);
+  }
+
+  if (make || model || year) {
+    let existsSql = `
+      exists (
+        select 1
+        from part_compatibility pc
+        where pc.part_id = p.id
+    `;
+
+    if (make) {
+      bindings.push(make);
+      existsSql += ` and lower(pc.make) = lower(?${bindings.length})`;
+    }
+
+    if (model) {
+      bindings.push(model);
+      existsSql += ` and lower(pc.model) = lower(?${bindings.length})`;
+    }
+
+    if (year) {
+      bindings.push(year);
+      const idx = bindings.length;
+      existsSql += ` and (pc.year_start is null or pc.year_start <= ?${idx}) and (pc.year_end is null or pc.year_end >= ?${idx})`;
+    }
+
+    existsSql += ` )`;
+    conditions.push(existsSql);
   }
 
   const whereClause = conditions.length ? `where ${conditions.join(" and ")}` : "";
@@ -63,14 +96,19 @@ catalogRoutes.get("/parts", async (c) => {
         where pi.part_id = p.id
         order by pi.is_featured desc, pi.sort_order asc, pi.id asc
         limit 1
-      ) as image_url
+      ) as image_url,
+      (
+        select count(*)
+        from part_compatibility pc
+        where pc.part_id = p.id
+      ) as compatibility_count
     from parts p
     left join brands b on b.id = p.brand_id
     left join categories c on c.id = p.category_id
     left join sellers s on s.id = p.seller_id
     ${whereClause}
     order by p.featured desc, p.created_at desc
-    limit 48;
+    limit 60;
   `;
 
   const stmt = c.env.DB.prepare(sql);
@@ -81,6 +119,9 @@ catalogRoutes.get("/parts", async (c) => {
       currency: "GBP",
       locale: "en-GB",
       market: "United Kingdom",
+      vehicle_filter: make || model || year
+        ? { make, model, year }
+        : null,
     })
   );
 });
@@ -103,6 +144,7 @@ catalogRoutes.get("/parts/:slug", async (c) => {
       p.featured,
       p.created_at,
       p.updated_at,
+      p.weight_kg,
       b.name as brand_name,
       b.slug as brand_slug,
       c.name as category_name,
