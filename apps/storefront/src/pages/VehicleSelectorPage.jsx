@@ -4,37 +4,42 @@ import { apiGet } from "../lib/api";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 
 export default function VehicleSelectorPage() {
-  const { setVehicle } = useSelectedVehicle();
+  const { vehicle, setVehicle, clearVehicle } = useSelectedVehicle();
 
   const [makes, setMakes] = useState([]);
   const [models, setModels] = useState([]);
   const [years, setYears] = useState([]);
 
-  const [selectedMake, setSelectedMake] = useState("");
-  const [selectedModel, setSelectedModel] = useState("");
-  const [selectedYear, setSelectedYear] = useState("");
+  const [selectedMake, setSelectedMake] = useState(vehicle?.make || "");
+  const [selectedModel, setSelectedModel] = useState(vehicle?.model || "");
+  const [selectedYear, setSelectedYear] = useState(vehicle?.year || "");
 
   const [loadingMakes, setLoadingMakes] = useState(true);
   const [loadingModels, setLoadingModels] = useState(false);
   const [loadingYears, setLoadingYears] = useState(false);
+
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     let active = true;
 
-    apiGet("/api/v1/vehicles/makes")
-      .then((res) => {
+    async function loadMakes() {
+      try {
+        setError("");
+        setLoadingMakes(true);
+        const res = await apiGet("/api/v1/vehicles/makes");
         if (!active) return;
         setMakes(res?.data || []);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!active) return;
         setError(err.message || "Failed to load vehicle makes");
-      })
-      .finally(() => {
+      } finally {
         if (active) setLoadingMakes(false);
-      });
+      }
+    }
+
+    loadMakes();
 
     return () => {
       active = false;
@@ -51,23 +56,32 @@ export default function VehicleSelectorPage() {
     }
 
     let active = true;
-    setLoadingModels(true);
-    setSelectedModel("");
-    setYears([]);
-    setSelectedYear("");
 
-    apiGet(`/api/v1/vehicles/models?make=${encodeURIComponent(selectedMake)}`)
-      .then((res) => {
+    async function loadModels() {
+      try {
+        setError("");
+        setLoadingModels(true);
+        const res = await apiGet(
+          `/api/v1/vehicles/models?make=${encodeURIComponent(selectedMake)}`
+        );
         if (!active) return;
-        setModels(res?.data || []);
-      })
-      .catch((err) => {
+        const nextModels = res?.data || [];
+        setModels(nextModels);
+
+        if (!nextModels.some((item) => item.slug === selectedModel)) {
+          setSelectedModel("");
+          setYears([]);
+          setSelectedYear("");
+        }
+      } catch (err) {
         if (!active) return;
         setError(err.message || "Failed to load vehicle models");
-      })
-      .finally(() => {
+      } finally {
         if (active) setLoadingModels(false);
-      });
+      }
+    }
+
+    loadModels();
 
     return () => {
       active = false;
@@ -82,36 +96,43 @@ export default function VehicleSelectorPage() {
     }
 
     let active = true;
-    setLoadingYears(true);
-    setSelectedYear("");
 
-    apiGet(`/api/v1/vehicles/years?model=${encodeURIComponent(selectedModel)}`)
-      .then((res) => {
+    async function loadYears() {
+      try {
+        setError("");
+        setLoadingYears(true);
+        const res = await apiGet(
+          `/api/v1/vehicles/years?model=${encodeURIComponent(selectedModel)}`
+        );
         if (!active) return;
-        setYears(res?.data || []);
-      })
-      .catch((err) => {
+        const nextYears = res?.data || [];
+        setYears(nextYears);
+
+        if (!nextYears.some((item) => String(item.year) === String(selectedYear))) {
+          setSelectedYear("");
+        }
+      } catch (err) {
         if (!active) return;
         setError(err.message || "Failed to load vehicle years");
-      })
-      .finally(() => {
+      } finally {
         if (active) setLoadingYears(false);
-      });
+      }
+    }
+
+    loadYears();
 
     return () => {
       active = false;
     };
   }, [selectedModel]);
 
-  const selectedMakeName = useMemo(
-    () => makes.find((m) => m.slug === selectedMake)?.name || "",
-    [makes, selectedMake]
-  );
+  const selectedMakeName = useMemo(() => {
+    return makes.find((item) => item.slug === selectedMake)?.name || "";
+  }, [makes, selectedMake]);
 
-  const selectedModelName = useMemo(
-    () => models.find((m) => m.slug === selectedModel)?.name || "",
-    [models, selectedModel]
-  );
+  const selectedModelName = useMemo(() => {
+    return models.find((item) => item.slug === selectedModel)?.name || "";
+  }, [models, selectedModel]);
 
   function handleSave() {
     if (!selectedMake || !selectedModel || !selectedYear) {
@@ -119,16 +140,17 @@ export default function VehicleSelectorPage() {
       return;
     }
 
+    setError("");
     setVehicle({
       make: selectedMake,
       makeName: selectedMakeName,
       model: selectedModel,
       modelName: selectedModelName,
-      year: selectedYear,
+      year: String(selectedYear),
     });
 
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => setSaved(false), 1800);
   }
 
   return (
@@ -167,6 +189,12 @@ export default function VehicleSelectorPage() {
         </div>
       ) : null}
 
+      {saved ? (
+        <div className="rounded-3xl border border-green-200 bg-green-50 p-5 text-green-700 shadow-sm">
+          Vehicle saved successfully.
+        </div>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="space-y-5">
@@ -183,8 +211,8 @@ export default function VehicleSelectorPage() {
                 <select
                   value={selectedMake}
                   onChange={(e) => setSelectedMake(e.target.value)}
-                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
                   disabled={loadingMakes}
+                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
                 >
                   <option value="">
                     {loadingMakes ? "Loading makes..." : "Select make"}
@@ -202,8 +230,8 @@ export default function VehicleSelectorPage() {
                 <select
                   value={selectedModel}
                   onChange={(e) => setSelectedModel(e.target.value)}
-                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
                   disabled={!selectedMake || loadingModels}
+                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
                 >
                   <option value="">
                     {!selectedMake
@@ -225,8 +253,8 @@ export default function VehicleSelectorPage() {
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(e.target.value)}
-                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
                   disabled={!selectedModel || loadingYears}
+                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
                 >
                   <option value="">
                     {!selectedModel
@@ -235,9 +263,9 @@ export default function VehicleSelectorPage() {
                       ? "Loading years..."
                       : "Select year"}
                   </option>
-                  {years.map((year) => (
-                    <option key={year.id} value={year.year}>
-                      {year.year}
+                  {years.map((item) => (
+                    <option key={item.id} value={item.year}>
+                      {item.year}
                     </option>
                   ))}
                 </select>
@@ -259,13 +287,15 @@ export default function VehicleSelectorPage() {
               >
                 Browse parts
               </Link>
-            </div>
 
-            {saved ? (
-              <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-                Vehicle saved successfully.
-              </div>
-            ) : null}
+              <button
+                type="button"
+                onClick={clearVehicle}
+                className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+              >
+                Clear vehicle
+              </button>
+            </div>
           </div>
         </div>
 
@@ -277,21 +307,21 @@ export default function VehicleSelectorPage() {
               <div className="rounded-2xl bg-gray-50 p-4">
                 <p className="text-xs uppercase tracking-wide text-gray-400">Make</p>
                 <p className="mt-1 font-semibold text-gray-900">
-                  {selectedMakeName || "-"}
+                  {selectedMakeName || vehicle?.makeName || "-"}
                 </p>
               </div>
 
               <div className="rounded-2xl bg-gray-50 p-4">
                 <p className="text-xs uppercase tracking-wide text-gray-400">Model</p>
                 <p className="mt-1 font-semibold text-gray-900">
-                  {selectedModelName || "-"}
+                  {selectedModelName || vehicle?.modelName || "-"}
                 </p>
               </div>
 
               <div className="rounded-2xl bg-gray-50 p-4">
                 <p className="text-xs uppercase tracking-wide text-gray-400">Year</p>
                 <p className="mt-1 font-semibold text-gray-900">
-                  {selectedYear || "-"}
+                  {selectedYear || vehicle?.year || "-"}
                 </p>
               </div>
             </div>
