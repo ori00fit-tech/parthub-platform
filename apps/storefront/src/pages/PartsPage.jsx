@@ -15,23 +15,25 @@ function sortParts(items, sortValue) {
     case "stock_desc":
       return list.sort((a, b) => Number(b.quantity || 0) - Number(a.quantity || 0));
     case "name_asc":
-      return list.sort((a, b) => String(a.title || "").localeCompare(String(b.title || "")));
+      return list.sort((a, b) =>
+        String(a.title || "").localeCompare(String(b.title || ""))
+      );
     case "newest":
     default:
       return list.sort(
-        (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+        (a, b) =>
+          new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
       );
   }
 }
 
 export default function PartsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { vehicle, hasVehicle, clearVehicle } = useSelectedVehicle();
+  const { selectedVehicle, hasVehicle, clearVehicle } = useSelectedVehicle();
 
   const [parts, setParts] = useState([]);
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -43,6 +45,12 @@ export default function PartsPage() {
   const [applyVehicleFilter, setApplyVehicleFilter] = useState(hasVehicle);
 
   useEffect(() => {
+    if (!hasVehicle) {
+      setApplyVehicleFilter(false);
+    }
+  }, [hasVehicle]);
+
+  useEffect(() => {
     let active = true;
 
     async function loadCatalog() {
@@ -50,24 +58,29 @@ export default function PartsPage() {
         setLoading(true);
         setError("");
 
-        const catalogPath = applyVehicleFilter && hasVehicle
-          ? `/api/v1/catalog/parts?make=${encodeURIComponent(vehicle.makeName)}&model=${encodeURIComponent(vehicle.modelName)}&year=${encodeURIComponent(vehicle.year)}`
-          : "/api/v1/catalog/parts";
+        const catalogParams =
+          applyVehicleFilter && hasVehicle && selectedVehicle
+            ? {
+                make: selectedVehicle.make_name || selectedVehicle.make || "",
+                model: selectedVehicle.model_name || selectedVehicle.model || "",
+                year: selectedVehicle.year || "",
+              }
+            : undefined;
 
         const [partsRes, brandsRes, categoriesRes] = await Promise.all([
-          apiGet(catalogPath),
+          apiGet("/api/v1/catalog/parts", catalogParams),
           apiGet("/api/v1/catalog/brands"),
           apiGet("/api/v1/catalog/categories"),
         ]);
 
         if (!active) return;
 
-        setParts(partsRes?.data || []);
-        setBrands(brandsRes?.data || []);
-        setCategories(categoriesRes?.data || []);
+        setParts(Array.isArray(partsRes?.data) ? partsRes.data : []);
+        setBrands(Array.isArray(brandsRes?.data) ? brandsRes.data : []);
+        setCategories(Array.isArray(categoriesRes?.data) ? categoriesRes.data : []);
       } catch (err) {
         if (!active) return;
-        setError(err.message || "Failed to load catalog");
+        setError(err?.message || "Failed to load catalog");
       } finally {
         if (active) setLoading(false);
       }
@@ -78,7 +91,7 @@ export default function PartsPage() {
     return () => {
       active = false;
     };
-  }, [applyVehicleFilter, hasVehicle, vehicle]);
+  }, [applyVehicleFilter, hasVehicle, selectedVehicle]);
 
   useEffect(() => {
     const next = new URLSearchParams();
@@ -96,13 +109,18 @@ export default function PartsPage() {
     const query = search.trim().toLowerCase();
 
     let list = parts.filter((item) => {
-      const matchesSearch =
-        !query ||
-        String(item.title || "").toLowerCase().includes(query) ||
-        String(item.sku || "").toLowerCase().includes(query) ||
-        String(item.brand_name || "").toLowerCase().includes(query) ||
-        String(item.category_name || "").toLowerCase().includes(query);
+      const haystack = [
+        item.title,
+        item.sku,
+        item.brand_name,
+        item.category_name,
+        item.description,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
+      const matchesSearch = !query || haystack.includes(query);
       const matchesBrand = !selectedBrand || item.brand_slug === selectedBrand;
       const matchesCategory = !selectedCategory || item.category_slug === selectedCategory;
       const matchesStock = !stockOnly || Number(item.quantity || 0) > 0;
@@ -112,6 +130,14 @@ export default function PartsPage() {
 
     return sortParts(list, sortBy);
   }, [parts, search, selectedBrand, selectedCategory, stockOnly, sortBy]);
+
+  const activeFiltersCount = [
+    Boolean(search),
+    Boolean(selectedBrand),
+    Boolean(selectedCategory),
+    Boolean(stockOnly),
+    sortBy !== "newest",
+  ].filter(Boolean).length;
 
   function clearFilters() {
     setSearch("");
@@ -177,6 +203,7 @@ export default function PartsPage() {
 
           <button
             type="button"
+            onClick={() => setSearch(search.trim())}
             className="h-14 rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
             Search parts
@@ -208,10 +235,12 @@ export default function PartsPage() {
             </p>
           </div>
 
-          {hasVehicle ? (
+          {hasVehicle && selectedVehicle ? (
             <div className="flex flex-wrap items-center gap-2">
               <div className="rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
-                {vehicle.makeName} • {vehicle.modelName} • {vehicle.year}
+                {selectedVehicle.make_name || selectedVehicle.make} •{" "}
+                {selectedVehicle.model_name || selectedVehicle.model} •{" "}
+                {selectedVehicle.year || "Year not set"}
               </div>
 
               <button
@@ -304,9 +333,46 @@ export default function PartsPage() {
           </label>
         </div>
 
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {search ? (
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+              Search: {search}
+            </span>
+          ) : null}
+
+          {selectedBrand ? (
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+              Brand: {brands.find((b) => b.slug === selectedBrand)?.name || selectedBrand}
+            </span>
+          ) : null}
+
+          {selectedCategory ? (
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+              Category: {categories.find((c) => c.slug === selectedCategory)?.name || selectedCategory}
+            </span>
+          ) : null}
+
+          {stockOnly ? (
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+              In stock only
+            </span>
+          ) : null}
+
+          {sortBy !== "newest" ? (
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+              Sorted
+            </span>
+          ) : null}
+        </div>
+
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-gray-500">
             <span className="font-semibold text-gray-900">{filteredParts.length}</span> parts found
+            {activeFiltersCount ? (
+              <span className="ml-2 text-xs text-gray-400">
+                • {activeFiltersCount} filter{activeFiltersCount > 1 ? "s" : ""} active
+              </span>
+            ) : null}
             {applyVehicleFilter && hasVehicle ? (
               <span className="ml-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
                 filtered by vehicle
