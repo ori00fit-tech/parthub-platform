@@ -1,61 +1,73 @@
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-const navItems = [
-  { to: "/", label: "Dashboard", icon: "📊", end: true },
-  { to: "/parts", label: "My Parts", icon: "🔩" },
-  { to: "/orders", label: "Orders", icon: "📦" },
-  { to: "/reviews", label: "Reviews", icon: "⭐" },
-  { to: "/store", label: "Store Settings", icon: "🏪" },
-];
+function navClass({ isActive }) {
+  return [
+    "flex items-center rounded-xl px-3 py-2 text-sm font-medium transition",
+    isActive
+      ? "bg-blue-50 text-blue-700"
+      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+  ].join(" ");
+}
 
-export default function SellerLayout() {
+export default function SellerLayout({ children }) {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="w-60 bg-white border-r border-gray-200 flex flex-col shrink-0">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <a href="https://parthub.site" className="text-blue-600 font-bold text-lg">PartHub</a>
-          <p className="text-xs text-gray-400 mt-0.5">Seller Portal</p>
-        </div>
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-6">
+            <Link to="/" className="text-xl font-black tracking-tight text-slate-950">
+              PartHub Seller
+            </Link>
 
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
-                  isActive
-                    ? "bg-blue-50 text-blue-700 font-medium"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`
-              }
+            <nav className="hidden items-center gap-2 md:flex">
+              <NavLink to="/" className={navClass}>Dashboard</NavLink>
+              <NavLink to="/parts" className={navClass}>Inventory</NavLink>
+              <NavLink to="/orders" className={navClass}>Orders</NavLink>
+              <NavLink to="/reviews" className={navClass}>Reviews</NavLink>
+              <NavLink to="/store-settings" className={navClass}>Store</NavLink>
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              to="/parts/create"
+              className="hidden rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 sm:inline-flex"
             >
-              <span>{item.icon}</span>
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
+              + Add part
+            </Link>
 
-        <div className="p-4 border-t border-gray-100">
-          <p className="text-sm font-medium text-gray-700 truncate">{user?.name}</p>
-          <p className="text-xs text-gray-400 truncate mb-3">{user?.email}</p>
-          <button onClick={() => { logout(); navigate("/auth"); }} className="text-xs text-red-400 hover:underline">
-            Sign out
-          </button>
-        </div>
-      </aside>
+            <div className="hidden text-right sm:block">
+              <p className="text-sm font-semibold text-gray-900">
+                {user?.name || user?.email || "Seller"}
+              </p>
+              <p className="text-xs text-gray-500">Seller session active</p>
+            </div>
 
-      {/* Main */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-6 py-8">
-          <Outlet />
+            <button
+              onClick={logout}
+              className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
+
+        <div className="border-t border-gray-100 bg-white md:hidden">
+          <div className="mx-auto grid max-w-7xl grid-cols-5 gap-2 px-4 py-3 sm:px-6">
+            <NavLink to="/" className={navClass}>Home</NavLink>
+            <NavLink to="/parts" className={navClass}>Parts</NavLink>
+            <NavLink to="/orders" className={navClass}>Orders</NavLink>
+            <NavLink to="/reviews" className={navClass}>Reviews</NavLink>
+            <NavLink to="/store-settings" className={navClass}>Store</NavLink>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        {children}
       </main>
     </div>
   );

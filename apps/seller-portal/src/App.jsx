@@ -1,37 +1,131 @@
-import { Routes, Route, Link } from "react-router-dom";
-import MediaUploadPage from "./pages/MediaUploadPage";
+import { Routes, Route } from "react-router-dom";
+import SellerLayout from "./components/layout/SellerLayout";
+import ProtectedRoute from "./components/routing/ProtectedRoute";
+
+import AuthPage from "./pages/AuthPage";
+import DashboardPage from "./pages/DashboardPage";
+import PartsPage from "./pages/PartsPage";
+import PartCreatePage from "./pages/PartCreatePage";
 import PartCreateWithUploadPage from "./pages/PartCreateWithUploadPage";
+import PartEditPage from "./pages/PartEditPage";
+import MediaUploadPage from "./pages/MediaUploadPage";
+import OrdersPage from "./pages/OrdersPage";
+import OrderDetailsPage from "./pages/OrderDetailsPage";
+import ReviewsPage from "./pages/ReviewsPage";
+import StoreSettingsPage from "./pages/StoreSettingsPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
-function Home() {
+function ProtectedShell({ children }) {
   return (
-    <div className="space-y-4 p-4">
-      <h1 className="text-2xl font-bold">Seller Portal</h1>
-
-      <div className="flex flex-wrap gap-3">
-        <Link
-          to="/media-upload"
-          className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
-        >
-          Upload media
-        </Link>
-
-        <Link
-          to="/parts/create"
-          className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white"
-        >
-          Create part + image
-        </Link>
-      </div>
-    </div>
+    <ProtectedRoute>
+      <SellerLayout>{children}</SellerLayout>
+    </ProtectedRoute>
   );
 }
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/media-upload" element={<MediaUploadPage />} />
-      <Route path="/parts/create" element={<PartCreateWithUploadPage />} />
+      <Route path="/auth" element={<AuthPage />} />
+
+      <Route
+        path="/"
+        element={
+          <ProtectedShell>
+            <DashboardPage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
+        path="/parts"
+        element={
+          <ProtectedShell>
+            <PartsPage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
+        path="/parts/new"
+        element={
+          <ProtectedShell>
+            <PartCreatePage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
+        path="/parts/create"
+        element={
+          <ProtectedShell>
+            <PartCreateWithUploadPage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
+        path="/parts/:id/edit"
+        element={
+          <ProtectedShell>
+            <PartEditPage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
+        path="/media-upload"
+        element={
+          <ProtectedShell>
+            <MediaUploadPage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
+        path="/orders"
+        element={
+          <ProtectedShell>
+            <OrdersPage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
+        path="/orders/:id"
+        element={
+          <ProtectedShell>
+            <OrderDetailsPage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
+        path="/reviews"
+        element={
+          <ProtectedShell>
+            <ReviewsPage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
+        path="/store-settings"
+        element={
+          <ProtectedShell>
+            <StoreSettingsPage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
+        path="*"
+        element={
+          <ProtectedShell>
+            <NotFoundPage />
+          </ProtectedShell>
+        }
+      />
     </Routes>
   );
 }
