@@ -45,16 +45,17 @@ export default function StoreSettingsPage() {
       try {
         setLoading(true);
         setError("");
-        const res = await api.get("/api/v1/marketplace/me");
 
+        const res = await api.get("/api/v1/marketplace/me");
         if (!active) return;
 
         const seller = res?.data || {};
+
         setForm({
-          display_name: seller.display_name || "",
+          display_name: seller.display_name || seller.name || "",
           slug: seller.slug || "",
           phone: seller.phone || "",
-          city: seller.city || "",
+          city: seller.city || seller.location || "",
           description: seller.description || "",
           logo_url: seller.logo_url || "",
           banner_url: seller.banner_url || "",
