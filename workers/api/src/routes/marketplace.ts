@@ -726,107 +726,87 @@ marketplaceRoutes.get("/me/parts", authMiddleware, async (c) => {
 });
 
 marketplaceRoutes.get("/me/orders", authMiddleware, async (c) => {
-  const sellerId = c.get("seller_id");
+  try {
+    const sellerId = c.get("seller_id");
 
-  if (!sellerId) {
-    return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+    if (!sellerId) {
+      return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+    }
+
+    const orders = await c.env.DB.prepare(`
+      select
+        o.id,
+        o.order_number,
+        o.status,
+        o.payment_status,
+        o.shipping_status,
+        o.total,
+        o.created_at,
+        coalesce(u.name, o.buyer_name, 'Buyer') as buyer_name,
+        u.email as buyer_email
+      from orders o
+      join order_items oi on oi.order_id = o.id
+      join parts p on p.id = oi.part_id
+      left join users u on u.id = o.buyer_id
+      where p.seller_id = ?1
+      group by
+        o.id,
+        o.order_number,
+        o.status,
+        o.payment_status,
+        o.shipping_status,
+        o.total,
+        o.created_at,
+        u.name,
+        o.buyer_name,
+        u.email
+      order by o.created_at desc
+    `).bind(sellerId).all();
+
+    return c.json(success(orders.results || []));
+  } catch (error) {
+    return c.json(
+      failure(
+        "GET_SELLER_ORDERS_FAILED",
+        error instanceof Error ? error.message : "Unknown seller orders error"
+      ),
+      500
+    );
   }
-
-  const orders = await c.env.DB.prepare(`
-    select
-      o.id,
-      o.order_number,
-      o.status,
-      o.payment_status,
-      o.shipping_status,
-      o.total,
-      o.created_at,
-      u.name as buyer_name,
-      u.email as buyer_email
-    from orders o
-    join users u on u.id = o.buyer_id
-    join order_items oi on oi.order_id = o.id
-    join parts p on p.id = oi.part_id
-    where p.seller_id = ?1
-    group by o.id
-    order by o.created_at desc
-  `).bind(sellerId).all();
-
-  return c.json(success(orders.results || []));
-});
-
-marketplaceRoutes.get("/me/orders/:id", authMiddleware, async (c) => {
-  const sellerId = c.get("seller_id");
-  const id = c.req.param("id");
-
-  if (!sellerId) {
-    return c.json(failure("NOT_SELLER", "Seller account required"), 403);
-  }
-
-  const order = await c.env.DB.prepare(`
-    select
-      o.*,
-      u.name as buyer_name,
-      u.email as buyer_email,
-      u.phone as buyer_phone
-    from orders o
-    join users u on u.id = o.buyer_id
-    where o.id = ?1
-    limit 1
-  `).bind(id).first();
-
-  if (!order) {
-    return c.json(failure("NOT_FOUND", "Order not found"), 404);
-  }
-
-  const items = await c.env.DB.prepare(`
-    select
-      oi.*,
-      p.title as part_title,
-      p.sku,
-      (
-        select pi.url
-        from part_images pi
-        where pi.part_id = p.id
-        order by pi.is_featured desc, pi.sort_order asc, pi.id asc
-        limit 1
-      ) as image_url
-    from order_items oi
-    join parts p on p.id = oi.part_id
-    where oi.order_id = ?1 and p.seller_id = ?2
-    order by oi.id asc
-  `).bind(id, sellerId).all();
-
-  return c.json(
-    success({
-      ...(order as Record<string, unknown>),
-      items: items.results || [],
-    })
-  );
 });
 
 marketplaceRoutes.get("/me/reviews", authMiddleware, async (c) => {
-  const sellerId = c.get("seller_id");
+  try {
+    const sellerId = c.get("seller_id");
 
-  if (!sellerId) {
-    return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+    if (!sellerId) {
+      return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+    }
+
+    const reviews = await c.env.DB.prepare(`
+      select
+        r.id,
+        r.rating,
+        r.comment,
+        r.created_at,
+        u.name as buyer_name,
+        u.email as buyer_email,
+        p.title as part_title
+      from reviews r
+      join users u on u.id = r.buyer_id
+      join parts p on p.id = r.part_id
+      where p.seller_id = ?1
+      order by r.created_at desc
+    `).bind(sellerId).all();
+
+    return c.json(success(reviews.results || []));
+  } catch (error) {
+    return c.json(
+      failure(
+        "GET_SELLER_REVIEWS_FAILED",
+        error instanceof Error ? error.message : "Unknown seller reviews error"
+      ),
+      500
+    );
   }
-
-  const reviews = await c.env.DB.prepare(`
-    select
-      r.id,
-      r.rating,
-      r.comment,
-      r.created_at,
-      u.name as buyer_name,
-      u.email as buyer_email,
-      p.title as part_title
-    from reviews r
-    join parts p on p.id = r.part_id
-    join users u on u.id = r.buyer_id
-    where p.seller_id = ?1
-    order by r.created_at desc
-  `).bind(sellerId).all();
-
-  return c.json(success(reviews.results || []));
 });
