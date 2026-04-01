@@ -736,13 +736,13 @@ marketplaceRoutes.get("/me/orders", authMiddleware, async (c) => {
     const orders = await c.env.DB.prepare(`
       select
         o.id,
-        o.order_number,
+        cast(o.id as text) as order_number,
         o.status,
         o.payment_status,
         o.shipping_status,
         o.total,
         o.created_at,
-        coalesce(u.name, o.buyer_name, 'Buyer') as buyer_name,
+        coalesce(u.name, 'Buyer') as buyer_name,
         u.email as buyer_email
       from orders o
       join order_items oi on oi.order_id = o.id
@@ -751,14 +751,12 @@ marketplaceRoutes.get("/me/orders", authMiddleware, async (c) => {
       where p.seller_id = ?1
       group by
         o.id,
-        o.order_number,
         o.status,
         o.payment_status,
         o.shipping_status,
         o.total,
         o.created_at,
         u.name,
-        o.buyer_name,
         u.email
       order by o.created_at desc
     `).bind(sellerId).all();
@@ -787,7 +785,7 @@ marketplaceRoutes.get("/me/reviews", authMiddleware, async (c) => {
       select
         r.id,
         r.rating,
-        r.comment,
+        null as comment,
         r.created_at,
         u.name as buyer_name,
         u.email as buyer_email,
