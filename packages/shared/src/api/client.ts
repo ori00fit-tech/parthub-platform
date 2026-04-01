@@ -1,7 +1,3 @@
-// ============================
-// Base API Client
-// ============================
-
 import type { ApiResponse, ApiError } from "../types/api";
 
 interface ClientOptions {
@@ -10,13 +6,47 @@ interface ClientOptions {
   onUnauthorized?: () => void;
 }
 
+type LegacyApiResponse<T> = {
+  success?: boolean;
+  ok?: boolean;
+  data?: T;
+  meta?: unknown;
+  message?: string;
+  error?: string | { code?: string; message?: string };
+};
+
+function extractErrorMessage(body: unknown): string {
+  if (!body || typeof body !== "object") return "Request failed";
+
+  const b = body as Record<string, unknown>;
+  const err = b.error;
+
+  if (typeof err === "string" && err.trim()) return err;
+
+  if (err && typeof err === "object") {
+    const msg = (err as Record<string, unknown>).message;
+    if (typeof msg === "string" && msg.trim()) return msg;
+  }
+
+  const msg = b.message;
+  if (typeof msg === "string" && msg.trim()) return msg;
+
+  return "Request failed";
+}
+
+function isSuccessful(body: unknown): boolean {
+  if (!body || typeof body !== "object") return false;
+  const b = body as Record<string, unknown>;
+  return b.success === true || b.ok === true;
+}
+
 export function createApiClient(options: ClientOptions) {
   const { baseUrl, getToken, onUnauthorized } = options;
 
   async function request<T>(
     path: string,
     init: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
+  ): Promise<ApiResponse<T> | LegacyApiResponse<T>> {
     const token = getToken();
 
     const headers: HeadersInit = {
@@ -35,14 +65,18 @@ export function createApiClient(options: ClientOptions) {
       throw new Error("Unauthorized");
     }
 
-    const body = (await response.json()) as ApiResponse<T> | ApiError;
-
-    if (!response.ok || !body.success) {
-      const err = body as ApiError;
-      throw new Error(err.error ?? "Request failed");
+    let body: unknown = null;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error("Invalid JSON response");
     }
 
-    return body as ApiResponse<T>;
+    if (!response.ok || !isSuccessful(body)) {
+      throw new Error(extractErrorMessage(body));
+    }
+
+    return body as ApiResponse<T> | LegacyApiResponse<T>;
   }
 
   return {
