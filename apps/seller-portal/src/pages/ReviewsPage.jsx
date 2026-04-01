@@ -40,15 +40,13 @@ export default function ReviewsPage() {
       try {
         setLoading(true);
         setError("");
-
         const res = await api.get("/api/v1/marketplace/me/reviews");
         if (!active) return;
-
         setReviews(normalizeReviews(res));
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load seller reviews");
         setReviews([]);
+        setError(err?.message || "Failed to load seller reviews");
       } finally {
         if (active) setLoading(false);
       }
@@ -114,16 +112,6 @@ export default function ReviewsPage() {
     );
   }
 
-  if (error) {
-    return (
-      <section className="space-y-6">
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
-          {error}
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="space-y-6">
       <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
@@ -154,6 +142,12 @@ export default function ReviewsPage() {
           </div>
         </div>
       </div>
+
+      {error ? (
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
+          {error}
+        </div>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -208,19 +202,6 @@ export default function ReviewsPage() {
           </button>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {query ? (
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-              Search: {query}
-            </span>
-          ) : null}
-          {ratingFilter ? (
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-              Rating: {ratingFilter} star
-            </span>
-          ) : null}
-        </div>
-
         <div className="mt-4 text-sm text-gray-500">
           <span className="font-semibold text-gray-900">{filteredReviews.length}</span> reviews found
         </div>
@@ -229,25 +210,10 @@ export default function ReviewsPage() {
       {filteredReviews.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
           <div className="text-5xl">⭐</div>
-          <h2 className="mt-4 text-2xl font-bold text-gray-900">No reviews found</h2>
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">No reviews yet</h2>
           <p className="mt-2 text-sm text-gray-500">
             Reviews will appear here once buyers start rating your listings.
           </p>
-
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              to="/parts"
-              className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
-            >
-              Review inventory
-            </Link>
-            <Link
-              to="/store-settings"
-              className="rounded-2xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-            >
-              Store settings
-            </Link>
-          </div>
         </div>
       ) : (
         <div className="space-y-4">
@@ -278,24 +244,9 @@ export default function ReviewsPage() {
                     <p>Date: {review.created_at || "—"}</p>
                   </div>
 
-                  {review.title ? (
-                    <p className="mt-4 text-base font-semibold text-gray-900">
-                      {review.title}
-                    </p>
-                  ) : null}
-
-                  <p className="mt-2 text-sm leading-6 text-gray-600">
+                  <p className="mt-4 text-sm leading-6 text-gray-600">
                     {review.comment || review.content || "No written review content."}
                   </p>
-                </div>
-
-                <div className="flex flex-col items-start gap-3 xl:items-end">
-                  <Link
-                    to="/parts"
-                    className="rounded-2xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-                  >
-                    Review inventory
-                  </Link>
                 </div>
               </div>
             </article>

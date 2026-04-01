@@ -65,8 +65,8 @@ export default function OrdersPage() {
         setOrders(normalizeOrders(res));
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load seller orders");
         setOrders([]);
+        setError(err?.message || "Failed to load seller orders");
       } finally {
         if (active) setLoading(false);
       }
@@ -127,16 +127,6 @@ export default function OrdersPage() {
     );
   }
 
-  if (error) {
-    return (
-      <section className="space-y-6">
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
-          {error}
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="space-y-6">
       <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
@@ -168,6 +158,12 @@ export default function OrdersPage() {
         </div>
       </div>
 
+      {error ? (
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
+          {error}
+        </div>
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
           <p className="text-sm text-gray-500">Total orders</p>
@@ -195,7 +191,7 @@ export default function OrdersPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search order number, buyer, status..."
+            placeholder="Search order id, buyer, status..."
             className="h-12 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
           />
 
@@ -222,19 +218,6 @@ export default function OrdersPage() {
           </button>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {query ? (
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-              Search: {query}
-            </span>
-          ) : null}
-          {statusFilter ? (
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-              Status: {statusFilter}
-            </span>
-          ) : null}
-        </div>
-
         <div className="mt-4 text-sm text-gray-500">
           <span className="font-semibold text-gray-900">{filteredOrders.length}</span> orders found
         </div>
@@ -243,25 +226,10 @@ export default function OrdersPage() {
       {filteredOrders.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
           <div className="text-5xl">📦</div>
-          <h2 className="mt-4 text-2xl font-bold text-gray-900">No orders found</h2>
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">No orders yet</h2>
           <p className="mt-2 text-sm text-gray-500">
-            New seller orders will appear here when order activity starts.
+            New seller orders will appear here when buyer activity starts.
           </p>
-
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              to="/parts"
-              className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
-            >
-              Review inventory
-            </Link>
-            <Link
-              to="/store-settings"
-              className="rounded-2xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-            >
-              Store settings
-            </Link>
-          </div>
         </div>
       ) : (
         <div className="space-y-4">
@@ -301,8 +269,6 @@ export default function OrdersPage() {
                   <div className="mt-3 grid gap-2 text-sm text-gray-600 sm:grid-cols-2 xl:grid-cols-3">
                     <p>Buyer: {order.buyer_name || "—"}</p>
                     <p>Email: {order.buyer_email || "—"}</p>
-                    <p>Phone: {order.buyer_phone || "—"}</p>
-                    <p>City: {order.buyer_city || "—"}</p>
                     <p>Shipping: {order.shipping_status || "—"}</p>
                     <p>Created: {order.created_at || "—"}</p>
                   </div>
@@ -312,12 +278,12 @@ export default function OrdersPage() {
                   <div className="rounded-2xl bg-gray-50 px-4 py-3 text-right">
                     <p className="text-xs uppercase tracking-wide text-gray-400">Total</p>
                     <p className="mt-1 text-lg font-bold text-gray-900">
-                      {order.total_formatted || order.total || "—"}
+                      {order.total || "—"}
                     </p>
                   </div>
 
                   <Link
-                    to={`/orders/${order.id || order.order_number}`}
+                    to={`/orders/${order.id}`}
                     className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
                   >
                     View order

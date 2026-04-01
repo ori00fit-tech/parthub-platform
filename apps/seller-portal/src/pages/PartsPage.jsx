@@ -55,8 +55,8 @@ export default function PartsPage() {
         setParts(normalizeItems(res));
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load seller inventory");
         setParts([]);
+        setError(err?.message || "Failed to load seller inventory");
       } finally {
         if (active) setLoading(false);
       }
@@ -128,16 +128,6 @@ export default function PartsPage() {
     );
   }
 
-  if (error) {
-    return (
-      <section className="space-y-6">
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
-          {error}
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="space-y-6">
       <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
@@ -168,6 +158,12 @@ export default function PartsPage() {
           </div>
         </div>
       </div>
+
+      {error ? (
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
+          {error}
+        </div>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -231,24 +227,6 @@ export default function PartsPage() {
           </button>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {query ? (
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-              Search: {query}
-            </span>
-          ) : null}
-          {statusFilter ? (
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-              Status: {statusFilter}
-            </span>
-          ) : null}
-          {stockFilter ? (
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-              Stock: {stockFilter.replaceAll("_", " ")}
-            </span>
-          ) : null}
-        </div>
-
         <div className="mt-4 text-sm text-gray-500">
           <span className="font-semibold text-gray-900">{filteredParts.length}</span> parts found
         </div>
@@ -257,9 +235,9 @@ export default function PartsPage() {
       {filteredParts.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
           <div className="text-5xl">📦</div>
-          <h2 className="mt-4 text-2xl font-bold text-gray-900">No parts found</h2>
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">No parts yet</h2>
           <p className="mt-2 text-sm text-gray-500">
-            Try changing filters, or create your first listing.
+            Create your first listing to start building your seller inventory.
           </p>
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -347,13 +325,6 @@ export default function PartsPage() {
                         className="rounded-2xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
                       >
                         Upload media
-                      </Link>
-
-                      <Link
-                        to={`/parts/${part.id}/edit`}
-                        className="rounded-2xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-                      >
-                        Manage listing
                       </Link>
                     </div>
                   </div>
