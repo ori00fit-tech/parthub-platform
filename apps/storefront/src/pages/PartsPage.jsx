@@ -93,6 +93,36 @@ function buildApiQuery(filters, vehicle) {
 }
 
 
+
+function buildEmptyStateHints({ q, hasVehicle, selectedVehicle, filters }) {
+  const hints = [];
+
+  if (q) {
+    hints.push(`Try a broader keyword than "${q}".`);
+  } else {
+    hints.push("Try searching by part name, SKU, or brand.");
+  }
+
+  if (hasVehicle && selectedVehicle?.label) {
+    hints.push(`Your current vehicle filter is ${selectedVehicle.label}.`);
+    hints.push("Clear the vehicle context to see a wider catalog.");
+  }
+
+  if (filters?.category) {
+    hints.push("Try removing the category filter.");
+  }
+
+  if (filters?.brand) {
+    hints.push("Try removing the brand filter.");
+  }
+
+  if (filters?.condition) {
+    hints.push("Try switching condition or removing it.");
+  }
+
+  return [...new Set(hints)].slice(0, 4);
+}
+
 function getRankingBadges(part, hasVehicle) {
   const badges = [];
 
@@ -237,6 +267,21 @@ export default function PartsPage() {
   }, [filters, selectedVehicle, setSearchParams]);
 
   const vehicleLabel = useMemo(() => getVehicleLabel(selectedVehicle), [selectedVehicle]);
+
+  const emptyStateHints = useMemo(
+    () =>
+      buildEmptyStateHints({
+        q: filters.q,
+        hasVehicle,
+        selectedVehicle,
+        filters: {
+          category: filters.category,
+          brand: filters.brand,
+          condition: filters.condition,
+        },
+      }),
+    [filters.q, filters.category, filters.brand, filters.condition, hasVehicle, selectedVehicle]
+  );
 
   const exactMatchesCount = useMemo(
     () => parts.filter((part) => Number(part?.exact_vehicle_match || 0) === 1).length,
@@ -580,37 +625,57 @@ export default function PartsPage() {
               ))}
             </div>
           ) : parts.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-8 text-center shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900">
-                {hasVehicle
-                  ? "No exact matches found for your selected vehicle"
-                  : "No parts found"}
-              </h3>
+            <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-8 shadow-sm sm:p-10">
+              <div className="max-w-2xl">
+                <h3 className="text-xl font-bold text-gray-900">
+                  {hasVehicle
+                    ? "No exact matches found for your selected vehicle"
+                    : "No parts found"}
+                </h3>
 
-              <p className="mt-2 text-sm text-gray-500">
-                {hasVehicle
-                  ? "Try clearing some filters or removing the vehicle context to see broader marketplace inventory."
-                  : "Try broadening the search or clearing some filters."}
-              </p>
+                <p className="mt-2 text-sm text-gray-500">
+                  {hasVehicle
+                    ? "No listings matched your current vehicle and filter combination."
+                    : "No listings matched your current search and filter combination."}
+                </p>
 
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={clearAllFilters}
-                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
-                >
-                  Clear filters
-                </button>
+                <div className="mt-5 space-y-3">
+                  {emptyStateHints.map((hint, index) => (
+                    <div
+                      key={index}
+                      className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-700"
+                    >
+                      {hint}
+                    </div>
+                  ))}
+                </div>
 
-                {hasVehicle ? (
+                <div className="mt-6 flex flex-wrap gap-3">
                   <button
                     type="button"
-                    onClick={clearVehicle}
+                    onClick={clearAllFilters}
+                    className="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                  >
+                    Reset search filters
+                  </button>
+
+                  {hasVehicle ? (
+                    <button
+                      type="button"
+                      onClick={clearVehicle}
+                      className="inline-flex h-11 items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                    >
+                      Clear vehicle filter
+                    </button>
+                  ) : null}
+
+                  <Link
+                    to="/parts"
                     className="inline-flex h-11 items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
                   >
-                    Show broader parts
-                  </button>
-                ) : null}
+                    Browse all parts
+                  </Link>
+                </div>
               </div>
             </div>
           ) : (

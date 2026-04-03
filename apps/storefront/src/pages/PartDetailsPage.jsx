@@ -148,8 +148,7 @@ function detectFitmentStatus(compatibility, selectedVehicle) {
     title: "No structured compatibility data yet",
     description:
       "Use SKU, seller notes, and product details until compatibility data is expanded.",
-    };
-  }
+  };
 }
 
 function toneClasses(tone) {
