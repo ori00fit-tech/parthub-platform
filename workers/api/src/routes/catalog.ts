@@ -134,12 +134,17 @@ catalogRoutes.get("/parts", async (c) => {
   );
 });
 
+
 catalogRoutes.get("/parts/:slug", async (c) => {
   const slug = c.req.param("slug");
 
-  const sql = `
+  const part = await c.env.DB.prepare(
+    `
     select
       p.id,
+      p.seller_id,
+      p.category_id,
+      p.brand_id,
       p.slug,
       p.title,
       p.description,
@@ -172,12 +177,14 @@ catalogRoutes.get("/parts/:slug", async (c) => {
     left join categories c on c.id = p.category_id
     left join sellers s on s.id = p.seller_id
     where p.slug = ?1
-    limit 1;
-  `;
+      and p.status = 'active'
+    limit 1
+    `
+  )
+    .bind(slug)
+    .first();
 
-  const result = await c.env.DB.prepare(sql).bind(slug).first();
-
-  if (!result) {
+  if (!part) {
     return c.json(
       {
         ok: false,
@@ -192,14 +199,55 @@ catalogRoutes.get("/parts/:slug", async (c) => {
     );
   }
 
+  const [images, specs, compatibility, relatedParts] = await Promise.all([
+    c.env.DB.prepare(`
+      select * from part_images where part_id = ?1
+      order by is_featured desc, sort_order asc
+    `).bind(part.id).all(),
+
+    c.env.DB.prepare(`
+      select * from part_specs where part_id = ?1
+      order by sort_order asc
+    `).bind(part.id).all(),
+
+    c.env.DB.prepare(`
+      select * from part_compatibility where part_id = ?1
+    `).bind(part.id).all(),
+
+    c.env.DB.prepare(`
+      select rp.*, 
+        (select url from part_images pi where pi.part_id = rp.id limit 1) as image_url
+      from parts rp
+      where rp.status='active'
+        and rp.id != ?1
+      limit 4
+    `).bind(part.id).all()
+  ]);
+
+  const compatibilityResults = compatibility.results ?? [];
+
   return c.json(
-    ok(result, {
-      currency: "GBP",
-      locale: "en-GB",
-      market: "United Kingdom",
-    })
+    ok(
+      {
+        ...part,
+        images: images.results ?? [],
+        media: images.results ?? [],
+        specs: specs.results ?? [],
+        compatibility: compatibilityResults,
+        related_parts: relatedParts.results ?? [],
+        compatibility_count: compatibilityResults.length,
+        fitment_notes: compatibilityResults.map((c: any) =>
+          [c.year_start, c.make, c.model, c.engine].filter(Boolean).join(" ")
+        ),
+      },
+      {
+        currency: "GBP",
+        locale: "en-GB",
+        market: "United Kingdom",
+      }
+    )
   );
-});
+}); 
 
 catalogRoutes.get("/categories", async (c) => {
   const sql = `
