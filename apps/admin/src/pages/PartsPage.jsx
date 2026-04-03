@@ -2,52 +2,51 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 
-const STATUS_OPTIONS = ["pending", "active", "rejected", "archived"];
-
-function normalizeParts(payload) {
-  const list =
-    payload?.data?.items ||
-    payload?.data?.parts ||
-    payload?.data ||
-    payload?.items ||
-    payload?.parts ||
-    [];
-
-  return Array.isArray(list) ? list : [];
+function normalizeRows(payload) {
+  return Array.isArray(payload?.data) ? payload.data : [];
 }
 
-function statusBadge(status) {
-  switch (String(status || "").toLowerCase()) {
+function normalizePagination(payload) {
+  const meta = payload?.meta || {};
+  return {
+    page: Number(meta.page || 1),
+    total: Number(meta.total || 0),
+    totalPages: Number(meta.total_pages || 1),
+  };
+}
+
+function statusClasses(status) {
+  switch (status) {
     case "active":
-      return "bg-green-900/30 text-green-300 border-green-800/60";
+      return "bg-green-50 text-green-700 border-green-200";
     case "pending":
-      return "bg-yellow-900/30 text-yellow-300 border-yellow-800/60";
+      return "bg-amber-50 text-amber-700 border-amber-200";
     case "rejected":
-      return "bg-red-900/30 text-red-300 border-red-800/60";
+      return "bg-red-50 text-red-700 border-red-200";
     case "archived":
-      return "bg-gray-800 text-gray-300 border-gray-700";
+      return "bg-gray-100 text-gray-700 border-gray-200";
     default:
-      return "bg-blue-900/30 text-blue-300 border-blue-800/60";
+      return "bg-gray-100 text-gray-700 border-gray-200";
   }
 }
 
 export default function PartsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const status = searchParams.get("status") || "pending";
-
-  const [parts, setParts] = useState([]);
+  const [rows, setRows] = useState([]);
+  const [meta, setMeta] = useState({ page: 1, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
-  const [workingId, setWorkingId] = useState(null);
   const [error, setError] = useState("");
 
-  async function loadParts() {
+  const status = searchParams.get("status") || "pending";
+
+  async function loadRows(nextStatus = status) {
     try {
       setLoading(true);
       setError("");
-      const res = await api.get(`/api/v1/admin/parts?status=${encodeURIComponent(status)}`);
-      setParts(normalizeParts(res));
+      const res = await api.get(`/api/v1/admin/parts?status=${encodeURIComponent(nextStatus)}`);
+      setRows(normalizeRows(res));
+      setMeta(normalizePagination(res));
     } catch (err) {
-      setParts([]);
       setError(err?.message || "Failed to load parts");
     } finally {
       setLoading(false);
@@ -55,164 +54,133 @@ export default function PartsPage() {
   }
 
   useEffect(() => {
-    loadParts();
+    loadRows();
   }, [status]);
 
   async function updateStatus(id, nextStatus) {
     try {
-      setWorkingId(id);
-      setError("");
-      await api.patch(`/api/v1/admin/parts/${id}/status`, {
-        status: nextStatus,
-      });
-      await loadParts();
+      await api.patch(`/api/v1/admin/parts/${id}/status`, { status: nextStatus });
+      await loadRows();
     } catch (err) {
       setError(err?.message || "Failed to update part status");
-    } finally {
-      setWorkingId(null);
     }
+  }
+
+  function setStatusFilter(nextStatus) {
+    const qs = new URLSearchParams(searchParams);
+    qs.set("status", nextStatus);
+    setSearchParams(qs, { replace: true });
   }
 
   return (
     <section className="space-y-6">
-      <div className="overflow-hidden rounded-[28px] border border-gray-800 bg-gradient-to-br from-gray-900 via-slate-950 to-blue-950 p-6 text-white shadow-xl sm:p-8">
-        <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
-          <div className="max-w-3xl">
-            <div className="mb-3 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/80">
-              Parts moderation
-            </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">Marketplace parts</h1>
-            <p className="mt-3 text-sm text-gray-300 sm:text-base">
-              Review submitted listings, approve valid parts, reject bad entries, or archive outdated ones.
-            </p>
-          </div>
+      <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-700 p-6 text-white shadow-lg sm:p-8">
+        <h1 className="text-3xl font-bold sm:text-5xl">Part moderation</h1>
+        <p className="mt-3 text-sm text-indigo-100 sm:text-base">
+          Review marketplace listings, approve high-quality parts, and reject poor or invalid submissions.
+        </p>
+      </div>
 
-          <div className="flex flex-wrap gap-3">
-            <Link
-              to="/categories"
-              className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
+      <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap gap-3">
+          {["pending", "active", "rejected", "archived"].map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setStatusFilter(item)}
+              className={[
+                "inline-flex h-10 items-center justify-center rounded-2xl border px-4 text-sm font-semibold transition",
+                status === item
+                  ? "border-blue-600 bg-blue-50 text-blue-700"
+                  : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50",
+              ].join(" ")}
             >
-              Categories
-            </Link>
-            <Link
-              to="/sellers"
-              className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
-            >
-              Sellers
-            </Link>
-          </div>
+              {item}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-4 text-sm text-gray-500">
+          {loading ? "Loading parts..." : `${meta.total} listing${meta.total === 1 ? "" : "s"}`}
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {STATUS_OPTIONS.map((option) => (
-          <button
-            key={option}
-            onClick={() => setSearchParams({ status: option })}
-            className={[
-              "rounded-2xl border px-4 py-2 text-sm font-medium transition",
-              status === option
-                ? "border-blue-600 bg-blue-600 text-white"
-                : "border-gray-700 bg-gray-900 text-gray-300 hover:bg-gray-800",
-            ].join(" ")}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
-
       {error ? (
-        <div className="rounded-3xl border border-red-900/50 bg-red-950/20 p-6 text-red-300 shadow-sm">
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-5 text-red-700 shadow-sm">
           {error}
         </div>
       ) : null}
 
-      {loading ? (
-        <div className="rounded-3xl border border-gray-800 bg-gray-900 p-6 text-sm text-gray-400 shadow-sm">
-          Loading parts...
-        </div>
-      ) : parts.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-gray-700 bg-gray-900 p-10 text-center shadow-sm">
-          <div className="text-5xl mb-4">🔩</div>
-          <h2 className="text-2xl font-bold text-gray-100">No parts found</h2>
-          <p className="mt-2 text-sm text-gray-400">
-            No parts are currently available for the selected moderation status.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {parts.map((part) => (
-            <article
-              key={part.id}
-              className="rounded-3xl border border-gray-800 bg-gray-900 p-5 shadow-sm transition hover:border-blue-800"
-            >
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-xl font-bold text-gray-100">
-                      {part.title || "Untitled part"}
-                    </h3>
-                    <span
-                      className={[
-                        "rounded-full border px-3 py-1 text-xs font-semibold",
-                        statusBadge(part.status),
-                      ].join(" ")}
+      <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+        {loading ? (
+          <div className="p-6 text-sm text-gray-500">Loading moderation queue...</div>
+        ) : rows.length === 0 ? (
+          <div className="p-6 text-sm text-gray-500">No parts found for this status.</div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {rows.map((part) => (
+              <div key={part.id} className="p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-lg font-bold text-gray-900">{part.title}</h2>
+                      <span
+                        className={[
+                          "rounded-full border px-3 py-1 text-xs font-semibold",
+                          statusClasses(part.status),
+                        ].join(" ")}
+                      >
+                        {part.status}
+                      </span>
+                    </div>
+
+                    <p className="mt-1 text-sm text-gray-500">
+                      seller: {part.seller_name || "unknown"} • price: {part.price} • slug: {part.slug}
+                    </p>
+
+                    <p className="mt-2 text-sm text-gray-600">
+                      {part.description || "No part description available."}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    <Link
+                      to={`/parts/${part.id}`}
+                      className="inline-flex h-10 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
                     >
-                      {part.status || "unknown"}
-                    </span>
+                      View details
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={() => updateStatus(part.id, "active")}
+                      className="inline-flex h-10 items-center justify-center rounded-2xl bg-green-600 px-4 text-sm font-semibold text-white transition hover:bg-green-700"
+                    >
+                      Approve
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => updateStatus(part.id, "rejected")}
+                      className="inline-flex h-10 items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                    >
+                      Reject
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => updateStatus(part.id, "archived")}
+                      className="inline-flex h-10 items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
+                    >
+                      Archive
+                    </button>
                   </div>
-
-                  <div className="mt-3 grid gap-2 text-sm text-gray-400 sm:grid-cols-2 xl:grid-cols-3">
-                    <p>Seller: {part.seller_name || "—"}</p>
-                    <p>Slug: {part.slug || "—"}</p>
-                    <p>SKU: {part.sku || "—"}</p>
-                    <p>Price: {part.price ?? "—"}</p>
-                    <p>Stock: {part.quantity ?? "—"}</p>
-                    <p>Created: {part.created_at || "—"}</p>
-                  </div>
-
-                  <p className="mt-4 text-sm leading-6 text-gray-300">
-                    {part.description || "No description available."}
-                  </p>
-                </div>
-
-                <div className="flex flex-col gap-2 xl:min-w-[180px]">
-                  <button
-                    onClick={() => updateStatus(part.id, "active")}
-                    disabled={workingId === part.id}
-                    className="rounded-2xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-500 disabled:opacity-60"
-                  >
-                    {workingId === part.id ? "Updating..." : "Approve"}
-                  </button>
-
-                  <button
-                    onClick={() => updateStatus(part.id, "rejected")}
-                    disabled={workingId === part.id}
-                    className="rounded-2xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-60"
-                  >
-                    {workingId === part.id ? "Updating..." : "Reject"}
-                  </button>
-
-                  <button
-                    onClick={() => updateStatus(part.id, "archived")}
-                    disabled={workingId === part.id}
-                    className="rounded-2xl bg-gray-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-600 disabled:opacity-60"
-                  >
-                    {workingId === part.id ? "Updating..." : "Archive"}
-                  </button>
-
-                  <Link
-                    to={`/parts/${part.id}`}
-                    className="rounded-2xl border border-gray-700 bg-gray-950 px-4 py-2 text-center text-sm font-semibold text-gray-200 transition hover:bg-gray-800"
-                  >
-                    View details
-                  </Link>
                 </div>
               </div>
-            </article>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

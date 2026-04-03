@@ -1,206 +1,101 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 
-function normalizeReviews(payload) {
-  const list =
-    payload?.data?.items ||
-    payload?.data?.reviews ||
-    payload?.data ||
-    payload?.items ||
-    payload?.reviews ||
-    [];
-
-  return Array.isArray(list) ? list : [];
-}
-
-function renderStars(value) {
-  const rating = Math.max(0, Math.min(5, Number(value || 0)));
-  const full = Math.round(rating);
-
-  return Array.from({ length: 5 }).map((_, index) => (
-    <span key={index} className={index < full ? "text-amber-400" : "text-gray-700"}>
-      ★
-    </span>
-  ));
+function normalizeRows(payload) {
+  return Array.isArray(payload?.data) ? payload.data : [];
 }
 
 export default function ReviewsPage() {
-  const [reviews, setReviews] = useState([]);
+  const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [workingId, setWorkingId] = useState(null);
   const [error, setError] = useState("");
-  const [query, setQuery] = useState("");
 
-  async function loadReviews() {
+  async function loadRows() {
     try {
       setLoading(true);
       setError("");
       const res = await api.get("/api/v1/admin/reviews");
-      setReviews(normalizeReviews(res));
+      setRows(normalizeRows(res));
     } catch (err) {
-      setReviews([]);
-      setError(err?.message || "Failed to load pending reviews");
+      setError(err?.message || "Failed to load reviews");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadReviews();
+    loadRows();
   }, []);
 
-  const filteredReviews = useMemo(() => {
-    const q = query.trim().toLowerCase();
-
-    return reviews.filter((review) => {
-      const haystack = [
-        review.id,
-        review.buyer_name,
-        review.part_title,
-        review.comment,
-        review.content,
-        review.status,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return !q || haystack.includes(q);
-    });
-  }, [reviews, query]);
-
-  async function updateStatus(id, status) {
+  async function moderate(id, status) {
     try {
-      setWorkingId(id);
-      setError("");
-
       await api.patch(`/api/v1/admin/reviews/${id}/status`, { status });
-
-      setReviews((prev) => prev.filter((review) => String(review.id) !== String(id)));
+      await loadRows();
     } catch (err) {
       setError(err?.message || "Failed to update review status");
-    } finally {
-      setWorkingId(null);
     }
-  }
-
-  if (loading) {
-    return (
-      <section className="space-y-6">
-        <div className="rounded-3xl border border-gray-800 bg-gray-900 p-6 text-sm text-gray-400 shadow-sm">
-          Loading pending reviews...
-        </div>
-      </section>
-    );
   }
 
   return (
     <section className="space-y-6">
-      <div className="overflow-hidden rounded-[28px] border border-gray-800 bg-gradient-to-br from-gray-900 via-slate-950 to-blue-950 p-6 text-white shadow-xl sm:p-8">
-        <div className="max-w-3xl">
-          <div className="mb-3 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/80">
-            Reviews moderation
-          </div>
-          <h1 className="text-3xl font-bold sm:text-5xl">Pending reviews</h1>
-          <p className="mt-3 text-sm text-gray-300 sm:text-base">
-            Review buyer feedback before it becomes publicly visible across the marketplace.
-          </p>
-        </div>
+      <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-slate-900 to-fuchsia-700 p-6 text-white shadow-lg sm:p-8">
+        <h1 className="text-3xl font-bold sm:text-5xl">Review moderation</h1>
+        <p className="mt-3 text-sm text-fuchsia-100 sm:text-base">
+          Approve real buyer feedback and reject low-quality or policy-breaking reviews.
+        </p>
       </div>
 
       {error ? (
-        <div className="rounded-3xl border border-red-900/50 bg-red-950/20 p-6 text-red-300 shadow-sm">
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-5 text-red-700 shadow-sm">
           {error}
         </div>
       ) : null}
 
-      <div className="rounded-3xl border border-gray-800 bg-gray-900 p-5 shadow-sm">
-        <div className="grid gap-3 xl:grid-cols-[1fr_auto]">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search buyer, part, content, review id..."
-            className="h-12 rounded-2xl border border-gray-700 bg-gray-950 px-4 text-sm text-gray-100 outline-none focus:border-blue-500"
-          />
-
-          <button
-            type="button"
-            onClick={() => setQuery("")}
-            className="h-12 rounded-2xl border border-gray-700 bg-gray-950 px-4 text-sm font-semibold text-gray-200 transition hover:bg-gray-800"
-          >
-            Reset
-          </button>
-        </div>
-
-        <div className="mt-4 text-sm text-gray-400">
-          <span className="font-semibold text-gray-100">{filteredReviews.length}</span> pending reviews
-        </div>
-      </div>
-
-      {filteredReviews.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-gray-700 bg-gray-900 p-10 text-center shadow-sm">
-          <div className="text-5xl mb-4">⭐</div>
-          <h2 className="text-2xl font-bold text-gray-100">No pending reviews</h2>
-          <p className="mt-2 text-sm text-gray-400">
-            The moderation queue is currently clear.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredReviews.map((review) => (
-            <article
-              key={review.id}
-              className="rounded-3xl border border-gray-800 bg-gray-900 p-5 shadow-sm transition hover:border-blue-800"
-            >
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h3 className="text-xl font-bold text-gray-100">
-                      {review.part_title || "Part review"}
-                    </h3>
-
-                    <div className="flex items-center gap-1 text-lg">
-                      {renderStars(review.rating)}
-                    </div>
-
-                    <span className="rounded-full border border-amber-800/60 bg-amber-900/30 px-3 py-1 text-xs font-semibold text-amber-300">
-                      {Number(review.rating || 0).toFixed(1)}
-                    </span>
+      <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+        {loading ? (
+          <div className="p-6 text-sm text-gray-500">Loading reviews...</div>
+        ) : rows.length === 0 ? (
+          <div className="p-6 text-sm text-gray-500">No pending reviews right now.</div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {rows.map((review) => (
+              <div key={review.id} className="p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0">
+                    <h2 className="text-lg font-bold text-gray-900">
+                      {review.part_title || "Unknown part"}
+                    </h2>
+                    <p className="mt-1 text-sm text-gray-500">
+                      buyer: {review.buyer_name || "unknown"} • rating: {review.rating}/5
+                    </p>
+                    <p className="mt-2 text-sm text-gray-600">
+                      {review.body || review.comment || "No review text provided."}
+                    </p>
                   </div>
 
-                  <div className="mt-3 grid gap-2 text-sm text-gray-400 sm:grid-cols-2 xl:grid-cols-3">
-                    <p>Review ID: {review.id || "—"}</p>
-                    <p>Buyer: {review.buyer_name || "—"}</p>
-                    <p>Created: {review.created_at || "—"}</p>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => moderate(review.id, "approved")}
+                      className="inline-flex h-10 items-center justify-center rounded-2xl bg-green-600 px-4 text-sm font-semibold text-white transition hover:bg-green-700"
+                    >
+                      Approve
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => moderate(review.id, "rejected")}
+                      className="inline-flex h-10 items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                    >
+                      Reject
+                    </button>
                   </div>
-
-                  <div className="mt-4 rounded-2xl bg-gray-950 p-4 text-sm leading-6 text-gray-300">
-                    {review.comment || review.content || "No written content available for this review."}
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2 xl:min-w-[180px]">
-                  <button
-                    onClick={() => updateStatus(review.id, "approved")}
-                    disabled={workingId === review.id}
-                    className="rounded-2xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-500 disabled:opacity-60"
-                  >
-                    {workingId === review.id ? "Updating..." : "Approve"}
-                  </button>
-
-                  <button
-                    onClick={() => updateStatus(review.id, "rejected")}
-                    disabled={workingId === review.id}
-                    className="rounded-2xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-60"
-                  >
-                    {workingId === review.id ? "Updating..." : "Reject"}
-                  </button>
                 </div>
               </div>
-            </article>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }
