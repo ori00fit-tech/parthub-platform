@@ -89,47 +89,37 @@ function detectFitmentStatus(compatibility, selectedVehicle) {
       tone: "neutral",
       title: "Select your vehicle to confirm fitment",
       description:
-        "Vehicle-aware fitment messaging becomes stronger once a make, model, and year are selected.",
+        "Choose make, model, and year to verify if this part matches your vehicle.",
     };
   }
 
-  const exactMatch = compatibility.some((row) => doesVehicleMatch(row, selectedVehicle));
+  const exactMatch = compatibility.some((row) =>
+    doesVehicleMatch(row, selectedVehicle)
+  );
 
   if (exactMatch) {
     return {
       tone: "positive",
-      title: "Matches your selected vehicle",
+      title: "Fits your selected vehicle",
       description:
-        "This part has at least one compatibility row aligned with your selected make, model, and year.",
+        "This part has a compatibility row that matches your selected make, model, and year.",
     };
   }
 
-  const partialMatch = compatibility.some((row) => {
-    const makeMatches =
-      String(row.make || "").toLowerCase() ===
-      String(selectedVehicle.make || "").toLowerCase();
-
-    const modelMatches =
-      String(row.model || "").toLowerCase() ===
-      String(selectedVehicle.model || "").toLowerCase();
-
-    return makeMatches || modelMatches;
-  });
-
-  if (partialMatch) {
+  if (compatibility.length > 0) {
     return {
       tone: "warning",
-      title: "Partial fitment signal detected",
+      title: "Compatibility not confirmed for your vehicle",
       description:
-        "Some compatibility data looks related to your vehicle, but the exact year match is not confirmed.",
+        "This part has vehicle compatibility data, but your selected vehicle is not an exact confirmed match.",
     };
   }
 
   return {
     tone: "neutral",
-    title: "Fitment not confirmed for your selected vehicle",
+    title: "No structured compatibility data yet",
     description:
-      "Review the compatibility rows, SKU, and seller notes before purchasing.",
+      "Use seller notes, SKU, and product details until compatibility data is added.",
   };
 }
 
@@ -324,6 +314,12 @@ export default function PartDetailsPage() {
               <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
                 {part.condition}
               </span>
+
+              {selectedVehicleMatch ? (
+                <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                  Fits your vehicle
+                </span>
+              ) : null}
 
               {selectedVehicleMatch ? (
                 <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
