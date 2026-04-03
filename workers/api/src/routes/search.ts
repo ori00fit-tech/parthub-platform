@@ -12,12 +12,15 @@ function ok(data: unknown, meta: unknown = null) {
   };
 }
 
-function fail(code: string, message: string) {
+function fail(message: string, code = "SEARCH_FAILED") {
   return {
     ok: false,
     data: null,
     meta: null,
-    error: { code, message },
+    error: {
+      code,
+      message,
+    },
   };
 }
 
@@ -28,111 +31,154 @@ searchRoutes.get("/", async (c) => {
     const brand = c.req.query("brand")?.trim() || "";
     const make = c.req.query("make")?.trim() || "";
     const model = c.req.query("model")?.trim() || "";
+    const yearRaw = c.req.query("year")?.trim() || "";
     const condition = c.req.query("condition")?.trim() || "";
     const minPriceRaw = c.req.query("min_price")?.trim() || "";
     const maxPriceRaw = c.req.query("max_price")?.trim() || "";
-    const yearRaw = c.req.query("year")?.trim() || "";
     const sort = c.req.query("sort")?.trim() || "relevance";
     const pageRaw = c.req.query("page")?.trim() || "1";
-    const limitRaw = c.req.query("limit")?.trim() || "20";
 
     const year = yearRaw ? Number(yearRaw) : null;
     const minPrice = minPriceRaw ? Number(minPriceRaw) : null;
     const maxPrice = maxPriceRaw ? Number(maxPriceRaw) : null;
     const page = Math.max(1, Number(pageRaw) || 1);
-    const limit = Math.min(60, Math.max(1, Number(limitRaw) || 20));
+    const limit = 20;
     const offset = (page - 1) * limit;
 
-    const conditions: string[] = ["p.status = 'active'"];
-    const bindings: unknown[] = [];
+    const where: string[] = ["p.status = 'active'"];
+    const params: unknown[] = [];
 
     if (q) {
-      bindings.push(`%${q}%`);
-      const idx = bindings.length;
-      conditions.push(
-        `(p.title like ?${idx} or p.description like ?${idx} or p.slug like ?${idx} or p.sku like ?${idx} or b.name like ?${idx} or c.name like ?${idx})`
-      );
+      const like = `%${q}%`;
+      where.push(`(
+        p.title like ?${params.length + 1}
+        or p.slug like ?${params.length + 2}
+        or p.sku like ?${params.length + 3}
+        or p.description like ?${params.length + 4}
+        or b.name like ?${params.length + 5}
+        or c.name like ?${params.length + 6}
+      )`);
+      params.push(like, like, like, like, like, like);
     }
 
     if (category) {
-      bindings.push(category);
-      conditions.push(`c.slug = ?${bindings.length}`);
+      where.push(`c.slug = ?${params.length + 1}`);
+      params.push(category);
     }
 
     if (brand) {
-      bindings.push(brand);
-      conditions.push(`b.slug = ?${bindings.length}`);
+      where.push(`b.slug = ?${params.length + 1}`);
+      params.push(brand);
     }
 
     if (condition) {
-      bindings.push(condition);
-      conditions.push(`p.condition = ?${bindings.length}`);
+      where.push(`p.condition = ?${params.length + 1}`);
+      params.push(condition);
     }
 
     if (minPrice != null && !Number.isNaN(minPrice)) {
-      bindings.push(minPrice);
-      conditions.push(`p.price >= ?${bindings.length}`);
+      where.push(`p.price >= ?${params.length + 1}`);
+      params.push(minPrice);
     }
 
     if (maxPrice != null && !Number.isNaN(maxPrice)) {
-      bindings.push(maxPrice);
-      conditions.push(`p.price <= ?${bindings.length}`);
+      where.push(`p.price <= ?${params.length + 1}`);
+      params.push(maxPrice);
     }
 
-    if (make || model || year) {
-      let compatibilitySql = `
-        exists (
+    const vehicleFilterParamsStart = params.length;
+
+    let exactVehicleMatchSql = "0";
+    let partialVehicleMatchSql = "0";
+    let compatibilityWhereSql = "";
+
+    if (make && model && year && !Number.isNaN(year)) {
+      exactVehicleMatchSql = `
+        case
+          when exists (
+            select 1
+            from part_compatibility pc
+            where pc.part_id = p.id
+              and lower(pc.make) = lower(?${vehicleFilterParamsStart + 1})
+              and lower(pc.model) = lower(?${vehicleFilterParamsStart + 2})
+              and pc.year_start <= ?${vehicleFilterParamsStart + 3}
+              and (pc.year_end is null or pc.year_end >= ?${vehicleFilterParamsStart + 4})
+          ) then 1
+          else 0
+        end
+      `;
+
+      partialVehicleMatchSql = `
+        case
+          when exists (
+            select 1
+            from part_compatibility pc
+            where pc.part_id = p.id
+              and lower(pc.make) = lower(?${vehicleFilterParamsStart + 5})
+              and lower(pc.model) = lower(?${vehicleFilterParamsStart + 6})
+          ) then 1
+          else 0
+        end
+      `;
+
+      compatibilityWhereSql = `
+        and exists (
           select 1
           from part_compatibility pc
           where pc.part_id = p.id
+            and lower(pc.make) = lower(?${vehicleFilterParamsStart + 7})
+            and lower(pc.model) = lower(?${vehicleFilterParamsStart + 8})
+            and pc.year_start <= ?${vehicleFilterParamsStart + 9}
+            and (pc.year_end is null or pc.year_end >= ?${vehicleFilterParamsStart + 10})
+        )
       `;
 
-      if (make) {
-        bindings.push(make);
-        compatibilitySql += ` and lower(pc.make) = lower(?${bindings.length})`;
-      }
+      params.push(make, model, year, year, make, model);
+    } else if (make && model) {
+      exactVehicleMatchSql = `
+        case
+          when exists (
+            select 1
+            from part_compatibility pc
+            where pc.part_id = p.id
+              and lower(pc.make) = lower(?${vehicleFilterParamsStart + 1})
+              and lower(pc.model) = lower(?${vehicleFilterParamsStart + 2})
+          ) then 1
+          else 0
+        end
+      `;
 
-      if (model) {
-        bindings.push(model);
-        compatibilitySql += ` and lower(pc.model) = lower(?${bindings.length})`;
-      }
+      partialVehicleMatchSql = exactVehicleMatchSql;
+      compatibilityWhereSql = `
+        and exists (
+          select 1
+          from part_compatibility pc
+          where pc.part_id = p.id
+            and lower(pc.make) = lower(?${vehicleFilterParamsStart + 3})
+            and lower(pc.model) = lower(?${vehicleFilterParamsStart + 4})
+        )
+      `;
 
-      if (year) {
-        bindings.push(year);
-        const idx = bindings.length;
-        compatibilitySql += ` and pc.year_start <= ?${idx} and (pc.year_end is null or pc.year_end >= ?${idx})`;
-      }
-
-      compatibilitySql += ` )`;
-      conditions.push(compatibilitySql);
+      params.push(make, model, make, model);
     }
 
-    const whereClause = `where ${conditions.join(" and ")}`;
+    const whereClause = where.length ? `where ${where.join(" and ")}` : "";
 
-    const orderClause =
-      sort === "newest"
-        ? `order by p.created_at desc`
-        : sort === "price_asc"
-        ? `order by p.price asc, p.created_at desc`
+    const orderBy =
+      sort === "price_asc"
+        ? `order by p.price asc, p.featured desc, p.created_at desc`
         : sort === "price_desc"
-        ? `order by p.price desc, p.created_at desc`
-        : q
-        ? `order by
-            case
-              when lower(p.title) like lower(?${bindings.length + 1}) then 1
-              when lower(p.sku) like lower(?${bindings.length + 1}) then 2
-              when lower(p.description) like lower(?${bindings.length + 1}) then 3
-              else 4
-            end,
-            p.featured desc,
-            compatibility_count desc,
-            p.created_at desc`
-        : `order by p.featured desc, compatibility_count desc, p.created_at desc`;
-
-    const searchBindings = [...bindings];
-    if (sort === "relevance" && q) {
-      searchBindings.push(`${q}%`);
-    }
+          ? `order by p.price desc, p.featured desc, p.created_at desc`
+          : sort === "newest"
+            ? `order by p.created_at desc, p.featured desc`
+            : `
+              order by
+                exact_vehicle_match desc,
+                partial_vehicle_match desc,
+                in_stock_score desc,
+                p.featured desc,
+                p.created_at desc
+            `;
 
     const sql = `
       select
@@ -168,53 +214,52 @@ searchRoutes.get("/", async (c) => {
           select count(*)
           from part_compatibility pc
           where pc.part_id = p.id
-        ) as compatibility_count
+        ) as compatibility_count,
+        ${exactVehicleMatchSql} as exact_vehicle_match,
+        ${partialVehicleMatchSql} as partial_vehicle_match,
+        case when p.quantity > 0 then 1 else 0 end as in_stock_score
       from parts p
       left join brands b on b.id = p.brand_id
       left join categories c on c.id = p.category_id
       left join sellers s on s.id = p.seller_id
       ${whereClause}
-      ${orderClause}
-      limit ${limit} offset ${offset};
+      ${compatibilityWhereSql}
+      ${orderBy}
+      limit ?${params.length + 1}
+      offset ?${params.length + 2}
     `;
 
+    const result = await c.env.DB.prepare(sql).bind(...params, limit, offset).all();
+
+    const countParams = [...params];
     const countSql = `
       select count(*) as total
       from parts p
       left join brands b on b.id = p.brand_id
       left join categories c on c.id = p.category_id
       left join sellers s on s.id = p.seller_id
-      ${whereClause};
+      ${whereClause}
+      ${compatibilityWhereSql}
     `;
 
-    const stmt = c.env.DB.prepare(sql);
-    const countStmt = c.env.DB.prepare(countSql);
-
-    const [result, countResult] = await Promise.all([
-      searchBindings.length ? stmt.bind(...searchBindings).all() : stmt.all(),
-      bindings.length ? countStmt.bind(...bindings).first() : countStmt.first(),
-    ]);
-
-    const total = Number((countResult as { total?: number } | null)?.total || 0);
+    const countResult = await c.env.DB.prepare(countSql).bind(...countParams).first<{ total: number }>();
+    const total = Number(countResult?.total || 0);
+    const totalPages = Math.max(1, Math.ceil(total / limit));
 
     await c.env.DB.prepare(
       `
       insert into part_search_logs (
-        query, make, model, year, category_slug, brand_slug, results_count, session_id
-      ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+        query,
+        make_slug,
+        model_slug,
+        year,
+        results_count
+      ) values (?1, ?2, ?3, ?4, ?5)
       `
     )
-      .bind(
-        q || "",
-        make || null,
-        model || null,
-        year || null,
-        category || null,
-        brand || null,
-        Array.isArray(result.results) ? result.results.length : 0,
-        c.req.header("x-session-id") || null
-      )
-      .run();
+      .bind(q || null, make || null, model || null, year || null, total)
+      .run()
+      .catch(() => null);
 
     return c.json(
       ok(result.results || [], {
@@ -222,7 +267,7 @@ searchRoutes.get("/", async (c) => {
           page,
           limit,
           total,
-          total_pages: Math.max(1, Math.ceil(total / limit)),
+          total_pages: totalPages,
         },
         query: {
           q,
@@ -243,10 +288,7 @@ searchRoutes.get("/", async (c) => {
     );
   } catch (error) {
     return c.json(
-      fail(
-        "SEARCH_FAILED",
-        error instanceof Error ? error.message : "Unknown search error"
-      ),
+      fail(error instanceof Error ? error.message : "Unknown search error"),
       500
     );
   }
@@ -256,28 +298,32 @@ searchRoutes.get("/suggestions", async (c) => {
   try {
     const q = c.req.query("q")?.trim() || "";
 
-    if (q.length < 2) {
-      return c.json(ok([]));
+    if (!q || q.length < 2) {
+      return c.json(ok([], null));
     }
 
+    const like = `%${q}%`;
+
     const sql = `
-      select distinct p.title
+      select
+        p.title
       from parts p
       where p.status = 'active'
-        and lower(p.title) like lower(?1)
-      order by p.title asc
-      limit 10;
+        and (
+          p.title like ?1
+          or p.sku like ?2
+          or p.slug like ?3
+        )
+      order by p.featured desc, p.created_at desc
+      limit 8
     `;
 
-    const result = await c.env.DB.prepare(sql).bind(`%${q}%`).all();
+    const result = await c.env.DB.prepare(sql).bind(like, like, like).all();
 
-    return c.json(ok(result.results || []));
+    return c.json(ok(result.results || [], null));
   } catch (error) {
     return c.json(
-      fail(
-        "SUGGESTIONS_FAILED",
-        error instanceof Error ? error.message : "Unknown suggestions error"
-      ),
+      fail(error instanceof Error ? error.message : "Unknown suggestions error"),
       500
     );
   }
