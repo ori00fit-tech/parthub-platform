@@ -9,6 +9,7 @@ import { marketplacePartsRoutes } from "./routes/marketplace.parts";
 import { mediaRoutes } from "./routes/media";
 import { commerceRoutes } from "./routes/commerce";
 import { adminRoutes } from "./routes/admin";
+import { adminAnalyticsRoutes } from "./routes/admin.analytics";
 import { healthRoutes } from "./routes/health";
 import { whatsappRoutes } from "./routes/whatsapp";
 
@@ -40,6 +41,7 @@ app.route("/api/v1/marketplace", marketplaceRoutes);
 app.route("/api/v1/media", mediaRoutes);
 app.route("/api/v1/commerce", commerceRoutes);
 app.route("/api/v1/admin", adminRoutes);
+app.route("/api/v1/admin/analytics", adminAnalyticsRoutes);
 app.route("/api/v1/whatsapp", whatsappRoutes);
 
 app.notFound((c) => {

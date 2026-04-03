@@ -12,6 +12,7 @@ import CategoriesPage from "./pages/CategoriesPage";
 import VehiclesPage from "./pages/VehiclesPage";
 import OrdersPage from "./pages/OrdersPage";
 import ReviewsPage from "./pages/ReviewsPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 function PrivateRoute({ children }) {
@@ -38,6 +39,7 @@ function AppRoutes() {
         <Route path="/vehicles" element={<VehiclesPage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/reviews" element={<ReviewsPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
