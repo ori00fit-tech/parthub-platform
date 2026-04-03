@@ -92,7 +92,7 @@ function buildApiQuery(filters, vehicle) {
 
 function vehicleMatchesCard(part, vehicle) {
   if (!vehicle) return false;
-  return Number(part?.compatibility_count || 0) > 0;
+  return Number(part?.exact_vehicle_match || 0) === 1;
 }
 
 export default function PartsPage() {
@@ -143,8 +143,7 @@ export default function PartsPage() {
 
         setCategories(normalizeList(categoriesRes, "categories"));
         setBrands(normalizeList(brandsRes, "brands"));
-      } catch (err) {
-        if (!active) return;
+      } catch (_) {
       } finally {
         if (active) setLoadingMeta(false);
       }
@@ -191,6 +190,16 @@ export default function PartsPage() {
   }, [filters, selectedVehicle, setSearchParams]);
 
   const vehicleLabel = useMemo(() => getVehicleLabel(selectedVehicle), [selectedVehicle]);
+
+  const exactMatchesCount = useMemo(
+    () => parts.filter((part) => Number(part?.exact_vehicle_match || 0) === 1).length,
+    [parts]
+  );
+
+  const partialMatchesCount = useMemo(
+    () => parts.filter((part) => Number(part?.partial_vehicle_match || 0) === 1).length,
+    [parts]
+  );
 
   function setField(key) {
     return (e) => {
@@ -390,7 +399,7 @@ export default function PartsPage() {
               </div>
             ) : (
               <div className="mt-5 inline-flex rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-blue-100">
-                No vehicle selected. Search still works, but fitment confidence is stronger with a vehicle selected.
+                No vehicle selected. Search still works, but ranking is stronger with a vehicle selected.
               </div>
             )}
           </div>
@@ -399,7 +408,7 @@ export default function PartsPage() {
             <button
               type="button"
               onClick={() => setMobileFiltersOpen(true)}
-              className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50 lg:hidden"
+              className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50 xl:hidden"
             >
               Filters
             </button>
@@ -438,8 +447,8 @@ export default function PartsPage() {
                 <p className="text-lg font-bold text-gray-900">{resultsLabel}</p>
                 <p className="mt-1 text-sm text-gray-500">
                   {hasVehicle
-                    ? `Vehicle context active: ${vehicleLabel}`
-                    : "Showing marketplace-wide results"}
+                    ? `${exactMatchesCount} exact match${exactMatchesCount === 1 ? "" : "es"} for ${vehicleLabel}`
+                    : "Showing broader marketplace results"}
                 </p>
               </div>
 
@@ -469,6 +478,24 @@ export default function PartsPage() {
                 ) : null}
               </div>
             </div>
+
+            {hasVehicle ? (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-green-700">
+                    Exact matches
+                  </p>
+                  <p className="mt-1 text-2xl font-bold text-green-900">{exactMatchesCount}</p>
+                </div>
+
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                    Broader fitment candidates
+                  </p>
+                  <p className="mt-1 text-2xl font-bold text-blue-900">{partialMatchesCount}</p>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {error ? (
@@ -495,9 +522,16 @@ export default function PartsPage() {
             </div>
           ) : parts.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-8 text-center shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900">No parts found</h3>
+              <h3 className="text-xl font-bold text-gray-900">
+                {hasVehicle
+                  ? "No exact matches found for your selected vehicle"
+                  : "No parts found"}
+              </h3>
+
               <p className="mt-2 text-sm text-gray-500">
-                Try broadening the search, clearing some filters, or switching the selected vehicle.
+                {hasVehicle
+                  ? "Try clearing some filters or removing the vehicle context to see broader marketplace inventory."
+                  : "Try broadening the search or clearing some filters."}
               </p>
 
               <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
@@ -515,7 +549,7 @@ export default function PartsPage() {
                     onClick={clearVehicle}
                     className="inline-flex h-11 items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
                   >
-                    Clear vehicle
+                    Show broader parts
                   </button>
                 ) : null}
               </div>
@@ -524,7 +558,7 @@ export default function PartsPage() {
             <>
               <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
                 {parts.map((part) => {
-                  const matched = vehicleMatchesCard(part, selectedVehicle);
+                  const exactMatched = vehicleMatchesCard(part, selectedVehicle);
                   const compatibilityCount = Number(part?.compatibility_count || 0);
 
                   return (
@@ -551,7 +585,7 @@ export default function PartsPage() {
                             {part.condition}
                           </span>
 
-                          {matched ? (
+                          {exactMatched ? (
                             <span className="rounded-full bg-green-50 px-3 py-1 text-[11px] font-semibold text-green-700 shadow-sm">
                               Vehicle-matched
                             </span>
@@ -599,8 +633,13 @@ export default function PartsPage() {
                           )}
                         </div>
 
-                        <div className="border-t border-gray-100 pt-3 text-sm text-gray-500">
-                          Seller: {part.seller_name || "Unknown seller"}
+                        <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+                          <p className="text-sm text-gray-500">
+                            Seller: {part.seller_name || "Unknown seller"}
+                          </p>
+                          <span className="text-sm font-semibold text-blue-700">
+                            View fitment
+                          </span>
                         </div>
                       </div>
                     </Link>
