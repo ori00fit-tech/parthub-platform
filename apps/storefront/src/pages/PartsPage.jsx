@@ -167,6 +167,34 @@ function getRankingBadges(part, hasVehicle) {
   return badges.slice(0, 3);
 }
 
+
+function getSellerBadges(part) {
+  const badges = [];
+
+  if (Number(part?.compatibility_count || 0) > 0) {
+    badges.push({
+      label: "Fitment-ready seller",
+      className: "bg-indigo-50 text-indigo-700",
+    });
+  }
+
+  if (Number(part?.quantity || 0) >= 5) {
+    badges.push({
+      label: "Well stocked",
+      className: "bg-emerald-50 text-emerald-700",
+    });
+  }
+
+  if (Number(part?.featured || 0) === 1) {
+    badges.push({
+      label: "Trusted seller",
+      className: "bg-amber-50 text-amber-700",
+    });
+  }
+
+  return badges.slice(0, 2);
+}
+
 function vehicleMatchesCard(part, vehicle) {
   if (!vehicle) return false;
   return Number(part?.exact_vehicle_match || 0) === 1;
@@ -780,10 +808,27 @@ export default function PartsPage() {
                           ) : null}
                         </div>
 
-                        <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+                        <div className="border-t border-gray-100 pt-3 space-y-2">
                           <p className="text-sm text-gray-500">
                             Seller: {part.seller_name || "Unknown seller"}
                           </p>
+
+                          {getSellerBadges(part).length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {getSellerBadges(part).map((badge) => (
+                                <span
+                                  key={badge.label}
+                                  className={[
+                                    "rounded-full px-3 py-1 text-[11px] font-semibold",
+                                    badge.className,
+                                  ].join(" ")}
+                                >
+                                  {badge.label}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
+
                           <span className="text-sm font-semibold text-blue-700">
                             View fitment
                           </span>
