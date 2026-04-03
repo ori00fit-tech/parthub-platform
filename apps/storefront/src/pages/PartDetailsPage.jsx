@@ -162,6 +162,22 @@ function toneClasses(tone) {
   }
 }
 
+function buildWhatsAppLink(part, selectedVehicle) {
+  const vehicleLabel = selectedVehicle ? getVehicleLabel(selectedVehicle) : "No vehicle selected";
+
+  const message = [
+    "Hello, I want to confirm this part.",
+    `Part: ${part?.title || "Unknown part"}`,
+    part?.sku ? `SKU: ${part.sku}` : "",
+    `Vehicle: ${vehicleLabel}`,
+    part?.slug ? `Part slug: ${part.slug}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return `https://wa.me/?text=${encodeURIComponent(message)}`;
+}
+
 export default function PartDetailsPage() {
   const { slug } = useParams();
   const { selectedVehicle } = normalizeVehicleContext(useSelectedVehicle());
@@ -221,6 +237,10 @@ export default function PartDetailsPage() {
     () => detectFitmentStatus(compatibility, selectedVehicle),
     [compatibility, selectedVehicle]
   );
+  const whatsappLink = useMemo(
+    () => (part ? buildWhatsAppLink(part, selectedVehicle) : "#"),
+    [part, selectedVehicle]
+  );
 
   const activeImage = gallery[galleryIndex] || gallery[0] || null;
   const safeRelatedParts = Array.isArray(relatedParts) ? relatedParts : [];
@@ -279,7 +299,7 @@ export default function PartDetailsPage() {
   }
 
   return (
-    <section className="space-y-6 pb-20">
+    <section className="space-y-6 pb-24">
       <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
         <div className="space-y-4">
           <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
@@ -396,42 +416,57 @@ export default function PartDetailsPage() {
               </p>
             </div>
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <div className="inline-flex h-12 items-center rounded-2xl border border-gray-200 bg-white">
+            <div className="mt-6 flex flex-col gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="inline-flex h-12 items-center rounded-2xl border border-gray-200 bg-white">
+                  <button
+                    type="button"
+                    onClick={() => handleQuantityChange(quantity - 1)}
+                    className="h-full px-4 text-lg text-gray-700"
+                  >
+                    −
+                  </button>
+                  <span className="min-w-[44px] text-center text-sm font-semibold text-gray-900">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleQuantityChange(quantity + 1)}
+                    className="h-full px-4 text-lg text-gray-700"
+                  >
+                    +
+                  </button>
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => handleQuantityChange(quantity - 1)}
-                  className="h-full px-4 text-lg text-gray-700"
+                  onClick={handleAddToCart}
+                  disabled={!inStock || adding}
+                  className="inline-flex h-12 flex-1 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  −
+                  {adding ? "Adding..." : added ? "Added to cart" : "Add to cart"}
                 </button>
-                <span className="min-w-[44px] text-center text-sm font-semibold text-gray-900">
-                  {quantity}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleQuantityChange(quantity + 1)}
-                  className="h-full px-4 text-lg text-gray-700"
+
+                <Link
+                  to="/cart"
+                  className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-200 bg-white px-6 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
                 >
-                  +
-                </button>
+                  Cart ({totalItems})
+                </Link>
               </div>
 
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={!inStock || adding}
-                className="inline-flex h-12 flex-1 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-green-200 bg-green-50 px-6 text-sm font-semibold text-green-700 transition hover:bg-green-100"
               >
-                {adding ? "Adding..." : added ? "Added to cart" : "Add to cart"}
-              </button>
+                Ask seller on WhatsApp
+              </a>
 
-              <Link
-                to="/cart"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-200 bg-white px-6 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-              >
-                Cart ({totalItems})
-              </Link>
+              <p className="text-xs text-gray-500">
+                Use WhatsApp to confirm fitment, SKU, and availability before purchase if needed.
+              </p>
             </div>
           </div>
 
@@ -460,62 +495,94 @@ export default function PartDetailsPage() {
                 </p>
               ) : null}
             </div>
+
+            <p className="mt-4 text-xs text-gray-500">
+              Compatibility guidance improves confidence, but final purchase should still confirm SKU, OEM reference, and seller notes.
+            </p>
           </div>
         </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900">Compatibility</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Review all known vehicle matches for this part.
-          </p>
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-gray-900">Quick fitment summary</h2>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl bg-gray-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-400">Selected vehicle</p>
+                <p className="mt-1 text-sm font-semibold text-gray-900">
+                  {selectedVehicle ? getVehicleLabel(selectedVehicle) : "Not selected"}
+                </p>
+              </div>
 
-          {compatibility.length === 0 ? (
-            <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500">
-              No compatibility rows are available yet for this part.
+              <div className="rounded-2xl bg-gray-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-400">Compatibility rows</p>
+                <p className="mt-1 text-sm font-semibold text-gray-900">
+                  {compatibility.length}
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-gray-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-400">Match status</p>
+                <p className="mt-1 text-sm font-semibold text-gray-900">
+                  {selectedVehicleMatch ? "Confirmed match" : "Not confirmed"}
+                </p>
+              </div>
             </div>
-          ) : (
-            <div className="mt-5 space-y-3">
-              {compatibility.map((row) => {
-                const rowMatch = doesVehicleMatch(row, selectedVehicle);
+          </div>
 
-                return (
-                  <div
-                    key={row.id}
-                    className={[
-                      "rounded-2xl border p-4",
-                      rowMatch
-                        ? "border-green-200 bg-green-50"
-                        : "border-gray-200 bg-gray-50",
-                    ].join(" ")}
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-gray-900">
-                        {row.make} • {row.model}
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-gray-900">Compatibility</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Review all known vehicle matches for this part.
+            </p>
+
+            {compatibility.length === 0 ? (
+              <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500">
+                No compatibility rows are available yet for this part.
+              </div>
+            ) : (
+              <div className="mt-5 space-y-3">
+                {compatibility.map((row) => {
+                  const rowMatch = doesVehicleMatch(row, selectedVehicle);
+
+                  return (
+                    <div
+                      key={row.id}
+                      className={[
+                        "rounded-2xl border p-4",
+                        rowMatch
+                          ? "border-green-200 bg-green-50"
+                          : "border-gray-200 bg-gray-50",
+                      ].join(" ")}
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold text-gray-900">
+                          {row.make} • {row.model}
+                        </p>
+                        {rowMatch ? (
+                          <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                            Your selected vehicle matches
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <p className="mt-2 text-sm text-gray-600">
+                        {row.year_start}
+                        {row.year_end ? ` → ${row.year_end}` : ""}
+                        {row.engine ? ` • ${row.engine}` : ""}
+                        {row.trim ? ` • ${row.trim}` : ""}
                       </p>
-                      {rowMatch ? (
-                        <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                          Your selected vehicle matches
-                        </span>
+
+                      {row.notes ? (
+                        <p className="mt-2 text-sm text-gray-500">{row.notes}</p>
                       ) : null}
                     </div>
-
-                    <p className="mt-2 text-sm text-gray-600">
-                      {row.year_start}
-                      {row.year_end ? ` → ${row.year_end}` : ""}
-                      {row.engine ? ` • ${row.engine}` : ""}
-                      {row.trim ? ` • ${row.trim}` : ""}
-                    </p>
-
-                    {row.notes ? (
-                      <p className="mt-2 text-sm text-gray-500">{row.notes}</p>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -620,7 +687,6 @@ export default function PartDetailsPage() {
           </button>
         </div>
       </div>
-
     </section>
   );
 }

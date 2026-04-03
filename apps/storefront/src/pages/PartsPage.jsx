@@ -498,6 +498,12 @@ export default function PartsPage() {
             ) : null}
           </div>
 
+          {!hasVehicle ? (
+            <div className="rounded-3xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700 shadow-sm">
+              Select your vehicle to unlock exact fitment ranking and stronger part matching.
+            </div>
+          ) : null}
+
           {error ? (
             <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
               {error}
