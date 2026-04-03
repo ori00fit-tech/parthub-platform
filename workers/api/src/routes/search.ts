@@ -90,7 +90,7 @@ searchRoutes.get("/", async (c) => {
     let partialVehicleMatchSql = "0";
     let compatibilityWhereSql = "";
 
-    if (make && model && year && !Number.isNaN(year)) {
+    if (make && model && year != null && !Number.isNaN(year)) {
       const start = params.length;
 
       exactVehicleMatchSql = `
@@ -167,9 +167,59 @@ searchRoutes.get("/", async (c) => {
       `;
 
       params.push(make, model, make, model);
+    } else if (make) {
+      const start = params.length;
+
+      partialVehicleMatchSql = `
+        case
+          when exists (
+            select 1
+            from part_compatibility pc
+            where pc.part_id = p.id
+              and lower(pc.make) = lower(?${start + 1})
+          ) then 1
+          else 0
+        end
+      `;
+
+      compatibilityWhereSql = `
+        and exists (
+          select 1
+          from part_compatibility pc
+          where pc.part_id = p.id
+            and lower(pc.make) = lower(?${start + 2})
+        )
+      `;
+
+      params.push(make, make);
     }
 
     const whereClause = where.length ? `where ${where.join(" and ")}` : "";
+
+    const rankingScoreSql = `
+      (
+        (${exactVehicleMatchSql}) * 120 +
+        (${partialVehicleMatchSql}) * 45 +
+        (case when p.quantity > 0 then 30 else 0 end) +
+        (case when p.featured = 1 then 20 else 0 end) +
+        (case
+          when (
+            select count(*)
+            from part_compatibility pc
+            where pc.part_id = p.id
+          ) >= 1 then 12
+          else 0
+        end) +
+        (case
+          when (
+            select count(*)
+            from part_compatibility pc
+            where pc.part_id = p.id
+          ) >= 3 then 10
+          else 0
+        end)
+      )
+    `;
 
     const orderBy =
       sort === "price_asc"
@@ -222,50 +272,7 @@ searchRoutes.get("/", async (c) => {
         ${exactVehicleMatchSql} as exact_vehicle_match,
         ${partialVehicleMatchSql} as partial_vehicle_match,
         case when p.quantity > 0 then 1 else 0 end as in_stock_score,
-        (
-          (${exactVehicleMatchSql} * 120) +
-          (${partialVehicleMatchSql} * 45) +
-          (
-            case
-              when p.quantity > 0 then 30
-              else 0
-            end
-          ) +
-          (
-            case
-              when p.featured = 1 then 20
-              else 0
-            end
-          ) +
-          (
-            case
-              when (
-                select count(*)
-                from part_compatibility pc
-                where pc.part_id = p.id
-              ) >= 1 then 12
-              else 0
-            end
-          ) +
-          (
-            case
-              when (
-                select count(*)
-                from part_compatibility pc
-                where pc.part_id = p.id
-              ) >= 3 then 10
-              else 0
-            end
-          ) +
-          (
-            case
-              when ?1 != '' and lower(coalesce(p.title, '')) like lower(?2) then 35
-              when ?1 != '' and lower(coalesce(p.sku, '')) like lower(?2) then 20
-              when ?1 != '' and lower(coalesce(p.description, '')) like lower(?2) then 10
-              else 0
-            end
-          )
-        ) as ranking_score
+        ${rankingScoreSql} as ranking_score
       from parts p
       left join brands b on b.id = p.brand_id
       left join categories c on c.id = p.category_id
@@ -277,7 +284,7 @@ searchRoutes.get("/", async (c) => {
       offset ?${params.length + 2}
     `;
 
-    const result = await c.env.DB.prepare(sql).bind(q, `%${q}%`, ...params, limit, offset).all();
+    const result = await c.env.DB.prepare(sql).bind(...params, limit, offset).all();
 
     const countParams = [...params];
     const countSql = `
@@ -359,16 +366,17 @@ searchRoutes.get("/suggestions", async (c) => {
       where p.status = 'active'
         and (
           p.title like ?1
-          or p.sku like ?2
-          or p.slug like ?3
+          or p.sku like ?1
+          or p.slug like ?1
         )
+      group by p.title
       order by p.featured desc, p.created_at desc
       limit 8
     `;
 
-    const result = await c.env.DB.prepare(sql).bind(like, like, like).all();
+    const result = await c.env.DB.prepare(sql).bind(like).all();
 
-    return c.json(ok(result.results || [], null));
+    return c.json(ok((result.results || []).map((item: any) => item.title).filter(Boolean)));
   } catch (error) {
     return c.json(
       fail(error instanceof Error ? error.message : "Unknown suggestions error"),
