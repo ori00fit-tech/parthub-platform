@@ -11,7 +11,7 @@ function normalizeGallery(part) {
     ...(Array.isArray(part?.images) ? part.images : []),
   ];
 
-  const fromArrays = candidates
+  const items = candidates
     .map((item) => {
       if (typeof item === "string") {
         return { url: item, alt: part?.title || "Part image" };
@@ -24,11 +24,11 @@ function normalizeGallery(part) {
     })
     .filter((item) => item.url);
 
-  const fallback = part?.image_url
+  if (items.length) return items;
+
+  return part?.image_url
     ? [{ url: part.image_url, alt: part?.title || "Part image" }]
     : [];
-
-  return fromArrays.length ? fromArrays : fallback;
 }
 
 function normalizeSpecs(part) {
@@ -61,26 +61,54 @@ function normalizeCompatibility(part) {
   return Array.isArray(part?.compatibility) ? part.compatibility : [];
 }
 
+function normalizeVehicleContext(ctx) {
+  const selectedVehicle = ctx?.selectedVehicle || ctx?.vehicle || null;
+  return { selectedVehicle };
+}
+
+function getVehicleLabel(vehicle) {
+  if (!vehicle) return "";
+
+  return (
+    vehicle.label ||
+    [
+      vehicle.year,
+      vehicle.makeName || vehicle.make_name || vehicle.make,
+      vehicle.modelName || vehicle.model_name || vehicle.model,
+      vehicle.engineName || vehicle.engine_name || vehicle.engine,
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
+}
+
 function doesVehicleMatch(row, vehicle) {
-  if (!vehicle || !row) return false;
+  if (!row || !vehicle) return false;
 
-  const makeMatches =
-    String(row.make || "").toLowerCase() === String(vehicle.make || "").toLowerCase();
+  const vehicleMake = String(
+    vehicle?.makeName || vehicle?.make_name || vehicle?.make || ""
+  ).toLowerCase();
 
-  const modelMatches =
-    String(row.model || "").toLowerCase() === String(vehicle.model || "").toLowerCase();
+  const vehicleModel = String(
+    vehicle?.modelName || vehicle?.model_name || vehicle?.model || ""
+  ).toLowerCase();
 
-  const year = Number(vehicle.year || 0);
-  const yearStart = Number(row.year_start || 0);
-  const yearEnd = row.year_end != null ? Number(row.year_end) : null;
+  const vehicleYear = Number(vehicle?.year || 0);
 
+  const rowMake = String(row?.make || "").toLowerCase();
+  const rowModel = String(row?.model || "").toLowerCase();
+  const rowYearStart = Number(row?.year_start || 0);
+  const rowYearEnd = row?.year_end != null ? Number(row.year_end) : null;
+
+  if (!vehicleMake || !vehicleModel || !vehicleYear) return false;
+
+  const makeMatches = rowMake === vehicleMake;
+  const modelMatches = rowModel === vehicleModel;
   const yearMatches =
-    year &&
-    yearStart &&
-    year >= yearStart &&
-    (yearEnd == null || year <= yearEnd);
+    vehicleYear >= rowYearStart &&
+    (rowYearEnd == null || vehicleYear <= rowYearEnd);
 
-  return Boolean(makeMatches && modelMatches && yearMatches);
+  return makeMatches && modelMatches && yearMatches;
 }
 
 function detectFitmentStatus(compatibility, selectedVehicle) {
@@ -89,7 +117,7 @@ function detectFitmentStatus(compatibility, selectedVehicle) {
       tone: "neutral",
       title: "Select your vehicle to confirm fitment",
       description:
-        "Choose make, model, and year to verify if this part matches your vehicle.",
+        "Choose make, model, and year to verify whether this part matches your vehicle.",
     };
   }
 
@@ -100,9 +128,9 @@ function detectFitmentStatus(compatibility, selectedVehicle) {
   if (exactMatch) {
     return {
       tone: "positive",
-      title: "Fits your selected vehicle",
+      title: `Fits your ${getVehicleLabel(selectedVehicle)}`,
       description:
-        "This part has a compatibility row that matches your selected make, model, and year.",
+        "This part has a compatibility row that matches your selected vehicle.",
     };
   }
 
@@ -111,7 +139,7 @@ function detectFitmentStatus(compatibility, selectedVehicle) {
       tone: "warning",
       title: "Compatibility not confirmed for your vehicle",
       description:
-        "This part has vehicle compatibility data, but your selected vehicle is not an exact confirmed match.",
+        "This part includes compatibility data, but your selected vehicle is not an exact confirmed match.",
     };
   }
 
@@ -119,8 +147,9 @@ function detectFitmentStatus(compatibility, selectedVehicle) {
     tone: "neutral",
     title: "No structured compatibility data yet",
     description:
-      "Use seller notes, SKU, and product details until compatibility data is added.",
-  };
+      "Use SKU, seller notes, and product details until compatibility data is expanded.",
+    };
+  }
 }
 
 function toneClasses(tone) {
@@ -129,7 +158,6 @@ function toneClasses(tone) {
       return "border-green-200 bg-green-50 text-green-800";
     case "warning":
       return "border-amber-200 bg-amber-50 text-amber-800";
-    case "neutral":
     default:
       return "border-blue-200 bg-blue-50 text-blue-800";
   }
@@ -137,8 +165,7 @@ function toneClasses(tone) {
 
 export default function PartDetailsPage() {
   const { slug } = useParams();
-  const vehicleContext = useSelectedVehicle() || {};
-  const selectedVehicle = vehicleContext.vehicle || vehicleContext.selectedVehicle || null;
+  const { selectedVehicle } = normalizeVehicleContext(useSelectedVehicle());
   const cartContext = useCart() || {};
   const addItem = cartContext.addItem || (() => {});
   const totalItems = cartContext.totalItems || 0;
@@ -161,20 +188,18 @@ export default function PartDetailsPage() {
         setError("");
         setAdded(false);
 
-        const partRes = await apiGet(`/api/v1/catalog/parts/${slug}`);
+        const response = await apiGet(`/api/v1/catalog/parts/${slug}`);
         if (!active) return;
 
-        const nextPart = partRes?.data || null;
+        const nextPart = response?.data || null;
         setPart(nextPart);
         setGalleryIndex(0);
 
-        const relatedSource =
-          nextPart?.similar_parts ||
-          nextPart?.related_parts ||
-          partRes?.meta?.related_parts ||
-          [];
+        const nextRelated = Array.isArray(nextPart?.related_parts)
+          ? nextPart.related_parts.slice(0, 4)
+          : [];
 
-        setRelatedParts(Array.isArray(relatedSource) ? relatedSource.slice(0, 4) : []);
+        setRelatedParts(nextRelated);
       } catch (err) {
         if (!active) return;
         setError(err?.message || "Failed to load part details");
@@ -206,8 +231,8 @@ export default function PartDetailsPage() {
     doesVehicleMatch(row, selectedVehicle)
   );
 
-  function handleQuantityChange(next) {
-    const normalized = Math.max(1, Math.min(99, Number(next || 1)));
+  function handleQuantityChange(nextValue) {
+    const normalized = Math.max(1, Math.min(99, Number(nextValue || 1)));
     setQuantity(normalized);
   }
 
@@ -215,6 +240,7 @@ export default function PartDetailsPage() {
     if (!part || !inStock) return;
 
     setAdding(true);
+
     try {
       addItem(
         {
@@ -254,8 +280,8 @@ export default function PartDetailsPage() {
   }
 
   return (
-    <section className="space-y-6 pb-16">
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+    <section className="space-y-6 pb-20">
+      <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
         <div className="space-y-4">
           <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
             {activeImage ? (
@@ -317,13 +343,7 @@ export default function PartDetailsPage() {
 
               {selectedVehicleMatch ? (
                 <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-                  Fits your vehicle
-                </span>
-              ) : null}
-
-              {selectedVehicleMatch ? (
-                <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-                  Matches your selected vehicle
+                  Vehicle-matched
                 </span>
               ) : null}
             </div>
@@ -350,7 +370,9 @@ export default function PartDetailsPage() {
                 <p className={inStock ? "font-semibold text-green-700" : "font-semibold text-red-600"}>
                   {inStock ? `In stock (${stock})` : "Out of stock"}
                 </p>
-                <p className="text-gray-500">Seller: {part.seller_name || "Unknown seller"}</p>
+                <p className="text-gray-500">
+                  Seller: {part.seller_name || "Unknown seller"}
+                </p>
               </div>
             </div>
 
@@ -417,6 +439,11 @@ export default function PartDetailsPage() {
                 <span className="font-semibold text-gray-900">Availability:</span>{" "}
                 {inStock ? `${stock} unit(s) available` : "Currently unavailable"}
               </p>
+              {part.sku ? (
+                <p>
+                  <span className="font-semibold text-gray-900">SKU:</span> {part.sku}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
@@ -479,25 +506,37 @@ export default function PartDetailsPage() {
         <div className="space-y-6">
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="text-2xl font-bold text-gray-900">Specifications</h2>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {specs.map((spec, index) => (
-                <div key={`${spec.label}-${index}`} className="rounded-2xl bg-gray-50 p-4">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">
-                    {spec.label}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-gray-900">{spec.value}</p>
-                </div>
-              ))}
-            </div>
+
+            {specs.length === 0 ? (
+              <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500">
+                No technical specifications available yet.
+              </div>
+            ) : (
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {specs.map((spec, index) => (
+                  <div
+                    key={`${spec.label}-${index}`}
+                    className="rounded-2xl bg-gray-50 p-4"
+                  >
+                    <p className="text-xs uppercase tracking-wide text-gray-400">
+                      {spec.label}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-gray-900">
+                      {spec.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="text-2xl font-bold text-gray-900">Need another option?</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Explore related parts from the same marketplace inventory.
+              Explore related parts from the marketplace inventory.
             </p>
 
-                {safeRelatedParts.length === 0 ? (
+            {safeRelatedParts.length === 0 ? (
               <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500">
                 No related parts available yet.
               </div>
@@ -524,7 +563,9 @@ export default function PartDetailsPage() {
                     </div>
 
                     <div className="p-4">
-                      <p className="line-clamp-2 font-semibold text-gray-900">{item.title}</p>
+                      <p className="line-clamp-2 font-semibold text-gray-900">
+                        {item.title}
+                      </p>
                       <p className="mt-1 text-sm text-gray-500">
                         {item.brand_name || "Brand"} • {item.category_name || "Category"}
                       </p>
