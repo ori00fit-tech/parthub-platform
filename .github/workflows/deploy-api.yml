@@ -27,4 +27,5 @@ jobs:
       - name: Deploy
         run: cd workers/api && npx wrangler@4 deploy
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_EMAIL: ${{ secrets.CF_EMAIL }}
+          CLOUDFLARE_API_KEY: ${{ secrets.CF_GLOBAL_API_KEY }}
