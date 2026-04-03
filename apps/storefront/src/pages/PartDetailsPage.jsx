@@ -180,8 +180,10 @@ function buildWhatsAppLink(part, selectedVehicle) {
 
 export default function PartDetailsPage() {
   const { slug } = useParams();
-  const { selectedVehicle } = normalizeVehicleContext(useSelectedVehicle());
+  const vehicleContext = useSelectedVehicle();
+  const { selectedVehicle } = normalizeVehicleContext(vehicleContext);
   const cartContext = useCart() || {};
+  const saveVehicle = vehicleContext?.saveVehicle || (() => {});
   const addItem = cartContext.addItem || (() => {});
   const totalItems = cartContext.totalItems || 0;
 
@@ -408,6 +410,16 @@ export default function PartDetailsPage() {
                   <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-current">
                     Exact match confirmed
                   </span>
+                ) : null}
+
+                {selectedVehicle ? (
+                  <button
+                    type="button"
+                    onClick={() => saveVehicle(selectedVehicle)}
+                    className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-current transition hover:bg-white"
+                  >
+                    Save vehicle
+                  </button>
                 ) : null}
               </div>
 

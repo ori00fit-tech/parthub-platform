@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { apiGet } from "../lib/api";
 import { formatPriceGBP } from "../lib/formatters";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
+import GaragePanel from "../features/vehicles/GaragePanel";
 
 function normalizeList(payload, fallbackKey) {
   const list =
@@ -425,19 +426,23 @@ export default function PartsPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="hidden rounded-3xl border border-gray-200 bg-white p-6 shadow-sm xl:block">
-          <div className="mb-5">
-            <h2 className="text-xl font-bold text-gray-900">Filters</h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Refine results for faster matching.
-            </p>
+        <aside className="hidden space-y-6 xl:block">
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="mb-5">
+              <h2 className="text-xl font-bold text-gray-900">Filters</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Refine results for faster matching.
+              </p>
+            </div>
+
+            {loadingMeta ? (
+              <div className="text-sm text-gray-500">Loading filters...</div>
+            ) : (
+              FilterPanel
+            )}
           </div>
 
-          {loadingMeta ? (
-            <div className="text-sm text-gray-500">Loading filters...</div>
-          ) : (
-            FilterPanel
-          )}
+          <GaragePanel />
         </aside>
 
         <div className="space-y-5">
