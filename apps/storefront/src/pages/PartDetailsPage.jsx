@@ -19,7 +19,7 @@ function normalizeGallery(part) {
 
       return {
         url: item?.url || item?.image_url || item?.src || "",
-        alt: item?.alt || part?.title || "Part image",
+        alt: item?.alt || item?.alt_text || part?.title || "Part image",
       };
     })
     .filter((item) => item.url);
@@ -32,22 +32,13 @@ function normalizeGallery(part) {
 }
 
 function normalizeSpecs(part) {
-  const rawSpecs = part?.specs || part?.attributes || part?.technical_specs || null;
+  const rawSpecs = part?.specs || [];
 
-  if (Array.isArray(rawSpecs)) {
+  if (Array.isArray(rawSpecs) && rawSpecs.length) {
     return rawSpecs
       .map((item) => ({
         label: item?.label || item?.name || item?.key || "",
         value: item?.value || item?.content || "",
-      }))
-      .filter((item) => item.label && item.value);
-  }
-
-  if (rawSpecs && typeof rawSpecs === "object") {
-    return Object.entries(rawSpecs)
-      .map(([key, value]) => ({
-        label: key,
-        value: Array.isArray(value) ? value.join(", ") : String(value ?? ""),
       }))
       .filter((item) => item.label && item.value);
   }
@@ -58,6 +49,7 @@ function normalizeSpecs(part) {
     ["SKU", part?.sku],
     ["Condition", part?.condition],
     ["Location", part?.seller_location],
+    ["Weight", part?.weight_kg ? `${part.weight_kg} kg` : ""],
   ];
 
   return fallback
@@ -65,66 +57,71 @@ function normalizeSpecs(part) {
     .map(([label, value]) => ({ label, value }));
 }
 
-function extractFitmentText(part) {
-  if (Array.isArray(part?.fitment_notes) && part.fitment_notes.length) {
-    return part.fitment_notes.join(" • ");
-  }
-
-  if (typeof part?.fitment_notes === "string" && part.fitment_notes.trim()) {
-    return part.fitment_notes;
-  }
-
-  if (typeof part?.fitment_text === "string" && part.fitment_text.trim()) {
-    return part.fitment_text;
-  }
-
-  return "";
+function normalizeCompatibility(part) {
+  return Array.isArray(part?.compatibility) ? part.compatibility : [];
 }
 
-function detectFitmentStatus(part, selectedVehicle) {
+function doesVehicleMatch(row, vehicle) {
+  if (!vehicle || !row) return false;
+
+  const makeMatches =
+    String(row.make || "").toLowerCase() === String(vehicle.make || "").toLowerCase();
+
+  const modelMatches =
+    String(row.model || "").toLowerCase() === String(vehicle.model || "").toLowerCase();
+
+  const year = Number(vehicle.year || 0);
+  const yearStart = Number(row.year_start || 0);
+  const yearEnd = row.year_end != null ? Number(row.year_end) : null;
+
+  const yearMatches =
+    year &&
+    yearStart &&
+    year >= yearStart &&
+    (yearEnd == null || year <= yearEnd);
+
+  return Boolean(makeMatches && modelMatches && yearMatches);
+}
+
+function detectFitmentStatus(compatibility, selectedVehicle) {
   if (!selectedVehicle) {
     return {
       tone: "neutral",
-      title: "Select your vehicle to check fitment context",
+      title: "Select your vehicle to confirm fitment",
       description:
         "Vehicle-aware fitment messaging becomes stronger once a make, model, and year are selected.",
     };
   }
 
-  const haystack = [
-    part?.fitment_text,
-    part?.fitment_notes,
-    part?.description,
-    part?.title,
-    part?.sku,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+  const exactMatch = compatibility.some((row) => doesVehicleMatch(row, selectedVehicle));
 
-  const make = String(selectedVehicle?.make_name || selectedVehicle?.make || "").toLowerCase();
-  const model = String(selectedVehicle?.model_name || selectedVehicle?.model || "").toLowerCase();
-  const year = String(selectedVehicle?.year || "").toLowerCase();
-
-  const matchesMake = make && haystack.includes(make);
-  const matchesModel = model && haystack.includes(model);
-  const matchesYear = year && haystack.includes(year);
-
-  if (matchesMake && (matchesModel || matchesYear)) {
+  if (exactMatch) {
     return {
       tone: "positive",
-      title: "Potential fitment match for your selected vehicle",
+      title: "Matches your selected vehicle",
       description:
-        "This part appears aligned with your current vehicle context. Final confirmation should still rely on full fitment data or OEM reference.",
+        "This part has at least one compatibility row aligned with your selected make, model, and year.",
     };
   }
 
-  if (matchesMake || matchesModel || matchesYear) {
+  const partialMatch = compatibility.some((row) => {
+    const makeMatches =
+      String(row.make || "").toLowerCase() ===
+      String(selectedVehicle.make || "").toLowerCase();
+
+    const modelMatches =
+      String(row.model || "").toLowerCase() ===
+      String(selectedVehicle.model || "").toLowerCase();
+
+    return makeMatches || modelMatches;
+  });
+
+  if (partialMatch) {
     return {
       tone: "warning",
       title: "Partial fitment signal detected",
       description:
-        "Some of your vehicle details appear related, but the match is not fully clear yet.",
+        "Some compatibility data looks related to your vehicle, but the exact year match is not confirmed.",
     };
   }
 
@@ -132,7 +129,7 @@ function detectFitmentStatus(part, selectedVehicle) {
     tone: "neutral",
     title: "Fitment not confirmed for your selected vehicle",
     description:
-      "Use SKU, OEM reference, product notes, and full compatibility data before purchase.",
+      "Review the compatibility rows, SKU, and seller notes before purchasing.",
   };
 }
 
@@ -150,7 +147,7 @@ function toneClasses(tone) {
 
 export default function PartDetailsPage() {
   const { slug } = useParams();
-  const { selectedVehicle } = useSelectedVehicle();
+  const { vehicle: selectedVehicle } = useSelectedVehicle();
   const { addItem, totalItems } = useCart();
 
   const [part, setPart] = useState(null);
@@ -184,11 +181,7 @@ export default function PartDetailsPage() {
           partRes?.meta?.related_parts ||
           [];
 
-        if (Array.isArray(relatedSource)) {
-          setRelatedParts(relatedSource.slice(0, 4));
-        } else {
-          setRelatedParts([]);
-        }
+        setRelatedParts(Array.isArray(relatedSource) ? relatedSource.slice(0, 4) : []);
       } catch (err) {
         if (!active) return;
         setError(err?.message || "Failed to load part details");
@@ -206,15 +199,18 @@ export default function PartDetailsPage() {
 
   const gallery = useMemo(() => normalizeGallery(part), [part]);
   const specs = useMemo(() => normalizeSpecs(part), [part]);
+  const compatibility = useMemo(() => normalizeCompatibility(part), [part]);
   const fitment = useMemo(
-    () => detectFitmentStatus(part, selectedVehicle),
-    [part, selectedVehicle]
+    () => detectFitmentStatus(compatibility, selectedVehicle),
+    [compatibility, selectedVehicle]
   );
-  const fitmentText = useMemo(() => extractFitmentText(part), [part]);
 
   const activeImage = gallery[galleryIndex] || gallery[0] || null;
   const stock = Number(part?.quantity || 0);
   const inStock = stock > 0;
+  const selectedVehicleMatch = compatibility.some((row) =>
+    doesVehicleMatch(row, selectedVehicle)
+  );
 
   function handleQuantityChange(next) {
     const normalized = Math.max(1, Math.min(99, Number(next || 1)));
@@ -264,203 +260,121 @@ export default function PartDetailsPage() {
   }
 
   return (
-    <section className="space-y-6 pb-24 lg:pb-10">
-      <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
-        <Link to="/" className="hover:text-gray-700">Home</Link>
-        <span>•</span>
-        <Link to="/parts" className="hover:text-gray-700">Parts</Link>
-        {part.category_slug ? (
-          <>
-            <span>•</span>
-            <Link to={`/parts?category=${part.category_slug}`} className="hover:text-gray-700">
-              {part.category_name || "Category"}
-            </Link>
-          </>
-        ) : null}
-        <span>•</span>
-        <span className="text-gray-700">{part.title}</span>
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+    <section className="space-y-6 pb-16">
+      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-4">
-          <div className="overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm">
-            <div className="bg-gray-100">
-              {activeImage ? (
-                <img
-                  src={activeImage.url}
-                  alt={activeImage.alt}
-                  className="h-[320px] w-full object-cover sm:h-[420px]"
-                />
-              ) : (
-                <div className="flex h-[320px] items-center justify-center text-sm text-gray-400 sm:h-[420px]">
-                  No image available
-                </div>
-              )}
-            </div>
-
-            {gallery.length > 1 ? (
-              <div className="grid grid-cols-4 gap-3 p-4 sm:grid-cols-5">
-                {gallery.map((image, index) => (
-                  <button
-                    key={`${image.url}-${index}`}
-                    type="button"
-                    onClick={() => setGalleryIndex(index)}
-                    className={[
-                      "overflow-hidden rounded-2xl border bg-gray-50 transition",
-                      index === galleryIndex
-                        ? "border-blue-500 ring-2 ring-blue-100"
-                        : "border-gray-200 hover:border-gray-300",
-                    ].join(" ")}
-                  >
-                    <img
-                      src={image.url}
-                      alt={image.alt}
-                      className="h-20 w-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
-
-          <div className={`rounded-3xl border p-5 shadow-sm ${toneClasses(fitment.tone)}`}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-bold">{fitment.title}</h2>
-                <p className="mt-1 text-sm">{fitment.description}</p>
-              </div>
-
-              {selectedVehicle ? (
-                <Link
-                  to="/vehicle-selector"
-                  className="rounded-2xl border border-current/20 bg-white/70 px-4 py-2 text-sm font-semibold"
-                >
-                  Change vehicle
-                </Link>
-              ) : (
-                <Link
-                  to="/vehicle-selector"
-                  className="rounded-2xl border border-current/20 bg-white/70 px-4 py-2 text-sm font-semibold"
-                >
-                  Select vehicle
-                </Link>
-              )}
-            </div>
-
-            {selectedVehicle ? (
-              <div className="mt-4 rounded-2xl bg-white/70 px-4 py-3 text-sm">
-                Current vehicle:{" "}
-                <span className="font-semibold">
-                  {selectedVehicle.label}
-                </span>
-              </div>
-            ) : null}
-
-            {fitmentText ? (
-              <div className="mt-4 rounded-2xl bg-white/70 px-4 py-3 text-sm">
-                <span className="font-semibold">Fitment notes:</span> {fitmentText}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Description</h2>
-            <p className="mt-4 whitespace-pre-line text-sm leading-7 text-gray-600">
-              {part.description || "No description available for this part yet."}
-            </p>
-          </div>
-
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Technical details</h2>
-            {specs.length ? (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {specs.map((spec) => (
-                  <div key={`${spec.label}-${spec.value}`} className="rounded-2xl bg-gray-50 p-4">
-                    <p className="text-xs uppercase tracking-wide text-gray-400">
-                      {spec.label}
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-gray-900">
-                      {spec.value}
-                    </p>
-                  </div>
-                ))}
-              </div>
+          <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+            {activeImage ? (
+              <img
+                src={activeImage.url}
+                alt={activeImage.alt}
+                className="h-[320px] w-full object-cover sm:h-[420px]"
+              />
             ) : (
-              <div className="mt-4 rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-sm text-gray-500">
-                Technical details will appear here as richer product data becomes available.
+              <div className="flex h-[320px] items-center justify-center bg-gray-100 text-sm text-gray-400 sm:h-[420px]">
+                No image available
               </div>
             )}
           </div>
+
+          {gallery.length > 1 ? (
+            <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
+              {gallery.map((image, index) => (
+                <button
+                  key={`${image.url}-${index}`}
+                  type="button"
+                  onClick={() => setGalleryIndex(index)}
+                  className={[
+                    "overflow-hidden rounded-2xl border bg-white",
+                    galleryIndex === index
+                      ? "border-blue-500 ring-2 ring-blue-100"
+                      : "border-gray-200",
+                  ].join(" ")}
+                >
+                  <img
+                    src={image.url}
+                    alt={image.alt}
+                    className="h-20 w-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-[28px] border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex flex-wrap gap-2">
-                  {part.condition ? (
-                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                      {part.condition}
-                    </span>
-                  ) : null}
-                  {inStock ? (
-                    <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-                      In stock
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
-                      Out of stock
-                    </span>
-                  )}
-                </div>
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              {part.brand_name ? (
+                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                  {part.brand_name}
+                </span>
+              ) : null}
 
-                <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-900">
-                  {part.title}
-                </h1>
+              {part.category_name ? (
+                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                  {part.category_name}
+                </span>
+              ) : null}
 
-                <p className="mt-2 text-sm text-gray-500">
-                  {part.brand_name || "Unknown brand"} • {part.category_name || "Uncategorized"}
-                </p>
-              </div>
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                {part.condition}
+              </span>
+
+              {selectedVehicleMatch ? (
+                <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                  Matches your selected vehicle
+                </span>
+              ) : null}
             </div>
 
-            <div className="mt-6 flex items-end justify-between gap-4">
+            <h1 className="mt-4 text-3xl font-bold text-gray-900">{part.title}</h1>
+
+            <p className="mt-3 text-sm leading-6 text-gray-600">
+              {part.description || "No description available for this part yet."}
+            </p>
+
+            <div className="mt-5 flex items-end justify-between gap-4">
               <div>
-                <p className="text-4xl font-bold text-gray-900">
+                <p className="text-3xl font-bold text-gray-900">
                   {formatPriceGBP(part.price)}
                 </p>
                 {part.compare_price ? (
-                  <p className="mt-1 text-sm text-gray-400 line-through">
+                  <p className="text-sm text-gray-400 line-through">
                     {formatPriceGBP(part.compare_price)}
                   </p>
                 ) : null}
               </div>
 
-              <div className="text-right text-sm text-gray-500">
-                <p>Stock: {stock}</p>
-                {part.sku ? <p>SKU: {part.sku}</p> : null}
+              <div className="text-right text-sm">
+                <p className={inStock ? "font-semibold text-green-700" : "font-semibold text-red-600"}>
+                  {inStock ? `In stock (${stock})` : "Out of stock"}
+                </p>
+                <p className="text-gray-500">Seller: {part.seller_name || "Unknown seller"}</p>
               </div>
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-[120px_1fr]">
-              <div className="flex h-12 items-center rounded-2xl border border-gray-200 bg-white">
+            <div className={["mt-6 rounded-2xl border px-4 py-4", toneClasses(fitment.tone)].join(" ")}>
+              <p className="font-semibold">{fitment.title}</p>
+              <p className="mt-1 text-sm">{fitment.description}</p>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <div className="inline-flex h-12 items-center rounded-2xl border border-gray-200 bg-white">
                 <button
                   type="button"
                   onClick={() => handleQuantityChange(quantity - 1)}
-                  className="h-full w-12 text-lg text-gray-700 hover:bg-gray-50"
+                  className="h-full px-4 text-lg text-gray-700"
                 >
                   −
                 </button>
-                <input
-                  value={quantity}
-                  onChange={(e) => handleQuantityChange(e.target.value)}
-                  className="h-full w-full border-x border-gray-200 text-center text-sm font-semibold text-gray-900 outline-none"
-                  inputMode="numeric"
-                />
+                <span className="min-w-[44px] text-center text-sm font-semibold text-gray-900">
+                  {quantity}
+                </span>
                 <button
                   type="button"
                   onClick={() => handleQuantityChange(quantity + 1)}
-                  className="h-full w-12 text-lg text-gray-700 hover:bg-gray-50"
+                  className="h-full px-4 text-lg text-gray-700"
                 >
                   +
                 </button>
@@ -470,141 +384,159 @@ export default function PartDetailsPage() {
                 type="button"
                 onClick={handleAddToCart}
                 disabled={!inStock || adding}
-                className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                className="inline-flex h-12 flex-1 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {adding ? "Adding..." : inStock ? "Add to cart" : "Unavailable"}
+                {adding ? "Adding..." : added ? "Added to cart" : "Add to cart"}
               </button>
-            </div>
 
-            {added ? (
-              <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-                Added to cart successfully. Cart now has {totalItems} item{totalItems > 1 ? "s" : ""}.
-              </div>
-            ) : null}
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Seller</p>
-                <p className="mt-1 font-semibold text-gray-900">
-                  {part.seller_name || "Marketplace seller"}
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Location</p>
-                <p className="mt-1 font-semibold text-gray-900">
-                  {part.seller_location || "Not specified"}
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Category</p>
-                <p className="mt-1 font-semibold text-gray-900">
-                  {part.category_name || "Uncategorized"}
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Reference</p>
-                <p className="mt-1 font-semibold text-gray-900">
-                  {part.sku || "—"}
-                </p>
-              </div>
+              <Link
+                to="/cart"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-200 bg-white px-6 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+              >
+                Cart ({totalItems})
+              </Link>
             </div>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-900">Buyer reassurance</h2>
+            <h2 className="text-lg font-bold text-gray-900">Seller trust</h2>
             <div className="mt-4 space-y-3 text-sm text-gray-600">
-              <div className="rounded-2xl bg-gray-50 p-4">
-                Double-check fitment before checkout, especially for vehicle-specific parts.
-              </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
-                Use SKU or OEM reference when comparing multiple listings.
-              </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
-                Vehicle context is stored across storefront pages to reduce wrong-part risk.
-              </div>
+              <p>
+                <span className="font-semibold text-gray-900">Seller:</span>{" "}
+                {part.seller_name || "Unknown"}
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900">Location:</span>{" "}
+                {part.seller_location || "Not specified"}
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900">Listing status:</span>{" "}
+                {part.status}
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900">Availability:</span>{" "}
+                {inStock ? `${stock} unit(s) available` : "Currently unavailable"}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {relatedParts.length ? (
+      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Related parts</h2>
-              <p className="text-sm text-gray-500">
-                Nearby options to continue browsing without leaving the buying flow.
-              </p>
+          <h2 className="text-2xl font-bold text-gray-900">Compatibility</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Review all known vehicle matches for this part.
+          </p>
+
+          {compatibility.length === 0 ? (
+            <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500">
+              No compatibility rows are available yet for this part.
             </div>
+          ) : (
+            <div className="mt-5 space-y-3">
+              {compatibility.map((row) => {
+                const rowMatch = doesVehicleMatch(row, selectedVehicle);
 
-            <Link to="/parts" className="text-sm font-medium text-blue-600 hover:text-blue-700">
-              Browse all →
-            </Link>
-          </div>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {relatedParts.map((item) => (
-              <article
-                key={item.id || item.slug}
-                className="rounded-3xl border border-gray-200 bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="overflow-hidden rounded-2xl bg-gray-100">
-                  {item.image_url ? (
-                    <img
-                      src={item.image_url}
-                      alt={item.title}
-                      className="h-40 w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-40 items-center justify-center text-sm text-gray-400">
-                      No image
-                    </div>
-                  )}
-                </div>
-
-                <h3 className="mt-4 line-clamp-2 text-base font-semibold text-gray-900">
-                  {item.title}
-                </h3>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  {item.brand_name || "Unknown brand"}
-                </p>
-
-                <div className="mt-4 flex items-end justify-between gap-3">
-                  <p className="text-lg font-bold text-gray-900">
-                    {formatPriceGBP(item.price)}
-                  </p>
-                  <Link
-                    to={`/parts/${item.slug}`}
-                    className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                return (
+                  <div
+                    key={row.id}
+                    className={[
+                      "rounded-2xl border p-4",
+                      rowMatch
+                        ? "border-green-200 bg-green-50"
+                        : "border-gray-200 bg-gray-50",
+                    ].join(" ")}
                   >
-                    View
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-gray-900">
+                        {row.make} • {row.model}
+                      </p>
+                      {rowMatch ? (
+                        <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                          Your selected vehicle matches
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <p className="mt-2 text-sm text-gray-600">
+                      {row.year_start}
+                      {row.year_end ? ` → ${row.year_end}` : ""}
+                      {row.engine ? ` • ${row.engine}` : ""}
+                      {row.trim ? ` • ${row.trim}` : ""}
+                    </p>
+
+                    {row.notes ? (
+                      <p className="mt-2 text-sm text-gray-500">{row.notes}</p>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      ) : null}
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 p-4 backdrop-blur lg:hidden">
-        <div className="mx-auto flex max-w-7xl items-center gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-gray-900">{part.title}</p>
-            <p className="text-base font-bold text-gray-900">{formatPriceGBP(part.price)}</p>
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-gray-900">Specifications</h2>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {specs.map((spec, index) => (
+                <div key={`${spec.label}-${index}`} className="rounded-2xl bg-gray-50 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">
+                    {spec.label}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-gray-900">{spec.value}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            disabled={!inStock || adding}
-            className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-          >
-            {adding ? "Adding..." : inStock ? "Add to cart" : "Unavailable"}
-          </button>
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-gray-900">Need another option?</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Explore related parts from the same marketplace inventory.
+            </p>
+
+            {relatedParts.length === 0 ? (
+              <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500">
+                No related parts available yet.
+              </div>
+            ) : (
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                {relatedParts.map((item) => (
+                  <Link
+                    key={item.id}
+                    to={`/parts/${item.slug}`}
+                    className="overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <div className="bg-gray-100">
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.title}
+                          className="h-36 w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-36 items-center justify-center text-sm text-gray-400">
+                          No image
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="p-4">
+                      <p className="line-clamp-2 font-semibold text-gray-900">{item.title}</p>
+                      <p className="mt-1 text-sm text-gray-500">
+                        {item.brand_name || "Brand"} • {item.category_name || "Category"}
+                      </p>
+                      <p className="mt-3 text-lg font-bold text-gray-900">
+                        {formatPriceGBP(item.price)}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </section>
