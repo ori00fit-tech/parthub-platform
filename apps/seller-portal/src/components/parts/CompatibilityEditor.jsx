@@ -16,6 +16,57 @@ function normalizeRows(payload) {
   return Array.isArray(list) ? list : [];
 }
 
+const PRESETS = [
+  {
+    id: "audi-a4-tdi",
+    label: "Audi A4 2.0 TDI",
+    make: "audi",
+    model: "a4",
+    year_start: "2014",
+    year_end: "2016",
+    engine: "2.0 TDI",
+    trim: "",
+    notes: "Common demand preset",
+    bulk_years: "2014,2015,2016",
+  },
+  {
+    id: "vw-golf-tdi",
+    label: "VW Golf 2.0 TDI",
+    make: "volkswagen",
+    model: "golf",
+    year_start: "2013",
+    year_end: "2020",
+    engine: "2.0 TDI",
+    trim: "",
+    notes: "Common demand preset",
+    bulk_years: "2013,2014,2015,2016,2017,2018,2019,2020",
+  },
+  {
+    id: "bmw-320d",
+    label: "BMW 320d",
+    make: "bmw",
+    model: "3 series",
+    year_start: "2012",
+    year_end: "2018",
+    engine: "320d",
+    trim: "",
+    notes: "Common demand preset",
+    bulk_years: "2012,2013,2014,2015,2016,2017,2018",
+  },
+  {
+    id: "mercedes-c220",
+    label: "Mercedes C220 CDI",
+    make: "mercedes",
+    model: "c class",
+    year_start: "2014",
+    year_end: "2019",
+    engine: "C220 CDI",
+    trim: "",
+    notes: "Common demand preset",
+    bulk_years: "2014,2015,2016,2017,2018,2019",
+  },
+];
+
 export default function CompatibilityEditor({ partId }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +119,22 @@ export default function CompatibilityEditor({ partId }) {
     };
   }
 
+  function applyPreset(preset) {
+    setError("");
+    setSuccess("");
+    setForm({
+      make: preset.make,
+      model: preset.model,
+      year_start: preset.year_start,
+      year_end: preset.year_end,
+      engine: preset.engine,
+      trim: preset.trim,
+      notes: preset.notes,
+      bulk_years: preset.bulk_years,
+    });
+    setSuccess(`Preset loaded: ${preset.label}`);
+  }
+
   async function addSingleRow(e) {
     e.preventDefault();
     setError("");
@@ -106,9 +173,9 @@ export default function CompatibilityEditor({ partId }) {
         ...prev,
         year_start: "",
         year_end: "",
-        engine: "",
-        trim: "",
-        notes: "",
+        engine: prev.engine,
+        trim: prev.trim,
+        notes: prev.notes,
       }));
       await loadRows();
     } catch (err) {
@@ -165,11 +232,6 @@ export default function CompatibilityEditor({ partId }) {
         setError("No bulk rows were added.");
       }
 
-      setForm((prev) => ({
-        ...prev,
-        bulk_years: "",
-      }));
-
       await loadRows();
     } catch (err) {
       setError(err?.message || "Bulk add failed");
@@ -215,6 +277,29 @@ export default function CompatibilityEditor({ partId }) {
 
   return (
     <section className="space-y-6">
+      <div className="rounded-3xl border border-indigo-200 bg-indigo-50 p-6 shadow-sm">
+        <h2 className="text-2xl font-bold text-slate-950">Quick presets</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Load common vehicle fitment presets, then fine-tune before saving rows.
+        </p>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {PRESETS.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => applyPreset(preset)}
+              className="rounded-2xl border border-indigo-200 bg-white px-4 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:bg-indigo-50"
+            >
+              <p className="font-semibold text-gray-900">{preset.label}</p>
+              <p className="mt-1 text-xs text-gray-500">
+                {preset.year_start} → {preset.year_end} • {preset.engine || "engine not set"}
+              </p>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Compatibility editor</h2>
