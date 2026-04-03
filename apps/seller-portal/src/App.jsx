@@ -12,6 +12,7 @@ import MediaUploadPage from "./pages/MediaUploadPage";
 import OrdersPage from "./pages/OrdersPage";
 import OrderDetailsPage from "./pages/OrderDetailsPage";
 import ReviewsPage from "./pages/ReviewsPage";
+import InsightsPage from "./pages/InsightsPage";
 import StoreSettingsPage from "./pages/StoreSettingsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
