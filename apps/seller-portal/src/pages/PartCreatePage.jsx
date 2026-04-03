@@ -20,6 +20,76 @@ function normalizeList(payload, keyName) {
   return Array.isArray(list) ? list : [];
 }
 
+function suggestCategory(title, categories) {
+  const t = String(title || "").toLowerCase();
+
+  const rules = [
+    { keywords: ["brake", "pad", "rotor", "disc"], slugHints: ["brakes", "brake", "brakes-rotors"] },
+    { keywords: ["filter", "oil filter", "air filter", "fuel filter"], slugHints: ["filters", "filter"] },
+    { keywords: ["turbo", "intercooler"], slugHints: ["engine", "turbo"] },
+    { keywords: ["lamp", "headlight", "taillight", "light"], slugHints: ["lighting", "lights"] },
+    { keywords: ["suspension", "shock", "strut", "spring"], slugHints: ["suspension"] },
+  ];
+
+  for (const rule of rules) {
+    if (rule.keywords.some((keyword) => t.includes(keyword))) {
+      const match = categories.find((item) =>
+        rule.slugHints.includes(String(item.slug || "").toLowerCase())
+      );
+      if (match) return match;
+    }
+  }
+
+  return null;
+}
+
+function suggestBrand(title, brands) {
+  const t = String(title || "").toLowerCase();
+  return brands.find((item) => t.includes(String(item.name || "").toLowerCase())) || null;
+}
+
+function buildTitleSuggestions(form, suggestedBrand) {
+  const suggestions = [];
+  const rawTitle = String(form.title || "").trim();
+
+  if (!rawTitle) return suggestions;
+
+  const normalized = rawTitle
+    .replace(/\s+/g, " ")
+    .replace(/\btest\b/gi, "")
+    .trim();
+
+  if (normalized && normalized !== rawTitle) {
+    suggestions.push(normalized);
+  }
+
+  if (suggestedBrand && !normalized.toLowerCase().includes(String(suggestedBrand.name || "").toLowerCase())) {
+    suggestions.push(`${suggestedBrand.name} ${normalized}`.trim());
+  }
+
+  return [...new Set(suggestions)].filter(Boolean).slice(0, 3);
+}
+
+function buildFitmentHints(form) {
+  const hints = [];
+  const title = String(form.title || "").toLowerCase();
+
+  if (title.includes("turbo")) {
+    hints.push("Add make/model/year ranges for the exact engine variants using this turbo.");
+  }
+  if (title.includes("brake")) {
+    hints.push("Brake parts convert better when compatibility rows and axle position are clear.");
+  }
+  if (title.includes("filter")) {
+    hints.push("Filters need SKU and engine compatibility for stronger buyer confidence.");
+  }
+  if (!title) {
+    hints.push("Add a clear part title first to unlock better suggestions.");
+  }
+
+  return hints.slice(0, 3);
+}
+
 export default function PartCreatePage() {
   const navigate = useNavigate();
 
@@ -85,6 +155,26 @@ export default function PartCreatePage() {
     return form.slug || slugify(form.title);
   }, [form.slug, form.title]);
 
+  const suggestedCategory = useMemo(
+    () => suggestCategory(form.title, categories),
+    [form.title, categories]
+  );
+
+  const suggestedBrand = useMemo(
+    () => suggestBrand(form.title, brands),
+    [form.title, brands]
+  );
+
+  const titleSuggestions = useMemo(
+    () => buildTitleSuggestions(form, suggestedBrand),
+    [form, suggestedBrand]
+  );
+
+  const fitmentHints = useMemo(
+    () => buildFitmentHints(form),
+    [form]
+  );
+
   function setField(key) {
     return (e) => {
       const value =
@@ -93,20 +183,41 @@ export default function PartCreatePage() {
       setError("");
       setSuccess("");
 
-      setForm((prev) => {
-        if (key === "title" && !prev.slug) {
-          return {
-            ...prev,
-            title: value,
-          };
-        }
-
-        return {
-          ...prev,
-          [key]: value,
-        };
-      });
+      setForm((prev) => ({
+        ...prev,
+        [key]: value,
+      }));
     };
+  }
+
+  function applySuggestedSlug() {
+    setForm((prev) => ({
+      ...prev,
+      slug: slugify(prev.title),
+    }));
+  }
+
+  function applySuggestedCategory() {
+    if (!suggestedCategory) return;
+    setForm((prev) => ({
+      ...prev,
+      category_id: String(suggestedCategory.id),
+    }));
+  }
+
+  function applySuggestedBrand() {
+    if (!suggestedBrand) return;
+    setForm((prev) => ({
+      ...prev,
+      brand_id: String(suggestedBrand.id),
+    }));
+  }
+
+  function applyTitleSuggestion(value) {
+    setForm((prev) => ({
+      ...prev,
+      title: value,
+    }));
   }
 
   async function handleSubmit(e) {
@@ -203,9 +314,6 @@ export default function PartCreatePage() {
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
               Create a seller listing with core product data, stock, pricing, and fitment notes.
             </p>
-            <p className="mt-2 text-xs text-blue-100/80">
-              After creating the part, you will be redirected to the edit page to add vehicle compatibility.
-            </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -225,7 +333,7 @@ export default function PartCreatePage() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
         <form onSubmit={handleSubmit} className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Part details</h2>
@@ -263,12 +371,21 @@ export default function PartCreatePage() {
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 Slug
               </label>
-              <input
-                value={form.slug}
-                onChange={setField("slug")}
-                placeholder={computedSlug || "bosch-front-brake-pads-set"}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
-              />
+              <div className="flex gap-3">
+                <input
+                  value={form.slug}
+                  onChange={setField("slug")}
+                  placeholder={computedSlug || "your-part-slug"}
+                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={applySuggestedSlug}
+                  className="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                >
+                  Use slug
+                </button>
+              </div>
               <p className="mt-1 text-xs text-gray-400">
                 Preview: {computedSlug || "your-part-slug"}
               </p>
@@ -288,53 +405,60 @@ export default function PartCreatePage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Condition
+                Brand
               </label>
-              <select
-                value={form.condition}
-                onChange={setField("condition")}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
-              >
-                <option value="new">New</option>
-                <option value="used">Used</option>
-                <option value="refurbished">Refurbished</option>
-              </select>
+              <div className="flex gap-3">
+                <select
+                  value={form.brand_id}
+                  onChange={setField("brand_id")}
+                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+                >
+                  <option value="">Select brand</option>
+                  {brands.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+                {suggestedBrand ? (
+                  <button
+                    type="button"
+                    onClick={applySuggestedBrand}
+                    className="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                  >
+                    Match
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 Category
               </label>
-              <select
-                value={form.category_id}
-                onChange={setField("category_id")}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
-              >
-                <option value="">Select category</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Brand
-              </label>
-              <select
-                value={form.brand_id}
-                onChange={setField("brand_id")}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
-              >
-                <option value="">Select brand</option>
-                {brands.map((brand) => (
-                  <option key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex gap-3">
+                <select
+                  value={form.category_id}
+                  onChange={setField("category_id")}
+                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+                >
+                  <option value="">Select category</option>
+                  {categories.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+                {suggestedCategory ? (
+                  <button
+                    type="button"
+                    onClick={applySuggestedCategory}
+                    className="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                  >
+                    Suggest
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             <div>
@@ -342,12 +466,10 @@ export default function PartCreatePage() {
                 Price
               </label>
               <input
-                type="number"
-                min="0"
-                step="0.01"
                 value={form.price}
                 onChange={setField("price")}
-                placeholder="59.99"
+                inputMode="numeric"
+                placeholder="35000"
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
@@ -357,12 +479,10 @@ export default function PartCreatePage() {
                 Compare price
               </label>
               <input
-                type="number"
-                min="0"
-                step="0.01"
                 value={form.compare_price}
                 onChange={setField("compare_price")}
-                placeholder="79.99"
+                inputMode="numeric"
+                placeholder="42000"
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
@@ -372,29 +492,42 @@ export default function PartCreatePage() {
                 Quantity
               </label>
               <input
-                type="number"
-                min="0"
-                step="1"
                 value={form.quantity}
                 onChange={setField("quantity")}
-                placeholder="10"
+                inputMode="numeric"
+                placeholder="1"
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Weight (kg)
+                Condition
               </label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.weight_kg}
-                onChange={setField("weight_kg")}
-                placeholder="1.20"
+              <select
+                value={form.condition}
+                onChange={setField("condition")}
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
-              />
+              >
+                <option value="new">New</option>
+                <option value="used">Used</option>
+                <option value="refurbished">Refurbished</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Status
+              </label>
+              <select
+                value={form.status}
+                onChange={setField("status")}
+                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+              >
+                <option value="active">Active</option>
+                <option value="draft">Draft</option>
+                <option value="pending">Pending</option>
+              </select>
             </div>
 
             <div className="sm:col-span-2">
@@ -414,10 +547,10 @@ export default function PartCreatePage() {
                 Description
               </label>
               <textarea
-                rows={5}
                 value={form.description}
                 onChange={setField("description")}
-                placeholder="Describe the part, its quality, compatibility, and important details..."
+                rows={5}
+                placeholder="Describe the part, condition, and trust signals..."
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
@@ -427,38 +560,36 @@ export default function PartCreatePage() {
                 Fitment notes
               </label>
               <textarea
-                rows={4}
                 value={form.fitment_notes}
                 onChange={setField("fitment_notes")}
-                placeholder="Compatible with Audi A4 B8 2013–2015, front axle..."
+                rows={4}
+                placeholder="Audi A4 2014-2016 2.0 TDI S Line..."
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Status
+                Weight (kg)
               </label>
-              <select
-                value={form.status}
-                onChange={setField("status")}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
-              >
-                <option value="active">Active</option>
-                <option value="draft">Draft</option>
-                <option value="archived">Archived</option>
-              </select>
+              <input
+                value={form.weight_kg}
+                onChange={setField("weight_kg")}
+                inputMode="decimal"
+                placeholder="8.5"
+                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+              />
             </div>
 
-            <div className="flex items-center">
-              <label className="flex items-center gap-3 rounded-2xl border border-gray-200 px-4 py-3 text-sm text-gray-800">
+            <div className="flex items-end">
+              <label className="inline-flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700">
                 <input
                   type="checkbox"
                   checked={form.featured}
                   onChange={setField("featured")}
-                  className="h-4 w-4"
+                  className="h-4 w-4 rounded border-gray-300"
                 />
-                Mark as featured
+                Featured listing
               </label>
             </div>
           </div>
@@ -467,83 +598,93 @@ export default function PartCreatePage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+              className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
             >
               {saving ? "Creating..." : "Create part"}
             </button>
 
             <Link
-              to="/media-upload"
-              className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+              to="/parts"
+              className="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
             >
-              Upload media first
+              Cancel
             </Link>
           </div>
         </form>
 
-        <div className="space-y-4">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Listing preview</h2>
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-blue-200 bg-blue-50 p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-slate-950">Listing assistant</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Suggestions based on your current inputs.
+            </p>
 
-            <div className="mt-5 overflow-hidden rounded-3xl border border-gray-200 bg-white">
-              <div className="h-52 bg-gray-100">
-                {form.image_url ? (
-                  <img
-                    src={form.image_url}
-                    alt={form.title || "Part preview"}
-                    className="h-full w-full object-cover"
-                  />
-                ) : null}
+            <div className="mt-5 space-y-4">
+              <div className="rounded-2xl bg-white/80 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-400">Suggested slug</p>
+                <p className="mt-1 text-sm font-semibold text-gray-900">
+                  {computedSlug || "Waiting for title"}
+                </p>
               </div>
 
-              <div className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">
-                      {form.title || "Your part title"}
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      {brands.find((b) => String(b.id) === String(form.brand_id))?.name || "Brand"} •{" "}
-                      {categories.find((c) => String(c.id) === String(form.category_id))?.name || "Category"}
-                    </p>
-                  </div>
-
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                    {form.status || "active"}
-                  </span>
-                </div>
-
-                <p className="mt-4 text-sm text-gray-600">
-                  {form.description || "Listing description preview will appear here."}
+              <div className="rounded-2xl bg-white/80 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-400">Suggested category</p>
+                <p className="mt-1 text-sm font-semibold text-gray-900">
+                  {suggestedCategory?.name || "No strong category signal yet"}
                 </p>
+              </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-gray-600">
-                  <p>SKU: {form.sku || "—"}</p>
-                  <p>Stock: {form.quantity || "0"}</p>
-                  <p>Slug: {computedSlug || "—"}</p>
-                  <p>Condition: {form.condition || "—"}</p>
-                </div>
-
-                <p className="mt-5 text-2xl font-bold text-gray-900">
-                  {form.price ? form.price : "0.00"}
+              <div className="rounded-2xl bg-white/80 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-400">Suggested brand</p>
+                <p className="mt-1 text-sm font-semibold text-gray-900">
+                  {suggestedBrand?.name || "No brand detected in title"}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Create flow notes</h2>
-            <div className="mt-4 space-y-3 text-sm text-gray-600">
-              <div className="rounded-2xl bg-gray-50 p-4">
-                A clean title, SKU, and fitment note improve listing quality.
+            <h2 className="text-xl font-bold text-gray-900">Title suggestions</h2>
+
+            {titleSuggestions.length === 0 ? (
+              <p className="mt-4 text-sm text-gray-500">
+                Add a clearer title to unlock title cleanup suggestions.
+              </p>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {titleSuggestions.map((item, index) => (
+                  <div
+                    key={`${item}-${index}`}
+                    className="flex flex-col gap-3 rounded-2xl bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <p className="text-sm font-semibold text-gray-900">{item}</p>
+                    <button
+                      type="button"
+                      onClick={() => applyTitleSuggestion(item)}
+                      className="inline-flex h-10 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                    >
+                      Use title
+                    </button>
+                  </div>
+                ))}
               </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
-                Upload image assets first if you want a stronger-looking listing.
-              </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
-                Draft status is useful before publishing more sensitive listings.
-              </div>
+            )}
+          </div>
+
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-gray-900">Fitment guidance</h2>
+
+            <div className="mt-4 space-y-3">
+              {fitmentHints.map((item, index) => (
+                <div key={index} className="rounded-2xl bg-gray-50 p-4 text-sm text-gray-700">
+                  {item}
+                </div>
+              ))}
             </div>
+
+            <p className="mt-4 text-xs text-gray-500">
+              Listings with stronger compatibility data usually rank better and convert better for vehicle-aware buyers.
+            </p>
           </div>
         </div>
       </div>
