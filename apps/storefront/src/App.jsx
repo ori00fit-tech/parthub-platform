@@ -8,6 +8,7 @@ import VehicleSelectorPage from "./pages/VehicleSelectorPage";
 import CartPage from "./pages/CartPage";
 import AuthPage from "./pages/AuthPage";
 import CheckoutPage from "./pages/CheckoutPage";
+import CheckoutSuccessPage from "./pages/CheckoutSuccessPage";
 import OrdersPage from "./pages/OrdersPage";
 import AccountPage from "./pages/AccountPage";
 import SearchPage from "./pages/SearchPage";
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
 
         <Route path="/account" element={<AccountPage />} />
         <Route path="/orders" element={<OrdersPage />} />
