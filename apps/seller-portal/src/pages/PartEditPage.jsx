@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../lib/api";
+import CompatibilityEditor from "../components/parts/CompatibilityEditor";
 
 function slugify(value) {
   return String(value || "")
@@ -599,6 +600,9 @@ export default function PartEditPage() {
           </div>
         </div>
       </div>
+
+      <CompatibilityEditor partId={id} />
+
     </section>
   );
 }

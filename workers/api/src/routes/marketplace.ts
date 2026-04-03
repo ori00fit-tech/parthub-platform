@@ -808,3 +808,242 @@ marketplaceRoutes.get("/me/reviews", authMiddleware, async (c) => {
     );
   }
 });
+
+
+async function getOwnedPartForSeller(
+  DB: D1Database,
+  sellerId: number,
+  partId: number
+) {
+  return DB.prepare(
+    `
+    select id, seller_id, title
+    from parts
+    where id = ?1 and seller_id = ?2
+    limit 1
+    `
+  )
+    .bind(partId, sellerId)
+    .first<{ id: number; seller_id: number; title: string }>();
+}
+
+marketplaceRoutes.get("/me/parts/:id/compatibility", authMiddleware, async (c) => {
+  try {
+    const sellerId = c.get("seller_id");
+    const partId = Number(c.req.param("id"));
+
+    if (!sellerId) {
+      return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+    }
+
+    if (Number.isNaN(partId)) {
+      return c.json(failure("INVALID_ID", "Invalid part id"), 400);
+    }
+
+    const ownedPart = await getOwnedPartForSeller(c.env.DB, Number(sellerId), partId);
+
+    if (!ownedPart) {
+      return c.json(failure("PART_NOT_FOUND", "Part not found for this seller"), 404);
+    }
+
+    const result = await c.env.DB.prepare(
+      `
+      select
+        id,
+        part_id,
+        make,
+        model,
+        year_start,
+        year_end,
+        engine,
+        trim,
+        notes
+      from part_compatibility
+      where part_id = ?1
+      order by lower(make) asc, lower(model) asc, year_start desc, id desc
+      `
+    )
+      .bind(partId)
+      .all();
+
+    return c.json(success(result.results || []));
+  } catch (error) {
+    return c.json(
+      failure(
+        "GET_COMPATIBILITY_FAILED",
+        error instanceof Error ? error.message : "Unknown compatibility error"
+      ),
+      500
+    );
+  }
+});
+
+marketplaceRoutes.post("/me/parts/:id/compatibility", authMiddleware, async (c) => {
+  try {
+    const sellerId = c.get("seller_id");
+    const partId = Number(c.req.param("id"));
+
+    if (!sellerId) {
+      return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+    }
+
+    if (Number.isNaN(partId)) {
+      return c.json(failure("INVALID_ID", "Invalid part id"), 400);
+    }
+
+    const ownedPart = await getOwnedPartForSeller(c.env.DB, Number(sellerId), partId);
+
+    if (!ownedPart) {
+      return c.json(failure("PART_NOT_FOUND", "Part not found for this seller"), 404);
+    }
+
+    const body = await c.req.json<Record<string, unknown>>();
+    const make = String(body.make || "").trim();
+    const model = String(body.model || "").trim();
+    const yearStartRaw = body.year_start;
+    const yearEndRaw = body.year_end;
+    const engine = body.engine ? String(body.engine).trim() : null;
+    const trim = body.trim ? String(body.trim).trim() : null;
+    const notes = body.notes ? String(body.notes).trim() : null;
+
+    const yearStart = yearStartRaw != null && yearStartRaw !== "" ? Number(yearStartRaw) : null;
+    const yearEnd = yearEndRaw != null && yearEndRaw !== "" ? Number(yearEndRaw) : null;
+
+    if (!make) {
+      return c.json(failure("MAKE_REQUIRED", "make is required"), 400);
+    }
+
+    if (!model) {
+      return c.json(failure("MODEL_REQUIRED", "model is required"), 400);
+    }
+
+    if (yearStart == null || Number.isNaN(yearStart)) {
+      return c.json(failure("YEAR_START_REQUIRED", "year_start is required"), 400);
+    }
+
+    if (yearEnd != null && Number.isNaN(yearEnd)) {
+      return c.json(failure("INVALID_YEAR_END", "year_end is invalid"), 400);
+    }
+
+    if (yearEnd != null && yearEnd < yearStart) {
+      return c.json(failure("INVALID_YEAR_RANGE", "year_end must be greater than or equal to year_start"), 400);
+    }
+
+    const duplicate = await c.env.DB.prepare(
+      `
+      select id
+      from part_compatibility
+      where part_id = ?1
+        and lower(make) = lower(?2)
+        and lower(model) = lower(?3)
+        and year_start = ?4
+        and coalesce(year_end, -1) = coalesce(?5, -1)
+      limit 1
+      `
+    )
+      .bind(partId, make, model, yearStart, yearEnd)
+      .first();
+
+    if (duplicate) {
+      return c.json(failure("COMPATIBILITY_EXISTS", "This compatibility row already exists"), 409);
+    }
+
+    const inserted = await c.env.DB.prepare(
+      `
+      insert into part_compatibility (
+        part_id, make, model, year_start, year_end, engine, trim, notes
+      ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+      `
+    )
+      .bind(partId, make, model, yearStart, yearEnd, engine, trim, notes)
+      .run();
+
+    const compatibilityId = Number(inserted.meta.last_row_id);
+
+    const created = await c.env.DB.prepare(
+      `
+      select
+        id,
+        part_id,
+        make,
+        model,
+        year_start,
+        year_end,
+        engine,
+        trim,
+        notes
+      from part_compatibility
+      where id = ?1
+      limit 1
+      `
+    )
+      .bind(compatibilityId)
+      .first();
+
+    return c.json(success(created, { message: "Compatibility added successfully" }), 201);
+  } catch (error) {
+    return c.json(
+      failure(
+        "ADD_COMPATIBILITY_FAILED",
+        error instanceof Error ? error.message : "Unknown add compatibility error"
+      ),
+      500
+    );
+  }
+});
+
+marketplaceRoutes.delete("/me/parts/:id/compatibility/:compatibilityId", authMiddleware, async (c) => {
+  try {
+    const sellerId = c.get("seller_id");
+    const partId = Number(c.req.param("id"));
+    const compatibilityId = Number(c.req.param("compatibilityId"));
+
+    if (!sellerId) {
+      return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+    }
+
+    if (Number.isNaN(partId) || Number.isNaN(compatibilityId)) {
+      return c.json(failure("INVALID_ID", "Invalid id"), 400);
+    }
+
+    const ownedPart = await getOwnedPartForSeller(c.env.DB, Number(sellerId), partId);
+
+    if (!ownedPart) {
+      return c.json(failure("PART_NOT_FOUND", "Part not found for this seller"), 404);
+    }
+
+    const existing = await c.env.DB.prepare(
+      `
+      select id
+      from part_compatibility
+      where id = ?1 and part_id = ?2
+      limit 1
+      `
+    )
+      .bind(compatibilityId, partId)
+      .first();
+
+    if (!existing) {
+      return c.json(failure("COMPATIBILITY_NOT_FOUND", "Compatibility row not found"), 404);
+    }
+
+    await c.env.DB.prepare(
+      `
+      delete from part_compatibility
+      where id = ?1 and part_id = ?2
+      `
+    )
+      .bind(compatibilityId, partId)
+      .run();
+
+    return c.json(success({ id: compatibilityId }, { message: "Compatibility deleted successfully" }));
+  } catch (error) {
+    return c.json(
+      failure(
+        "DELETE_COMPATIBILITY_FAILED",
+        error instanceof Error ? error.message : "Unknown delete compatibility error"
+      ),
+      500
+    );
+  }
+});

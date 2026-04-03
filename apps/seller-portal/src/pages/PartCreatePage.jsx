@@ -203,6 +203,9 @@ export default function PartCreatePage() {
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
               Create a seller listing with core product data, stock, pricing, and fitment notes.
             </p>
+            <p className="mt-2 text-xs text-blue-100/80">
+              After creating the part, you will be redirected to the edit page to add vehicle compatibility.
+            </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
