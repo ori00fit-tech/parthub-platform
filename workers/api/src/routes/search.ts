@@ -173,17 +173,14 @@ searchRoutes.get("/", async (c) => {
 
     const orderBy =
       sort === "price_asc"
-        ? `order by p.price asc, p.featured desc, p.created_at desc`
+        ? `order by p.price asc, ranking_score desc, p.created_at desc`
         : sort === "price_desc"
-          ? `order by p.price desc, p.featured desc, p.created_at desc`
+          ? `order by p.price desc, ranking_score desc, p.created_at desc`
           : sort === "newest"
-            ? `order by p.created_at desc, p.featured desc`
+            ? `order by p.created_at desc, ranking_score desc`
             : `
               order by
-                exact_vehicle_match desc,
-                partial_vehicle_match desc,
-                in_stock_score desc,
-                p.featured desc,
+                ranking_score desc,
                 p.created_at desc
             `;
 
@@ -224,7 +221,51 @@ searchRoutes.get("/", async (c) => {
         ) as compatibility_count,
         ${exactVehicleMatchSql} as exact_vehicle_match,
         ${partialVehicleMatchSql} as partial_vehicle_match,
-        case when p.quantity > 0 then 1 else 0 end as in_stock_score
+        case when p.quantity > 0 then 1 else 0 end as in_stock_score,
+        (
+          (${exactVehicleMatchSql} * 120) +
+          (${partialVehicleMatchSql} * 45) +
+          (
+            case
+              when p.quantity > 0 then 30
+              else 0
+            end
+          ) +
+          (
+            case
+              when p.featured = 1 then 20
+              else 0
+            end
+          ) +
+          (
+            case
+              when (
+                select count(*)
+                from part_compatibility pc
+                where pc.part_id = p.id
+              ) >= 1 then 12
+              else 0
+            end
+          ) +
+          (
+            case
+              when (
+                select count(*)
+                from part_compatibility pc
+                where pc.part_id = p.id
+              ) >= 3 then 10
+              else 0
+            end
+          ) +
+          (
+            case
+              when ?1 != '' and lower(coalesce(p.title, '')) like lower(?2) then 35
+              when ?1 != '' and lower(coalesce(p.sku, '')) like lower(?2) then 20
+              when ?1 != '' and lower(coalesce(p.description, '')) like lower(?2) then 10
+              else 0
+            end
+          )
+        ) as ranking_score
       from parts p
       left join brands b on b.id = p.brand_id
       left join categories c on c.id = p.category_id
@@ -236,7 +277,7 @@ searchRoutes.get("/", async (c) => {
       offset ?${params.length + 2}
     `;
 
-    const result = await c.env.DB.prepare(sql).bind(...params, limit, offset).all();
+    const result = await c.env.DB.prepare(sql).bind(q, `%${q}%`, ...params, limit, offset).all();
 
     const countParams = [...params];
     const countSql = `
