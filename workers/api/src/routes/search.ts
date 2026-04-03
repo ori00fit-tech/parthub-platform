@@ -86,23 +86,23 @@ searchRoutes.get("/", async (c) => {
       params.push(maxPrice);
     }
 
-    const vehicleFilterParamsStart = params.length;
-
     let exactVehicleMatchSql = "0";
     let partialVehicleMatchSql = "0";
     let compatibilityWhereSql = "";
 
     if (make && model && year && !Number.isNaN(year)) {
+      const start = params.length;
+
       exactVehicleMatchSql = `
         case
           when exists (
             select 1
             from part_compatibility pc
             where pc.part_id = p.id
-              and lower(pc.make) = lower(?${vehicleFilterParamsStart + 1})
-              and lower(pc.model) = lower(?${vehicleFilterParamsStart + 2})
-              and pc.year_start <= ?${vehicleFilterParamsStart + 3}
-              and (pc.year_end is null or pc.year_end >= ?${vehicleFilterParamsStart + 4})
+              and lower(pc.make) = lower(?${start + 1})
+              and lower(pc.model) = lower(?${start + 2})
+              and pc.year_start <= ?${start + 3}
+              and (pc.year_end is null or pc.year_end >= ?${start + 4})
           ) then 1
           else 0
         end
@@ -114,8 +114,8 @@ searchRoutes.get("/", async (c) => {
             select 1
             from part_compatibility pc
             where pc.part_id = p.id
-              and lower(pc.make) = lower(?${vehicleFilterParamsStart + 5})
-              and lower(pc.model) = lower(?${vehicleFilterParamsStart + 6})
+              and lower(pc.make) = lower(?${start + 5})
+              and lower(pc.model) = lower(?${start + 6})
           ) then 1
           else 0
         end
@@ -126,36 +126,43 @@ searchRoutes.get("/", async (c) => {
           select 1
           from part_compatibility pc
           where pc.part_id = p.id
-            and lower(pc.make) = lower(?${vehicleFilterParamsStart + 7})
-            and lower(pc.model) = lower(?${vehicleFilterParamsStart + 8})
-            and pc.year_start <= ?${vehicleFilterParamsStart + 9}
-            and (pc.year_end is null or pc.year_end >= ?${vehicleFilterParamsStart + 10})
+            and lower(pc.make) = lower(?${start + 7})
+            and lower(pc.model) = lower(?${start + 8})
+            and pc.year_start <= ?${start + 9}
+            and (pc.year_end is null or pc.year_end >= ?${start + 10})
         )
       `;
 
-      params.push(make, model, year, year, make, model);
+      params.push(
+        make, model, year, year,
+        make, model,
+        make, model, year, year
+      );
     } else if (make && model) {
+      const start = params.length;
+
       exactVehicleMatchSql = `
         case
           when exists (
             select 1
             from part_compatibility pc
             where pc.part_id = p.id
-              and lower(pc.make) = lower(?${vehicleFilterParamsStart + 1})
-              and lower(pc.model) = lower(?${vehicleFilterParamsStart + 2})
+              and lower(pc.make) = lower(?${start + 1})
+              and lower(pc.model) = lower(?${start + 2})
           ) then 1
           else 0
         end
       `;
 
       partialVehicleMatchSql = exactVehicleMatchSql;
+
       compatibilityWhereSql = `
         and exists (
           select 1
           from part_compatibility pc
           where pc.part_id = p.id
-            and lower(pc.make) = lower(?${vehicleFilterParamsStart + 3})
-            and lower(pc.model) = lower(?${vehicleFilterParamsStart + 4})
+            and lower(pc.make) = lower(?${start + 3})
+            and lower(pc.model) = lower(?${start + 4})
         )
       `;
 
