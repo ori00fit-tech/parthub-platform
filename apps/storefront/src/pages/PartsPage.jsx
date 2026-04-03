@@ -92,6 +92,51 @@ function buildApiQuery(filters, vehicle) {
   return params.toString();
 }
 
+
+function getRankingBadges(part, hasVehicle) {
+  const badges = [];
+
+  if (Number(part?.exact_vehicle_match || 0) === 1) {
+    badges.push({
+      label: "Exact fit",
+      className: "bg-green-50 text-green-700",
+    });
+  } else if (Number(part?.partial_vehicle_match || 0) === 1 && hasVehicle) {
+    badges.push({
+      label: "Vehicle match",
+      className: "bg-emerald-50 text-emerald-700",
+    });
+  }
+
+  if (Number(part?.compatibility_count || 0) >= 3) {
+    badges.push({
+      label: "Strong compatibility",
+      className: "bg-blue-50 text-blue-700",
+    });
+  } else if (Number(part?.compatibility_count || 0) > 0) {
+    badges.push({
+      label: "Compatibility added",
+      className: "bg-sky-50 text-sky-700",
+    });
+  }
+
+  if (Number(part?.featured || 0) === 1) {
+    badges.push({
+      label: "Featured",
+      className: "bg-amber-50 text-amber-700",
+    });
+  }
+
+  if (Number(part?.quantity || 0) > 0 && Number(part?.quantity || 0) <= 2) {
+    badges.push({
+      label: "Low stock",
+      className: "bg-red-50 text-red-700",
+    });
+  }
+
+  return badges.slice(0, 3);
+}
+
 function vehicleMatchesCard(part, vehicle) {
   if (!vehicle) return false;
   return Number(part?.exact_vehicle_match || 0) === 1;
@@ -574,6 +619,7 @@ export default function PartsPage() {
                 {parts.map((part) => {
                   const exactMatched = vehicleMatchesCard(part, selectedVehicle);
                   const compatibilityCount = Number(part?.compatibility_count || 0);
+                  const rankingBadges = getRankingBadges(part, hasVehicle);
 
                   return (
                     <Link
@@ -616,6 +662,22 @@ export default function PartsPage() {
                             {part.brand_name || "Brand unavailable"}
                             {part.category_name ? ` • ${part.category_name}` : ""}
                           </p>
+
+                          {rankingBadges.length > 0 ? (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {rankingBadges.map((badge) => (
+                                <span
+                                  key={badge.label}
+                                  className={[
+                                    "rounded-full px-3 py-1 text-[11px] font-semibold",
+                                    badge.className,
+                                  ].join(" ")}
+                                >
+                                  {badge.label}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
 
                         <div className="flex items-end justify-between gap-3">
@@ -645,6 +707,12 @@ export default function PartsPage() {
                               No fitment rows yet
                             </span>
                           )}
+
+                          {Number(part?.ranking_score || 0) >= 100 ? (
+                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                              High relevance
+                            </span>
+                          ) : null}
                         </div>
 
                         <div className="flex items-center justify-between border-t border-gray-100 pt-3">
