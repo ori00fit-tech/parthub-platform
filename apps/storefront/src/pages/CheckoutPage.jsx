@@ -298,7 +298,8 @@ export default function CheckoutPage() {
           </div>
         </form>
 
-        <aside className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+        <aside className="space-y-6">
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="text-2xl font-bold text-gray-900">Order summary</h2>
 
           <div className="mt-5 space-y-4">
@@ -337,6 +338,17 @@ export default function CheckoutPage() {
           <p className="mt-4 text-xs text-gray-500">
             Final fitment confirmation should still rely on SKU, OEM reference, and seller confirmation where needed.
           </p>
+          </div>
+
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-gray-900">Checkout trust</h2>
+            <div className="mt-4 space-y-3 text-sm text-gray-600">
+              <p>• Guest checkout is enabled for faster ordering.</p>
+              <p>• Vehicle context is attached when selected.</p>
+              <p>• Seller follow-up can still confirm final fitment before fulfillment.</p>
+              <p>• SKU and notes remain important for high-confidence orders.</p>
+            </div>
+          </div>
         </aside>
       </div>
     </section>

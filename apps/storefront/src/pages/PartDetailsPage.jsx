@@ -69,7 +69,6 @@ function normalizeVehicleContext(ctx) {
 
 function getVehicleLabel(vehicle) {
   if (!vehicle) return "";
-
   return (
     vehicle.label ||
     [
@@ -149,7 +148,8 @@ function detectFitmentStatus(compatibility, selectedVehicle) {
     title: "No structured compatibility data yet",
     description:
       "Use SKU, seller notes, and product details until compatibility data is expanded.",
-  };
+    };
+  }
 }
 
 function toneClasses(tone) {
@@ -183,8 +183,8 @@ export default function PartDetailsPage() {
   const { slug } = useParams();
   const vehicleContext = useSelectedVehicle();
   const { selectedVehicle } = normalizeVehicleContext(vehicleContext);
-  const cartContext = useCart() || {};
   const saveVehicle = vehicleContext?.saveVehicle || (() => {});
+  const cartContext = useCart() || {};
   const addItem = cartContext.addItem || (() => {});
   const totalItems = cartContext.totalItems || 0;
 
@@ -344,6 +344,25 @@ export default function PartDetailsPage() {
               ))}
             </div>
           ) : null}
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-gray-400">Condition</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900">{part.condition}</p>
+            </div>
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-gray-400">Stock status</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900">
+                {inStock ? `${stock} available` : "Out of stock"}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-gray-400">Compatibility</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900">
+                {compatibility.length} row{compatibility.length === 1 ? "" : "s"}
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -427,7 +446,7 @@ export default function PartDetailsPage() {
               </div>
 
               <p className="mt-3 text-xs opacity-80">
-                Always confirm SKU / OEM reference before purchase.
+                Final purchase confidence should still confirm SKU, OEM reference, and seller guidance.
               </p>
             </div>
 
@@ -478,10 +497,16 @@ export default function PartDetailsPage() {
               >
                 Ask seller on WhatsApp
               </a>
+            </div>
+          </div>
 
-              <p className="text-xs text-gray-500">
-                Use WhatsApp to confirm fitment, SKU, and availability before purchase if needed.
-              </p>
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-gray-900">Why buyers trust this listing</h2>
+            <div className="mt-4 space-y-3 text-sm text-gray-600">
+              <p>• SKU and structured compatibility improve confidence before purchase.</p>
+              <p>• Stock visibility helps reduce surprise checkout failures.</p>
+              <p>• Seller contact via WhatsApp makes pre-purchase confirmation easier.</p>
+              <p>• Vehicle-aware matching helps rank the most relevant parts higher.</p>
             </div>
           </div>
 
@@ -512,7 +537,7 @@ export default function PartDetailsPage() {
             </div>
 
             <p className="mt-4 text-xs text-gray-500">
-              Compatibility guidance improves confidence, but final purchase should still confirm SKU, OEM reference, and seller notes.
+              Strong parts usually include stock, SKU, compatibility, and easy seller confirmation paths.
             </p>
           </div>
         </div>
@@ -625,6 +650,16 @@ export default function PartDetailsPage() {
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-gray-900">Purchase reassurance</h2>
+            <div className="mt-4 space-y-3 text-sm text-gray-600">
+              <p>• Confirm exact fitment when your vehicle has engine or trim variations.</p>
+              <p>• Use seller contact before checkout if you need additional confidence.</p>
+              <p>• SKU and compatibility rows are stronger trust signals than title alone.</p>
+              <p>• In-stock parts with structured fitment usually move faster and convert better.</p>
+            </div>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
