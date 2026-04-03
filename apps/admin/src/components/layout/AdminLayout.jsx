@@ -10,6 +10,7 @@ const navItems = [
   { to: "/vehicles", label: "Vehicles", icon: "🚗" },
   { to: "/orders", label: "Orders", icon: "📦" },
   { to: "/reviews", label: "Reviews", icon: "⭐" },
+  { to: "/analytics", label: "Analytics", icon: "📈" },
 ];
 
 function isActivePath(itemTo, pathname) {
