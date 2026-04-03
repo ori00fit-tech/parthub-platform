@@ -696,6 +696,315 @@ marketplaceRoutes.put("/onboarding", authMiddleware, async (c) => {
   return c.json(success(seller, { message: "Seller profile updated" }));
 });
 
+
+
+marketplaceRoutes.post("/me/parts", authMiddleware, async (c) => {
+  try {
+    const sellerId = c.get("seller_id");
+
+    if (!sellerId) {
+      return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+    }
+
+    const body = await c.req.json<Record<string, unknown>>();
+
+    const {
+      category_id,
+      brand_id,
+      slug,
+      title,
+      description,
+      sku,
+      price,
+      compare_price,
+      condition,
+      quantity,
+      weight_kg,
+      status,
+      featured,
+      image_url,
+    } = body ?? {};
+
+    if (!category_id) return c.json(failure("CATEGORY_ID_REQUIRED", "category_id is required"), 400);
+    if (!slug) return c.json(failure("SLUG_REQUIRED", "slug is required"), 400);
+    if (!title) return c.json(failure("TITLE_REQUIRED", "title is required"), 400);
+    if (price == null || Number.isNaN(Number(price))) {
+      return c.json(failure("PRICE_REQUIRED", "price is required"), 400);
+    }
+
+    const existing = await c.env.DB.prepare(
+      "select id from parts where slug = ?1 limit 1"
+    )
+      .bind(String(slug).trim())
+      .first();
+
+    if (existing) {
+      return c.json(failure("SLUG_EXISTS", "A part with this slug already exists"), 409);
+    }
+
+    const inserted = await c.env.DB.prepare(
+      `
+      insert into parts (
+        seller_id, category_id, brand_id, slug, title, description, sku,
+        price, compare_price, condition, quantity, weight_kg, status, featured
+      ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
+      `
+    )
+      .bind(
+        Number(sellerId),
+        Number(category_id),
+        brand_id ? Number(brand_id) : null,
+        String(slug).trim(),
+        String(title).trim(),
+        description ? String(description).trim() : null,
+        sku ? String(sku).trim() : null,
+        Number(price),
+        compare_price != null && compare_price !== "" ? Number(compare_price) : null,
+        condition ? String(condition).trim() : "new",
+        quantity != null && quantity !== "" ? Number(quantity) : 1,
+        weight_kg != null && weight_kg !== "" ? Number(weight_kg) : null,
+        status ? String(status).trim() : "active",
+        featured ? 1 : 0
+      )
+      .run();
+
+    const partId = Number(inserted.meta.last_row_id);
+
+    if (image_url) {
+      await c.env.DB.prepare(
+        `
+        insert into part_images (part_id, url, alt_text, sort_order, is_featured)
+        values (?1, ?2, ?3, 1, 1)
+        `
+      )
+        .bind(partId, String(image_url).trim(), String(title).trim())
+        .run();
+    }
+
+    const created = await getPartById(c.env.DB, partId);
+
+    return c.json(success(created, { message: "Part created successfully" }), 201);
+  } catch (error) {
+    return c.json(
+      failure(
+        "CREATE_SELLER_PART_FAILED",
+        error instanceof Error ? error.message : "Unknown create seller part error"
+      ),
+      500
+    );
+  }
+});
+
+marketplaceRoutes.get("/me/parts/:id", authMiddleware, async (c) => {
+  try {
+    const sellerId = c.get("seller_id");
+    const partId = Number(c.req.param("id"));
+
+    if (!sellerId) {
+      return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+    }
+
+    if (Number.isNaN(partId)) {
+      return c.json(failure("INVALID_ID", "Invalid part id"), 400);
+    }
+
+    const part = await c.env.DB.prepare(
+      `
+      select
+        p.id,
+        p.seller_id,
+        p.category_id,
+        p.brand_id,
+        p.slug,
+        p.title,
+        p.description,
+        p.sku,
+        p.price,
+        p.compare_price,
+        p.condition,
+        p.quantity,
+        p.weight_kg,
+        p.status,
+        p.featured,
+        p.created_at,
+        p.updated_at,
+        (
+          select pi.url
+          from part_images pi
+          where pi.part_id = p.id
+          order by pi.is_featured desc, pi.sort_order asc, pi.id asc
+          limit 1
+        ) as image_url
+      from parts p
+      where p.id = ?1 and p.seller_id = ?2
+      limit 1
+      `
+    )
+      .bind(partId, Number(sellerId))
+      .first();
+
+    if (!part) {
+      return c.json(failure("PART_NOT_FOUND", "Part not found for this seller"), 404);
+    }
+
+    return c.json(success(part));
+  } catch (error) {
+    return c.json(
+      failure(
+        "GET_SELLER_PART_FAILED",
+        error instanceof Error ? error.message : "Unknown get seller part error"
+      ),
+      500
+    );
+  }
+});
+
+marketplaceRoutes.put("/me/parts/:id", authMiddleware, async (c) => {
+  try {
+    const sellerId = c.get("seller_id");
+    const partId = Number(c.req.param("id"));
+
+    if (!sellerId) {
+      return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+    }
+
+    if (Number.isNaN(partId)) {
+      return c.json(failure("INVALID_ID", "Invalid part id"), 400);
+    }
+
+    const body = await c.req.json<Record<string, unknown>>();
+    const {
+      category_id,
+      brand_id,
+      slug,
+      title,
+      description,
+      sku,
+      price,
+      compare_price,
+      condition,
+      quantity,
+      weight_kg,
+      status,
+      featured,
+      image_url,
+    } = body ?? {};
+
+    const existing = await c.env.DB.prepare(
+      "select id from parts where id = ?1 and seller_id = ?2 limit 1"
+    )
+      .bind(partId, Number(sellerId))
+      .first();
+
+    if (!existing) {
+      return c.json(failure("PART_NOT_FOUND", "Part not found for this seller"), 404);
+    }
+
+    if (!category_id) return c.json(failure("CATEGORY_ID_REQUIRED", "category_id is required"), 400);
+    if (!slug) return c.json(failure("SLUG_REQUIRED", "slug is required"), 400);
+    if (!title) return c.json(failure("TITLE_REQUIRED", "title is required"), 400);
+    if (price == null || Number.isNaN(Number(price))) {
+      return c.json(failure("PRICE_REQUIRED", "price is required"), 400);
+    }
+
+    const slugConflict = await c.env.DB.prepare(
+      "select id from parts where slug = ?1 and id != ?2 limit 1"
+    )
+      .bind(String(slug).trim(), partId)
+      .first();
+
+    if (slugConflict) {
+      return c.json(failure("SLUG_EXISTS", "A part with this slug already exists"), 409);
+    }
+
+    await c.env.DB.prepare(
+      `
+      update parts
+      set
+        category_id = ?1,
+        brand_id = ?2,
+        slug = ?3,
+        title = ?4,
+        description = ?5,
+        sku = ?6,
+        price = ?7,
+        compare_price = ?8,
+        condition = ?9,
+        quantity = ?10,
+        weight_kg = ?11,
+        status = ?12,
+        featured = ?13,
+        updated_at = datetime('now')
+      where id = ?14 and seller_id = ?15
+      `
+    )
+      .bind(
+        Number(category_id),
+        brand_id ? Number(brand_id) : null,
+        String(slug).trim(),
+        String(title).trim(),
+        description ? String(description).trim() : null,
+        sku ? String(sku).trim() : null,
+        Number(price),
+        compare_price != null && compare_price !== "" ? Number(compare_price) : null,
+        condition ? String(condition).trim() : "new",
+        quantity != null && quantity !== "" ? Number(quantity) : 1,
+        weight_kg != null && weight_kg !== "" ? Number(weight_kg) : null,
+        status ? String(status).trim() : "active",
+        featured ? 1 : 0,
+        partId,
+        Number(sellerId)
+      )
+      .run();
+
+    if (image_url) {
+      const existingImage = await c.env.DB.prepare(
+        `
+        select id
+        from part_images
+        where part_id = ?1
+        order by is_featured desc, sort_order asc, id asc
+        limit 1
+        `
+      )
+        .bind(partId)
+        .first<{ id: number }>();
+
+      if (existingImage) {
+        await c.env.DB.prepare(
+          `
+          update part_images
+          set url = ?1, alt_text = ?2
+          where id = ?3
+          `
+        )
+          .bind(String(image_url).trim(), String(title).trim(), existingImage.id)
+          .run();
+      } else {
+        await c.env.DB.prepare(
+          `
+          insert into part_images (part_id, url, alt_text, sort_order, is_featured)
+          values (?1, ?2, ?3, 1, 1)
+          `
+        )
+          .bind(partId, String(image_url).trim(), String(title).trim())
+          .run();
+      }
+    }
+
+    const updated = await getPartById(c.env.DB, partId);
+    return c.json(success(updated, { message: "Part updated successfully" }));
+  } catch (error) {
+    return c.json(
+      failure(
+        "UPDATE_SELLER_PART_FAILED",
+        error instanceof Error ? error.message : "Unknown update seller part error"
+      ),
+      500
+    );
+  }
+});
+
 marketplaceRoutes.get("/me/parts", authMiddleware, async (c) => {
   const sellerId = c.get("seller_id");
 
