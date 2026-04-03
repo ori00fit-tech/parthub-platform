@@ -1,359 +1,215 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useCart } from "../features/cart/CartContext";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import { formatPriceGBP } from "../lib/formatters";
 
-function formatMinorPrice(value) {
-  return formatPriceGBP((Number(value || 0) / 100).toFixed(2));
+function getVehicleLabel(vehicle) {
+  if (!vehicle) return "";
+  return (
+    vehicle.label ||
+    [
+      vehicle.year,
+      vehicle.make_name || vehicle.makeName || vehicle.make,
+      vehicle.model_name || vehicle.modelName || vehicle.model,
+      vehicle.engine_name || vehicle.engineName || vehicle.engine,
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
 }
 
 export default function CartPage() {
-  const navigate = useNavigate();
-  const { items, updateQuantity, removeItem, clearCart, totalItems, subtotal } = useCart();
-  const { selectedVehicle, hasVehicle } = useSelectedVehicle();
+  const cart = useCart() || {};
+  const {
+    items = [],
+    totalItems = 0,
+    subtotal = 0,
+    updateItemQuantity = () => {},
+    removeItem = () => {},
+    clearCart = () => {},
+  } = cart;
 
-  const shipping = totalItems > 0 ? 500 : 0;
-  const total = subtotal + shipping;
+  const vehicleCtx = useSelectedVehicle();
+  const selectedVehicle = vehicleCtx?.selectedVehicle || null;
 
-  if (!totalItems) {
+  const vehicleLabel = getVehicleLabel(selectedVehicle);
+
+  if (!items.length) {
     return (
-      <section className="space-y-6 pb-10">
-        <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
-          <div className="max-w-3xl">
-            <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Cart foundation
-            </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">Your cart is empty</h1>
-            <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Start with your vehicle, browse the catalog, and add parts to continue toward checkout.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-3">
-          <Link
-            to="/vehicle-selector"
-            className="rounded-3xl border border-blue-200 bg-blue-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <p className="text-sm font-medium text-blue-700">Best starting point</p>
-            <p className="mt-1 text-xl font-bold text-gray-900">Select your vehicle</p>
-            <p className="mt-2 text-sm text-gray-600">
-              Improve fitment confidence before adding parts.
-            </p>
-          </Link>
-
-          <Link
-            to="/parts"
-            className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <p className="text-sm font-medium text-gray-500">Browse inventory</p>
-            <p className="mt-1 text-xl font-bold text-gray-900">Explore the catalog</p>
-            <p className="mt-2 text-sm text-gray-600">
-              Search by part name, category, brand, or SKU.
-            </p>
-          </Link>
-
-          <Link
-            to="/auth"
-            className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <p className="text-sm font-medium text-gray-500">Buyer foundation</p>
-            <p className="mt-1 text-xl font-bold text-gray-900">Sign in</p>
-            <p className="mt-2 text-sm text-gray-600">
-              Prepare your account for a smoother checkout flow.
-            </p>
-          </Link>
+      <section className="space-y-6">
+        <div className="rounded-[28px] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-700 p-6 text-white shadow-lg sm:p-8">
+          <h1 className="text-3xl font-bold sm:text-5xl">Your cart</h1>
+          <p className="mt-3 text-sm text-blue-100 sm:text-base">
+            Review selected parts before checkout.
+          </p>
         </div>
 
         <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
-          <div className="text-5xl">🛒</div>
-          <h2 className="mt-4 text-2xl font-bold text-gray-900">No items yet</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Your cart is empty</h2>
           <p className="mt-2 text-sm text-gray-500">
-            Once you add parts, they’ll appear here with quantity controls and order summary.
+            Browse the marketplace and add parts to continue.
           </p>
-
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              to="/parts"
-              className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
-            >
-              Browse parts
-            </Link>
-            <Link
-              to="/vehicle-selector"
-              className="rounded-2xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-            >
-              Choose vehicle
-            </Link>
-          </div>
+          <Link
+            to="/parts"
+            className="mt-5 inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700"
+          >
+            Browse parts
+          </Link>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="space-y-6 pb-10">
-      <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
-        <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
+    <section className="space-y-6 pb-16">
+      <div className="rounded-[28px] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-700 p-6 text-white shadow-lg sm:p-8">
+        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
-            <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Cart foundation
-            </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">
-              Your cart ({totalItems} item{totalItems > 1 ? "s" : ""})
-            </h1>
+            <h1 className="text-3xl font-bold sm:text-5xl">Your cart</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Review your selected parts, confirm quantities, and continue toward checkout.
+              Review selected parts and continue to checkout.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <Link
-              to="/parts"
-              className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
-            >
-              Continue shopping
-            </Link>
-            <button
-              type="button"
-              onClick={clearCart}
-              className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
-            >
-              Clear cart
-            </button>
+          <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white">
+            {totalItems} item{totalItems === 1 ? "" : "s"} selected
           </div>
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      {selectedVehicle ? (
+        <div className="rounded-3xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-800 shadow-sm">
+          Checkout context includes your selected vehicle:
+          <span className="ml-2 font-semibold">{vehicleLabel}</span>
+        </div>
+      ) : (
+        <div className="rounded-3xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm text-blue-700 shadow-sm">
+          No vehicle selected. You can still checkout, but fitment confirmation is stronger when a vehicle is selected.
+        </div>
+      )}
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="space-y-4">
-          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Vehicle context</h2>
-                <p className="text-sm text-gray-500">
-                  Reviewing parts with vehicle context reduces wrong-part risk.
-                </p>
-              </div>
-
-              {hasVehicle && selectedVehicle ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
-                    {selectedVehicle.label}
-                  </span>
-                  <Link
-                    to="/vehicle-selector"
-                    className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
-                  >
-                    Change vehicle
-                  </Link>
+          {items.map((item) => (
+            <div
+              key={item.id || item.part_id}
+              className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm"
+            >
+              <div className="flex flex-col gap-4 sm:flex-row">
+                <div className="h-24 w-full overflow-hidden rounded-2xl bg-gray-100 sm:w-28">
+                  {item.image_url || item.thumbnail ? (
+                    <img
+                      src={item.image_url || item.thumbnail}
+                      alt={item.title}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-xs text-gray-400">
+                      No image
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <Link
-                  to="/vehicle-selector"
-                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                >
-                  Select vehicle
-                </Link>
-              )}
-            </div>
 
-            {!hasVehicle ? (
-              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                No vehicle selected. You can still continue, but fitment confidence will be weaker.
-              </div>
-            ) : null}
-          </div>
-
-          <div className="space-y-4">
-            {items.map((item) => {
-              const lineTotal = Number(item.price || 0) * Number(item.quantity || 0);
-
-              return (
-                <article
-                  key={item.part_id}
-                  className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm"
-                >
-                  <div className="grid h-full grid-cols-1 sm:grid-cols-[120px_1fr]">
-                    <div className="bg-gray-100">
-                      {item.thumbnail ? (
-                        <img
-                          src={item.thumbnail}
-                          alt={item.title}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full min-h-[120px] items-center justify-center text-sm text-gray-400">
-                          No image
-                        </div>
-                      )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900">{item.title}</h2>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Seller: {item.seller_name || "Unknown seller"}
+                      </p>
+                      <p className="mt-2 text-base font-bold text-gray-900">
+                        {formatPriceGBP(item.price)}
+                      </p>
                     </div>
 
-                    <div className="p-5">
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="min-w-0">
-                          <Link
-                            to={`/parts/${item.slug}`}
-                            className="line-clamp-2 text-xl font-bold text-gray-900 hover:text-blue-600"
-                          >
-                            {item.title}
-                          </Link>
-
-                          <div className="mt-2 space-y-1 text-sm text-gray-500">
-                            <p>Seller: {item.seller_name || "Marketplace seller"}</p>
-                            {hasVehicle && selectedVehicle ? (
-                              <p>Vehicle context: {selectedVehicle.label}</p>
-                            ) : (
-                              <p>No vehicle context selected</p>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="text-left lg:text-right">
-                          <p className="text-2xl font-bold text-gray-900">
-                            {formatMinorPrice(lineTotal)}
-                          </p>
-                          <p className="mt-1 text-sm text-gray-500">
-                            {formatMinorPrice(item.price)} each
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex h-12 items-center rounded-2xl border border-gray-200 bg-white">
-                          <button
-                            type="button"
-                            onClick={() => updateQuantity(item.part_id, item.quantity - 1)}
-                            className="h-full w-12 text-lg text-gray-700 hover:bg-gray-50"
-                          >
-                            −
-                          </button>
-                          <span className="flex h-full min-w-[52px] items-center justify-center border-x border-gray-200 px-3 text-sm font-semibold text-gray-900">
-                            {item.quantity}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => updateQuantity(item.part_id, item.quantity + 1)}
-                            className="h-full w-12 text-lg text-gray-700 hover:bg-gray-50"
-                          >
-                            +
-                          </button>
-                        </div>
-
-                        <div className="flex flex-wrap gap-3">
-                          <Link
-                            to={`/parts/${item.slug}`}
-                            className="rounded-2xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-                          >
-                            View part
-                          </Link>
-
-                          <button
-                            type="button"
-                            onClick={() => removeItem(item.part_id)}
-                            className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(item.id || item.part_id)}
+                      className="inline-flex h-10 items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                    >
+                      Remove
+                    </button>
                   </div>
-                </article>
-              );
-            })}
-          </div>
-        </div>
 
-        <div className="space-y-4">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Order summary</h2>
+                  <div className="mt-4 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateItemQuantity(item.id || item.part_id, Math.max(1, Number(item.quantity || 1) - 1))
+                      }
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-200 bg-white text-lg text-gray-700"
+                    >
+                      −
+                    </button>
 
-            <div className="mt-5 space-y-4 text-sm">
-              <div className="flex items-center justify-between text-gray-600">
-                <span>Items</span>
-                <span>{totalItems}</span>
-              </div>
+                    <span className="min-w-[44px] text-center text-sm font-semibold text-gray-900">
+                      {item.quantity || 1}
+                    </span>
 
-              <div className="flex items-center justify-between text-gray-600">
-                <span>Subtotal</span>
-                <span>{formatMinorPrice(subtotal)}</span>
-              </div>
-
-              <div className="flex items-center justify-between text-gray-600">
-                <span>Estimated shipping</span>
-                <span>{formatMinorPrice(shipping)}</span>
-              </div>
-
-              <div className="border-t pt-4">
-                <div className="flex items-center justify-between text-base font-bold text-gray-900">
-                  <span>Total</span>
-                  <span>{formatMinorPrice(total)}</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateItemQuantity(item.id || item.part_id, Number(item.quantity || 1) + 1)
+                      }
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-200 bg-white text-lg text-gray-700"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-
-            <div className="mt-6 space-y-3">
-              <button
-                type="button"
-                onClick={() => navigate("/checkout")}
-                className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
-              >
-                Proceed to checkout
-              </button>
-
-              <Link
-                to="/auth"
-                className="inline-flex h-12 w-full items-center justify-center rounded-2xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-              >
-                Buyer sign in
-              </Link>
-
-              <Link
-                to="/parts"
-                className="inline-flex h-12 w-full items-center justify-center rounded-2xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-              >
-                Continue shopping
-              </Link>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-900">Checkout readiness</h2>
-            <div className="mt-4 space-y-3 text-sm text-gray-600">
-              <div className="rounded-2xl bg-gray-50 p-4">
-                Review quantities before checkout.
-              </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
-                Keep vehicle context active for stronger fitment confidence.
-              </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
-                Buyer sign-in helps prepare a smoother order flow.
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-900">Need another part?</h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Return to the catalog and keep building your order.
-            </p>
-            <div className="mt-4 flex flex-col gap-3">
-              <Link
-                to="/parts"
-                className="inline-flex h-11 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-black"
-              >
-                Browse more parts
-              </Link>
-              <Link
-                to="/vehicle-selector"
-                className="inline-flex h-11 items-center justify-center rounded-2xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-              >
-                Update vehicle
-              </Link>
-            </div>
-          </div>
+          ))}
         </div>
+
+        <aside className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-gray-900">Order summary</h2>
+
+          <div className="mt-5 space-y-3">
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>Items</span>
+              <span>{totalItems}</span>
+            </div>
+
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>Subtotal</span>
+              <span>{formatPriceGBP(subtotal)}</span>
+            </div>
+
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>Shipping</span>
+              <span>Calculated at checkout</span>
+            </div>
+
+            <div className="border-t border-gray-100 pt-3">
+              <div className="flex items-center justify-between">
+                <span className="text-base font-semibold text-gray-900">Estimated total</span>
+                <span className="text-xl font-bold text-gray-900">{formatPriceGBP(subtotal)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 space-y-3">
+            <Link
+              to="/checkout"
+              className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              Continue to checkout
+            </Link>
+
+            <button
+              type="button"
+              onClick={clearCart}
+              className="inline-flex h-12 w-full items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+            >
+              Clear cart
+            </button>
+          </div>
+
+          <p className="mt-4 text-xs text-gray-500">
+            Guest checkout is supported. Final fitment confirmation should still rely on SKU, OEM reference, and seller guidance.
+          </p>
+        </aside>
       </div>
     </section>
   );
