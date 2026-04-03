@@ -4,6 +4,7 @@ import { apiGet } from "../lib/api";
 import { formatPriceGBP } from "../lib/formatters";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import GaragePanel from "../features/vehicles/GaragePanel";
+import VehicleContextBar from "../features/vehicles/VehicleContextBar";
 
 function normalizeList(payload, fallbackKey) {
   const list =
@@ -424,6 +425,8 @@ export default function PartsPage() {
           </div>
         </div>
       </div>
+
+      <VehicleContextBar />
 
       <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="hidden space-y-6 xl:block">

@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { apiGet } from "../lib/api";
 import { formatPriceGBP } from "../lib/formatters";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
+import VehicleContextBar from "../features/vehicles/VehicleContextBar";
 import { useCart } from "../features/cart/CartContext";
 
 function normalizeGallery(part) {
@@ -302,6 +303,8 @@ export default function PartDetailsPage() {
 
   return (
     <section className="space-y-6 pb-24">
+      <VehicleContextBar />
+
       <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
         <div className="space-y-4">
           <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
