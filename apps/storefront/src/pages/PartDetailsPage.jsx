@@ -147,8 +147,11 @@ function toneClasses(tone) {
 
 export default function PartDetailsPage() {
   const { slug } = useParams();
-  const { vehicle: selectedVehicle } = useSelectedVehicle();
-  const { addItem, totalItems } = useCart();
+  const vehicleContext = useSelectedVehicle() || {};
+  const selectedVehicle = vehicleContext.vehicle || vehicleContext.selectedVehicle || null;
+  const cartContext = useCart() || {};
+  const addItem = cartContext.addItem || (() => {});
+  const totalItems = cartContext.totalItems || 0;
 
   const [part, setPart] = useState(null);
   const [relatedParts, setRelatedParts] = useState([]);
@@ -206,6 +209,7 @@ export default function PartDetailsPage() {
   );
 
   const activeImage = gallery[galleryIndex] || gallery[0] || null;
+  const safeRelatedParts = Array.isArray(relatedParts) ? relatedParts : [];
   const stock = Number(part?.quantity || 0);
   const inStock = stock > 0;
   const selectedVehicleMatch = compatibility.some((row) =>
@@ -497,13 +501,13 @@ export default function PartDetailsPage() {
               Explore related parts from the same marketplace inventory.
             </p>
 
-            {relatedParts.length === 0 ? (
+                {safeRelatedParts.length === 0 ? (
               <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500">
                 No related parts available yet.
               </div>
             ) : (
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                {relatedParts.map((item) => (
+                {safeRelatedParts.map((item) => (
                   <Link
                     key={item.id}
                     to={`/parts/${item.slug}`}
