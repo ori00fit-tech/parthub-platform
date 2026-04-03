@@ -1,6 +1,7 @@
 import { Hono } from "hono";
+import type { Env, HonoVariables } from "../types";
 
-export const catalogRoutes = new Hono();
+export const catalogRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
 function ok(data: unknown, meta: unknown = null) {
   return {

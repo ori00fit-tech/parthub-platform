@@ -1,6 +1,7 @@
 import { Hono } from "hono";
+import type { Env, HonoVariables } from "../types";
 
-export const searchRoutes = new Hono();
+export const searchRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
 function ok(data: unknown, meta: unknown = null) {
   return {
