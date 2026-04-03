@@ -77,6 +77,59 @@ function buildTitleSuggestions(form, suggestedBrand) {
   return [...new Set(suggestions)].filter(Boolean).slice(0, 3);
 }
 
+
+function buildCompatibilitySuggestions(form) {
+  const title = String(form.title || "").toLowerCase();
+  const notes = [];
+
+  const vehicles = [
+    { keys: ["audi a4"], label: "Audi A4 2014-2016 2.0 TDI" },
+    { keys: ["audi a3"], label: "Audi A3 2013-2018 1.6 TDI" },
+    { keys: ["bmw 3 series", "bmw 320"], label: "BMW 3 Series 2012-2018 320d" },
+    { keys: ["golf", "vw golf", "volkswagen golf"], label: "Volkswagen Golf 2013-2020 2.0 TDI" },
+    { keys: ["mercedes c class", "c220", "c class"], label: "Mercedes C-Class 2014-2019 C220 CDI" },
+    { keys: ["ford focus"], label: "Ford Focus 2012-2018 1.5 TDCi" },
+  ];
+
+  const partHints = [
+    {
+      keys: ["turbo", "turbocharger"],
+      templates: [
+        "Confirm exact engine code before sale.",
+        "Add make/model/year compatibility rows after saving changes.",
+      ],
+    },
+    {
+      keys: ["brake", "pads", "rotor", "disc"],
+      templates: [
+        "Specify front / rear axle in compatibility details.",
+        "Brake fitment should match make/model/year precisely.",
+      ],
+    },
+    {
+      keys: ["filter", "oil filter", "air filter", "fuel filter"],
+      templates: [
+        "Include engine variant in fitment rows.",
+        "Filter compatibility converts better when SKU and engine are both clear.",
+      ],
+    },
+  ];
+
+  for (const vehicle of vehicles) {
+    if (vehicle.keys.some((key) => title.includes(key))) {
+      notes.push(vehicle.label);
+    }
+  }
+
+  for (const hint of partHints) {
+    if (hint.keys.some((key) => title.includes(key))) {
+      notes.push(...hint.templates);
+    }
+  }
+
+  return [...new Set(notes)].slice(0, 4);
+}
+
 function buildFitmentHints(form) {
   const hints = [];
   const title = String(form.title || "").toLowerCase();
@@ -235,6 +288,11 @@ export default function PartEditPage() {
     [form]
   );
 
+  const compatibilitySuggestions = useMemo(
+    () => buildCompatibilitySuggestions(form),
+    [form]
+  );
+
   function setField(key) {
     return (e) => {
       const value =
@@ -278,6 +336,17 @@ export default function PartEditPage() {
       ...prev,
       title: value,
     }));
+  }
+
+  function applyCompatibilitySuggestion(value) {
+    setForm((prev) => {
+      const current = String(prev.fitment_notes || "").trim();
+      const nextValue = current ? `${current}\n${value}` : value;
+      return {
+        ...prev,
+        fitment_notes: nextValue,
+      };
+    });
   }
 
   async function handleSubmit(e) {
@@ -734,6 +803,37 @@ export default function PartEditPage() {
             <p className="mt-4 text-xs text-gray-500">
               Listings with clearer compatibility context usually rank better and reduce buyer hesitation.
             </p>
+          </div>
+
+          <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-slate-950">Compatibility suggestions</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Quick notes you can insert into fitment notes before refining structured compatibility rows.
+            </p>
+
+            {compatibilitySuggestions.length === 0 ? (
+              <p className="mt-4 text-sm text-gray-600">
+                Refine the title with vehicle or part context to unlock compatibility suggestions.
+              </p>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {compatibilitySuggestions.map((item, index) => (
+                  <div
+                    key={`${item}-${index}`}
+                    className="flex flex-col gap-3 rounded-2xl bg-white/80 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <p className="text-sm font-semibold text-gray-900">{item}</p>
+                    <button
+                      type="button"
+                      onClick={() => applyCompatibilitySuggestion(item)}
+                      className="inline-flex h-10 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-100 px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-200"
+                    >
+                      Add to notes
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
