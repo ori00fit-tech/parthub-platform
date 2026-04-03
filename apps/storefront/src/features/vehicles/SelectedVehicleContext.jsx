@@ -13,8 +13,46 @@ function safeRead() {
   }
 }
 
+function normalizeVehicle(vehicle) {
+  if (!vehicle) return null;
+
+  const makeName = vehicle.makeName || vehicle.make_name || vehicle.make || "";
+  const modelName = vehicle.modelName || vehicle.model_name || vehicle.model || "";
+  const engineName = vehicle.engineName || vehicle.engine_name || vehicle.engine || "";
+  const year = vehicle.year || null;
+
+  const label =
+    vehicle.label ||
+    [year, makeName, modelName, engineName].filter(Boolean).join(" ");
+
+  return {
+    ...vehicle,
+
+    // canonical
+    year,
+    label,
+
+    // snake_case
+    make_name: makeName,
+    model_name: modelName,
+    engine_name: engineName,
+
+    // camelCase
+    makeName,
+    modelName,
+    engineName,
+
+    // short aliases
+    make: vehicle.make || makeName,
+    model: vehicle.model || modelName,
+    engine: vehicle.engine || engineName,
+  };
+}
+
 export function SelectedVehicleProvider({ children }) {
-  const [selectedVehicle, setSelectedVehicleState] = useState(() => safeRead());
+  const [selectedVehicle, setSelectedVehicleState] = useState(() =>
+    normalizeVehicle(safeRead())
+  );
 
   useEffect(() => {
     try {
@@ -35,21 +73,7 @@ export function SelectedVehicleProvider({ children }) {
         return;
       }
 
-      const label =
-        vehicle.label ||
-        [
-          vehicle.year,
-          vehicle.make_name || vehicle.make,
-          vehicle.model_name || vehicle.model,
-          vehicle.engine_name || vehicle.engine,
-        ]
-          .filter(Boolean)
-          .join(" ");
-
-      setSelectedVehicleState({
-        ...vehicle,
-        label,
-      });
+      setSelectedVehicleState(normalizeVehicle(vehicle));
     }
 
     function clearVehicle() {
@@ -58,6 +82,7 @@ export function SelectedVehicleProvider({ children }) {
 
     return {
       selectedVehicle,
+      vehicle: selectedVehicle,
       setSelectedVehicle,
       clearVehicle,
       hasVehicle: Boolean(selectedVehicle),
