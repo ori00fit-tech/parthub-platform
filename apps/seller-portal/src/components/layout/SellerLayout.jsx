@@ -27,6 +27,7 @@ export default function SellerLayout({ children }) {
               <NavLink to="/parts" className={navClass}>Inventory</NavLink>
               <NavLink to="/orders" className={navClass}>Orders</NavLink>
               <NavLink to="/reviews" className={navClass}>Reviews</NavLink>
+              <NavLink to="/insights" className={navClass}>Insights</NavLink>
               <NavLink to="/store-settings" className={navClass}>Store</NavLink>
             </nav>
           </div>
@@ -61,6 +62,7 @@ export default function SellerLayout({ children }) {
             <NavLink to="/parts" className={navClass}>Parts</NavLink>
             <NavLink to="/orders" className={navClass}>Orders</NavLink>
             <NavLink to="/reviews" className={navClass}>Reviews</NavLink>
+            <NavLink to="/insights" className={navClass}>Insights</NavLink>
             <NavLink to="/store-settings" className={navClass}>Store</NavLink>
           </div>
         </div>
