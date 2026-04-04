@@ -5,6 +5,7 @@ import { formatPriceGBP } from "../lib/formatters";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import GaragePanel from "../features/vehicles/GaragePanel";
 import VehicleContextBar from "../features/vehicles/VehicleContextBar";
+import SavedSearchesPanel, { saveSearchItem } from "../features/search/SavedSearchesPanel";
 
 function normalizeList(payload, fallbackKey) {
   const list =
@@ -413,6 +414,36 @@ export default function PartsPage() {
     }));
   }
 
+  function handleSaveSearch() {
+    const query = buildApiQuery(filters, selectedVehicle);
+
+    saveSearchItem({
+      query,
+      label: filters.q ? `Search: ${filters.q}` : "Filtered marketplace search",
+      vehicleLabel: vehicleLabel || "",
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  function handleLoadSavedSearch(item) {
+    try {
+      const params = new URLSearchParams(item.query || "");
+
+      setFilters({
+        q: params.get("q") || "",
+        category: params.get("category") || "",
+        brand: params.get("brand") || "",
+        condition: params.get("condition") || "",
+        min_price: params.get("min_price") || "",
+        max_price: params.get("max_price") || "",
+        sort: params.get("sort") || "relevance",
+        page: Number(params.get("page") || 1),
+      });
+    } catch {
+      // ignore bad saved search
+    }
+  }
+
   const resultsLabel = loading
     ? "Loading parts..."
     : `${meta.total} result${meta.total === 1 ? "" : "s"} found`;
@@ -596,6 +627,14 @@ export default function PartsPage() {
 
             <button
               type="button"
+              onClick={handleSaveSearch}
+              className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
+            >
+              Save search
+            </button>
+
+            <button
+              type="button"
               onClick={clearAllFilters}
               className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
             >
@@ -625,6 +664,7 @@ export default function PartsPage() {
           </div>
 
           <GaragePanel />
+          <SavedSearchesPanel onLoadSearch={handleLoadSavedSearch} />
         </aside>
 
         <div className="space-y-5">
@@ -640,6 +680,13 @@ export default function PartsPage() {
               </div>
 
               <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveSearch}
+                  className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                >
+                  Save this search
+                </button>
                 {filters.q ? (
                   <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
                     Search: {filters.q}
