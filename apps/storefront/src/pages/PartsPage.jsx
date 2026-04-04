@@ -234,6 +234,18 @@ export default function PartsPage() {
   const [shortlist, setShortlist] = useState([]);
 
   useEffect(() => {
+    try {
+      const raw = localStorage.getItem("parthub_compare_items");
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) {
+        setShortlist(parsed.slice(-4));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
     let active = true;
 
     async function loadMeta() {
@@ -335,19 +347,38 @@ export default function PartsPage() {
   function toggleShortlist(part) {
     setShortlist((prev) => {
       const exists = prev.some((item) => item.id === part.id);
+      let next;
+
       if (exists) {
-        return prev.filter((item) => item.id !== part.id);
+        next = prev.filter((item) => item.id !== part.id);
+      } else {
+        const nextItem = {
+          id: part.id,
+          slug: part.slug,
+          title: part.title,
+          price: part.price,
+          image_url: part.image_url || null,
+          quantity: part.quantity,
+          condition: part.condition,
+          compatibility_count: part.compatibility_count,
+          exact_vehicle_match: part.exact_vehicle_match,
+          partial_vehicle_match: part.partial_vehicle_match,
+          ranking_score: part.ranking_score,
+          brand_name: part.brand_name,
+          category_name: part.category_name,
+          seller_name: part.seller_name,
+        };
+
+        next = [...prev, nextItem].slice(-4);
       }
 
-      const nextItem = {
-        id: part.id,
-        slug: part.slug,
-        title: part.title,
-        price: part.price,
-        image_url: part.image_url || null,
-      };
+      try {
+        localStorage.setItem("parthub_compare_items", JSON.stringify(next));
+      } catch {
+        // ignore
+      }
 
-      return [...prev, nextItem].slice(-4);
+      return next;
     });
   }
 
@@ -980,6 +1011,13 @@ export default function PartsPage() {
             </div>
 
             <div className="flex flex-wrap gap-2">
+              <Link
+                to="/compare"
+                className="inline-flex h-10 items-center justify-center rounded-2xl bg-blue-600 px-4 text-xs font-semibold text-white transition hover:bg-blue-700"
+              >
+                Compare
+              </Link>
+
               {shortlist.slice(-2).map((item) => (
                 <Link
                   key={item.id}
