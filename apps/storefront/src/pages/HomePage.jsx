@@ -1,275 +1,235 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { apiGet } from "../lib/api";
-import { formatPriceGBP } from "../lib/formatters";
+import { Link } from "react-router-dom";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 
+function getVehicleLabel(vehicle) {
+  if (!vehicle) return "";
+  return (
+    vehicle.label ||
+    [
+      vehicle.year,
+      vehicle.make_name || vehicle.makeName || vehicle.make,
+      vehicle.model_name || vehicle.modelName || vehicle.model,
+      vehicle.engine_name || vehicle.engineName || vehicle.engine,
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
+}
+
 export default function HomePage() {
-  const navigate = useNavigate();
-  const { selectedVehicle } = useSelectedVehicle();
-
-  const [parts, setParts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-
-    Promise.all([
-      apiGet("/api/v1/catalog/parts"),
-      apiGet("/api/v1/catalog/categories"),
-    ])
-      .then(([partsRes, categoriesRes]) => {
-        if (!active) return;
-        setParts(partsRes?.data || []);
-        setCategories(categoriesRes?.data || []);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const featuredParts = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-
-    const filtered = normalized
-      ? parts.filter((part) =>
-          [
-            part.title,
-            part.description,
-            part.brand_name,
-            part.category_name,
-            part.sku,
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase()
-            .includes(normalized)
-        )
-      : parts;
-
-    return filtered.slice(0, 6);
-  }, [parts, query]);
-
-  function handleSearchSubmit(e) {
-    e.preventDefault();
-    const normalized = query.trim();
-    navigate(normalized ? `/parts?search=${encodeURIComponent(normalized)}` : "/parts");
-  }
-
-  const vehicleLabel = selectedVehicle?.label || "";
-  const heroTitle = vehicleLabel
-    ? `Find parts for ${vehicleLabel}`
-    : "Find the right auto part for your vehicle.";
+  const vehicleCtx = useSelectedVehicle();
+  const selectedVehicle = vehicleCtx?.selectedVehicle || null;
+  const vehicleLabel = getVehicleLabel(selectedVehicle);
 
   return (
-    <div className="space-y-8">
-      <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 text-white shadow-xl">
-        <div className="space-y-6 px-5 py-8 sm:px-8 sm:py-10">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-blue-100">
-              UK-focused marketplace • Cloudflare powered
+    <section className="space-y-8 pb-16">
+      <div className="overflow-hidden rounded-[32px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 px-6 py-8 text-white shadow-xl sm:px-8 sm:py-10 lg:px-10 lg:py-12">
+        <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+          <div className="max-w-3xl">
+            <div className="mb-4 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
+              Vehicle-aware parts marketplace
+            </div>
+
+            <h1 className="text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
+              Find the right auto part with more confidence
+            </h1>
+
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-blue-100 sm:text-base">
+              Search by keyword, fitment, make, model, and year. Compare listings, verify compatibility,
+              and buy from sellers with stronger stock and fitment signals.
+            </p>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                to="/parts"
+                className="inline-flex h-12 items-center justify-center rounded-2xl bg-white px-6 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
+              >
+                Browse parts
+              </Link>
+
+              <Link
+                to="/compare"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-6 text-sm font-semibold text-white transition hover:bg-white/15"
+              >
+                Compare shortlisted parts
+              </Link>
+
+              <a
+                href="https://seller.parthub.local"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-6 text-sm font-semibold text-white transition hover:bg-white/15"
+              >
+                Sell parts
+              </a>
             </div>
 
             {selectedVehicle ? (
-              <div className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white">
-                Vehicle: {selectedVehicle.label}
+              <div className="mt-6 inline-flex flex-wrap items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white">
+                <span className="font-semibold">Selected vehicle:</span>
+                <span>{vehicleLabel}</span>
+                <Link
+                  to="/parts"
+                  className="rounded-xl bg-white/15 px-3 py-1 font-semibold text-white transition hover:bg-white/20"
+                >
+                  Search for this vehicle
+                </Link>
               </div>
-            ) : null}
+            ) : (
+              <div className="mt-6 inline-flex rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-blue-100">
+                No vehicle selected yet. Search still works, but exact fitment gets stronger after selecting one.
+              </div>
+            )}
           </div>
 
-          <div className="max-w-2xl space-y-3">
-            <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
-              {heroTitle}
-            </h1>
-            <p className="max-w-xl text-sm text-blue-100 sm:text-base">
-              Search fast, compare prices in GBP, and buy from trusted UK sellers.
-            </p>
-          </div>
-
-          <form onSubmit={handleSearchSubmit} className="rounded-2xl bg-white p-3 shadow-lg">
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search brake pads, oil filter, Bosch, FLT-2002..."
-                className="h-12 flex-1 rounded-xl border border-gray-200 px-4 text-sm text-gray-900 outline-none ring-0 placeholder:text-gray-400 focus:border-blue-500"
-              />
-              <button
-                type="submit"
-                className="inline-flex h-12 items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
-              >
-                Search parts
-              </button>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-100">
+                Why PartHub
+              </p>
+              <div className="mt-4 space-y-3 text-sm text-white/95">
+                <p>• Vehicle-aware ranking</p>
+                <p>• Compatibility-first discovery</p>
+                <p>• Seller trust and stock signals</p>
+                <p>• Compare parts side by side</p>
+              </div>
             </div>
-          </form>
 
-          <div className="flex flex-wrap gap-3">
-            <Link
-              to="/vehicle-selector"
-              className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
-            >
-              {selectedVehicle ? "Change selected vehicle" : "Select your vehicle"}
-            </Link>
-
-            <Link
-              to="/parts"
-              className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
-            >
-              Browse all parts
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-3">
-              ✔ UK sellers
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-3">
-              ✔ Fast delivery
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-3">
-              ✔ Verified parts
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-3">
-              ✔ Secure checkout
+            <div className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-100">
+                Buyer confidence
+              </p>
+              <div className="mt-4 space-y-3 text-sm text-white/95">
+                <p>• Exact fit badges when available</p>
+                <p>• Structured compatibility rows</p>
+                <p>• Shortlist and compare flow</p>
+                <p>• Guest checkout supported</p>
+              </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        <Link
-          to="/vehicle-selector"
-          className="rounded-2xl bg-slate-950 px-5 py-4 text-white shadow-sm transition hover:bg-black"
-        >
-          <p className="text-sm text-white/70">Vehicle-first</p>
-          <p className="mt-1 text-lg font-semibold">
-            {selectedVehicle ? "Update vehicle context" : "Choose your vehicle"}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            Step 1
           </p>
-        </Link>
-
-        <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
-          <p className="text-sm text-gray-500">Live inventory</p>
-          <p className="mt-1 text-lg font-semibold">{parts.length}+ visible parts</p>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
-          <p className="text-sm text-gray-500">Coverage</p>
-          <p className="mt-1 text-lg font-semibold">{categories.length}+ categories</p>
-        </div>
-      </section>
-
-      <section className="space-y-4">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold">Popular categories</h2>
-            <p className="text-sm text-gray-500">Explore fast-moving product groups.</p>
-          </div>
-          <Link to="/parts" className="text-sm font-medium text-blue-600 hover:text-blue-700">
-            View all parts →
+          <h2 className="mt-2 text-2xl font-bold text-gray-900">Search with vehicle context</h2>
+          <p className="mt-3 text-sm leading-6 text-gray-600">
+            Add make, model, and year to surface stronger fitment matches and reduce search noise.
+          </p>
+          <Link
+            to="/parts"
+            className="mt-5 inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
+          >
+            Start searching
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {categories.slice(0, 8).map((category) => (
-            <Link
-              key={category.id}
-              to={`/parts?category=${category.slug}`}
-              className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
-            >
-              <p className="text-sm font-semibold text-gray-900">{category.name}</p>
-              <p className="mt-1 text-xs text-gray-500">Browse category</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-2xl font-bold">
-            {selectedVehicle ? "Suggested parts for your selected vehicle" : "Available parts"}
-          </h2>
-          <p className="text-sm text-gray-500">Fresh results from your live D1 inventory.</p>
+        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            Step 2
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-gray-900">Compare before buying</h2>
+          <p className="mt-3 text-sm leading-6 text-gray-600">
+            Shortlist parts and compare price, fitment depth, stock, and seller trust before choosing.
+          </p>
+          <Link
+            to="/compare"
+            className="mt-5 inline-flex h-11 items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+          >
+            Open compare
+          </Link>
         </div>
 
-        {loading ? (
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            Loading parts...
-          </div>
-        ) : null}
+        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            Step 3
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-gray-900">Checkout with more clarity</h2>
+          <p className="mt-3 text-sm leading-6 text-gray-600">
+            Keep SKU, vehicle context, and seller notes aligned for stronger purchase confidence.
+          </p>
+          <Link
+            to="/cart"
+            className="mt-5 inline-flex h-11 items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+          >
+            View cart
+          </Link>
+        </div>
+      </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {featuredParts.map((part) => (
-            <article
-              key={part.id}
-              className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{part.title}</h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {part.brand_name} • {part.category_name}
-                  </p>
-                </div>
-                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-                  {part.condition}
-                </span>
-              </div>
-
-              <p className="mb-4 text-sm text-gray-600">
-                {part.description || "No description available."}
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-gray-900">What makes the marketplace stronger</h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl bg-gray-50 p-4">
+              <p className="text-sm font-semibold text-gray-900">Vehicle-aware search</p>
+              <p className="mt-2 text-sm text-gray-600">
+                Results rank better when fitment data matches your selected vehicle.
               </p>
+            </div>
 
-              <div className="mb-4 space-y-1 text-sm text-gray-500">
-                <p>Seller: {part.seller_name}</p>
-                <p>Location: {part.seller_location}</p>
-                <p>Stock: {part.quantity}</p>
-              </div>
+            <div className="rounded-2xl bg-gray-50 p-4">
+              <p className="text-sm font-semibold text-gray-900">Compatibility-first inventory</p>
+              <p className="mt-2 text-sm text-gray-600">
+                Sellers with stronger fitment data help reduce buyer hesitation.
+              </p>
+            </div>
 
-              <div className="flex items-end justify-between gap-4">
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {formatPriceGBP(part.price)}
-                  </p>
-                  {part.compare_price ? (
-                    <p className="text-sm text-gray-400 line-through">
-                      {formatPriceGBP(part.compare_price)}
-                    </p>
-                  ) : null}
-                </div>
+            <div className="rounded-2xl bg-gray-50 p-4">
+              <p className="text-sm font-semibold text-gray-900">Seller trust signals</p>
+              <p className="mt-2 text-sm text-gray-600">
+                Inventory depth, compatibility, and activity improve perceived reliability.
+              </p>
+            </div>
 
-                <Link
-                  to={`/parts/${part.slug}`}
-                  className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-                >
-                  View part
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
-          <div>
-            <h2 className="text-2xl font-bold">Can’t find your exact part?</h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Submit a request and let sellers respond with matching offers.
-            </p>
+            <div className="rounded-2xl bg-gray-50 p-4">
+              <p className="text-sm font-semibold text-gray-900">Decision support</p>
+              <p className="mt-2 text-sm text-gray-600">
+                Shortlist, compare, and confidence messaging make decisions easier.
+              </p>
+            </div>
           </div>
-
-          <button className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-black">
-            Request a part
-          </button>
         </div>
-      </section>
-    </div>
+
+        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-gray-900">Marketplace paths</h2>
+          <div className="mt-5 space-y-4">
+            <Link
+              to="/parts"
+              className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 transition hover:bg-white"
+            >
+              <div>
+                <p className="font-semibold text-gray-900">Browse all parts</p>
+                <p className="mt-1 text-sm text-gray-500">Start with the catalog and filters</p>
+              </div>
+              <span className="text-sm font-semibold text-blue-700">Open</span>
+            </Link>
+
+            <Link
+              to="/compare"
+              className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 transition hover:bg-white"
+            >
+              <div>
+                <p className="font-semibold text-gray-900">Compare saved parts</p>
+                <p className="mt-1 text-sm text-gray-500">Review shortlisted parts side by side</p>
+              </div>
+              <span className="text-sm font-semibold text-blue-700">Open</span>
+            </Link>
+
+            <Link
+              to="/parts?q=brake"
+              className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 transition hover:bg-white"
+            >
+              <div>
+                <p className="font-semibold text-gray-900">Popular starting search</p>
+                <p className="mt-1 text-sm text-gray-500">Explore a common buyer query path</p>
+              </div>
+              <span className="text-sm font-semibold text-blue-700">Try search</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
