@@ -231,6 +231,7 @@ export default function PartsPage() {
   const [loadingMeta, setLoadingMeta] = useState(true);
   const [error, setError] = useState("");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [shortlist, setShortlist] = useState([]);
 
   useEffect(() => {
     let active = true;
@@ -320,6 +321,35 @@ export default function PartsPage() {
     () => parts.filter((part) => Number(part?.partial_vehicle_match || 0) === 1).length,
     [parts]
   );
+
+  const topMatch = useMemo(() => {
+    if (!Array.isArray(parts) || parts.length === 0) return null;
+    return parts[0];
+  }, [parts]);
+
+  const shortlistIds = useMemo(
+    () => shortlist.map((item) => item.id),
+    [shortlist]
+  );
+
+  function toggleShortlist(part) {
+    setShortlist((prev) => {
+      const exists = prev.some((item) => item.id === part.id);
+      if (exists) {
+        return prev.filter((item) => item.id !== part.id);
+      }
+
+      const nextItem = {
+        id: part.id,
+        slug: part.slug,
+        title: part.title,
+        price: part.price,
+        image_url: part.image_url || null,
+      };
+
+      return [...prev, nextItem].slice(-4);
+    });
+  }
 
   function setField(key) {
     return (e) => {
@@ -630,6 +660,60 @@ export default function PartsPage() {
             </div>
           ) : null}
 
+          {!loading && !error && topMatch ? (
+            <div className="rounded-3xl border border-green-200 bg-gradient-to-br from-green-50 to-white p-5 shadow-sm">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0">
+                  <div className="mb-2 inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                    Top result
+                  </div>
+                  <h3 className="truncate text-xl font-bold text-gray-900">{topMatch.title}</h3>
+                  <p className="mt-1 text-sm text-gray-600">
+                    {topMatch.brand_name || "Brand unavailable"}
+                    {topMatch.category_name ? ` • ${topMatch.category_name}` : ""}
+                    {hasVehicle && Number(topMatch?.exact_vehicle_match || 0) === 1
+                      ? " • Exact fit for your vehicle"
+                      : ""}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {getRankingBadges(topMatch, hasVehicle).map((badge) => (
+                      <span
+                        key={badge.label}
+                        className={[
+                          "rounded-full px-3 py-1 text-[11px] font-semibold",
+                          badge.className,
+                        ].join(" ")}
+                      >
+                        {badge.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <div className="flex items-center rounded-2xl bg-white px-4 py-3 text-lg font-bold text-gray-900 shadow-sm">
+                    {formatPriceGBP(topMatch.price)}
+                  </div>
+
+                  <Link
+                    to={`/parts/${topMatch.slug}`}
+                    className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                  >
+                    View best match
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => toggleShortlist(topMatch)}
+                    className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                  >
+                    {shortlistIds.includes(topMatch.id) ? "Remove from shortlist" : "Add to shortlist"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {error ? (
             <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
               {error}
@@ -829,9 +913,23 @@ export default function PartsPage() {
                             </div>
                           ) : null}
 
-                          <span className="text-sm font-semibold text-blue-700">
-                            View fitment
-                          </span>
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-sm font-semibold text-blue-700">
+                              View fitment
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                toggleShortlist(part);
+                              }}
+                              className="inline-flex h-9 items-center justify-center rounded-2xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 transition hover:bg-gray-50"
+                            >
+                              {shortlistIds.includes(part.id) ? "Shortlisted" : "Shortlist"}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </Link>
@@ -868,6 +966,33 @@ export default function PartsPage() {
           )}
         </div>
       </div>
+
+      {shortlist.length > 0 ? (
+        <div className="fixed bottom-0 inset-x-0 z-40 border-t border-gray-200 bg-white/95 px-4 py-3 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur xl:hidden">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Shortlist
+              </p>
+              <p className="truncate text-sm font-semibold text-gray-900">
+                {shortlist.length} saved part{shortlist.length === 1 ? "" : "s"}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {shortlist.slice(-2).map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/parts/${item.slug}`}
+                  className="inline-flex h-10 items-center justify-center rounded-2xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 transition hover:bg-gray-50"
+                >
+                  View
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {mobileFiltersOpen ? (
         <div className="fixed inset-0 z-50 bg-slate-950/45 px-4 py-6 xl:hidden">
