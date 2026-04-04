@@ -3,6 +3,7 @@ import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext"
 
 function getVehicleLabel(vehicle) {
   if (!vehicle) return "";
+
   return (
     vehicle.label ||
     [
@@ -16,20 +17,20 @@ function getVehicleLabel(vehicle) {
   );
 }
 
-function FeatureCard({ title, description }) {
-  return (
-    <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-gray-600">{description}</p>
-    </div>
-  );
-}
+function EntryCard({ title, description, to, cta, tone = "default" }) {
+  const tones = {
+    default: "border-gray-200 bg-white",
+    blue: "border-blue-200 bg-blue-50",
+    green: "border-green-200 bg-green-50",
+  };
 
-function PathCard({ title, description, to, cta }) {
   return (
     <Link
       to={to}
-      className="block rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      className={[
+        "block rounded-3xl border p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
+        tones[tone] || tones.default,
+      ].join(" ")}
     >
       <h3 className="text-xl font-bold text-gray-900">{title}</h3>
       <p className="mt-2 text-sm leading-6 text-gray-600">{description}</p>
@@ -53,20 +54,27 @@ export default function HomePage() {
             </div>
 
             <h1 className="text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
-              Search smarter. Match better. Buy with more confidence.
+              Discover the marketplace from one place
             </h1>
 
             <p className="mt-4 max-w-2xl text-sm leading-7 text-blue-100 sm:text-base">
-              PartHub helps buyers search by keyword and vehicle, review fitment-ready listings,
-              compare shortlisted parts, and buy from sellers with stronger stock and trust signals.
+              Start with vehicle selection, browse parts, compare shortlisted items,
+              and move to cart or orders from a homepage built around the flows you already have.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                to="/parts"
+                to="/vehicle-selector"
                 className="inline-flex h-12 items-center justify-center rounded-2xl bg-white px-6 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
               >
-                Start searching
+                Select vehicle
+              </Link>
+
+              <Link
+                to="/parts"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-6 text-sm font-semibold text-white transition hover:bg-white/15"
+              >
+                Browse parts
               </Link>
 
               <Link
@@ -85,12 +93,12 @@ export default function HomePage() {
                   to="/parts"
                   className="rounded-xl bg-white/15 px-3 py-1 font-semibold text-white transition hover:bg-white/20"
                 >
-                  Search this vehicle
+                  Discover matching parts
                 </Link>
               </div>
             ) : (
               <div className="mt-6 inline-flex rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-blue-100">
-                No vehicle selected yet. Search still works, but fitment ranking becomes stronger after choosing one.
+                Start by choosing your vehicle to improve fitment discovery and ranking quality.
               </div>
             )}
           </div>
@@ -98,13 +106,15 @@ export default function HomePage() {
           <div className="grid gap-4">
             <div className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur">
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-100">
-                What buyers get
+                Pages already available
               </p>
               <div className="mt-4 space-y-3 text-sm text-white/95">
-                <p>• Vehicle-aware ranking</p>
-                <p>• Fitment-first discovery</p>
-                <p>• Compare flow before buying</p>
-                <p>• Seller trust and stock visibility</p>
+                <p>• Vehicle selector</p>
+                <p>• Parts catalog</p>
+                <p>• Compare page</p>
+                <p>• Cart and checkout</p>
+                <p>• Orders and tracking</p>
+                <p>• Seller profile pages</p>
               </div>
             </div>
           </div>
@@ -112,41 +122,105 @@ export default function HomePage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <FeatureCard
-          title="Search with fitment context"
-          description="Use make, model, and year to reduce search noise and surface stronger matches."
+        <EntryCard
+          title="Find parts by vehicle"
+          description="Choose make, model, and year first, then move مباشرة to more relevant discovery."
+          to="/vehicle-selector"
+          cta="Open vehicle selector"
+          tone="blue"
         />
-        <FeatureCard
-          title="Compare before checkout"
-          description="Shortlist parts and compare stock, compatibility depth, and pricing side by side."
+
+        <EntryCard
+          title="Browse the catalog"
+          description="Open the marketplace, use filters, inspect compatibility, and shortlist the best listings."
+          to="/parts"
+          cta="Open parts catalog"
         />
-        <FeatureCard
-          title="Trust clearer listings"
-          description="Seller credibility, compatibility rows, and stock signals help buyers decide faster."
+
+        <EntryCard
+          title="Compare saved parts"
+          description="Review shortlisted parts side by side before opening details or continuing to checkout."
+          to="/compare"
+          cta="Open compare"
+          tone="green"
         />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <PathCard
-          title="Browse all parts"
-          description="Start with the full catalog and refine results with filters."
-          to="/parts"
-          cta="Open catalog"
-        />
+      <div className="grid gap-6 xl:grid-cols-2">
+        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-gray-900">Discover storefront pages</h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <EntryCard
+              title="Vehicle selector"
+              description="Select or change your vehicle context."
+              to="/vehicle-selector"
+              cta="Go there"
+            />
 
-        <PathCard
-          title="Open compare"
-          description="Review shortlisted parts side by side before choosing."
-          to="/compare"
-          cta="Compare now"
-        />
+            <EntryCard
+              title="Parts"
+              description="Browse, search, filter, and open part details."
+              to="/parts"
+              cta="Go there"
+            />
 
-        <PathCard
-          title="Try a common search"
-          description="Jump into a typical buyer path and explore active inventory."
-          to="/parts?q=brake"
-          cta="Search brakes"
-        />
+            <EntryCard
+              title="Cart"
+              description="Review selected parts before checkout."
+              to="/cart"
+              cta="Open cart"
+            />
+
+            <EntryCard
+              title="Orders"
+              description="Review order history and tracking pages."
+              to="/orders"
+              cta="Open orders"
+            />
+
+            <EntryCard
+              title="Compare"
+              description="Open shortlisted parts side by side."
+              to="/compare"
+              cta="Open compare"
+            />
+
+            <EntryCard
+              title="Account"
+              description="Access sign-in and buyer account pages."
+              to="/account"
+              cta="Open account"
+            />
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-gray-900">Suggested journeys</h2>
+          <div className="mt-5 space-y-4">
+            <EntryCard
+              title="Best flow: vehicle → parts"
+              description="Choose a vehicle first, then browse stronger matches in the catalog."
+              to="/vehicle-selector"
+              cta="Start this path"
+              tone="blue"
+            />
+
+            <EntryCard
+              title="Popular query path"
+              description="Jump into a common search journey and inspect marketplace inventory."
+              to="/parts?q=brake"
+              cta="Try brake search"
+            />
+
+            <EntryCard
+              title="Decision path"
+              description="Use compare after shortlisting parts to reduce hesitation before buying."
+              to="/compare"
+              cta="Review shortlist"
+              tone="green"
+            />
+          </div>
+        </div>
       </div>
     </section>
   );
