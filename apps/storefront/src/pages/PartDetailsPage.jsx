@@ -413,7 +413,17 @@ export default function PartDetailsPage() {
                   {inStock ? `In stock (${stock})` : "Out of stock"}
                 </p>
                 <p className="text-gray-500">
-                  Seller: {part.seller_name || "Unknown seller"}
+                  Seller:{" "}
+                  {part.seller_slug ? (
+                    <Link
+                      to={`/sellers/${part.seller_slug}`}
+                      className="font-semibold text-blue-700 hover:underline"
+                    >
+                      {part.seller_name || "Unknown seller"}
+                    </Link>
+                  ) : (
+                    part.seller_name || "Unknown seller"
+                  )}
                 </p>
               </div>
             </div>
@@ -514,7 +524,16 @@ export default function PartDetailsPage() {
             <div className="mt-4 space-y-3 text-sm text-gray-600">
               <p>
                 <span className="font-semibold text-gray-900">Seller:</span>{" "}
-                {part.seller_name || "Unknown"}
+                {part.seller_slug ? (
+                  <Link
+                    to={`/sellers/${part.seller_slug}`}
+                    className="font-semibold text-blue-700 hover:underline"
+                  >
+                    {part.seller_name || "Unknown"}
+                  </Link>
+                ) : (
+                  part.seller_name || "Unknown"
+                )}
               </p>
               <p>
                 <span className="font-semibold text-gray-900">Location:</span>{" "}

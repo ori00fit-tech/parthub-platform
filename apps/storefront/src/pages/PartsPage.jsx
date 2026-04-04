@@ -972,7 +972,18 @@ export default function PartsPage() {
 
                         <div className="border-t border-gray-100 pt-3 space-y-2">
                           <p className="text-sm text-gray-500">
-                            Seller: {part.seller_name || "Unknown seller"}
+                            Seller:{" "}
+                            {part.seller_slug ? (
+                              <Link
+                                to={`/sellers/${part.seller_slug}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="font-semibold text-blue-700 hover:underline"
+                              >
+                                {part.seller_name || "Unknown seller"}
+                              </Link>
+                            ) : (
+                              part.seller_name || "Unknown seller"
+                            )}
                           </p>
 
                           {getSellerBadges(part).length > 0 ? (

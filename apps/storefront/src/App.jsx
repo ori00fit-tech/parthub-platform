@@ -10,6 +10,7 @@ import AuthPage from "./pages/AuthPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import CheckoutSuccessPage from "./pages/CheckoutSuccessPage";
 import ComparePage from "./pages/ComparePage";
+import SellerProfilePage from "./pages/SellerProfilePage";
 import OrdersPage from "./pages/OrdersPage";
 import AccountPage from "./pages/AccountPage";
 import SearchPage from "./pages/SearchPage";
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
         <Route path="/compare" element={<ComparePage />} />
+        <Route path="/sellers/:slug" element={<SellerProfilePage />} />
 
         <Route path="/account" element={<AccountPage />} />
         <Route path="/orders" element={<OrdersPage />} />
