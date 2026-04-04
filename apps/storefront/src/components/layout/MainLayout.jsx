@@ -1,4 +1,4 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import { useCart } from "../../features/cart/CartContext";
 import { useAuth } from "../../features/auth/AuthContext";
 import { useSelectedVehicle } from "../../features/vehicles/SelectedVehicleContext";
@@ -6,21 +6,30 @@ import { useSelectedVehicle } from "../../features/vehicles/SelectedVehicleConte
 function navClass({ isActive }) {
   return [
     "text-sm font-medium transition",
-    isActive ? "text-blue-600" : "text-gray-600 hover:text-gray-900",
+    isActive ? "text-blue-700" : "text-gray-700 hover:text-blue-600",
   ].join(" ");
 }
 
-function mobileNavClass({ isActive }) {
-  return [
-    "flex flex-col items-center justify-center rounded-2xl px-3 py-2 text-xs font-semibold transition",
-    isActive ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-  ].join(" ");
+function getVehicleLabel(vehicle) {
+  if (!vehicle) return "";
+  return (
+    vehicle.label ||
+    [
+      vehicle.year,
+      vehicle.make_name || vehicle.makeName || vehicle.make,
+      vehicle.model_name || vehicle.modelName || vehicle.model,
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
 }
 
-export default function MainLayout({ children }) {
+export default function MainLayout() {
   const { totalItems } = useCart();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { selectedVehicle, clearVehicle } = useSelectedVehicle();
+
+  const vehicleLabel = getVehicleLabel(selectedVehicle);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -32,219 +41,46 @@ export default function MainLayout({ children }) {
             </Link>
 
             <nav className="hidden items-center gap-4 md:flex">
-              <NavLink to="/" className={navClass}>
-                Home
-              </NavLink>
-              <NavLink to="/parts" className={navClass}>
-                Parts
-              </NavLink>
-              <NavLink to="/categories" className={navClass}>
-                Categories
-              </NavLink>
-              <NavLink to="/vehicle-selector" className={navClass}>
-                My Vehicle
-              </NavLink>
-              {isAuthenticated ? (
-                <NavLink to="/orders" className={navClass}>
-                  Orders
-                </NavLink>
-              ) : null}
+              <NavLink to="/" className={navClass}>Home</NavLink>
+              <NavLink to="/parts" className={navClass}>Parts</NavLink>
+              <NavLink to="/vehicle-selector" className={navClass}>Vehicle</NavLink>
+              <NavLink to="/compare" className={navClass}>Compare</NavLink>
             </nav>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              to="/search"
-              className="hidden rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 sm:inline-flex"
-            >
-              Search
-            </Link>
-
-            <Link
-              to="/cart"
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
-            >
-              <span>Cart</span>
-              <span className="rounded-full bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
-                {totalItems}
-              </span>
-            </Link>
-
-            {isAuthenticated ? (
-              <div className="hidden items-center gap-2 sm:flex">
-                <Link
-                  to="/account"
-                  className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
-                >
-                  Account
+          <div className="flex items-center gap-3">
+            {selectedVehicle ? (
+              <div className="hidden items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 lg:flex">
+                <Link to="/parts" className="text-xs font-semibold text-gray-800">
+                  {vehicleLabel}
                 </Link>
                 <button
-                  onClick={logout}
-                  className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-black"
+                  type="button"
+                  onClick={clearVehicle}
+                  className="text-xs font-semibold text-red-600"
                 >
-                  Sign out
+                  Clear
                 </button>
               </div>
-            ) : (
-              <Link
-                to="/auth"
-                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-              >
-                Sign in
-              </Link>
-            )}
-          </div>
-        </div>
+            ) : null}
 
-        <div className="border-t border-gray-100 bg-gray-50">
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-            <div className="min-w-0 text-sm text-gray-600">
-              {selectedVehicle ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium text-gray-900">Selected vehicle:</span>
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-100">
-                    {selectedVehicle.label}
-                  </span>
-                  <Link
-                    to="/vehicle-selector"
-                    className="text-sm font-medium text-blue-600 hover:text-blue-700"
-                  >
-                    Change
-                  </Link>
-                  <button
-                    onClick={clearVehicle}
-                    className="text-sm font-medium text-gray-500 hover:text-gray-700"
-                  >
-                    Clear
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span>No vehicle selected.</span>
-                  <Link
-                    to="/vehicle-selector"
-                    className="font-medium text-blue-600 hover:text-blue-700"
-                  >
-                    Select your vehicle
-                  </Link>
-                </div>
-              )}
-            </div>
+            <Link to="/cart" className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-50">
+              Cart ({totalItems})
+            </Link>
 
-            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-              {isAuthenticated ? (
-                <span className="rounded-full bg-white px-3 py-1 ring-1 ring-gray-200">
-                  Signed in{user?.email ? `: ${user.email}` : ""}
-                </span>
-              ) : (
-                <Link
-                  to="/auth"
-                  className="rounded-full bg-white px-3 py-1 font-medium text-gray-600 ring-1 ring-gray-200 hover:text-gray-900"
-                >
-                  Buyer sign-in available
-                </Link>
-              )}
-
-              <Link
-                to="/checkout"
-                className="rounded-full bg-white px-3 py-1 font-medium text-gray-600 ring-1 ring-gray-200 hover:text-gray-900"
-              >
-                Checkout
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-gray-100 bg-white md:hidden">
-          <div className="mx-auto grid max-w-7xl grid-cols-5 gap-2 px-4 py-3 sm:px-6">
-            <NavLink to="/" className={mobileNavClass}>
-              <span>Home</span>
-            </NavLink>
-
-            <NavLink to="/parts" className={mobileNavClass}>
-              <span>Parts</span>
-            </NavLink>
-
-            <NavLink to="/vehicle-selector" className={mobileNavClass}>
-              <span>Vehicle</span>
-            </NavLink>
-
-            <NavLink to="/cart" className={mobileNavClass}>
-              <span>Cart</span>
-              <span className="mt-1 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-bold text-white">
-                {totalItems}
-              </span>
-            </NavLink>
-
-            <NavLink
+            <Link
               to={isAuthenticated ? "/account" : "/auth"}
-              className={mobileNavClass}
+              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
-              <span>{isAuthenticated ? "Account" : "Sign in"}</span>
-            </NavLink>
+              {isAuthenticated ? "Account" : "Sign in"}
+            </Link>
           </div>
         </div>
       </header>
 
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        {children}
+        <Outlet />
       </main>
-
-      <footer className="border-t border-gray-200 bg-white">
-        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-4 lg:px-8">
-          <div>
-            <h3 className="text-lg font-bold text-slate-950">PartHub</h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Vehicle-first storefront foundation for browsing, fitment, cart, buyer auth, and checkout flow.
-            </p>
-          </div>
-
-          <div>
-            <h4 className="text-sm font-semibold text-gray-900">Browse</h4>
-            <div className="mt-3 space-y-2 text-sm">
-              <Link to="/parts" className="block text-gray-600 hover:text-gray-900">
-                All parts
-              </Link>
-              <Link to="/categories" className="block text-gray-600 hover:text-gray-900">
-                Categories
-              </Link>
-              <Link to="/search" className="block text-gray-600 hover:text-gray-900">
-                Search
-              </Link>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-sm font-semibold text-gray-900">Buyer flow</h4>
-            <div className="mt-3 space-y-2 text-sm">
-              <Link to="/cart" className="block text-gray-600 hover:text-gray-900">
-                Cart
-              </Link>
-              <Link to="/checkout" className="block text-gray-600 hover:text-gray-900">
-                Checkout
-              </Link>
-              <Link to="/vehicle-selector" className="block text-gray-600 hover:text-gray-900">
-                Vehicle selector
-              </Link>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-sm font-semibold text-gray-900">Account</h4>
-            <div className="mt-3 space-y-2 text-sm">
-              <Link to={isAuthenticated ? "/account" : "/auth"} className="block text-gray-600 hover:text-gray-900">
-                {isAuthenticated ? "Buyer account" : "Sign in"}
-              </Link>
-              <Link to="/orders" className="block text-gray-600 hover:text-gray-900">
-                Orders
-              </Link>
-              <Link to="/wishlist" className="block text-gray-600 hover:text-gray-900">
-                Wishlist
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
