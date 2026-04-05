@@ -86,7 +86,7 @@ export default function HomePage() {
             </div>
 
             {selectedVehicle ? (
-              <div className="mt-6 inline-flex flex-wrap items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white">
+              <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white">
                 <span className="font-semibold">Selected vehicle:</span>
                 <span>{vehicleLabel}</span>
                 <Link
@@ -94,6 +94,26 @@ export default function HomePage() {
                   className="rounded-xl bg-white/15 px-3 py-1 font-semibold text-white transition hover:bg-white/20"
                 >
                   Discover matching parts
+                </Link>
+                <Link
+                  to={`/parts?make=${encodeURIComponent(
+                    String(
+                      selectedVehicle?.make_name ||
+                      selectedVehicle?.makeName ||
+                      selectedVehicle?.make ||
+                      ""
+                    ).toLowerCase()
+                  )}&model=${encodeURIComponent(
+                    String(
+                      selectedVehicle?.model_name ||
+                      selectedVehicle?.modelName ||
+                      selectedVehicle?.model ||
+                      ""
+                    ).toLowerCase()
+                  )}&year=${encodeURIComponent(String(selectedVehicle?.year || ""))}`}
+                  className="rounded-xl bg-white px-3 py-1 font-semibold text-slate-950 transition hover:bg-blue-50"
+                >
+                  Continue with this vehicle
                 </Link>
               </div>
             ) : (
