@@ -44,6 +44,29 @@ export default function HomePage() {
   const selectedVehicle = vehicleCtx?.selectedVehicle || null;
   const vehicleLabel = getVehicleLabel(selectedVehicle);
 
+  const selectedMake = String(
+    selectedVehicle?.make_name ||
+      selectedVehicle?.makeName ||
+      selectedVehicle?.make ||
+      ""
+  ).toLowerCase();
+
+  const selectedModel = String(
+    selectedVehicle?.model_name ||
+      selectedVehicle?.modelName ||
+      selectedVehicle?.model ||
+      ""
+  ).toLowerCase();
+
+  const selectedYear = String(selectedVehicle?.year || "");
+
+  const continueVehicleHref =
+    selectedVehicle && selectedMake && selectedModel && selectedYear
+      ? `/parts?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(
+          selectedModel
+        )}&year=${encodeURIComponent(selectedYear)}`
+      : "/parts";
+
   return (
     <section className="space-y-8 pb-16">
       <div className="overflow-hidden rounded-[32px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 px-6 py-8 text-white shadow-xl sm:px-8 sm:py-10 lg:px-10 lg:py-12">
@@ -54,12 +77,12 @@ export default function HomePage() {
             </div>
 
             <h1 className="text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
-              Discover the marketplace from one place
+              Start from your Garage, then discover matching parts faster
             </h1>
 
             <p className="mt-4 max-w-2xl text-sm leading-7 text-blue-100 sm:text-base">
-              Start with vehicle selection, browse parts, compare shortlisted items,
-              and move to cart or orders from a homepage built around the flows you already have.
+              Keep your current vehicle in Garage, browse parts with stronger fitment context,
+              compare shortlisted items, and continue shopping with more confidence.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
@@ -67,7 +90,7 @@ export default function HomePage() {
                 to="/vehicle-selector"
                 className="inline-flex h-12 items-center justify-center rounded-2xl bg-white px-6 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
               >
-                Select vehicle
+                Open Garage
               </Link>
 
               <Link
@@ -87,38 +110,26 @@ export default function HomePage() {
 
             {selectedVehicle ? (
               <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white">
-                <span className="font-semibold">Selected vehicle:</span>
+                <span className="font-semibold">Garage vehicle:</span>
                 <span>{vehicleLabel}</span>
+
                 <Link
-                  to="/parts"
-                  className="rounded-xl bg-white/15 px-3 py-1 font-semibold text-white transition hover:bg-white/20"
-                >
-                  Discover matching parts
-                </Link>
-                <Link
-                  to={`/parts?make=${encodeURIComponent(
-                    String(
-                      selectedVehicle?.make_name ||
-                      selectedVehicle?.makeName ||
-                      selectedVehicle?.make ||
-                      ""
-                    ).toLowerCase()
-                  )}&model=${encodeURIComponent(
-                    String(
-                      selectedVehicle?.model_name ||
-                      selectedVehicle?.modelName ||
-                      selectedVehicle?.model ||
-                      ""
-                    ).toLowerCase()
-                  )}&year=${encodeURIComponent(String(selectedVehicle?.year || ""))}`}
+                  to={continueVehicleHref}
                   className="rounded-xl bg-white px-3 py-1 font-semibold text-slate-950 transition hover:bg-blue-50"
                 >
                   Continue with this vehicle
                 </Link>
+
+                <Link
+                  to="/vehicle-selector"
+                  className="rounded-xl bg-white/15 px-3 py-1 font-semibold text-white transition hover:bg-white/20"
+                >
+                  Change Garage vehicle
+                </Link>
               </div>
             ) : (
               <div className="mt-6 inline-flex rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-blue-100">
-                Start by choosing your vehicle to improve fitment discovery and ranking quality.
+                No vehicle saved in Garage yet. Add one first to improve fitment discovery.
               </div>
             )}
           </div>
@@ -126,15 +137,13 @@ export default function HomePage() {
           <div className="grid gap-4">
             <div className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur">
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-100">
-                Pages already available
+                Garage flow
               </p>
               <div className="mt-4 space-y-3 text-sm text-white/95">
-                <p>• Vehicle selector</p>
-                <p>• Parts catalog</p>
-                <p>• Compare page</p>
-                <p>• Cart and checkout</p>
-                <p>• Orders and tracking</p>
-                <p>• Seller profile pages</p>
+                <p>• Save your current vehicle</p>
+                <p>• Search with fitment context</p>
+                <p>• Compare shortlisted parts</p>
+                <p>• Continue shopping faster next time</p>
               </div>
             </div>
           </div>
@@ -143,23 +152,23 @@ export default function HomePage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <EntryCard
-          title="Find parts by vehicle"
-          description="Choose make, model, and year first, then move مباشرة to more relevant discovery."
+          title="Open Garage"
+          description="Save, review, or change your current vehicle before searching the marketplace."
           to="/vehicle-selector"
-          cta="Open vehicle selector"
+          cta="Go to Garage"
           tone="blue"
         />
 
         <EntryCard
           title="Browse the catalog"
-          description="Open the marketplace, use filters, inspect compatibility, and shortlist the best listings."
+          description="Search, filter, inspect fitment, and open part details from the marketplace."
           to="/parts"
           cta="Open parts catalog"
         />
 
         <EntryCard
           title="Compare saved parts"
-          description="Review shortlisted parts side by side before opening details or continuing to checkout."
+          description="Review shortlisted parts side by side before opening details or buying."
           to="/compare"
           cta="Open compare"
           tone="green"
@@ -168,20 +177,22 @@ export default function HomePage() {
 
       <div className="grid gap-6 xl:grid-cols-2">
         <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900">Discover storefront pages</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Use Garage as your starting point</h2>
+
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <EntryCard
-              title="Vehicle selector"
-              description="Select or change your vehicle context."
+              title="Garage"
+              description="Manage the vehicle you want to shop for right now."
               to="/vehicle-selector"
-              cta="Go there"
+              cta="Open Garage"
+              tone="blue"
             />
 
             <EntryCard
-              title="Parts"
-              description="Browse, search, filter, and open part details."
-              to="/parts"
-              cta="Go there"
+              title="Parts for your vehicle"
+              description="Open discovery with your current vehicle context applied."
+              to={continueVehicleHref}
+              cta={selectedVehicle ? "Continue with saved vehicle" : "Browse parts"}
             />
 
             <EntryCard
@@ -197,37 +208,24 @@ export default function HomePage() {
               to="/orders"
               cta="Open orders"
             />
-
-            <EntryCard
-              title="Compare"
-              description="Open shortlisted parts side by side."
-              to="/compare"
-              cta="Open compare"
-            />
-
-            <EntryCard
-              title="Account"
-              description="Access sign-in and buyer account pages."
-              to="/account"
-              cta="Open account"
-            />
           </div>
         </div>
 
         <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="text-2xl font-bold text-gray-900">Suggested journeys</h2>
+
           <div className="mt-5 space-y-4">
             <EntryCard
-              title="Best flow: vehicle → parts"
-              description="Choose a vehicle first, then browse stronger matches in the catalog."
+              title="Best path: Garage → parts"
+              description="Choose or confirm your vehicle first, then browse better-ranked matches."
               to="/vehicle-selector"
-              cta="Start this path"
+              cta="Start from Garage"
               tone="blue"
             />
 
             <EntryCard
-              title="Popular query path"
-              description="Jump into a common search journey and inspect marketplace inventory."
+              title="Popular search path"
+              description="Jump into a common buyer query and inspect active inventory."
               to="/parts?q=brake"
               cta="Try brake search"
             />
