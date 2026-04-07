@@ -1,9 +1,9 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 
 function getVehicleLabel(vehicle) {
-  if (!vehicle) return "";
-
+  if (!vehicle) return "No vehicle selected";
   return (
     vehicle.label ||
     [
@@ -17,472 +17,497 @@ function getVehicleLabel(vehicle) {
   );
 }
 
-function QuickCategoryCard({ icon, title, subtitle, to }) {
+function HeroStat({ value, label, icon }) {
+  return (
+    <div className="flex items-center gap-3 border-b border-gray-200 px-5 py-4 sm:border-b-0 sm:border-r last:border-r-0">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-lg">
+        {icon}
+      </div>
+      <div>
+        <div className="text-lg font-black tracking-tight text-slate-950">{value}</div>
+        <div className="text-xs text-gray-500">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+function CategoryCard({ icon, title, to }) {
   return (
     <Link
       to={to}
-      className="group rounded-3xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+      className="flex flex-col items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 py-5 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
     >
-      <div className="text-3xl">{icon}</div>
-      <h3 className="mt-3 text-base font-bold text-gray-900">{title}</h3>
-      <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
-      <p className="mt-4 text-sm font-semibold text-blue-700">Explore</p>
+      <div className="text-2xl">{icon}</div>
+      <div className="text-sm font-bold text-slate-900">{title}</div>
     </Link>
   );
 }
 
-function FeatureCard({ icon, title, description }) {
+function ProductCard({ brand, title, price, was, fitment, to, badge, icon }) {
   return (
-    <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-2xl">
+    <Link
+      to={to}
+      className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+    >
+      <div className="relative flex aspect-square items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        {badge ? (
+          <span className="absolute left-3 top-3 rounded-md bg-red-600 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+            {badge}
+          </span>
+        ) : null}
+        <div className="text-6xl">{icon}</div>
+      </div>
+      <div className="p-4">
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-blue-600">
+          {brand}
+        </p>
+        <h3 className="mt-2 line-clamp-2 text-sm font-semibold leading-6 text-slate-900">
+          {title}
+        </h3>
+        <div className="mt-3 inline-flex rounded-md border border-green-200 bg-green-50 px-2.5 py-1 text-[11px] font-semibold text-green-700">
+          {fitment}
+        </div>
+        <div className="mt-4 flex items-end justify-between gap-3">
+          <div>
+            <p className="text-xl font-black tracking-tight text-slate-950">{price}</p>
+            {was ? <p className="text-xs text-gray-400 line-through">{was}</p> : null}
+          </div>
+          <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white">
+            +
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function SellerCard({ initials, name, location, rating, sales, to, color }) {
+  return (
+    <Link
+      to={to}
+      className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+    >
+      <div
+        className="flex h-12 w-12 items-center justify-center rounded-xl text-sm font-black text-white"
+        style={{ background: color }}
+      >
+        {initials}
+      </div>
+      <div>
+        <div className="flex items-center gap-2">
+          <p className="font-bold text-slate-900">{name}</p>
+          <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+            Verified
+          </span>
+        </div>
+        <p className="mt-1 text-xs text-gray-500">{location}</p>
+        <p className="mt-1 text-xs font-semibold text-amber-600">
+          {rating} · {sales} sales
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+function WhyCard({ icon, title, description, bg }) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div
+        className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl"
+        style={{ background: bg }}
+      >
         {icon}
       </div>
-      <h3 className="mt-4 text-lg font-bold text-gray-900">{title}</h3>
+      <h3 className="mt-4 text-base font-bold text-slate-900">{title}</h3>
       <p className="mt-2 text-sm leading-6 text-gray-600">{description}</p>
     </div>
   );
 }
 
-function JourneyCard({ eyebrow, title, description, to, cta, tone = "default" }) {
-  const tones = {
-    default: "border-gray-200 bg-white",
-    blue: "border-blue-200 bg-blue-50",
-    green: "border-green-200 bg-green-50",
-    amber: "border-amber-200 bg-amber-50",
-  };
-
-  return (
-    <Link
-      to={to}
-      className={[
-        "block rounded-3xl border p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
-        tones[tone] || tones.default,
-      ].join(" ")}
-    >
-      {eyebrow ? (
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-          {eyebrow}
-        </p>
-      ) : null}
-      <h3 className="mt-2 text-xl font-bold text-gray-900">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-gray-600">{description}</p>
-      <p className="mt-5 text-sm font-semibold text-blue-700">{cta}</p>
-    </Link>
-  );
-}
-
-function SellerCard({ title, subtitle, to, badge }) {
-  return (
-    <Link
-      to={to}
-      className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-          <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
-        </div>
-        {badge ? (
-          <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-            {badge}
-          </span>
-        ) : null}
-      </div>
-      <p className="mt-4 text-sm font-semibold text-blue-700">Open seller page</p>
-    </Link>
-  );
-}
-
 export default function HomePage() {
+  const navigate = useNavigate();
   const vehicleCtx = useSelectedVehicle();
   const selectedVehicle = vehicleCtx?.selectedVehicle || null;
-  const vehicleLabel = getVehicleLabel(selectedVehicle);
 
-  const selectedMake = String(
-    selectedVehicle?.make_name ||
-      selectedVehicle?.makeName ||
-      selectedVehicle?.make ||
-      ""
-  ).toLowerCase();
+  const [activeTab, setActiveTab] = useState("vehicle");
+  const [partQuery, setPartQuery] = useState("");
+  const [oemQuery, setOemQuery] = useState("");
+  const [vinQuery, setVinQuery] = useState("");
 
-  const selectedModel = String(
-    selectedVehicle?.model_name ||
-      selectedVehicle?.modelName ||
-      selectedVehicle?.model ||
-      ""
-  ).toLowerCase();
+  const selectedVehicleLabel = useMemo(
+    () => getVehicleLabel(selectedVehicle),
+    [selectedVehicle]
+  );
 
-  const selectedYear = String(selectedVehicle?.year || "");
+  function submitVehicleSearch() {
+    if (!selectedVehicle) {
+      navigate("/vehicle-selector");
+      return;
+    }
 
-  const continueVehicleHref =
-    selectedVehicle && selectedMake && selectedModel && selectedYear
-      ? `/parts?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(
-          selectedModel
-        )}&year=${encodeURIComponent(selectedYear)}`
-      : "/parts";
+    const make = String(
+      selectedVehicle.make_name || selectedVehicle.makeName || selectedVehicle.make || ""
+    ).toLowerCase();
+    const model = String(
+      selectedVehicle.model_name || selectedVehicle.modelName || selectedVehicle.model || ""
+    ).toLowerCase();
+    const year = String(selectedVehicle.year || "");
+
+    navigate(
+      `/parts?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&year=${encodeURIComponent(year)}`
+    );
+  }
+
+  function submitPartSearch(e) {
+    e.preventDefault();
+    navigate(partQuery.trim() ? `/parts?q=${encodeURIComponent(partQuery.trim())}` : "/parts");
+  }
+
+  function submitOemSearch(e) {
+    e.preventDefault();
+    navigate(oemQuery.trim() ? `/parts?q=${encodeURIComponent(oemQuery.trim())}` : "/parts");
+  }
+
+  function submitVinSearch(e) {
+    e.preventDefault();
+    navigate(vinQuery.trim() ? `/parts?q=${encodeURIComponent(vinQuery.trim())}` : "/vehicle-selector");
+  }
+
+  const quickCategories = [
+    { icon: "⚙️", title: "Engine", to: "/parts?q=engine" },
+    { icon: "🛑", title: "Brakes", to: "/parts?q=brake" },
+    { icon: "🪫", title: "Electrical", to: "/parts?q=battery" },
+    { icon: "🧴", title: "Filters", to: "/parts?q=filter" },
+    { icon: "🚘", title: "Suspension", to: "/parts?q=suspension" },
+    { icon: "💡", title: "Lighting", to: "/parts?q=light" },
+    { icon: "🔥", title: "Exhaust", to: "/parts?q=exhaust" },
+    { icon: "⚡", title: "Flash Deals", to: "/parts?sort=price_asc" },
+  ];
 
   return (
-    <section className="space-y-8 pb-16">
-      <div className="rounded-3xl bg-slate-950 px-4 py-2 text-center text-xs font-medium text-slate-200 shadow-sm sm:px-6">
-        Vehicle-aware marketplace • Compare parts • Seller trust • Guest checkout
-      </div>
+    <section className="space-y-10">
+      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-b from-white to-[#f4f6fb] px-4 py-10 text-center sm:px-6">
+        <div className="mx-auto max-w-4xl">
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-blue-700">
+            ✓ 2.4M+ Parts · 1,200+ Verified Sellers
+          </div>
 
-      <div className="overflow-hidden rounded-[36px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 text-white shadow-2xl">
-        <div className="grid gap-8 px-6 py-8 sm:px-8 sm:py-10 lg:grid-cols-[1.15fr_0.85fr] lg:px-10 lg:py-12">
-          <div className="max-w-3xl">
-            <div className="mb-4 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/90">
-              PartHub Marketplace
+          <h1 className="mt-6 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+            Find the Right Part,
+            <br />
+            <span className="text-blue-600">Every Time</span>
+          </h1>
+
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-gray-500 sm:text-base">
+            Search by vehicle, part name, OEM number, or VIN. Use Garage context and trust signals
+            to reach the right listing faster.
+          </p>
+
+          <div className="mx-auto mt-8 max-w-4xl overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-xl">
+            <div className="grid grid-cols-2 border-b border-gray-200 bg-[#f4f6fb] sm:grid-cols-4">
+              {[
+                ["vehicle", "By Vehicle"],
+                ["part", "By Part Name"],
+                ["oem", "OEM / Part #"],
+                ["vin", "By VIN"],
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setActiveTab(key)}
+                  className={[
+                    "px-3 py-4 text-sm font-bold transition",
+                    activeTab === key
+                      ? "border-b-2 border-blue-600 bg-white text-blue-600"
+                      : "text-gray-500 hover:text-slate-900",
+                  ].join(" ")}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
-            <h1 className="text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
-              Find the right part faster.
-              <br />
-              Compare smarter.
-              <br />
-              Buy with confidence.
-            </h1>
-
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-blue-100 sm:text-base">
-              Search by vehicle, explore the catalog, compare shortlisted parts,
-              and buy from sellers with clearer stock, fitment, and trust signals.
-            </p>
-
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link
-                to="/vehicle-selector"
-                className="inline-flex h-12 items-center justify-center rounded-2xl bg-white px-6 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
-              >
-                Open Garage
-              </Link>
-
-              <Link
-                to="/parts"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-6 text-sm font-semibold text-white transition hover:bg-white/15"
-              >
-                Browse parts
-              </Link>
-
-              <Link
-                to="/compare"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-6 text-sm font-semibold text-white transition hover:bg-white/15"
-              >
-                Compare parts
-              </Link>
-            </div>
-
-            {selectedVehicle ? (
-              <div className="mt-7 rounded-3xl border border-white/15 bg-white/10 p-4 sm:p-5">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-blue-100">
-                      Garage vehicle
-                    </p>
-                    <p className="mt-1 text-lg font-bold text-white">{vehicleLabel}</p>
+            <div className="p-5 sm:p-6">
+              {activeTab === "vehicle" ? (
+                <div className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="rounded-xl border border-gray-200 bg-[#f4f6fb] px-4 py-3 text-left">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400">Year</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">
+                        {selectedVehicle?.year || "Select Year"}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-gray-200 bg-[#f4f6fb] px-4 py-3 text-left">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400">Make</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">
+                        {selectedVehicle?.make_name || selectedVehicle?.makeName || selectedVehicle?.make || "Select Make"}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-gray-200 bg-[#f4f6fb] px-4 py-3 text-left">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400">Model</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">
+                        {selectedVehicle?.model_name || selectedVehicle?.modelName || selectedVehicle?.model || "Select Model"}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-gray-200 bg-[#f4f6fb] px-4 py-3 text-left">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400">Garage</p>
+                      <p className="mt-1 truncate text-sm font-semibold text-slate-900">
+                        {selectedVehicle ? selectedVehicleLabel : "Open Garage"}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-3">
-                    <Link
-                      to={continueVehicleHref}
-                      className="inline-flex h-11 items-center justify-center rounded-2xl bg-white px-4 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={submitVehicleSearch}
+                      className="inline-flex h-12 flex-1 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-bold text-white transition hover:bg-blue-700"
                     >
-                      Continue with this vehicle
-                    </Link>
+                      Search Compatible Parts
+                    </button>
 
                     <Link
                       to="/vehicle-selector"
-                      className="inline-flex h-11 items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15"
+                      className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-200 px-5 text-sm font-bold text-slate-800 transition hover:bg-gray-50"
                     >
-                      Change vehicle
+                      {selectedVehicle ? "Change Vehicle" : "Open Garage"}
                     </Link>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="mt-7 rounded-3xl border border-white/15 bg-white/10 p-4 sm:p-5">
-                <p className="text-sm text-blue-100">
-                  No vehicle saved in Garage yet. Start there to unlock stronger fitment discovery.
-                </p>
-                <Link
-                  to="/vehicle-selector"
-                  className="mt-4 inline-flex h-11 items-center justify-center rounded-2xl bg-white px-4 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
-                >
-                  Choose your vehicle
-                </Link>
-              </div>
-            )}
+              ) : null}
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
-              <div>
-                <p className="text-3xl font-black text-white">Vehicle-first</p>
-                <p className="mt-1 text-xs uppercase tracking-wide text-blue-100">
-                  discovery flow
-                </p>
-              </div>
-              <div>
-                <p className="text-3xl font-black text-white">Compare-ready</p>
-                <p className="mt-1 text-xs uppercase tracking-wide text-blue-100">
-                  shortlist flow
-                </p>
-              </div>
-              <div>
-                <p className="text-3xl font-black text-white">Trust-focused</p>
-                <p className="mt-1 text-xs uppercase tracking-wide text-blue-100">
-                  buyer journey
-                </p>
+              {activeTab === "part" ? (
+                <form onSubmit={submitPartSearch} className="space-y-4">
+                  <input
+                    value={partQuery}
+                    onChange={(e) => setPartQuery(e.target.value)}
+                    placeholder="e.g. front brake pads, oil filter, alternator…"
+                    className="h-12 w-full rounded-2xl border border-gray-200 bg-[#f4f6fb] px-4 text-sm outline-none focus:border-blue-500"
+                  />
+                  <button className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-bold text-white transition hover:bg-blue-700">
+                    Search Parts
+                  </button>
+                </form>
+              ) : null}
+
+              {activeTab === "oem" ? (
+                <form onSubmit={submitOemSearch} className="space-y-4">
+                  <input
+                    value={oemQuery}
+                    onChange={(e) => setOemQuery(e.target.value)}
+                    placeholder="e.g. 90915-YZZD2, 04152-YZZA4…"
+                    className="h-12 w-full rounded-2xl border border-gray-200 bg-[#f4f6fb] px-4 text-sm outline-none focus:border-blue-500"
+                  />
+                  <button className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-bold text-white transition hover:bg-blue-700">
+                    Look Up Part Number
+                  </button>
+                </form>
+              ) : null}
+
+              {activeTab === "vin" ? (
+                <form onSubmit={submitVinSearch} className="space-y-4">
+                  <input
+                    value={vinQuery}
+                    onChange={(e) => setVinQuery(e.target.value)}
+                    placeholder="17-character VIN"
+                    maxLength={17}
+                    className="h-12 w-full rounded-2xl border border-gray-200 bg-[#f4f6fb] px-4 text-sm tracking-wide outline-none focus:border-blue-500"
+                  />
+                  <button className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-bold text-white transition hover:bg-blue-700">
+                    Find Parts by VIN
+                  </button>
+                </form>
+              ) : null}
+
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2 border-t border-gray-200 pt-5 text-xs text-gray-500">
+                <span>Popular:</span>
+                {["Brake Pads", "Oil Filter", "Spark Plugs", "Alternator", "Shock Absorbers"].map((item) => (
+                  <Link
+                    key={item}
+                    to={`/parts?q=${encodeURIComponent(item)}`}
+                    className="rounded-full border border-gray-200 bg-[#f4f6fb] px-3 py-1.5 font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                  >
+                    {item}
+                  </Link>
+                ))}
               </div>
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-white/15 bg-white/10 p-5 backdrop-blur sm:p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-100">
-                  Quick vehicle finder
-                </p>
-                <h2 className="mt-1 text-2xl font-bold text-white">
-                  Start from Garage
-                </h2>
-              </div>
-
-              <div className="rounded-2xl bg-white/10 px-3 py-2 text-2xl">🚗</div>
-            </div>
-
-            <p className="mt-3 text-sm leading-6 text-blue-100">
-              Open your Garage to set or update the vehicle that should guide fitment-aware discovery.
-            </p>
-
-            <div className="mt-5 space-y-3">
-              <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white/90">
-                Year, make, model, and engine context
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white/90">
-                Better search relevance and match ranking
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white/90">
-                Faster path to compatible inventory
-              </div>
-            </div>
-
-            <Link
-              to="/vehicle-selector"
-              className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-2xl bg-cyan-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
-            >
-              Open Garage now
-            </Link>
-
-            <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-100">
-                Current status
-              </p>
-              <p className="mt-2 text-sm text-white">
-                {selectedVehicle ? vehicleLabel : "No Garage vehicle saved yet"}
-              </p>
-            </div>
+          <div className="mx-auto grid max-w-4xl border border-gray-200 border-t-0 bg-white shadow-sm sm:grid-cols-3">
+            <HeroStat value="2.4M+" label="Parts in catalog" icon="📦" />
+            <HeroStat value="1,200+" label="Verified sellers" icon="✅" />
+            <HeroStat value="4.9/5" label="Average buyer rating" icon="⭐" />
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="grid gap-4 lg:grid-cols-4">
-        <div className="rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-900 shadow-sm">
-          🚚 Fast shipping-ready discovery
-        </div>
-        <div className="rounded-3xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-semibold text-green-900 shadow-sm">
-          ✅ Seller and stock trust signals
-        </div>
-        <div className="rounded-3xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm font-semibold text-blue-900 shadow-sm">
-          🔍 Fitment-aware browsing
-        </div>
-        <div className="rounded-3xl border border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-900 shadow-sm">
-          🧾 Cart, checkout, and orders flow
-        </div>
-      </div>
-
-      <div>
-        <div className="mb-5 flex items-center justify-between gap-4">
+      <section>
+        <div className="mb-5 flex items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-              Shop faster
-            </p>
-            <h2 className="mt-1 text-3xl font-black text-gray-900">Popular entry points</h2>
+            <h2 className="text-2xl font-black tracking-tight text-slate-950">Browse categories</h2>
+            <p className="mt-1 text-sm text-gray-500">Start from a common parts family</p>
           </div>
+          <Link to="/parts" className="text-sm font-bold text-blue-600 hover:underline">
+            See all
+          </Link>
+        </div>
 
-          <Link to="/parts" className="text-sm font-semibold text-blue-700 hover:underline">
-            View all parts
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+          {quickCategories.map((item) => (
+            <CategoryCard key={item.title} {...item} />
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-black tracking-tight text-slate-950">Featured discovery</h2>
+            <p className="mt-1 text-sm text-gray-500">High-intent starting points for buyers</p>
+          </div>
+          <Link to="/parts" className="text-sm font-bold text-blue-600 hover:underline">
+            View all
           </Link>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <QuickCategoryCard
-            icon="🛑"
-            title="Brakes"
-            subtitle="Start with a common buyer category"
+          <ProductCard
+            brand="Bosch"
+            title="Front Brake Pads Kit"
+            price="£38.00"
+            was="£42.00"
+            fitment="Vehicle compatibility added"
             to="/parts?q=brake"
+            badge="Sale"
+            icon="🛑"
           />
-          <QuickCategoryCard
-            icon="🌬️"
-            title="Filters"
-            subtitle="Explore search-driven inventory"
-            to="/parts?q=filter"
+          <ProductCard
+            brand="K&N"
+            title="Performance Air Filter"
+            price="£24.00"
+            was="£29.00"
+            fitment="Popular vehicle match"
+            to="/parts?q=air%20filter"
+            badge="New"
+            icon="🧴"
           />
-          <QuickCategoryCard
-            icon="⚙️"
-            title="Engine parts"
-            subtitle="Open a broader discovery path"
-            to="/parts?q=engine"
+          <ProductCard
+            brand="NGK"
+            title="Spark Plug Set"
+            price="£18.00"
+            fitment="Garage-friendly search"
+            to="/parts?q=spark%20plug"
+            badge="OEM"
+            icon="⚡"
           />
-          <QuickCategoryCard
-            icon="🔋"
-            title="Electrical"
-            subtitle="Start another high-intent query"
-            to="/parts?q=battery"
+          <ProductCard
+            brand="Monroe"
+            title="Rear Shock Absorber Pair"
+            price="£79.00"
+            was="£89.00"
+            fitment="Compatibility-first listing"
+            to="/parts?q=shock"
+            icon="🚘"
           />
         </div>
-      </div>
+      </section>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <JourneyCard
-          eyebrow="Step 1"
-          title="Open Garage first"
-          description="Set your current vehicle before browsing to get stronger fitment context and cleaner results."
-          to="/vehicle-selector"
-          cta="Go to Garage"
-          tone="blue"
-        />
-
-        <JourneyCard
-          eyebrow="Step 2"
-          title="Browse and shortlist"
-          description="Search the catalog, inspect cards, and shortlist promising parts before opening details."
-          to="/parts"
-          cta="Open catalog"
-        />
-
-        <JourneyCard
-          eyebrow="Step 3"
-          title="Compare before buying"
-          description="Use compare to review shortlisted parts side by side before cart or checkout."
-          to="/compare"
-          cta="Open compare"
-          tone="green"
-        />
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      <section className="grid gap-6 xl:grid-cols-2">
         <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
+          <div className="mb-5 flex items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Marketplace discovery
-              </p>
-              <h2 className="mt-1 text-3xl font-black text-gray-900">
-                Pages you can use right now
-              </h2>
+              <h2 className="text-2xl font-black tracking-tight text-slate-950">Top verified sellers</h2>
+              <p className="mt-1 text-sm text-gray-500">Seller trust and storefront discovery</p>
             </div>
           </div>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <JourneyCard
-              title="Garage"
-              description="Select, review, or change the vehicle used for discovery."
-              to="/vehicle-selector"
-              cta="Open Garage"
-              tone="blue"
-            />
-
-            <JourneyCard
-              title="Parts catalog"
-              description="Browse search results, filters, badges, and fitment-aware cards."
+          <div className="space-y-3">
+            <SellerCard
+              initials="AP"
+              name="AutoParts Pro"
+              location="Los Angeles, CA"
+              rating="★★★★★ 4.9"
+              sales="12,400"
               to="/parts"
-              cta="Open parts"
+              color="linear-gradient(135deg,#0077b6,#00b4d8)"
             />
-
-            <JourneyCard
-              title="Compare page"
-              description="Review shortlisted parts side by side before deciding."
-              to="/compare"
-              cta="Open compare"
-              tone="green"
+            <SellerCard
+              initials="GS"
+              name="GenuineStar"
+              location="Detroit, MI"
+              rating="★★★★★ 4.8"
+              sales="8,900"
+              to="/parts"
+              color="linear-gradient(135deg,#f4a823,#e85d04)"
             />
-
-            <JourneyCard
-              title="Cart"
-              description="Review selected parts before going to checkout."
-              to="/cart"
-              cta="Open cart"
+            <SellerCard
+              initials="QP"
+              name="QuickParts"
+              location="Chicago, IL"
+              rating="★★★★☆ 4.7"
+              sales="6,200"
+              to="/parts"
+              color="linear-gradient(135deg,#2d6a4f,#52b788)"
             />
-
-            <JourneyCard
-              title="Orders"
-              description="Access order history and order tracking pages."
-              to="/orders"
-              cta="Open orders"
-            />
-
-            <JourneyCard
-              title="Account"
-              description="Use sign-in and account-related buyer pages."
-              to="/account"
-              cta="Open account"
+            <SellerCard
+              initials="OE"
+              name="OEM Direct"
+              location="Houston, TX"
+              rating="★★★★★ 4.9"
+              sales="21,000"
+              to="/parts"
+              color="linear-gradient(135deg,#6a0572,#ab83a1)"
             />
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-              Why PartHub feels stronger
+        <div className="rounded-3xl bg-gradient-to-br from-blue-600 to-blue-700 p-6 text-white shadow-xl">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-100">
+              Why PartHub
             </p>
-            <h2 className="mt-1 text-3xl font-black text-gray-900">
-              Cleaner buyer journey
-            </h2>
-
-            <div className="mt-5 grid gap-4">
-              <FeatureCard
-                icon="🚗"
-                title="Garage-first context"
-                description="Your vehicle can guide search and improve relevance before you even open a part page."
-              />
-              <FeatureCard
-                icon="📊"
-                title="Comparison-ready flow"
-                description="Shortlisting and compare reduce hesitation before checkout."
-              />
-              <FeatureCard
-                icon="🛡️"
-                title="Trust-oriented discovery"
-                description="Stock, compatibility, and seller signals help the buyer decide faster."
-              />
-            </div>
+            <h2 className="mt-2 text-3xl font-black tracking-tight">The cleaner buyer journey</h2>
+            <p className="mt-2 text-sm leading-6 text-blue-100">
+              Fitment-first discovery, verified sellers, tracked orders, and support-oriented flows.
+            </p>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Seller discovery
-                </p>
-                <h2 className="mt-1 text-2xl font-black text-gray-900">
-                  Explore seller storefronts
-                </h2>
-              </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
+              <div className="text-2xl">🔍</div>
+              <h3 className="mt-3 font-bold">Vehicle Compatibility Check</h3>
+              <p className="mt-2 text-sm text-blue-100">
+                Filter discovery by your exact year, make, model, and engine context.
+              </p>
             </div>
 
-            <div className="mt-5 space-y-4">
-              <SellerCard
-                title="Seller profile pages"
-                subtitle="Browse inventory and trust signals from public seller pages."
-                to="/parts"
-                badge="Trust-ready"
-              />
-              <SellerCard
-                title="Parts with seller context"
-                subtitle="Open parts first, then jump to seller storefronts from listing pages."
-                to="/parts"
-              />
+            <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
+              <div className="text-2xl">✅</div>
+              <h3 className="mt-3 font-bold">Verified Sellers</h3>
+              <p className="mt-2 text-sm text-blue-100">
+                Seller trust signals and public storefront access improve buyer confidence.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
+              <div className="text-2xl">🚚</div>
+              <h3 className="mt-3 font-bold">Fast Shipping Flow</h3>
+              <p className="mt-2 text-sm text-blue-100">
+                Cart, checkout, order history, and tracking pages already exist in the storefront.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
+              <div className="text-2xl">🔄</div>
+              <h3 className="mt-3 font-bold">Compare Before You Buy</h3>
+              <p className="mt-2 text-sm text-blue-100">
+                Compare shortlisted parts before opening details or moving to checkout.
+              </p>
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </section>
   );
 }

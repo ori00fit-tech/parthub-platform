@@ -1,30 +1,12 @@
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
 import { useCart } from "../../features/cart/CartContext";
 import { useAuth } from "../../features/auth/AuthContext";
 import { useSelectedVehicle } from "../../features/vehicles/SelectedVehicleContext";
 import Footer from "./Footer";
 
-function navClass({ isActive }) {
-  return [
-    "inline-flex items-center rounded-2xl px-4 py-2 text-sm font-semibold transition",
-    isActive
-      ? "bg-blue-50 text-blue-700"
-      : "text-gray-700 hover:bg-gray-50 hover:text-blue-600",
-  ].join(" ");
-}
-
-function mobileNavClass(isActive) {
-  return [
-    "flex flex-col items-center justify-center rounded-2xl px-3 py-3 text-xs font-semibold transition",
-    isActive
-      ? "bg-blue-50 text-blue-700"
-      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-  ].join(" ");
-}
-
 function getVehicleLabel(vehicle) {
-  if (!vehicle) return "";
-
+  if (!vehicle) return "Select Vehicle";
   return (
     vehicle.label ||
     [
@@ -37,192 +19,157 @@ function getVehicleLabel(vehicle) {
   );
 }
 
+function desktopNavClass({ isActive }) {
+  return [
+    "flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-semibold transition whitespace-nowrap",
+    isActive
+      ? "border-blue-600 text-blue-600"
+      : "border-transparent text-gray-500 hover:text-gray-900",
+  ].join(" ");
+}
+
+function mobileNavItemClass(active) {
+  return [
+    "flex flex-col items-center justify-center rounded-2xl px-2 py-2 text-[11px] font-semibold transition",
+    active ? "bg-blue-50 text-blue-700" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
+  ].join(" ");
+}
+
 export default function MainLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { totalItems } = useCart();
   const { isAuthenticated } = useAuth();
-  const { selectedVehicle, clearVehicle } = useSelectedVehicle();
+  const { selectedVehicle } = useSelectedVehicle();
 
-  const vehicleLabel = getVehicleLabel(selectedVehicle);
+  const [headerQuery, setHeaderQuery] = useState("");
 
-  const navItems = [
-    { to: "/", label: "Home", icon: "⌂" },
-    { to: "/parts", label: "Parts", icon: "⚙️" },
-    { to: "/vehicle-selector", label: "Garage", icon: "🚗" },
-    { to: "/compare", label: "Compare", icon: "⇄" },
-    { to: "/cart", label: "Cart", icon: "🛒" },
+  const vehicleLabel = useMemo(() => getVehicleLabel(selectedVehicle), [selectedVehicle]);
+
+  function submitHeaderSearch(e) {
+    e.preventDefault();
+    const q = headerQuery.trim();
+    navigate(q ? `/parts?q=${encodeURIComponent(q)}` : "/parts");
+  }
+
+  const categoryLinks = [
+    { label: "All Categories", to: "/parts" },
+    { label: "Engine", to: "/parts?q=engine" },
+    { label: "Brakes", to: "/parts?q=brake" },
+    { label: "Suspension", to: "/parts?q=suspension" },
+    { label: "Electrical", to: "/parts?q=battery" },
+    { label: "Filters", to: "/parts?q=filter" },
+    { label: "Flash Deals", to: "/parts?sort=price_asc" },
+  ];
+
+  const mobileNav = [
+    { label: "Home", to: "/", icon: "⌂" },
+    { label: "Parts", to: "/parts", icon: "⚙️" },
+    { label: "Garage", to: "/vehicle-selector", icon: "🚗" },
+    { label: "Compare", to: "/compare", icon: "⇄" },
+    { label: "Cart", to: "/cart", icon: "🛒" },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <div className="border-b border-slate-800 bg-slate-950 px-4 py-2 text-center text-[11px] font-medium tracking-wide text-slate-200 sm:px-6">
+    <div className="min-h-screen bg-[#f4f6fb] text-[#0f172a]">
+      <div className="bg-slate-950 px-4 py-2 text-center text-[11px] font-medium text-white">
         Vehicle-aware marketplace · Compare parts · Seller trust · Checkout flow
       </div>
 
-      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-4 lg:gap-6">
-            <Link to="/" className="shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-xl text-white shadow-sm">
-                  ⚙️
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-xl font-black tracking-tight text-slate-950">
-                    PartHub
-                  </p>
-                  <p className="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">
-                    Auto Parts Marketplace
-                  </p>
-                </div>
+      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white shadow-sm">
+        <div className="mx-auto flex max-w-[1380px] items-center gap-3 px-4 py-3 lg:px-6">
+          <Link to="/" className="flex shrink-0 items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-lg text-white shadow-sm">
+              ⚙️
+            </div>
+            <div className="min-w-0">
+              <div className="text-xl font-black tracking-tight text-slate-950">
+                Part<span className="text-blue-600">Hub</span>
               </div>
+            </div>
+          </Link>
+
+          <form
+            onSubmit={submitHeaderSearch}
+            className="hidden min-w-0 flex-1 overflow-hidden rounded-xl border border-gray-200 bg-[#f4f6fb] md:flex"
+          >
+            <input
+              value={headerQuery}
+              onChange={(e) => setHeaderQuery(e.target.value)}
+              placeholder="Search parts, brands, OEM numbers…"
+              className="min-w-0 flex-1 bg-transparent px-4 py-2.5 text-sm outline-none"
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              Search
+            </button>
+          </form>
+
+          <div className="ml-auto flex items-center gap-2">
+            <Link
+              to="/vehicle-selector"
+              className="hidden items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-gray-50 lg:flex"
+            >
+              <span>🚗</span>
+              <span className="max-w-[170px] truncate">{vehicleLabel}</span>
             </Link>
 
-            <div className="hidden xl:block">
-              {selectedVehicle ? (
-                <div className="flex items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3">
-                  <span className="text-lg">🚗</span>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-500">
-                      Garage vehicle
-                    </p>
-                    <p className="truncate text-sm font-bold text-blue-900">
-                      {vehicleLabel}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to="/vehicle-selector"
-                      className="inline-flex h-9 items-center justify-center rounded-xl bg-white px-3 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
-                    >
-                      Change
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={clearVehicle}
-                      className="inline-flex h-9 items-center justify-center rounded-xl border border-blue-200 bg-white px-3 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <Link
-                  to="/vehicle-selector"
-                  className="inline-flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 transition hover:bg-white"
-                >
-                  <span className="text-lg">🚗</span>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">
-                      Garage
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      Choose your vehicle
-                    </p>
-                  </div>
-                </Link>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <nav className="hidden items-center gap-2 lg:flex">
-              <NavLink to="/" className={navClass}>
-                Home
-              </NavLink>
-              <NavLink to="/parts" className={navClass}>
-                Parts
-              </NavLink>
-              <NavLink to="/vehicle-selector" className={navClass}>
-                Garage
-              </NavLink>
-              <NavLink to="/compare" className={navClass}>
-                Compare
-              </NavLink>
-              <NavLink to="/orders" className={navClass}>
-                Orders
-              </NavLink>
-            </nav>
+            <Link
+              to="/orders"
+              className="hidden rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-gray-50 sm:inline-flex"
+            >
+              Orders
+            </Link>
 
             <Link
               to="/cart"
-              className="relative inline-flex h-12 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+              className="relative inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-gray-50"
             >
-              Cart
-              {totalItems > 0 ? (
-                <span className="ml-2 inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-blue-600 px-1 text-[11px] font-bold text-white">
-                  {totalItems}
-                </span>
-              ) : null}
+              <span>Cart</span>
+              <span className="inline-flex h-7 min-w-[28px] items-center justify-center rounded-full bg-blue-600 px-2 text-xs font-bold text-white">
+                {totalItems}
+              </span>
             </Link>
 
             <Link
               to={isAuthenticated ? "/account" : "/auth"}
-              className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
+              className="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
             >
               {isAuthenticated ? "Account" : "Sign in"}
             </Link>
           </div>
         </div>
 
-        <div className="border-t border-gray-100 bg-white">
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              <span className="font-semibold text-gray-900">Marketplace paths:</span>
-
-              <Link
-                to="/parts"
-                className="rounded-full bg-gray-100 px-3 py-1.5 font-semibold text-gray-700 transition hover:bg-gray-200"
+        <div className="border-t border-gray-200 bg-white">
+          <div className="mx-auto hidden max-w-[1380px] items-center gap-1 overflow-x-auto px-4 lg:flex lg:px-6">
+            {categoryLinks.map((item) => (
+              <NavLink
+                key={item.label}
+                to={item.to}
+                className={desktopNavClass}
               >
-                Browse parts
-              </Link>
-
-              <Link
-                to="/vehicle-selector"
-                className="rounded-full bg-gray-100 px-3 py-1.5 font-semibold text-gray-700 transition hover:bg-gray-200"
-              >
-                Open Garage
-              </Link>
-
-              <Link
-                to="/compare"
-                className="rounded-full bg-gray-100 px-3 py-1.5 font-semibold text-gray-700 transition hover:bg-gray-200"
-              >
-                Compare
-              </Link>
-
-              <Link
-                to="/checkout"
-                className="rounded-full bg-gray-100 px-3 py-1.5 font-semibold text-gray-700 transition hover:bg-gray-200"
-              >
-                Checkout
-              </Link>
-            </div>
-
-            <div className="text-sm text-gray-500">
-              {selectedVehicle
-                ? "Garage is active and ready to guide discovery."
-                : "Add a vehicle in Garage for stronger fitment discovery."}
-            </div>
+                {item.label}
+              </NavLink>
+            ))}
           </div>
         </div>
 
-        <div className="border-t border-gray-100 bg-white lg:hidden">
-          <div className="mx-auto grid max-w-7xl grid-cols-5 gap-2 px-4 py-3 sm:px-6">
-            {navItems.map((item) => {
+        <div className="border-t border-gray-100 bg-white md:hidden">
+          <div className="mx-auto grid max-w-[1380px] grid-cols-5 gap-2 px-4 py-2">
+            {mobileNav.map((item) => {
               const active =
                 item.to === "/"
                   ? location.pathname === "/"
-                  : location.pathname === item.to ||
-                    location.pathname.startsWith(`${item.to}/`);
+                  : location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
 
               return (
-                <Link key={item.to} to={item.to} className={mobileNavClass(active)}>
+                <Link key={item.to} to={item.to} className={mobileNavItemClass(active)}>
                   <span className="text-base">{item.icon}</span>
                   <span className="mt-1">{item.label}</span>
                   {item.to === "/cart" && totalItems > 0 ? (
-                    <span className="mt-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white">
+                    <span className="mt-1 inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-blue-600 px-1 text-[9px] font-bold text-white">
                       {totalItems}
                     </span>
                   ) : null}
@@ -233,7 +180,7 @@ export default function MainLayout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-[1380px] px-4 py-8 lg:px-6">
         <Outlet />
       </main>
 
