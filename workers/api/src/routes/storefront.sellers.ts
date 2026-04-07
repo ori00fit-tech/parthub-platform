@@ -16,6 +16,7 @@ storefrontSellersRoutes.get("/:slug", async (c) => {
       s.description,
       s.location,
       s.phone,
+      s.seller_type,
       s.status,
       s.created_at,
       (
@@ -58,6 +59,7 @@ storefrontSellersRoutes.get("/:slug", async (c) => {
       p.condition,
       p.quantity,
       p.featured,
+      p.part_origin,
       p.created_at,
       b.name as brand_name,
       c.name as category_name,

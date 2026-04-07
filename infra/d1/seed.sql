@@ -59,3 +59,25 @@ INSERT OR IGNORE INTO brands (slug, name) VALUES
 ('moog','Moog'), ('acdelco','ACDelco'), ('gates','Gates'),
 ('dorman','Dorman'), ('ngk','NGK'), ('fel-pro','Fel-Pro'),
 ('oe-solutions','OE Solutions'), ('duralast','Duralast'), ('motorcraft','Motorcraft');
+
+-- =========================================================
+-- Morocco-focused marketplace layer
+-- =========================================================
+
+-- seller types
+UPDATE sellers SET seller_type = 'shop' WHERE slug = 'demo-seller';
+UPDATE sellers SET seller_type = 'importer' WHERE slug = 'chafik-auto-parts';
+
+-- if you add more sellers later, use:
+-- shop = classic parts shop
+-- breaker = used parts / casse
+-- importer = importer / wholesaler
+
+-- part origins for existing demo parts
+UPDATE parts SET part_origin = 'aftermarket' WHERE slug = 'front-brake-pads-kit';
+UPDATE parts SET part_origin = 'aftermarket' WHERE slug = 'engine-oil-filter';
+UPDATE parts SET part_origin = 'oem' WHERE slug = 'audi-a4-turbocharger-test';
+
+-- examples for future inserts:
+-- part_origin: oem | aftermarket | used
+-- seller_type: shop | breaker | importer

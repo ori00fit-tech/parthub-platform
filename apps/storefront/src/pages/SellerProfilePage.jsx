@@ -60,6 +60,23 @@ function getPartBadges(part) {
   return badges.slice(0, 3);
 }
 
+
+function getSellerTypeLabel(sellerType) {
+  const value = String(sellerType || "").toLowerCase();
+
+  if (value === "breaker") return "Breaker";
+  if (value === "importer") return "Importer";
+  return "Parts Shop";
+}
+
+function getPartOriginLabel(partOrigin) {
+  const value = String(partOrigin || "").toLowerCase();
+
+  if (value === "oem") return "OEM Genuine";
+  if (value === "used") return "Used Part";
+  return "Aftermarket";
+}
+
 export default function SellerProfilePage() {
   const { slug } = useParams();
   const [seller, setSeller] = useState(null);
@@ -160,6 +177,11 @@ export default function SellerProfilePage() {
 
             <div className="mt-5 space-y-4 text-sm text-gray-600">
               <p>
+                <span className="font-semibold text-gray-900">Seller type:</span>{" "}
+                {getSellerTypeLabel(seller.seller_type)}
+              </p>
+
+              <p>
                 <span className="font-semibold text-gray-900">Location:</span>{" "}
                 {seller.location || "Not specified"}
               </p>
@@ -248,6 +270,10 @@ export default function SellerProfilePage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold text-blue-700">
+                        {getPartOriginLabel(part.part_origin)}
+                      </span>
+
                       {getPartBadges(part).map((badge) => (
                         <span
                           key={badge.label}

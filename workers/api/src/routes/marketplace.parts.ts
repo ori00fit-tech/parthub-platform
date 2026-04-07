@@ -25,6 +25,7 @@ marketplacePartsRoutes.get("/:slug", async (c) => {
       p.weight_kg,
       p.status,
       p.featured,
+      p.part_origin,
       p.created_at,
       p.updated_at,
       b.name as brand_name,
@@ -34,6 +35,7 @@ marketplacePartsRoutes.get("/:slug", async (c) => {
       s.name as seller_name,
       s.slug as seller_slug,
       s.location as seller_location,
+      s.seller_type,
       (
         select pi.url
         from part_images pi

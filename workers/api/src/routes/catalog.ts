@@ -85,6 +85,7 @@ catalogRoutes.get("/parts", async (c) => {
       p.quantity,
       p.status,
       p.featured,
+      p.part_origin,
       p.created_at,
       b.name as brand_name,
       b.slug as brand_slug,
@@ -93,6 +94,7 @@ catalogRoutes.get("/parts", async (c) => {
       s.name as seller_name,
       s.slug as seller_slug,
       s.location as seller_location,
+      s.seller_type,
       (
         select pi.url
         from part_images pi

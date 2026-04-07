@@ -57,7 +57,7 @@ function normalizeMeta(meta) {
 function buildSearchParamsFromState(filters) {
   const params = new URLSearchParams();
 
-  if (filters.q) params.set("q", filters.q);
+  if (filters.q) params.set("search", filters.q);
   if (filters.category) params.set("category", filters.category);
   if (filters.brand) params.set("brand", filters.brand);
   if (filters.condition) params.set("condition", filters.condition);
@@ -75,14 +75,14 @@ function buildApiQuery(filters, vehicle) {
   if (vehicle?.make || vehicle?.make_name || vehicle?.makeName) {
     params.set(
       "make",
-      String(vehicle.make || vehicle.make_name || vehicle.makeName || "").toLowerCase()
+      String(vehicle.make_name || vehicle.makeName || vehicle.make || "").toLowerCase()
     );
   }
 
   if (vehicle?.model || vehicle?.model_name || vehicle?.modelName) {
     params.set(
       "model",
-      String(vehicle.model || vehicle.model_name || vehicle.modelName || "").toLowerCase()
+      String(vehicle.model_name || vehicle.modelName || vehicle.model || "").toLowerCase()
     );
   }
 
@@ -196,6 +196,53 @@ function getSellerBadges(part) {
   return badges.slice(0, 2);
 }
 
+
+function getOriginBadge(part) {
+  const origin = String(part?.part_origin || "").toLowerCase();
+
+  if (origin === "oem") {
+    return {
+      label: "OEM Genuine",
+      className: "bg-green-50 text-green-700",
+    };
+  }
+
+  if (origin === "used") {
+    return {
+      label: "Used Part",
+      className: "bg-amber-50 text-amber-700",
+    };
+  }
+
+  return {
+    label: "Aftermarket",
+    className: "bg-blue-50 text-blue-700",
+  };
+}
+
+function getSellerTypeBadge(part) {
+  const sellerType = String(part?.seller_type || "").toLowerCase();
+
+  if (sellerType === "breaker") {
+    return {
+      label: "Breaker",
+      className: "bg-orange-50 text-orange-700",
+    };
+  }
+
+  if (sellerType === "importer") {
+    return {
+      label: "Importer",
+      className: "bg-indigo-50 text-indigo-700",
+    };
+  }
+
+  return {
+    label: "Parts Shop",
+    className: "bg-slate-100 text-slate-700",
+  };
+}
+
 function vehicleMatchesCard(part, vehicle) {
   if (!vehicle) return false;
   return Number(part?.exact_vehicle_match || 0) === 1;
@@ -284,7 +331,7 @@ export default function PartsPage() {
         setError("");
 
         const query = buildApiQuery(filters, selectedVehicle);
-        const response = await apiGet(`/api/v1/search?${query}`);
+        const response = await apiGet(`/api/v1/catalog/parts?${query}`);
 
         if (!active) return;
 
@@ -953,6 +1000,24 @@ export default function PartsPage() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={[
+                              "rounded-full px-3 py-1 text-xs font-semibold",
+                              getOriginBadge(part).className,
+                            ].join(" ")}
+                          >
+                            {getOriginBadge(part).label}
+                          </span>
+
+                          <span
+                            className={[
+                              "rounded-full px-3 py-1 text-xs font-semibold",
+                              getSellerTypeBadge(part).className,
+                            ].join(" ")}
+                          >
+                            {getSellerTypeBadge(part).label}
+                          </span>
+
                           {compatibilityCount > 0 ? (
                             <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
                               Compatible with {compatibilityCount} vehicle setup{compatibilityCount === 1 ? "" : "s"}
