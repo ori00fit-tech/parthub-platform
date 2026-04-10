@@ -1,0 +1,99 @@
+========================================
+PARTHUB STOREFRONT AUDIT REPORT
+========================================
+Date: Sat Apr  4 23:11:22 +01 2026
+Root: /data/data/com.termux/files/home/downloads/parthub-platform
+App:  /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront
+
+----------------------------------------
+1) PAGE FILES
+----------------------------------------
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/AccountPage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/AuthPage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/CartPage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/CategoriesPage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/CategoryDetailsPage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/CheckoutPage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/CheckoutSuccessPage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/ComparePage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/HomePage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/NotFoundPage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/OrderTrackingPage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/OrdersPage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/PartDetailsPage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/PartsPage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/SearchPage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/SellerPage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/SellerProfilePage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/VehicleSelectorPage.jsx
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/WishlistPage.jsx
+
+----------------------------------------
+2) ROUTES IN App.jsx
+----------------------------------------
+23:        <Route path="/" element={<HomePage />} />
+24:        <Route path="/parts" element={<PartsPage />} />
+25:        <Route path="/parts/:slug" element={<PartDetailsPage />} />
+27:        <Route path="/vehicle-selector" element={<VehicleSelectorPage />} />
+29:        <Route path="/cart" element={<CartPage />} />
+30:        <Route path="/auth" element={<AuthPage />} />
+31:        <Route path="/checkout" element={<CheckoutPage />} />
+32:        <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
+33:        <Route path="/compare" element={<ComparePage />} />
+35:        <Route path="/sellers/:slug" element={<SellerProfilePage />} />
+37:        <Route path="/account" element={<AccountPage />} />
+38:        <Route path="/orders" element={<OrdersPage />} />
+39:        <Route path="/orders/:orderNumber/tracking" element={<OrderTrackingPage />} />
+41:        <Route path="*" element={<NotFoundPage />} />
+
+----------------------------------------
+3) TODO / FIXME / XXX
+----------------------------------------
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/SearchPage.jsx:1:// TODO: Implement SearchPage
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/SellerPage.jsx:1:// TODO: Implement SellerPage
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/CategoryDetailsPage.jsx:1:// TODO: Implement CategoryDetailsPage
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/CategoriesPage.jsx:1:// TODO: Implement CategoriesPage
+/data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/WishlistPage.jsx:1:// TODO: Implement WishlistPage
+
+----------------------------------------
+4) LARGE FILES
+----------------------------------------
+  6067 total
+  1123 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/PartsPage.jsx
+   760 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/PartDetailsPage.jsx
+   382 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/VehicleSelectorPage.jsx
+   356 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/CheckoutPage.jsx
+   348 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/AuthPage.jsx
+   295 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/SellerProfilePage.jsx
+   260 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/OrderTrackingPage.jsx
+   242 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/AccountPage.jsx
+   216 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/CartPage.jsx
+   190 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/ComparePage.jsx
+   160 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/OrdersPage.jsx
+   153 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/HomePage.jsx
+   146 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/pages/CheckoutSuccessPage.jsx
+   140 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/features/vehicles/SelectedVehicleContext.jsx
+   135 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/features/vehicles/GaragePanel.jsx
+   132 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/features/auth/AuthContext.jsx
+   114 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/features/cart/CartContext.jsx
+   109 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/features/search/SavedSearchesPanel.jsx
+   103 /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront/src/components/layout/Header.jsx
+
+----------------------------------------
+5) BUILD CHECK
+----------------------------------------
+
+> @parthub/storefront@1.0.0 build /data/data/com.termux/files/home/downloads/parthub-platform/apps/storefront
+> vite build
+
+vite v5.4.21 building for production...
+transforming...
+✓ 57 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.58 kB │ gzip:  0.36 kB
+dist/assets/index-Dl1IdAvM.css   26.62 kB │ gzip:  5.49 kB
+dist/assets/index-XwvjXFIz.js   304.67 kB │ gzip: 77.52 kB │ map: 1,030.74 kB
+✓ built in 1.87s
+Storefront build: OK
+

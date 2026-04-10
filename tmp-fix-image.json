@@ -1,0 +1,3 @@
+{
+  "sql": "update part_images set url = 'https://pub-be9a8908c38644218fbb6a343a760049.r2.dev/uploads/parts/1774860938357-1000134892.jpg', alt_text = 'Engine Oil Filter' where part_id = 2 and url = 'PUT_IMAGE_URL_HERE';"
+}
