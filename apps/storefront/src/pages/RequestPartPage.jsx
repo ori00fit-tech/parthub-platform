@@ -4,18 +4,19 @@ import { apiGet } from "../lib/api";
 import { useAuth } from "../features/auth/AuthContext";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import { requestsApi } from "../features/requests/api";
+import PhotoPicker from "../features/requests/PhotoPicker";
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+  "h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20";
 
 function Field({ label, hint, required, children }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-semibold text-gray-800">
+      <span className="mb-1.5 block text-sm font-semibold text-ink-2">
         {label} {required ? <span className="text-red-500">*</span> : null}
       </span>
       {children}
-      {hint ? <span className="mt-1 block text-xs text-gray-500">{hint}</span> : null}
+      {hint ? <span className="mt-1 block text-xs text-muted">{hint}</span> : null}
     </label>
   );
 }
@@ -52,6 +53,8 @@ export default function RequestPartPage() {
   const [categories, setCategories] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [images, setImages] = useState([]);
+  const [photosUploading, setPhotosUploading] = useState(false);
 
   useEffect(() => {
     apiGet("/api/v1/vehicles/makes")
@@ -105,6 +108,7 @@ export default function RequestPartPage() {
     try {
       const payload = {
         ...form,
+        images,
         year: form.year ? Number(form.year) : null,
         category_id: form.category_id ? Number(form.category_id) : null,
       };
@@ -135,21 +139,21 @@ export default function RequestPartPage() {
               <p className="mt-2 text-sm font-bold">
                 {i + 1}. {step.title}
               </p>
-              <p className="mt-1 text-xs text-slate-400">{step.text}</p>
+              <p className="mt-1 text-xs text-faint">{step.text}</p>
             </div>
           ))}
         </div>
       </section>
 
       {!isAuthenticated ? (
-        <section className="rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <h2 className="text-xl font-bold text-gray-900">Sign in to send a request</h2>
-          <p className="mt-2 text-sm text-gray-500">
+        <section className="rounded-3xl border border-line bg-surface p-8 text-center shadow-sm">
+          <h2 className="text-xl font-bold text-ink">Sign in to send a request</h2>
+          <p className="mt-2 text-sm text-muted">
             We need an account so sellers' offers reach you and only you can accept them.
           </p>
           <Link
             to="/auth"
-            className="mt-5 inline-flex h-11 items-center rounded-xl bg-blue-600 px-6 text-sm font-bold text-white transition hover:bg-blue-700"
+            className="mt-5 inline-flex h-11 items-center rounded-xl bg-navy px-6 text-sm font-bold text-white transition hover:bg-navy-deep"
           >
             Sign in or create an account
           </Link>
@@ -157,8 +161,8 @@ export default function RequestPartPage() {
       ) : (
         <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[1fr_340px]">
           <div className="space-y-6">
-            <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900">🚗 Your vehicle</h2>
+            <section className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-ink">🚗 Your vehicle</h2>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <Field label="Make" required>
                   <input
@@ -221,8 +225,8 @@ export default function RequestPartPage() {
               </div>
             </section>
 
-            <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900">⚙️ The part you need</h2>
+            <section className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-ink">⚙️ The part you need</h2>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <Field label="Part" required>
@@ -254,7 +258,7 @@ export default function RequestPartPage() {
                   />
                 </Field>
                 <div className="sm:col-span-2">
-                  <span className="mb-1.5 block text-sm font-semibold text-gray-800">Condition</span>
+                  <span className="mb-1.5 block text-sm font-semibold text-ink-2">Condition</span>
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       ["any", "New or used"],
@@ -268,8 +272,8 @@ export default function RequestPartPage() {
                         className={[
                           "h-11 rounded-xl border text-sm font-semibold transition",
                           form.condition_pref === value
-                            ? "border-blue-600 bg-blue-50 text-blue-700"
-                            : "border-gray-200 text-gray-600 hover:bg-gray-50",
+                            ? "border-sky-400 bg-navy/20 text-link"
+                            : "border-line text-muted hover:bg-white/5",
                         ].join(" ")}
                       >
                         {label}
@@ -288,13 +292,16 @@ export default function RequestPartPage() {
                     />
                   </Field>
                 </div>
+                <div className="sm:col-span-2">
+                  <PhotoPicker onChange={setImages} onUploadingChange={setPhotosUploading} />
+                </div>
               </div>
             </section>
           </div>
 
           <aside className="space-y-4 lg:sticky lg:top-40 lg:self-start">
-            <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900">📍 Contact</h2>
+            <section className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-ink">📍 Contact</h2>
               <div className="mt-4 space-y-4">
                 <Field label="City" required>
                   <input
@@ -318,24 +325,24 @@ export default function RequestPartPage() {
               </div>
 
               {error ? (
-                <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+                <p className="mt-4 rounded-xl bg-red-400/10 px-3 py-2 text-sm text-red-300">{error}</p>
               ) : null}
 
               <button
                 type="submit"
-                disabled={saving}
-                className="mt-5 h-12 w-full rounded-xl bg-blue-600 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
+                disabled={saving || photosUploading}
+                className="btn-cta mt-5 h-12 w-full rounded-xl text-sm"
               >
-                {saving ? "Sending…" : "Send request to sellers"}
+                {saving ? "Sending…" : photosUploading ? "Uploading photos…" : "Send request to sellers"}
               </button>
-              <p className="mt-3 text-center text-xs text-gray-500">
+              <p className="mt-3 text-center text-xs text-muted">
                 Free · Open for 14 days · No obligation to buy
               </p>
             </section>
 
             <Link
               to="/requests"
-              className="block rounded-2xl border border-gray-200 bg-white px-4 py-3 text-center text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+              className="block rounded-2xl border border-line bg-surface px-4 py-3 text-center text-sm font-semibold text-ink-2 shadow-sm transition hover:bg-white/5"
             >
               View my requests →
             </Link>

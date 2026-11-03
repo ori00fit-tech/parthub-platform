@@ -76,7 +76,7 @@ export default function PartCreateWithUploadPage() {
       }
 
       setImageUrl(data.data.url);
-      setPreviewUrl(data.data.url);
+      setPreviewUrl(`${API_BASE}${data.data.url}`);
     } catch (err) {
       setError(err.message || "Upload failed");
     } finally {

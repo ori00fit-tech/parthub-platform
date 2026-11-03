@@ -7,13 +7,14 @@ import {
   requestsApi,
   whatsappLink,
 } from "../features/requests/api";
+import { mediaUrl } from "../lib/media";
 
 function Spec({ label, value }) {
   if (!value) return null;
   return (
     <div>
-      <dt className="text-xs text-gray-500">{label}</dt>
-      <dd className="text-sm font-semibold text-gray-900">{value}</dd>
+      <dt className="text-xs text-muted">{label}</dt>
+      <dd className="text-sm font-semibold text-ink">{value}</dd>
     </div>
   );
 }
@@ -29,26 +30,26 @@ function OfferCard({ offer, request, cheapest, onAccept, accepting }) {
   return (
     <div
       className={[
-        "rounded-2xl border bg-white p-5 shadow-sm",
-        accepted ? "border-emerald-400 ring-2 ring-emerald-100" : "border-gray-200",
+        "rounded-2xl border bg-surface p-5 shadow-sm",
+        accepted ? "border-emerald-400 ring-2 ring-emerald-400/20" : "border-line",
         offer.status === "rejected" ? "opacity-60" : "",
       ].join(" ")}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link to={`/sellers/${offer.seller_slug}`} className="text-base font-bold text-gray-900 hover:text-blue-600">
+          <Link to={`/sellers/${offer.seller_slug}`} className="text-base font-bold text-ink hover:text-sky-200">
             {offer.seller_name}
           </Link>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted">
             {[offer.seller_location, offer.seller_type === "dismantler" ? "Dismantler" : null]
               .filter(Boolean)
               .join(" · ")}
           </p>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-black text-slate-950">{formatMAD(offer.price)}</p>
+          <p className="text-2xl font-black text-ink">{formatMAD(offer.price)}</p>
           {cheapest && !accepted ? (
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+            <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[11px] font-bold text-emerald-300">
               Best price
             </span>
           ) : null}
@@ -56,24 +57,24 @@ function OfferCard({ offer, request, cheapest, onAccept, accepting }) {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
-        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">
+        <span className="rounded-full bg-surface-2 px-2.5 py-1 text-ink-2">
           {CONDITION_LABELS[offer.condition] || offer.condition}
         </span>
-        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">
+        <span className="rounded-full bg-surface-2 px-2.5 py-1 text-ink-2">
           {Number(offer.warranty_months) > 0 ? `${offer.warranty_months} months warranty` : "No warranty"}
         </span>
         {offer.delivery_days != null ? (
-          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">
+          <span className="rounded-full bg-surface-2 px-2.5 py-1 text-ink-2">
             {Number(offer.delivery_days) === 0 ? "Available today" : `Ready in ${offer.delivery_days} days`}
           </span>
         ) : null}
       </div>
 
-      {offer.note ? <p className="mt-3 text-sm text-gray-600">“{offer.note}”</p> : null}
+      {offer.note ? <p className="mt-3 text-sm text-muted">“{offer.note}”</p> : null}
 
       {accepted ? (
-        <div className="mt-4 rounded-xl bg-emerald-50 p-4">
-          <p className="text-sm font-bold text-emerald-800">You accepted this offer. Contact the seller to arrange the sale:</p>
+        <div className="mt-4 rounded-xl bg-emerald-400/10 p-4">
+          <p className="text-sm font-bold text-emerald-300">You accepted this offer. Contact the seller to arrange the sale:</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {wa ? (
               <a
@@ -88,7 +89,7 @@ function OfferCard({ offer, request, cheapest, onAccept, accepting }) {
             {offer.seller_phone ? (
               <a
                 href={`tel:${offer.seller_phone}`}
-                className="inline-flex h-10 items-center rounded-xl border border-emerald-300 bg-white px-4 text-sm font-bold text-emerald-800"
+                className="inline-flex h-10 items-center rounded-xl border border-emerald-400/40 bg-surface px-4 text-sm font-bold text-emerald-300"
               >
                 Call {offer.seller_phone}
               </a>
@@ -100,7 +101,7 @@ function OfferCard({ offer, request, cheapest, onAccept, accepting }) {
           type="button"
           onClick={() => onAccept(offer)}
           disabled={accepting}
-          className="mt-4 h-11 w-full rounded-xl bg-blue-600 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
+          className="btn-cta mt-4 h-11 w-full rounded-xl text-sm"
         >
           {accepting ? "Accepting…" : "Accept this offer"}
         </button>
@@ -161,12 +162,12 @@ export default function RequestDetailsPage() {
     }
   }
 
-  if (loading) return <div className="h-64 animate-pulse rounded-3xl bg-white" />;
+  if (loading) return <div className="h-64 animate-pulse rounded-3xl bg-surface" />;
   if (!request) {
     return (
-      <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center">
-        <p className="text-sm text-red-700">{error || "Request not found"}</p>
-        <Link to="/requests" className="mt-4 inline-block text-sm font-semibold text-blue-600">
+      <div className="rounded-3xl border border-line bg-surface p-8 text-center">
+        <p className="text-sm text-red-300">{error || "Request not found"}</p>
+        <Link to="/requests" className="mt-4 inline-block text-sm font-semibold text-link">
           ← Back to my requests
         </Link>
       </div>
@@ -181,25 +182,25 @@ export default function RequestDetailsPage() {
 
   return (
     <div className="space-y-6">
-      <Link to="/requests" className="text-sm font-semibold text-blue-600">
+      <Link to="/requests" className="text-sm font-semibold text-link">
         ← My requests
       </Link>
 
       {location.state?.justCreated ? (
-        <div className="rounded-2xl bg-emerald-50 px-5 py-4 text-sm text-emerald-800">
+        <div className="rounded-2xl bg-emerald-400/10 px-5 py-4 text-sm text-emerald-300">
           <strong>Request sent!</strong> Matching sellers can see it now. Come back here to compare their offers.
         </div>
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
         <aside className="space-y-4 lg:sticky lg:top-40 lg:self-start">
-          <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <section className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
             <div className="flex items-center gap-2">
               <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${status.className}`}>{status.label}</span>
-              <span className="text-xs text-gray-400">{request.reference}</span>
+              <span className="text-xs text-faint">{request.reference}</span>
             </div>
-            <h1 className="mt-3 text-2xl font-black tracking-tight text-slate-950">{request.part_name}</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="mt-3 text-2xl font-black tracking-tight text-ink">{request.part_name}</h1>
+            <p className="text-sm text-muted">
               {[request.make, request.model, request.year].filter(Boolean).join(" ")}
             </p>
 
@@ -211,18 +212,28 @@ export default function RequestDetailsPage() {
               <Spec label="Condition" value={CONDITION_LABELS[request.condition_pref]} />
               <Spec label="City" value={request.city} />
             </dl>
-            {request.description ? <p className="mt-4 text-sm text-gray-600">{request.description}</p> : null}
+            {request.description ? <p className="mt-4 text-sm text-muted">{request.description}</p> : null}
+
+            {request.images?.length ? (
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {request.images.map((src) => (
+                  <a key={src} href={mediaUrl(src)} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-xl border border-line bg-surface-2">
+                    <img src={mediaUrl(src)} alt="" loading="lazy" className="h-full w-full object-cover" />
+                  </a>
+                ))}
+              </div>
+            ) : null}
 
             {isOpen ? (
               <>
-                <p className="mt-5 text-xs text-gray-500">
+                <p className="mt-5 text-xs text-muted">
                   Open until {new Date(`${request.expires_at.replace(" ", "T")}Z`).toLocaleDateString()}
                 </p>
                 <button
                   type="button"
                   onClick={close}
                   disabled={busy}
-                  className="mt-3 h-10 w-full rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 transition hover:bg-gray-50"
+                  className="mt-3 h-10 w-full rounded-xl border border-line text-sm font-semibold text-muted transition hover:bg-white/5"
                 >
                   Close request
                 </button>
@@ -232,17 +243,17 @@ export default function RequestDetailsPage() {
         </aside>
 
         <section className="space-y-4">
-          <h2 className="text-lg font-bold text-gray-900">
+          <h2 className="text-lg font-bold text-ink">
             {offers.length} {offers.length === 1 ? "offer" : "offers"}
           </h2>
 
-          {error ? <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
+          {error ? <p className="rounded-xl bg-red-400/10 px-4 py-3 text-sm text-red-300">{error}</p> : null}
 
           {offers.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center">
+            <div className="rounded-3xl border border-dashed border-line-strong bg-surface p-10 text-center">
               <div className="text-4xl">⏳</div>
-              <p className="mt-3 text-base font-bold text-gray-900">Waiting for offers</p>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-3 text-base font-bold text-ink">Waiting for offers</p>
+              <p className="mt-1 text-sm text-muted">
                 Sellers who stock parts for your {request.make} can see your request in their inbox.
               </p>
             </div>

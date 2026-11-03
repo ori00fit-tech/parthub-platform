@@ -24,29 +24,29 @@ export default function OrdersPage() {
         <div className="grid gap-4 lg:grid-cols-3">
           <Link
             to="/auth?redirect=/orders"
-            className="rounded-3xl border border-blue-200 bg-blue-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="rounded-3xl border border-navy/70 bg-navy/20 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            <p className="text-sm font-medium text-blue-700">Recommended</p>
-            <p className="mt-1 text-xl font-bold text-gray-900">Buyer sign in</p>
-            <p className="mt-2 text-sm text-gray-600">Continue to your orders area.</p>
+            <p className="text-sm font-medium text-link">Recommended</p>
+            <p className="mt-1 text-xl font-bold text-ink">Buyer sign in</p>
+            <p className="mt-2 text-sm text-muted">Continue to your orders area.</p>
           </Link>
 
           <Link
             to="/checkout"
-            className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="rounded-3xl border border-line bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            <p className="text-sm font-medium text-gray-500">Checkout</p>
-            <p className="mt-1 text-xl font-bold text-gray-900">Go to checkout</p>
-            <p className="mt-2 text-sm text-gray-600">Complete buyer details first.</p>
+            <p className="text-sm font-medium text-muted">Checkout</p>
+            <p className="mt-1 text-xl font-bold text-ink">Go to checkout</p>
+            <p className="mt-2 text-sm text-muted">Complete buyer details first.</p>
           </Link>
 
           <Link
             to="/cart"
-            className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="rounded-3xl border border-line bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            <p className="text-sm font-medium text-gray-500">Cart</p>
-            <p className="mt-1 text-xl font-bold text-gray-900">Review cart</p>
-            <p className="mt-2 text-sm text-gray-600">You currently have {totalItems} item(s).</p>
+            <p className="text-sm font-medium text-muted">Cart</p>
+            <p className="mt-1 text-xl font-bold text-ink">Review cart</p>
+            <p className="mt-2 text-sm text-muted">You currently have {totalItems} item(s).</p>
           </Link>
         </div>
       </section>
@@ -70,7 +70,7 @@ export default function OrdersPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               to="/account"
-              className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
+              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/30"
             >
               Back to account
             </Link>
@@ -85,28 +85,28 @@ export default function OrdersPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900">Buyer orders area</h2>
-          <p className="mt-2 text-sm text-gray-500">
+        <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-ink">Buyer orders area</h2>
+          <p className="mt-2 text-sm text-muted">
             Signed in as {user?.email || "buyer"}.
           </p>
 
-          <div className="mt-6 rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center">
-            <h3 className="text-xl font-bold text-gray-900">No orders yet</h3>
-            <p className="mt-2 text-sm text-gray-500">
+          <div className="mt-6 rounded-2xl border border-dashed border-line-strong bg-surface-2 px-4 py-8 text-center">
+            <h3 className="text-xl font-bold text-ink">No orders yet</h3>
+            <p className="mt-2 text-sm text-muted">
               Once the real checkout submission flow is wired, completed orders can appear here.
             </p>
 
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <Link
                 to="/checkout"
-                className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                className="btn-cta rounded-2xl px-5 py-3 text-sm"
               >
                 Continue to checkout
               </Link>
               <Link
                 to="/parts"
-                className="rounded-2xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
               >
                 Browse parts
               </Link>
@@ -115,23 +115,23 @@ export default function OrdersPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Order flow status</h2>
-            <div className="mt-4 space-y-3 text-sm text-gray-600">
-              <div className="rounded-2xl bg-gray-50 p-4">
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-ink">Order flow status</h2>
+            <div className="mt-4 space-y-3 text-sm text-muted">
+              <div className="rounded-2xl bg-surface-2 p-4">
                 Buyer authentication foundation: ready.
               </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
+              <div className="rounded-2xl bg-surface-2 p-4">
                 Cart and checkout foundations: ready.
               </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
+              <div className="rounded-2xl bg-surface-2 p-4">
                 Real order history API integration: next backend-connected step.
               </div>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Quick actions</h2>
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-ink">Quick actions</h2>
             <div className="mt-4 flex flex-col gap-3">
               <Link
                 to="/checkout"
@@ -141,13 +141,13 @@ export default function OrdersPage() {
               </Link>
               <Link
                 to="/cart"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
               >
                 Review cart
               </Link>
               <Link
                 to="/account"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
               >
                 Back to account
               </Link>

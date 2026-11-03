@@ -231,6 +231,7 @@ CREATE TABLE IF NOT EXISTS part_requests (
   oem_number         TEXT,
   description        TEXT,
   image_url          TEXT,
+  images             TEXT NOT NULL DEFAULT '[]',  -- JSON array, see migrations/0005
   condition_pref     TEXT NOT NULL DEFAULT 'any' CHECK (condition_pref IN ('any','new','used')),
   city               TEXT NOT NULL,
   phone              TEXT NOT NULL,

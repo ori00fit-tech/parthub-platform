@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { apiGet } from "../lib/api";
 import { formatPriceGBP } from "../lib/formatters";
+import { mediaUrl } from "../lib/media";
+import { useCart } from "../features/cart/CartContext";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import GaragePanel from "../features/vehicles/GaragePanel";
 import VehicleContextBar from "../features/vehicles/VehicleContextBar";
@@ -43,13 +45,14 @@ function getVehicleLabel(vehicle) {
   );
 }
 
-function normalizeMeta(meta) {
+// /catalog/parts doesn't return pagination yet; fall back to what was loaded.
+function normalizeMeta(meta, loadedCount = 0) {
   const pagination = meta?.pagination || {};
 
   return {
     page: Number(pagination.page || 1),
     limit: Number(pagination.limit || 20),
-    total: Number(pagination.total || 0),
+    total: Number(pagination.total ?? loadedCount),
     totalPages: Number(pagination.total_pages || 1),
   };
 }
@@ -130,38 +133,38 @@ function getRankingBadges(part, hasVehicle) {
   if (Number(part?.exact_vehicle_match || 0) === 1) {
     badges.push({
       label: "Exact fit",
-      className: "bg-green-50 text-green-700",
+      className: "bg-emerald-400/10 text-emerald-300",
     });
   } else if (Number(part?.partial_vehicle_match || 0) === 1 && hasVehicle) {
     badges.push({
       label: "Vehicle match",
-      className: "bg-emerald-50 text-emerald-700",
+      className: "bg-emerald-400/10 text-emerald-300",
     });
   }
 
   if (Number(part?.compatibility_count || 0) >= 3) {
     badges.push({
       label: "Strong compatibility",
-      className: "bg-blue-50 text-blue-700",
+      className: "bg-navy/20 text-link",
     });
   } else if (Number(part?.compatibility_count || 0) > 0) {
     badges.push({
       label: "Compatibility added",
-      className: "bg-sky-50 text-sky-700",
+      className: "bg-navy/20 text-link",
     });
   }
 
   if (Number(part?.featured || 0) === 1) {
     badges.push({
       label: "Featured",
-      className: "bg-amber-50 text-amber-700",
+      className: "bg-amber-400/10 text-amber-300",
     });
   }
 
   if (Number(part?.quantity || 0) > 0 && Number(part?.quantity || 0) <= 2) {
     badges.push({
       label: "Low stock",
-      className: "bg-red-50 text-red-700",
+      className: "bg-red-400/10 text-red-300",
     });
   }
 
@@ -175,21 +178,21 @@ function getSellerBadges(part) {
   if (Number(part?.compatibility_count || 0) > 0) {
     badges.push({
       label: "Fitment-ready seller",
-      className: "bg-indigo-50 text-indigo-700",
+      className: "bg-navy/20 text-link",
     });
   }
 
   if (Number(part?.quantity || 0) >= 5) {
     badges.push({
       label: "Well stocked",
-      className: "bg-emerald-50 text-emerald-700",
+      className: "bg-emerald-400/10 text-emerald-300",
     });
   }
 
   if (Number(part?.featured || 0) === 1) {
     badges.push({
       label: "Trusted seller",
-      className: "bg-amber-50 text-amber-700",
+      className: "bg-amber-400/10 text-amber-300",
     });
   }
 
@@ -202,44 +205,21 @@ function getOriginBadge(part) {
 
   if (origin === "oem") {
     return {
-      label: "OEM Genuine",
-      className: "bg-green-50 text-green-700",
+      label: "OEM",
+      className: "bg-navy text-white ring-1 ring-inset ring-white/15",
     };
   }
 
   if (origin === "used") {
     return {
-      label: "Used Part",
-      className: "bg-amber-50 text-amber-700",
+      label: "Used",
+      className: "border border-amber-400/35 bg-canvas/80 text-amber-300",
     };
   }
 
   return {
     label: "Aftermarket",
-    className: "bg-blue-50 text-blue-700",
-  };
-}
-
-function getSellerTypeBadge(part) {
-  const sellerType = String(part?.seller_type || "").toLowerCase();
-
-  if (sellerType === "breaker") {
-    return {
-      label: "Breaker",
-      className: "bg-orange-50 text-orange-700",
-    };
-  }
-
-  if (sellerType === "importer") {
-    return {
-      label: "Importer",
-      className: "bg-indigo-50 text-indigo-700",
-    };
-  }
-
-  return {
-    label: "Parts Shop",
-    className: "bg-slate-100 text-slate-700",
+    className: "border border-line-strong bg-canvas/80 text-ink-2",
   };
 }
 
@@ -251,6 +231,7 @@ function vehicleMatchesCard(part, vehicle) {
 export default function PartsPage() {
   const vehicleCtx = normalizeVehicleContext(useSelectedVehicle());
   const { selectedVehicle, hasVehicle, clearVehicle } = vehicleCtx;
+  const { items: cartItems, addItem } = useCart();
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -337,7 +318,7 @@ export default function PartsPage() {
 
         const nextParts = normalizeList(response, "parts");
         setParts(nextParts);
-        setMeta(normalizeMeta(response?.meta));
+        setMeta(normalizeMeta(response?.meta, nextParts.length));
       } catch (err) {
         if (!active) return;
         setError(err?.message || "Failed to load parts");
@@ -498,25 +479,25 @@ export default function PartsPage() {
   const FilterPanel = (
     <div className="space-y-5">
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-ink-2">
           Search
         </label>
         <input
           value={filters.q}
           onChange={setField("q")}
           placeholder="Search by title, SKU, keyword..."
-          className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+          className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
         />
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-ink-2">
           Category
         </label>
         <select
           value={filters.category}
           onChange={setField("category")}
-          className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+          className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
         >
           <option value="">All categories</option>
           {categories.map((item) => (
@@ -528,13 +509,13 @@ export default function PartsPage() {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-ink-2">
           Brand
         </label>
         <select
           value={filters.brand}
           onChange={setField("brand")}
-          className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+          className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
         >
           <option value="">All brands</option>
           {brands.map((item) => (
@@ -546,13 +527,13 @@ export default function PartsPage() {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-ink-2">
           Condition
         </label>
         <select
           value={filters.condition}
           onChange={setField("condition")}
-          className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+          className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
         >
           <option value="">All conditions</option>
           <option value="new">New</option>
@@ -563,7 +544,7 @@ export default function PartsPage() {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+          <label className="mb-1.5 block text-sm font-medium text-ink-2">
             Min price
           </label>
           <input
@@ -571,12 +552,12 @@ export default function PartsPage() {
             onChange={setField("min_price")}
             inputMode="numeric"
             placeholder="0"
-            className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+            className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
           />
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+          <label className="mb-1.5 block text-sm font-medium text-ink-2">
             Max price
           </label>
           <input
@@ -584,19 +565,19 @@ export default function PartsPage() {
             onChange={setField("max_price")}
             inputMode="numeric"
             placeholder="50000"
-            className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+            className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
           />
         </div>
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-ink-2">
           Sort
         </label>
         <select
           value={filters.sort}
           onChange={setField("sort")}
-          className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+          className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
         >
           <option value="relevance">Relevance</option>
           <option value="newest">Newest</option>
@@ -609,7 +590,7 @@ export default function PartsPage() {
         <button
           type="button"
           onClick={clearAllFilters}
-          className="inline-flex h-11 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+          className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
         >
           Clear filters
         </button>
@@ -618,7 +599,7 @@ export default function PartsPage() {
           <button
             type="button"
             onClick={clearVehicle}
-            className="inline-flex h-11 items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+            className="inline-flex h-11 items-center justify-center rounded-2xl border border-red-400/30 bg-red-400/10 px-4 text-sm font-semibold text-red-300 transition hover:bg-red-400/20"
           >
             Clear vehicle
           </button>
@@ -667,7 +648,7 @@ export default function PartsPage() {
             <button
               type="button"
               onClick={() => setMobileFiltersOpen(true)}
-              className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50 xl:hidden"
+              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/30 xl:hidden"
             >
               Filters
             </button>
@@ -675,7 +656,7 @@ export default function PartsPage() {
             <button
               type="button"
               onClick={handleSaveSearch}
-              className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
+              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/30"
             >
               Save search
             </button>
@@ -695,16 +676,16 @@ export default function PartsPage() {
 
       <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="hidden space-y-6 xl:block">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
             <div className="mb-5">
-              <h2 className="text-xl font-bold text-gray-900">Filters</h2>
-              <p className="mt-1 text-sm text-gray-500">
+              <h2 className="text-xl font-bold text-ink">Filters</h2>
+              <p className="mt-1 text-sm text-muted">
                 Refine results for faster matching.
               </p>
             </div>
 
             {loadingMeta ? (
-              <div className="text-sm text-gray-500">Loading filters...</div>
+              <div className="text-sm text-muted">Loading filters...</div>
             ) : (
               FilterPanel
             )}
@@ -715,11 +696,11 @@ export default function PartsPage() {
         </aside>
 
         <div className="space-y-5">
-          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="text-lg font-bold text-gray-900">{resultsLabel}</p>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="text-lg font-bold text-ink">{resultsLabel}</p>
+                <p className="mt-1 text-sm text-muted">
                   {hasVehicle
                     ? `${exactMatchesCount} exact match${exactMatchesCount === 1 ? "" : "es"} for ${vehicleLabel}`
                     : "Showing broader marketplace results"}
@@ -730,30 +711,30 @@ export default function PartsPage() {
                 <button
                   type="button"
                   onClick={handleSaveSearch}
-                  className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                  className="rounded-full bg-navy/20 px-3 py-1 text-xs font-semibold text-link transition hover:bg-navy/30"
                 >
                   Save this search
                 </button>
                 {filters.q ? (
-                  <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                  <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-ink-2">
                     Search: {filters.q}
                   </span>
                 ) : null}
 
                 {filters.category ? (
-                  <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                  <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-ink-2">
                     Category: {filters.category}
                   </span>
                 ) : null}
 
                 {filters.brand ? (
-                  <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                  <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-ink-2">
                     Brand: {filters.brand}
                   </span>
                 ) : null}
 
                 {hasVehicle ? (
-                  <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                  <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-300">
                     Vehicle-aware
                   </span>
                 ) : null}
@@ -762,38 +743,38 @@ export default function PartsPage() {
 
             {hasVehicle ? (
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-green-700">
+                <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
                     Exact matches
                   </p>
-                  <p className="mt-1 text-2xl font-bold text-green-900">{exactMatchesCount}</p>
+                  <p className="mt-1 text-2xl font-bold text-emerald-200">{exactMatchesCount}</p>
                 </div>
 
-                <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                <div className="rounded-2xl border border-navy/70 bg-navy/20 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-link">
                     Broader fitment candidates
                   </p>
-                  <p className="mt-1 text-2xl font-bold text-blue-900">{partialMatchesCount}</p>
+                  <p className="mt-1 text-2xl font-bold text-link">{partialMatchesCount}</p>
                 </div>
               </div>
             ) : null}
           </div>
 
           {!hasVehicle ? (
-            <div className="rounded-3xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700 shadow-sm">
+            <div className="rounded-3xl border border-navy/70 bg-navy/20 px-4 py-3 text-sm text-link shadow-sm">
               Select your vehicle to unlock exact fitment ranking and stronger part matching.
             </div>
           ) : null}
 
           {!loading && !error && topMatch ? (
-            <div className="rounded-3xl border border-green-200 bg-gradient-to-br from-green-50 to-white p-5 shadow-sm">
+            <div className="rounded-3xl border border-emerald-400/30 bg-gradient-to-br from-emerald-400/10 to-surface p-5 shadow-sm">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
-                  <div className="mb-2 inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                  <div className="mb-2 inline-flex rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-300">
                     Top result
                   </div>
-                  <h3 className="truncate text-xl font-bold text-gray-900">{topMatch.title}</h3>
-                  <p className="mt-1 text-sm text-gray-600">
+                  <h3 className="truncate text-xl font-bold text-ink">{topMatch.title}</h3>
+                  <p className="mt-1 text-sm text-muted">
                     {topMatch.brand_name || "Brand unavailable"}
                     {topMatch.category_name ? ` • ${topMatch.category_name}` : ""}
                     {hasVehicle && Number(topMatch?.exact_vehicle_match || 0) === 1
@@ -816,13 +797,13 @@ export default function PartsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <div className="flex items-center rounded-2xl bg-white px-4 py-3 text-lg font-bold text-gray-900 shadow-sm">
+                  <div className="flex items-center rounded-2xl bg-surface px-4 py-3 text-lg font-bold text-ink shadow-sm">
                     {formatPriceGBP(topMatch.price)}
                   </div>
 
                   <Link
                     to={`/parts/${topMatch.slug}`}
-                    className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                    className="inline-flex h-12 items-center justify-center rounded-2xl bg-navy px-5 text-sm font-semibold text-white transition hover:bg-navy-deep"
                   >
                     View best match
                   </Link>
@@ -830,7 +811,7 @@ export default function PartsPage() {
                   <button
                     type="button"
                     onClick={() => toggleShortlist(topMatch)}
-                    className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                    className="inline-flex h-12 items-center justify-center rounded-2xl border border-line bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
                   >
                     {shortlistIds.includes(topMatch.id) ? "Remove from shortlist" : "Add to shortlist"}
                   </button>
@@ -840,7 +821,7 @@ export default function PartsPage() {
           ) : null}
 
           {error ? (
-            <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
+            <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-6 text-red-300 shadow-sm">
               {error}
             </div>
           ) : null}
@@ -850,27 +831,27 @@ export default function PartsPage() {
               {Array.from({ length: 6 }).map((_, index) => (
                 <div
                   key={index}
-                  className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm"
+                  className="overflow-hidden rounded-3xl border border-line bg-surface shadow-sm"
                 >
-                  <div className="h-44 animate-pulse bg-gray-100" />
+                  <div className="h-44 animate-pulse bg-surface-2" />
                   <div className="space-y-3 p-4">
-                    <div className="h-4 w-2/3 animate-pulse rounded bg-gray-100" />
-                    <div className="h-4 w-1/2 animate-pulse rounded bg-gray-100" />
-                    <div className="h-10 w-full animate-pulse rounded bg-gray-100" />
+                    <div className="h-4 w-2/3 animate-pulse rounded bg-surface-2" />
+                    <div className="h-4 w-1/2 animate-pulse rounded bg-surface-2" />
+                    <div className="h-10 w-full animate-pulse rounded bg-surface-2" />
                   </div>
                 </div>
               ))}
             </div>
           ) : parts.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-8 shadow-sm sm:p-10">
+            <div className="rounded-3xl border border-dashed border-line-strong bg-surface p-8 shadow-sm sm:p-10">
               <div className="max-w-2xl">
-                <h3 className="text-xl font-bold text-gray-900">
+                <h3 className="text-xl font-bold text-ink">
                   {hasVehicle
                     ? "No exact matches found for your selected vehicle"
                     : "No parts found"}
                 </h3>
 
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-muted">
                   {hasVehicle
                     ? "No listings matched your current vehicle and filter combination."
                     : "No listings matched your current search and filter combination."}
@@ -880,7 +861,7 @@ export default function PartsPage() {
                   {emptyStateHints.map((hint, index) => (
                     <div
                       key={index}
-                      className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-700"
+                      className="rounded-2xl bg-surface-2 px-4 py-3 text-sm text-ink-2"
                     >
                       {hint}
                     </div>
@@ -891,14 +872,14 @@ export default function PartsPage() {
                   <button
                     type="button"
                     onClick={clearAllFilters}
-                    className="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl bg-navy px-5 text-sm font-semibold text-white transition hover:bg-navy-deep"
                   >
                     Reset search filters
                   </button>
 
                   <Link
                     to={`/request-part${searchParams.get("q") ? `?part=${encodeURIComponent(searchParams.get("q"))}` : ""}`}
-                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-5 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-navy/70 bg-navy/20 px-5 text-sm font-semibold text-link transition hover:bg-navy/30"
                   >
                     Can't find it? Request this part
                   </Link>
@@ -907,7 +888,7 @@ export default function PartsPage() {
                     <button
                       type="button"
                       onClick={clearVehicle}
-                      className="inline-flex h-11 items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                      className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
                     >
                       Clear vehicle filter
                     </button>
@@ -915,7 +896,7 @@ export default function PartsPage() {
 
                   <Link
                     to="/parts"
-                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
                   >
                     Browse all parts
                   </Link>
@@ -930,186 +911,183 @@ export default function PartsPage() {
                   const compatibilityCount = Number(part?.compatibility_count || 0);
                   const rankingBadges = getRankingBadges(part, hasVehicle);
 
+                  const inStock = Number(part.quantity || 0) > 0;
+                  const lowStock = inStock && Number(part.quantity) <= 3;
+                  const origin = getOriginBadge(part);
+                  const inCart = cartItems.some((item) => item.part_id === part.id);
+
                   return (
-                    <Link
+                    <article
                       key={part.id}
-                      to={`/parts/${part.slug}`}
-                      className="group overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+                      className="group relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-panel transition duration-200 hover:-translate-y-0.5 hover:border-line-strong hover:shadow-lift"
                     >
-                      <div className="relative bg-gray-100">
+                      {/* Whole card opens the part; buttons and links sit above this. */}
+                      <Link to={`/parts/${part.slug}`} className="absolute inset-0 z-0" aria-label={part.title} />
+
+                      <div className="media-well relative flex aspect-[4/3] max-w-full items-center justify-center overflow-hidden border-b border-line">
                         {part.image_url ? (
                           <img
-                            src={part.image_url}
-                            alt={part.title}
-                            className="h-48 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                            src={mediaUrl(part.image_url)}
+                            alt=""
+                            loading="lazy"
+                            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                           />
                         ) : (
-                          <div className="flex h-48 items-center justify-center text-sm text-gray-400">
-                            No image
-                          </div>
+                          <svg viewBox="0 0 64 64" className="h-20 w-20 text-[#46587A]" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                            <circle cx="32" cy="32" r="9" />
+                            <path d="M32 6v8M32 50v8M6 32h8M50 32h8M13.6 13.6l5.7 5.7M44.7 44.7l5.7 5.7M13.6 50.4l5.7-5.7M44.7 19.3l5.7-5.7" strokeLinecap="round" />
+                            <circle cx="32" cy="32" r="20" strokeDasharray="4 5" />
+                          </svg>
                         )}
 
-                        <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-                          <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold text-gray-800 shadow-sm">
+                        <div className="absolute left-2.5 top-2.5 flex flex-wrap gap-1.5">
+                          <span className={["rounded px-2 py-1 text-[10.5px] font-semibold uppercase tracking-[0.1em]", origin.className].join(" ")}>
+                            {origin.label}
+                          </span>
+                          <span className="rounded border border-line-strong bg-canvas/80 px-2 py-1 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-ink-2">
                             {part.condition}
                           </span>
-
-                          {exactMatched ? (
-                            <span className="rounded-full bg-green-50 px-3 py-1 text-[11px] font-semibold text-green-700 shadow-sm">
-                              Vehicle-matched
-                            </span>
-                          ) : null}
                         </div>
+
+                        {part.sku ? (
+                          <span className="absolute bottom-2 right-2.5 font-mono text-[10.5px] tracking-[0.06em] text-[#6E81A3]">
+                            {part.sku}
+                          </span>
+                        ) : null}
                       </div>
 
-                      <div className="space-y-3 p-4">
-                        <div>
-                          <h3 className="line-clamp-2 text-base font-bold text-gray-900">
-                            {part.title}
-                          </h3>
-                          <p className="mt-1 text-sm text-gray-500">
-                            {part.brand_name || "Brand unavailable"}
-                            {part.category_name ? ` • ${part.category_name}` : ""}
-                          </p>
-
-                          {rankingBadges.length > 0 ? (
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {rankingBadges.map((badge) => (
-                                <span
-                                  key={badge.label}
-                                  className={[
-                                    "rounded-full px-3 py-1 text-[11px] font-semibold",
-                                    badge.className,
-                                  ].join(" ")}
-                                >
-                                  {badge.label}
-                                </span>
-                              ))}
-                            </div>
-                          ) : null}
-                        </div>
-
-                        <div className="flex items-end justify-between gap-3">
-                          <div>
-                            <p className="text-xl font-bold text-gray-900">
-                              {formatPriceGBP(part.price)}
-                            </p>
-                            {part.compare_price ? (
-                              <p className="text-xs text-gray-400 line-through">
-                                {formatPriceGBP(part.compare_price)}
-                              </p>
-                            ) : null}
-                          </div>
-
-                          <div className="text-right text-xs text-gray-500">
-                            <p>{part.quantity > 0 ? `${part.quantity} in stock` : "Out of stock"}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            className={[
-                              "rounded-full px-3 py-1 text-xs font-semibold",
-                              getOriginBadge(part).className,
-                            ].join(" ")}
-                          >
-                            {getOriginBadge(part).label}
+                      <div className="flex flex-1 flex-col gap-3 p-3.5">
+                        <div className="flex items-center justify-between gap-2 text-xs text-muted">
+                          <span className="truncate font-semibold uppercase tracking-[0.08em] text-[#A9BBF5]">
+                            {part.brand_name || "Unbranded"}
                           </span>
-
-                          <span
-                            className={[
-                              "rounded-full px-3 py-1 text-xs font-semibold",
-                              getSellerTypeBadge(part).className,
-                            ].join(" ")}
-                          >
-                            {getSellerTypeBadge(part).label}
-                          </span>
-
-                          {compatibilityCount > 0 ? (
-                            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                              Compatible with {compatibilityCount} vehicle setup{compatibilityCount === 1 ? "" : "s"}
-                            </span>
-                          ) : (
-                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
-                              No fitment rows yet
-                            </span>
-                          )}
-
-                          {Number(part?.ranking_score || 0) >= 100 ? (
-                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                              High relevance
-                            </span>
-                          ) : null}
+                          {part.category_name ? <span className="truncate">{part.category_name}</span> : null}
                         </div>
 
-                        <div className="border-t border-gray-100 pt-3 space-y-2">
-                          <p className="text-sm text-gray-500">
-                            Seller:{" "}
+                        <h3 className="line-clamp-2 font-sans text-[15.5px] font-semibold leading-snug text-ink">{part.title}</h3>
+
+                        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5 rounded-lg border border-line bg-surface-2 px-2.5 py-2 text-xs">
+                          <dt className="self-center text-[10.5px] uppercase tracking-[0.06em] text-muted">SKU</dt>
+                          <dd className="break-all font-mono text-ink">{part.sku || "—"}</dd>
+                          <dt className="self-center text-[10.5px] uppercase tracking-[0.06em] text-muted">Seller</dt>
+                          <dd className="relative z-10 min-w-0 truncate">
                             {part.seller_slug ? (
-                              <Link
-                                to={`/sellers/${part.seller_slug}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="font-semibold text-blue-700 hover:underline"
-                              >
+                              <Link to={`/sellers/${part.seller_slug}`} className="font-semibold text-link hover:underline">
                                 {part.seller_name || "Unknown seller"}
                               </Link>
                             ) : (
-                              part.seller_name || "Unknown seller"
+                              <span className="text-ink-2">{part.seller_name || "Unknown seller"}</span>
                             )}
-                          </p>
+                            {part.seller_location ? <span className="text-faint"> · {part.seller_location}</span> : null}
+                          </dd>
+                        </dl>
 
-                          {getSellerBadges(part).length > 0 ? (
-                            <div className="flex flex-wrap gap-2">
-                              {getSellerBadges(part).map((badge) => (
-                                <span
-                                  key={badge.label}
-                                  className={[
-                                    "rounded-full px-3 py-1 text-[11px] font-semibold",
-                                    badge.className,
-                                  ].join(" ")}
-                                >
-                                  {badge.label}
-                                </span>
-                              ))}
-                            </div>
-                          ) : null}
+                        <div className="flex flex-wrap gap-1.5">
+                          <span
+                            className={[
+                              "inline-flex h-6 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium before:h-1.5 before:w-1.5 before:rounded-full before:bg-current",
+                              !inStock
+                                ? "border-red-400/25 bg-red-400/10 text-red-300"
+                                : lowStock
+                                ? "border-amber-400/25 bg-amber-400/10 text-amber-300"
+                                : "border-emerald-400/25 bg-emerald-400/10 text-emerald-300",
+                            ].join(" ")}
+                          >
+                            {!inStock ? "Out of stock" : lowStock ? `Low stock · ${part.quantity} left` : `In stock · ${part.quantity}`}
+                          </span>
 
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-sm font-semibold text-blue-700">
-                              View fitment
+                          {exactMatched ? (
+                            <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 text-xs font-medium text-emerald-300 before:h-1.5 before:w-1.5 before:rounded-full before:bg-current">
+                              Fits your vehicle
                             </span>
+                          ) : compatibilityCount > 0 ? (
+                            <span className="inline-flex h-6 items-center rounded-full border border-line bg-white/[0.03] px-2.5 text-xs font-medium text-muted">
+                              Fits {compatibilityCount} vehicle setup{compatibilityCount === 1 ? "" : "s"}
+                            </span>
+                          ) : (
+                            <span className="inline-flex h-6 items-center rounded-full border border-line bg-white/[0.03] px-2.5 text-xs font-medium text-faint">
+                              No fitment data yet
+                            </span>
+                          )}
 
+                          {rankingBadges.filter((badge) => !/stock/i.test(badge.label)).slice(0, 2).map((badge) => (
+                            <span key={badge.label} className={["inline-flex h-6 items-center rounded-full px-2.5 text-xs font-medium", badge.className].join(" ")}>
+                              {badge.label}
+                            </span>
+                          ))}
+                          {getSellerBadges(part).slice(0, 1).map((badge) => (
+                            <span key={badge.label} className={["inline-flex h-6 items-center rounded-full px-2.5 text-xs font-medium", badge.className].join(" ")}>
+                              {badge.label}
+                            </span>
+                          ))}
+                        </div>
+
+                        <div className="mt-auto flex items-end justify-between gap-3 pt-1">
+                          <div className="font-mono tabular-nums">
+                            {part.compare_price ? (
+                              <s className="mb-1 block text-xs text-faint">{formatPriceGBP(part.compare_price)}</s>
+                            ) : null}
+                            <span className="text-[22px] font-semibold leading-none text-white">{formatPriceGBP(part.price)}</span>
+                          </div>
+
+                          <div className="relative z-10 flex items-center gap-1.5">
                             <button
                               type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                toggleShortlist(part);
-                              }}
-                              className="inline-flex h-9 items-center justify-center rounded-2xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 transition hover:bg-gray-50"
+                              onClick={() => toggleShortlist(part)}
+                              aria-pressed={shortlistIds.includes(part.id)}
+                              aria-label={shortlistIds.includes(part.id) ? "Remove from shortlist" : "Add to shortlist"}
+                              title={shortlistIds.includes(part.id) ? "Shortlisted" : "Shortlist"}
+                              className={[
+                                "flex h-[42px] w-[42px] items-center justify-center rounded-xl border transition",
+                                shortlistIds.includes(part.id)
+                                  ? "border-navy bg-navy/30 text-white"
+                                  : "border-line-strong text-muted hover:border-muted hover:text-ink",
+                              ].join(" ")}
                             >
-                              {shortlistIds.includes(part.id) ? "Shortlisted" : "Shortlist"}
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill={shortlistIds.includes(part.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                                <path d="M6 3h12v18l-6-4-6 4z" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!inStock}
+                              onClick={() =>
+                                addItem({
+                                  part_id: part.id,
+                                  slug: part.slug,
+                                  title: part.title,
+                                  thumbnail: part.image_url || null,
+                                  seller_name: part.seller_name || "",
+                                  price: part.price,
+                                })
+                              }
+                              className="btn-cta h-[42px] rounded-xl px-3.5 text-sm"
+                            >
+                              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+                                <path d="M12 5v14M5 12h14" />
+                              </svg>
+                              {inStock ? (inCart ? "Add more" : "Add to Cart") : "Sold out"}
                             </button>
                           </div>
                         </div>
                       </div>
-                    </Link>
+                    </article>
                   );
                 })}
               </div>
 
               {meta.totalPages > 1 ? (
-                <div className="flex flex-wrap items-center justify-center gap-3 rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="flex flex-wrap items-center justify-center gap-3 rounded-3xl border border-line bg-surface p-4 shadow-sm">
                   <button
                     type="button"
                     disabled={meta.page <= 1}
                     onClick={() => goToPage(meta.page - 1)}
-                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Previous
                   </button>
 
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="text-sm font-medium text-ink-2">
                     Page {meta.page} of {meta.totalPages}
                   </span>
 
@@ -1117,7 +1095,7 @@ export default function PartsPage() {
                     type="button"
                     disabled={meta.page >= meta.totalPages}
                     onClick={() => goToPage(meta.page + 1)}
-                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Next
                   </button>
@@ -1129,13 +1107,13 @@ export default function PartsPage() {
       </div>
 
       {shortlist.length > 0 ? (
-        <div className="fixed bottom-0 inset-x-0 z-40 border-t border-gray-200 bg-white/95 px-4 py-3 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur xl:hidden">
+        <div className="fixed bottom-0 inset-x-0 z-40 border-t border-line bg-surface/95 px-4 py-3 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur xl:hidden">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              <p className="text-xs font-semibold uppercase tracking-wide text-faint">
                 Shortlist
               </p>
-              <p className="truncate text-sm font-semibold text-gray-900">
+              <p className="truncate text-sm font-semibold text-ink">
                 {shortlist.length} saved part{shortlist.length === 1 ? "" : "s"}
               </p>
             </div>
@@ -1143,7 +1121,7 @@ export default function PartsPage() {
             <div className="flex flex-wrap gap-2">
               <Link
                 to="/compare"
-                className="inline-flex h-10 items-center justify-center rounded-2xl bg-blue-600 px-4 text-xs font-semibold text-white transition hover:bg-blue-700"
+                className="inline-flex h-10 items-center justify-center rounded-2xl bg-navy px-4 text-xs font-semibold text-white transition hover:bg-navy-deep"
               >
                 Compare
               </Link>
@@ -1152,7 +1130,7 @@ export default function PartsPage() {
                 <Link
                   key={item.id}
                   to={`/parts/${item.slug}`}
-                  className="inline-flex h-10 items-center justify-center rounded-2xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 transition hover:bg-gray-50"
+                  className="inline-flex h-10 items-center justify-center rounded-2xl border border-line bg-surface px-3 text-xs font-semibold text-ink-2 transition hover:bg-white/5"
                 >
                   View
                 </Link>
@@ -1164,17 +1142,17 @@ export default function PartsPage() {
 
       {mobileFiltersOpen ? (
         <div className="fixed inset-0 z-50 bg-slate-950/45 px-4 py-6 xl:hidden">
-          <div className="mx-auto flex h-full max-w-lg flex-col rounded-[28px] bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <div className="mx-auto flex h-full max-w-lg flex-col rounded-[28px] bg-surface shadow-2xl">
+            <div className="flex items-center justify-between border-b border-line px-5 py-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Filters</h2>
-                <p className="text-xs text-gray-500">Refine marketplace results</p>
+                <h2 className="text-lg font-bold text-ink">Filters</h2>
+                <p className="text-xs text-muted">Refine marketplace results</p>
               </div>
 
               <button
                 type="button"
                 onClick={() => setMobileFiltersOpen(false)}
-                className="inline-flex h-10 items-center justify-center rounded-2xl border border-gray-200 px-4 text-sm font-semibold text-gray-700"
+                className="inline-flex h-10 items-center justify-center rounded-2xl border border-line px-4 text-sm font-semibold text-ink-2"
               >
                 Close
               </button>
@@ -1182,7 +1160,7 @@ export default function PartsPage() {
 
             <div className="flex-1 overflow-y-auto px-5 py-5">
               {loadingMeta ? (
-                <div className="text-sm text-gray-500">Loading filters...</div>
+                <div className="text-sm text-muted">Loading filters...</div>
               ) : (
                 FilterPanel
               )}

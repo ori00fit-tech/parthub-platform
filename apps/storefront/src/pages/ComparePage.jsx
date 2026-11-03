@@ -50,14 +50,14 @@ export default function ComparePage() {
           </p>
         </div>
 
-        <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900">No parts selected for comparison</h2>
-          <p className="mt-2 text-sm text-gray-500">
+        <div className="rounded-3xl border border-dashed border-line-strong bg-surface p-10 text-center shadow-sm">
+          <h2 className="text-2xl font-bold text-ink">No parts selected for comparison</h2>
+          <p className="mt-2 text-sm text-muted">
             Add parts to shortlist from the search results first.
           </p>
           <Link
             to="/parts"
-            className="mt-5 inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700"
+            className="mt-5 inline-flex h-12 items-center justify-center rounded-2xl bg-navy px-6 text-sm font-semibold text-white transition hover:bg-navy-deep"
           >
             Browse parts
           </Link>
@@ -87,26 +87,26 @@ export default function ComparePage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-3xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-3xl border border-line bg-surface shadow-sm">
         <div className="grid min-w-[980px] grid-cols-[220px_repeat(auto-fit,minmax(220px,1fr))]">
-          <div className="border-r border-gray-200 bg-gray-50 p-5">
-            <p className="font-semibold text-gray-900">Field</p>
+          <div className="border-r border-line bg-surface-2 p-5">
+            <p className="font-semibold text-ink">Field</p>
           </div>
 
           {items.map((item) => (
-            <div key={item.id} className="border-r border-gray-200 p-5 last:border-r-0">
+            <div key={item.id} className="border-r border-line p-5 last:border-r-0">
               <div className="flex items-start justify-between gap-3">
-                <p className="line-clamp-2 font-bold text-gray-900">{item.title}</p>
+                <p className="line-clamp-2 font-bold text-ink">{item.title}</p>
                 <button
                   type="button"
                   onClick={() => removeItem(item.id)}
-                  className="rounded-xl border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-100"
+                  className="rounded-xl border border-red-400/30 bg-red-400/10 px-3 py-1 text-xs font-semibold text-red-300 transition hover:bg-red-400/20"
                 >
                   Remove
                 </button>
               </div>
 
-              <div className="mt-4 overflow-hidden rounded-2xl bg-gray-100">
+              <div className="mt-4 overflow-hidden rounded-2xl bg-surface-2">
                 {item.image_url ? (
                   <img
                     src={item.image_url}
@@ -114,7 +114,7 @@ export default function ComparePage() {
                     className="h-36 w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-36 items-center justify-center text-sm text-gray-400">
+                  <div className="flex h-36 items-center justify-center text-sm text-faint">
                     No image
                   </div>
                 )}
@@ -122,7 +122,7 @@ export default function ComparePage() {
 
               <Link
                 to={`/parts/${item.slug}`}
-                className="mt-4 inline-flex h-10 items-center justify-center rounded-2xl bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700"
+                className="mt-4 inline-flex h-10 items-center justify-center rounded-2xl bg-navy px-4 text-sm font-semibold text-white transition hover:bg-navy-deep"
               >
                 Open part
               </Link>
@@ -170,15 +170,15 @@ export default function ComparePage() {
             },
           ].map((row) => (
             <>
-              <div key={row.label} className="border-t border-r border-gray-200 bg-gray-50 p-5">
-                <p className="text-sm font-semibold text-gray-900">{row.label}</p>
+              <div key={row.label} className="border-t border-r border-line bg-surface-2 p-5">
+                <p className="text-sm font-semibold text-ink">{row.label}</p>
               </div>
               {items.map((item) => (
                 <div
                   key={`${row.label}-${item.id}`}
-                  className="border-t border-r border-gray-200 p-5 last:border-r-0"
+                  className="border-t border-r border-line p-5 last:border-r-0"
                 >
-                  <p className="text-sm text-gray-700">{row.value(item)}</p>
+                  <p className="text-sm text-ink-2">{row.value(item)}</p>
                 </div>
               ))}
             </>

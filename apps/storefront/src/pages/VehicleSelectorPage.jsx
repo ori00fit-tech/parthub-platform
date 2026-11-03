@@ -223,35 +223,35 @@ export default function VehicleSelectorPage() {
       </div>
 
       {error ? (
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-5 text-red-700 shadow-sm">
+        <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-5 text-red-300 shadow-sm">
           {error}
         </div>
       ) : null}
 
       {saved ? (
-        <div className="rounded-3xl border border-green-200 bg-green-50 p-5 text-green-700 shadow-sm">
+        <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 p-5 text-emerald-300 shadow-sm">
           Vehicle saved successfully.
         </div>
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
           <div className="space-y-5">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Select your vehicle</h2>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-2xl font-bold text-ink">Select your vehicle</h2>
+              <p className="text-sm text-muted">
                 Start with the make, then model, then year.
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               <label className="space-y-2">
-                <span className="text-sm font-medium text-gray-700">Make</span>
+                <span className="text-sm font-medium text-ink-2">Make</span>
                 <select
                   value={selectedMake}
                   onChange={handleMakeChange}
                   disabled={loadingMakes}
-                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
+                  className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none"
                 >
                   <option value="">
                     {loadingMakes ? "Loading makes..." : "Select make"}
@@ -265,12 +265,12 @@ export default function VehicleSelectorPage() {
               </label>
 
               <label className="space-y-2">
-                <span className="text-sm font-medium text-gray-700">Model</span>
+                <span className="text-sm font-medium text-ink-2">Model</span>
                 <select
                   value={selectedModel}
                   onChange={handleModelChange}
                   disabled={!selectedMake || loadingModels}
-                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
+                  className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none"
                 >
                   <option value="">
                     {!selectedMake
@@ -288,12 +288,12 @@ export default function VehicleSelectorPage() {
               </label>
 
               <label className="space-y-2">
-                <span className="text-sm font-medium text-gray-700">Year</span>
+                <span className="text-sm font-medium text-ink-2">Year</span>
                 <select
                   value={selectedYear}
                   onChange={handleYearChange}
                   disabled={!selectedModel || loadingYears}
-                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
+                  className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none"
                 >
                   <option value="">
                     {!selectedModel
@@ -315,14 +315,14 @@ export default function VehicleSelectorPage() {
               <button
                 type="button"
                 onClick={handleSave}
-                className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                className="btn-cta rounded-2xl px-5 py-3 text-sm"
               >
                 Save vehicle
               </button>
 
               <Link
                 to="/parts"
-                className="rounded-2xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
               >
                 Browse parts
               </Link>
@@ -330,7 +330,7 @@ export default function VehicleSelectorPage() {
               <button
                 type="button"
                 onClick={handleClearVehicle}
-                className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                className="rounded-2xl border border-red-400/30 bg-red-400/10 px-5 py-3 text-sm font-semibold text-red-300 transition hover:bg-red-400/20"
               >
                 Clear vehicle
               </button>
@@ -339,36 +339,36 @@ export default function VehicleSelectorPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-900">Current selection</h2>
+          <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
+            <h2 className="text-lg font-bold text-ink">Current selection</h2>
 
             <div className="mt-4 space-y-3">
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Make</p>
-                <p className="mt-1 font-semibold text-gray-900">
+              <div className="rounded-2xl bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-wide text-faint">Make</p>
+                <p className="mt-1 font-semibold text-ink">
                   {selectedMakeName || selectedVehicle?.make_name || "-"}
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Model</p>
-                <p className="mt-1 font-semibold text-gray-900">
+              <div className="rounded-2xl bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-wide text-faint">Model</p>
+                <p className="mt-1 font-semibold text-ink">
                   {selectedModelName || selectedVehicle?.model_name || "-"}
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Year</p>
-                <p className="mt-1 font-semibold text-gray-900">
+              <div className="rounded-2xl bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-wide text-faint">Year</p>
+                <p className="mt-1 font-semibold text-ink">
                   {selectedYear || selectedVehicle?.year || "-"}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-900">Why this matters</h2>
-            <div className="mt-3 space-y-2 text-sm text-gray-600">
+          <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
+            <h2 className="text-lg font-bold text-ink">Why this matters</h2>
+            <div className="mt-3 space-y-2 text-sm text-muted">
               <p>✔ Faster catalog browsing</p>
               <p>✔ Better fitment workflows</p>
               <p>✔ Stronger vehicle-specific search foundation</p>

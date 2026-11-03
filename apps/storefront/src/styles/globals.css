@@ -2,6 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-gray-50 text-gray-900;
+/* ============================================================
+   PartHub industrial theme (dark)
+   Colors live in tailwind.config.js. Orange (`cta`) is only for
+   conversion buttons: use the `.btn-cta` component class.
+   ============================================================ */
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-canvas font-sans text-ink antialiased;
+  }
+
+  h1,
+  h2 {
+    @apply font-display tracking-[0.01em];
+  }
+
+  ::selection {
+    background: rgba(147, 197, 253, 0.3);
+  }
+
+  :focus-visible {
+    outline: 2px solid #93c5fd;
+    outline-offset: 2px;
+  }
+
+  /* Native form controls follow the dark palette. */
+  input,
+  select,
+  textarea {
+    @apply bg-surface-2 text-ink placeholder:text-faint;
+  }
+
+  select option {
+    @apply bg-surface text-ink;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Safety Orange: conversion actions only. */
+  .btn-cta {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-cta font-bold text-cta-ink shadow-cta transition hover:bg-cta-hover active:translate-y-px disabled:cursor-not-allowed disabled:bg-[#4B3A2E] disabled:text-[#A8988B] disabled:shadow-none;
+  }
+
+  /* Codes: SKU, OEM numbers, references. */
+  .code {
+    @apply font-mono tabular-nums;
+  }
+
+  /* Recessed studio backdrop behind product photos. */
+  .media-well {
+    background: radial-gradient(120% 90% at 50% 38%, #2a3954 0%, #172234 55%, #0f1828 100%);
+  }
+}
+
+@keyframes cartbump {
+  40% {
+    transform: scale(1.35);
+  }
 }

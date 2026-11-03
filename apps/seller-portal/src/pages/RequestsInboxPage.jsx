@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
-import { formatMAD, offerBadge } from "../lib/requests";
+import { formatMAD, mediaUrl, offerBadge } from "../lib/requests";
 
 export default function RequestsInboxPage() {
   const [scope, setScope] = useState("matched");
@@ -122,6 +122,20 @@ export default function RequestsInboxPage() {
                 to={`/requests/${r.id}`}
                 className="flex flex-wrap items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow"
               >
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100">
+                  {r.images?.[0] ? (
+                    <>
+                      <img src={mediaUrl(r.images[0])} alt="" loading="lazy" className="h-full w-full object-cover" />
+                      {r.images.length > 1 ? (
+                        <span className="absolute bottom-0.5 right-0.5 rounded bg-slate-950/70 px-1 text-[10px] font-bold text-white">
+                          +{r.images.length - 1}
+                        </span>
+                      ) : null}
+                    </>
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-xl">⚙️</div>
+                  )}
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     {badge ? (

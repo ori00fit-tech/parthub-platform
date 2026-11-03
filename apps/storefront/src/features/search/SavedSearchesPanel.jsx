@@ -42,13 +42,13 @@ export default function SavedSearchesPanel({ onLoadSearch }) {
 
   if (items.length === 0) {
     return (
-      <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="text-xl font-bold text-gray-900">Saved searches</h2>
-        <p className="mt-1 text-sm text-gray-500">
+      <section className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
+        <h2 className="text-xl font-bold text-ink">Saved searches</h2>
+        <p className="mt-1 text-sm text-muted">
           Save important searches and return to them quickly.
         </p>
 
-        <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
+        <div className="mt-5 rounded-2xl border border-dashed border-line-strong bg-surface-2 p-4 text-sm text-muted">
           No saved searches yet.
         </div>
       </section>
@@ -56,9 +56,9 @@ export default function SavedSearchesPanel({ onLoadSearch }) {
   }
 
   return (
-    <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-      <h2 className="text-xl font-bold text-gray-900">Saved searches</h2>
-      <p className="mt-1 text-sm text-gray-500">
+    <section className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
+      <h2 className="text-xl font-bold text-ink">Saved searches</h2>
+      <p className="mt-1 text-sm text-muted">
         Re-open saved buyer intent in one click.
       </p>
 
@@ -66,13 +66,13 @@ export default function SavedSearchesPanel({ onLoadSearch }) {
         {items.map((item, index) => (
           <div
             key={`${item.query}-${index}`}
-            className="rounded-2xl border border-gray-200 bg-gray-50 p-4"
+            className="rounded-2xl border border-line bg-surface-2 p-4"
           >
-            <p className="font-semibold text-gray-900">
+            <p className="font-semibold text-ink">
               {item.label || item.query || "Saved search"}
             </p>
 
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-muted">
               {item.vehicleLabel ? `${item.vehicleLabel} • ` : ""}
               {item.query || "No keyword"}
             </p>
@@ -81,14 +81,14 @@ export default function SavedSearchesPanel({ onLoadSearch }) {
               <button
                 type="button"
                 onClick={() => onLoadSearch(item)}
-                className="inline-flex h-10 items-center justify-center rounded-2xl bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700"
+                className="inline-flex h-10 items-center justify-center rounded-2xl bg-navy px-4 text-sm font-semibold text-white transition hover:bg-navy-deep"
               >
                 Open
               </button>
 
               <Link
                 to={`/parts?${item.query}`}
-                className="inline-flex h-10 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                className="inline-flex h-10 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
               >
                 Open in page
               </Link>
@@ -96,7 +96,7 @@ export default function SavedSearchesPanel({ onLoadSearch }) {
               <button
                 type="button"
                 onClick={() => removeItem(item.query)}
-                className="inline-flex h-10 items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                className="inline-flex h-10 items-center justify-center rounded-2xl border border-red-400/30 bg-red-400/10 px-4 text-sm font-semibold text-red-300 transition hover:bg-red-400/20"
               >
                 Remove
               </button>

@@ -9,20 +9,20 @@ function getSellerBadges(seller) {
   if (Number(seller?.fitment_ready_parts_count || 0) > 0) {
     badges.push({
       label: "Fitment-ready seller",
-      className: "bg-indigo-50 text-indigo-700",
+      className: "bg-navy/20 text-link",
     });
   }
 
   if (Number(seller?.active_parts_count || 0) >= 5) {
     badges.push({
       label: "Well stocked",
-      className: "bg-emerald-50 text-emerald-700",
+      className: "bg-emerald-400/10 text-emerald-300",
     });
   }
 
   badges.push({
     label: "Active seller",
-    className: "bg-amber-50 text-amber-700",
+    className: "bg-amber-400/10 text-amber-300",
   });
 
   return badges.slice(0, 3);
@@ -34,26 +34,26 @@ function getPartBadges(part) {
   if (Number(part?.compatibility_count || 0) >= 3) {
     badges.push({
       label: "Strong compatibility",
-      className: "bg-blue-50 text-blue-700",
+      className: "bg-navy/20 text-link",
     });
   } else if (Number(part?.compatibility_count || 0) > 0) {
     badges.push({
       label: "Compatibility added",
-      className: "bg-sky-50 text-sky-700",
+      className: "bg-navy/20 text-link",
     });
   }
 
   if (Number(part?.featured || 0) === 1) {
     badges.push({
       label: "Featured",
-      className: "bg-amber-50 text-amber-700",
+      className: "bg-amber-400/10 text-amber-300",
     });
   }
 
   if (Number(part?.quantity || 0) >= 5) {
     badges.push({
       label: "In stock",
-      className: "bg-emerald-50 text-emerald-700",
+      className: "bg-emerald-400/10 text-emerald-300",
     });
   }
 
@@ -120,7 +120,7 @@ export default function SellerProfilePage() {
 
   if (loading) {
     return (
-      <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
         Loading seller profile...
       </div>
     );
@@ -128,7 +128,7 @@ export default function SellerProfilePage() {
 
   if (error || !seller) {
     return (
-      <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
+      <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-6 text-red-300 shadow-sm">
         {error || "Seller not found"}
       </div>
     );
@@ -172,49 +172,49 @@ export default function SellerProfilePage() {
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-6">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900">About this seller</h2>
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">About this seller</h2>
 
-            <div className="mt-5 space-y-4 text-sm text-gray-600">
+            <div className="mt-5 space-y-4 text-sm text-muted">
               <p>
-                <span className="font-semibold text-gray-900">Seller type:</span>{" "}
+                <span className="font-semibold text-ink">Seller type:</span>{" "}
                 {getSellerTypeLabel(seller.seller_type)}
               </p>
 
               <p>
-                <span className="font-semibold text-gray-900">Location:</span>{" "}
+                <span className="font-semibold text-ink">Location:</span>{" "}
                 {seller.location || "Not specified"}
               </p>
 
               {seller.phone ? (
                 <p>
-                  <span className="font-semibold text-gray-900">Phone:</span>{" "}
+                  <span className="font-semibold text-ink">Phone:</span>{" "}
                   {seller.phone}
                 </p>
               ) : null}
 
               <p>
-                <span className="font-semibold text-gray-900">Active listings:</span>{" "}
+                <span className="font-semibold text-ink">Active listings:</span>{" "}
                 {seller.active_parts_count || 0}
               </p>
 
               <p>
-                <span className="font-semibold text-gray-900">Fitment-ready listings:</span>{" "}
+                <span className="font-semibold text-ink">Fitment-ready listings:</span>{" "}
                 {seller.fitment_ready_parts_count || 0}
               </p>
             </div>
 
-            <div className="mt-5 rounded-2xl bg-gray-50 p-4">
-              <p className="text-sm font-semibold text-gray-900">Seller description</p>
-              <p className="mt-2 text-sm leading-6 text-gray-600">
+            <div className="mt-5 rounded-2xl bg-surface-2 p-4">
+              <p className="text-sm font-semibold text-ink">Seller description</p>
+              <p className="mt-2 text-sm leading-6 text-muted">
                 {seller.description || "No seller description available yet."}
               </p>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900">Why this seller may be trusted</h2>
-            <div className="mt-4 space-y-3 text-sm text-gray-600">
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">Why this seller may be trusted</h2>
+            <div className="mt-4 space-y-3 text-sm text-muted">
               <p>• Active inventory indicates this seller is currently participating in the marketplace.</p>
               <p>• Fitment-ready listings usually reduce buyer hesitation and improve part matching.</p>
               <p>• Stock visibility and structured compatibility are stronger trust signals than title alone.</p>
@@ -222,18 +222,18 @@ export default function SellerProfilePage() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Seller inventory</h2>
-              <p className="mt-1 text-sm text-gray-500">
+              <h2 className="text-2xl font-bold text-ink">Seller inventory</h2>
+              <p className="mt-1 text-sm text-muted">
                 Active marketplace listings from this seller.
               </p>
             </div>
           </div>
 
           {parts.length === 0 ? (
-            <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500">
+            <div className="mt-5 rounded-2xl border border-dashed border-line-strong bg-surface-2 p-5 text-sm text-muted">
               No active parts found for this seller.
             </div>
           ) : (
@@ -242,9 +242,9 @@ export default function SellerProfilePage() {
                 <Link
                   key={part.id}
                   to={`/parts/${part.slug}`}
-                  className="group overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+                  className="group overflow-hidden rounded-3xl border border-line bg-surface shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
                 >
-                  <div className="bg-gray-100">
+                  <div className="bg-surface-2">
                     {part.image_url ? (
                       <img
                         src={part.image_url}
@@ -252,7 +252,7 @@ export default function SellerProfilePage() {
                         className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                       />
                     ) : (
-                      <div className="flex h-44 items-center justify-center text-sm text-gray-400">
+                      <div className="flex h-44 items-center justify-center text-sm text-faint">
                         No image
                       </div>
                     )}
@@ -260,17 +260,17 @@ export default function SellerProfilePage() {
 
                   <div className="space-y-3 p-4">
                     <div>
-                      <h3 className="line-clamp-2 text-base font-bold text-gray-900">
+                      <h3 className="line-clamp-2 text-base font-bold text-ink">
                         {part.title}
                       </h3>
-                      <p className="mt-1 text-sm text-gray-500">
+                      <p className="mt-1 text-sm text-muted">
                         {part.brand_name || "Brand unavailable"}
                         {part.category_name ? ` • ${part.category_name}` : ""}
                       </p>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold text-blue-700">
+                      <span className="rounded-full bg-navy/20 px-3 py-1 text-[11px] font-semibold text-link">
                         {getPartOriginLabel(part.part_origin)}
                       </span>
 
@@ -289,23 +289,23 @@ export default function SellerProfilePage() {
 
                     <div className="flex items-end justify-between gap-3">
                       <div>
-                        <p className="text-xl font-bold text-gray-900">
+                        <p className="text-xl font-bold text-ink">
                           {formatPriceGBP(part.price)}
                         </p>
                         {part.compare_price ? (
-                          <p className="text-xs text-gray-400 line-through">
+                          <p className="text-xs text-faint line-through">
                             {formatPriceGBP(part.compare_price)}
                           </p>
                         ) : null}
                       </div>
 
-                      <div className="text-right text-xs text-gray-500">
+                      <div className="text-right text-xs text-muted">
                         <p>{Number(part.quantity || 0) > 0 ? `${part.quantity} in stock` : "Out of stock"}</p>
                       </div>
                     </div>
 
-                    <div className="border-t border-gray-100 pt-3">
-                      <span className="text-sm font-semibold text-blue-700">
+                    <div className="border-t border-line pt-3">
+                      <span className="text-sm font-semibold text-link">
                         View part
                       </span>
                     </div>
