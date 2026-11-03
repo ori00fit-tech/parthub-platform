@@ -9,6 +9,8 @@ JWT_EXPIRES_IN = "7d"
 STOREFRONT_URL = "https://parthub.site"
 SELLER_PORTAL_URL = "https://seller.parthub.site"
 WHATSAPP_TEMPLATE_LANG = "fr"
+# Flat delivery fee added to every order, in centimes (3500 = 35 MAD).
+SHIPPING_FEE_CENTIMES = "3500"
 
 [[d1_databases]]
 binding = "DB"

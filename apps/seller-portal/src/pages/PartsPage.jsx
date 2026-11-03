@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
+import { formatMoney } from "@parthub/shared";
 
 function normalizeItems(payload) {
   const list =
@@ -308,7 +309,7 @@ export default function PartsPage() {
                     <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-gray-600">
                       <p>SKU: {part.sku || "—"}</p>
                       <p className={stockTone(qty)}>Stock: {qty}</p>
-                      <p>Price: {part.price ?? "—"}</p>
+                      <p>Price: {formatMoney(part.price)}</p>
                       <p>Slug: {part.slug || "—"}</p>
                     </div>
 

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useCart } from "../features/cart/CartContext";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
-import { formatPriceGBP } from "../lib/formatters";
+import { formatPrice } from "../lib/formatters";
 
 function getVehicleLabel(vehicle) {
   if (!vehicle) return "";
@@ -118,7 +118,7 @@ export default function CartPage() {
                         Seller: {item.seller_name || "Unknown seller"}
                       </p>
                       <p className="mt-2 text-base font-bold text-ink">
-                        {formatPriceGBP(item.price)}
+                        {formatPrice(item.price)}
                       </p>
                     </div>
 
@@ -173,7 +173,7 @@ export default function CartPage() {
 
             <div className="flex items-center justify-between text-sm text-muted">
               <span>Subtotal</span>
-              <span>{formatPriceGBP(subtotal)}</span>
+              <span>{formatPrice(subtotal)}</span>
             </div>
 
             <div className="flex items-center justify-between text-sm text-muted">
@@ -184,7 +184,7 @@ export default function CartPage() {
             <div className="border-t border-line pt-3">
               <div className="flex items-center justify-between">
                 <span className="text-base font-semibold text-ink">Estimated total</span>
-                <span className="text-xl font-bold text-ink">{formatPriceGBP(subtotal)}</span>
+                <span className="text-xl font-bold text-ink">{formatPrice(subtotal)}</span>
               </div>
             </div>
           </div>
@@ -207,7 +207,7 @@ export default function CartPage() {
           </div>
 
           <p className="mt-4 text-xs text-muted">
-            Guest checkout is supported. Final fitment confirmation should still rely on SKU, OEM reference, and seller guidance.
+            Sign in at checkout to track your order. Final fitment confirmation should still rely on SKU, OEM reference, and seller guidance.
           </p>
         </aside>
       </div>

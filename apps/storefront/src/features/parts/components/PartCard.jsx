@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useCart } from "../../../features/cart/CartContext";
+import { formatPrice } from "../../../lib/formatters";
 
 const DEFAULT_IMG = "/placeholder-part.webp";
 
@@ -54,11 +55,11 @@ export default function PartCard({ part }) {
         <div className="mt-auto flex items-center justify-between gap-2">
           <div>
             <span className="text-base font-bold text-ink">
-              ${(part.price / 100).toFixed(2)}
+              {formatPrice(part.price)}
             </span>
             {part.compare_price && (
               <span className="text-xs text-faint line-through ml-1">
-                ${(part.compare_price / 100).toFixed(2)}
+                {formatPrice(part.compare_price)}
               </span>
             )}
           </div>

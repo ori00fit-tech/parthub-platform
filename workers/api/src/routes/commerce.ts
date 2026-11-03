@@ -7,6 +7,17 @@ import { dbFirst, dbAll, dbRun } from "../utils/db";
 export const commerceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
 const MAX_ORDER_LINES = 50;
+const DEFAULT_SHIPPING_FEE_CENTIMES = 3500; // 35 MAD
+
+// Flat delivery fee in centimes (MAD). Set SHIPPING_FEE_CENTIMES in wrangler.toml.
+function shippingFee(env: Env): number {
+  const configured = Number(env.SHIPPING_FEE_CENTIMES);
+  return Number.isInteger(configured) && configured >= 0 ? configured : DEFAULT_SHIPPING_FEE_CENTIMES;
+}
+
+function optionalText(value: unknown, max = 200): string | null {
+  return typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null;
+}
 const MAX_QTY_PER_LINE = 100;
 
 // Unguessable reference, e.g. PH-2026-7K3QX9MD (no 0/O/1/I to avoid confusion).
@@ -17,6 +28,11 @@ function generateOrderReference(): string {
   return `PH-${new Date().getFullYear()}-${code}`;
 }
 
+// GET /api/v1/commerce/shipping — what checkout should show before ordering
+commerceRoutes.get("/shipping", (c) =>
+  ok(c, { flat_fee: shippingFee(c.env), currency: "MAD" })
+);
+
 // POST /api/v1/commerce/orders
 commerceRoutes.post("/orders", authMiddleware, async (c) => {
   const buyerId = c.get("user_id");
@@ -25,6 +41,7 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
     shipping_address: {
       full_name: string; phone: string; address_line1: string;
       city: string; country: string;
+      address_line2?: string | null; state?: string | null; postal_code?: string | null;
     };
     notes?: string;
   }>();
@@ -75,7 +92,7 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
     });
   }
 
-  const shipping_fee = 500; // cents — flat rate
+  const shipping_fee = shippingFee(c.env);
   const total = subtotal + shipping_fee;
   const ref = generateOrderReference();
   const orderIdSql = "(SELECT id FROM orders WHERE reference = ?)";
@@ -97,9 +114,19 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
        VALUES (?, ?, ?, ?, ?, 'pending', 'unpaid', 'pending', ?)`
     ).bind(buyerId, ref, subtotal, shipping_fee, total, body.notes ?? null),
     db.prepare(
-      `INSERT INTO order_addresses (order_id, full_name, phone, address_line1, city, country)
-       VALUES (${orderIdSql}, ?, ?, ?, ?, ?)`
-    ).bind(ref, addr.full_name.trim(), addr.phone.trim(), addr.address_line1.trim(), addr.city.trim(), addr.country.trim()),
+      `INSERT INTO order_addresses (order_id, full_name, phone, address_line1, address_line2, city, state, postal_code, country)
+       VALUES (${orderIdSql}, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      ref,
+      addr.full_name.trim(),
+      addr.phone.trim(),
+      addr.address_line1.trim(),
+      optionalText(addr.address_line2),
+      addr.city.trim(),
+      optionalText(addr.state),
+      optionalText(addr.postal_code),
+      addr.country.trim()
+    ),
     ...resolvedItems.map((item) =>
       db.prepare(
         `INSERT INTO order_items (order_id, part_id, seller_id, title, price, quantity, subtotal)

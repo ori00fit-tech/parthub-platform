@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { apiGet } from "../lib/api";
-import { formatPriceGBP } from "../lib/formatters";
+import { formatPrice } from "../lib/formatters";
 import { mediaUrl } from "../lib/media";
 import { useCart } from "../features/cart/CartContext";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
@@ -798,7 +798,7 @@ export default function PartsPage() {
 
                 <div className="flex flex-wrap gap-3">
                   <div className="flex items-center rounded-2xl bg-surface px-4 py-3 text-lg font-bold text-ink shadow-sm">
-                    {formatPriceGBP(topMatch.price)}
+                    {formatPrice(topMatch.price)}
                   </div>
 
                   <Link
@@ -1025,9 +1025,9 @@ export default function PartsPage() {
                         <div className="mt-auto flex items-end justify-between gap-3 pt-1">
                           <div className="font-mono tabular-nums">
                             {part.compare_price ? (
-                              <s className="mb-1 block text-xs text-faint">{formatPriceGBP(part.compare_price)}</s>
+                              <s className="mb-1 block text-xs text-faint">{formatPrice(part.compare_price)}</s>
                             ) : null}
-                            <span className="text-[22px] font-semibold leading-none text-white">{formatPriceGBP(part.price)}</span>
+                            <span className="text-[22px] font-semibold leading-none text-white">{formatPrice(part.price)}</span>
                           </div>
 
                           <div className="relative z-10 flex items-center gap-1.5">

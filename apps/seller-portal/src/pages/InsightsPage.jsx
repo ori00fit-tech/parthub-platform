@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
+import { formatMoney } from "@parthub/shared";
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -298,7 +299,7 @@ export default function InsightsPage() {
                         <span className="text-sm font-semibold text-gray-700">{item.status}</span>
                       </div>
                       <p className="mt-1 text-sm text-gray-500">
-                        stock: {item.quantity} • price: {item.price} • fitment rows: {item.compatibility_count}
+                        stock: {item.quantity} • price: {formatMoney(item.price)} • fitment rows: {item.compatibility_count}
                       </p>
                     </div>
                   ))}

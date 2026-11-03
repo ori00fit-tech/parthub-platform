@@ -375,8 +375,8 @@ export default function HomePage() {
           <ProductCard
             brand="Bosch"
             title="Front Brake Pads Kit"
-            price="£38.00"
-            was="£42.00"
+            price="380,00 MAD"
+            was="450,00 MAD"
             fitment="Vehicle compatibility added"
             to="/parts?q=brake"
             badge="Sale"
@@ -385,8 +385,8 @@ export default function HomePage() {
           <ProductCard
             brand="K&N"
             title="Performance Air Filter"
-            price="£24.00"
-            was="£29.00"
+            price="190,00 MAD"
+            was="240,00 MAD"
             fitment="Popular vehicle match"
             to="/parts?q=air%20filter"
             badge="New"
@@ -395,7 +395,7 @@ export default function HomePage() {
           <ProductCard
             brand="NGK"
             title="Spark Plug Set"
-            price="£18.00"
+            price="160,00 MAD"
             fitment="Garage-friendly search"
             to="/parts?q=spark%20plug"
             badge="OEM"
@@ -404,8 +404,8 @@ export default function HomePage() {
           <ProductCard
             brand="Monroe"
             title="Rear Shock Absorber Pair"
-            price="£79.00"
-            was="£89.00"
+            price="690,00 MAD"
+            was="790,00 MAD"
             fitment="Compatibility-first listing"
             to="/parts?q=shock"
             icon="🚘"
@@ -426,7 +426,7 @@ export default function HomePage() {
             <SellerCard
               initials="AP"
               name="AutoParts Pro"
-              location="Los Angeles, CA"
+              location="Casablanca"
               rating="★★★★★ 4.9"
               sales="12,400"
               to="/parts"
@@ -435,7 +435,7 @@ export default function HomePage() {
             <SellerCard
               initials="GS"
               name="GenuineStar"
-              location="Detroit, MI"
+              location="Rabat"
               rating="★★★★★ 4.8"
               sales="8,900"
               to="/parts"
@@ -444,7 +444,7 @@ export default function HomePage() {
             <SellerCard
               initials="QP"
               name="QuickParts"
-              location="Chicago, IL"
+              location="Tanger"
               rating="★★★★☆ 4.7"
               sales="6,200"
               to="/parts"
@@ -453,7 +453,7 @@ export default function HomePage() {
             <SellerCard
               initials="OE"
               name="OEM Direct"
-              location="Houston, TX"
+              location="Marrakech"
               rating="★★★★★ 4.9"
               sales="21,000"
               to="/parts"

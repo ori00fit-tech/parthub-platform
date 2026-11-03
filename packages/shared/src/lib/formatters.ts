@@ -4,8 +4,8 @@
 
 export function formatPrice(
   amount: number,
-  currency = "USD",
-  locale = "en-US"
+  currency = "MAD",
+  locale = "fr-MA"
 ): string {
   return new Intl.NumberFormat(locale, {
     style: "currency",
@@ -16,7 +16,7 @@ export function formatPrice(
 
 export function formatDate(
   dateString: string,
-  locale = "en-US"
+  locale = "fr-MA"
 ): string {
   return new Intl.DateTimeFormat(locale, {
     year: "numeric",

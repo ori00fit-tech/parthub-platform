@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { SELLER_TOKEN_KEY } from "@parthub/shared";
+import { SELLER_TOKEN_KEY, formatMoney, parseMoneyInput } from "@parthub/shared";
 
 const API_BASE = "https://parthub-api.ori00fit-c96.workers.dev";
 
@@ -100,9 +100,9 @@ export default function PartCreateWithUploadPage() {
         title: form.title,
         description: form.description,
         sku: form.sku,
-        price: Number(form.price),
+        price: parseMoneyInput(form.price),
         compare_price:
-          form.compare_price !== "" ? Number(form.compare_price) : null,
+          parseMoneyInput(form.compare_price),
         condition: form.condition,
         quantity: Number(form.quantity || 1),
         weight_kg: form.weight_kg !== "" ? Number(form.weight_kg) : null,
@@ -231,7 +231,7 @@ export default function PartCreateWithUploadPage() {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium">Price (pence)</span>
+            <span className="text-sm font-medium">Price (MAD)</span>
             <input
               type="number"
               value={form.price}
@@ -243,7 +243,7 @@ export default function PartCreateWithUploadPage() {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium">Compare price (pence)</span>
+            <span className="text-sm font-medium">Compare-at price (MAD)</span>
             <input
               type="number"
               value={form.compare_price}
@@ -369,7 +369,7 @@ export default function PartCreateWithUploadPage() {
             <p><span className="font-semibold">ID:</span> {success.id}</p>
             <p><span className="font-semibold">Title:</span> {success.title}</p>
             <p><span className="font-semibold">Slug:</span> {success.slug}</p>
-            <p><span className="font-semibold">Price:</span> {success.price}</p>
+            <p><span className="font-semibold">Price:</span> {formatMoney(success.price)}</p>
             <p><span className="font-semibold">Image:</span> {success.image_url || "No image"}</p>
           </div>
         </div>

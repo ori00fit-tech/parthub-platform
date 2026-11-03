@@ -6,14 +6,7 @@ export function mediaUrl(path) {
   return path.startsWith("/") ? `${BASE_URL}${path}` : path;
 }
 
-export function formatMAD(cents) {
-  if (cents == null) return "—";
-  return new Intl.NumberFormat("fr-MA", {
-    style: "currency",
-    currency: "MAD",
-    maximumFractionDigits: 2,
-  }).format(Number(cents) / 100);
-}
+export { formatMoney as formatMAD } from "@parthub/shared";
 
 export function offerBadge(status) {
   switch (status) {

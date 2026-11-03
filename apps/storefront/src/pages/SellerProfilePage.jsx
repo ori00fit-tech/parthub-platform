@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiGet } from "../lib/api";
-import { formatPriceGBP } from "../lib/formatters";
+import { formatPrice } from "../lib/formatters";
 
 function getSellerBadges(seller) {
   const badges = [];
@@ -290,11 +290,11 @@ export default function SellerProfilePage() {
                     <div className="flex items-end justify-between gap-3">
                       <div>
                         <p className="text-xl font-bold text-ink">
-                          {formatPriceGBP(part.price)}
+                          {formatPrice(part.price)}
                         </p>
                         {part.compare_price ? (
                           <p className="text-xs text-faint line-through">
-                            {formatPriceGBP(part.compare_price)}
+                            {formatPrice(part.compare_price)}
                           </p>
                         ) : null}
                       </div>

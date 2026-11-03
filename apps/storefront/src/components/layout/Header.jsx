@@ -22,7 +22,7 @@ export default function Header() {
           </div>
           <div className="leading-tight">
             <div className="text-xl font-extrabold tracking-tight text-ink">
-              PartHub UK 🇬🇧
+              PartHub Maroc 🇲🇦
             </div>
             <div className="text-xs text-muted">Auto parts marketplace</div>
           </div>
