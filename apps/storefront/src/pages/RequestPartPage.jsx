@@ -62,6 +62,21 @@ export default function RequestPartPage() {
       .catch(() => setCategories([]));
   }, []);
 
+  // The login response has no phone, so fetch it from the profile once.
+  useEffect(() => {
+    if (!isAuthenticated || user?.phone) return;
+    let active = true;
+    apiGet("/api/v1/auth/me", undefined, { auth: true })
+      .then((res) => {
+        const phone = res?.data?.phone;
+        if (active && phone) setForm((prev) => (prev.phone ? prev : { ...prev, phone }));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, user?.phone]);
+
   // Suggest models once the typed make matches a known make.
   const matchedMake = useMemo(
     () => makes.find((m) => m.name?.toLowerCase() === form.make.trim().toLowerCase()) || null,
@@ -290,7 +305,7 @@ export default function RequestPartPage() {
                     required
                   />
                 </Field>
-                <Field label="Phone / WhatsApp" required hint="Only shared with the seller whose offer you accept.">
+                <Field label="Phone / WhatsApp" required hint="We'll message you on WhatsApp when offers arrive. Only shared with the seller whose offer you accept.">
                   <input
                     className={inputClass}
                     value={form.phone}

@@ -262,3 +262,18 @@ CREATE INDEX IF NOT EXISTS idx_part_requests_open ON part_requests(status, expir
 CREATE INDEX IF NOT EXISTS idx_part_requests_make ON part_requests(make);
 CREATE INDEX IF NOT EXISTS idx_request_offers_request ON request_offers(request_id);
 CREATE INDEX IF NOT EXISTS idx_request_offers_seller ON request_offers(seller_id);
+
+-- ── WhatsApp Notification Log ───────────────────────────────
+-- See migrations/0004_whatsapp_notifications.sql
+CREATE TABLE IF NOT EXISTS whatsapp_notifications (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind        TEXT NOT NULL,     -- new_request | new_offer | offer_accepted
+  ref_id      INTEGER NOT NULL,  -- part_requests.id or request_offers.id
+  recipient   TEXT NOT NULL,     -- 'seller:<id>' or 'buyer:<id>'
+  sent        INTEGER NOT NULL DEFAULT 0,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (kind, ref_id, recipient)
+);
+
+CREATE INDEX IF NOT EXISTS idx_whatsapp_notifications_recipient
+  ON whatsapp_notifications(recipient, created_at);

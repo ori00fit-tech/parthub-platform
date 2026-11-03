@@ -21,6 +21,12 @@ import type { Env, HonoVariables } from "../types";
 import { authMiddleware } from "../middlewares/auth";
 import { sellerGuard } from "../middlewares/seller";
 import { resolveActor } from "../utils/seller-actor";
+import { runInBackground } from "../utils/whatsapp";
+import {
+  notifyBuyerOfNewOffer,
+  notifySellerOfAcceptance,
+  notifySellersOfNewRequest,
+} from "../utils/request-notifications";
 
 type AppEnv = { Bindings: Env; Variables: HonoVariables };
 export const requestsRoutes = new Hono<AppEnv>();
@@ -156,7 +162,9 @@ requestsRoutes.post("/", authMiddleware, async (c) => {
      where r.reference = ?1`
   )
     .bind(reference)
-    .first();
+    .first<{ id: number }>();
+
+  if (created) runInBackground(c, notifySellersOfNewRequest(c.env, created.id));
 
   return okRes(c, created, 201);
 });
@@ -267,6 +275,8 @@ requestsRoutes.post("/mine/:id/accept/:offerId", authMiddleware, async (c) => {
   )
     .bind(offerId)
     .first();
+
+  runInBackground(c, notifySellerOfAcceptance(c.env, offerId));
 
   return okRes(c, accepted);
 });
@@ -455,7 +465,10 @@ requestsRoutes.put("/inbox/:id/offer", authMiddleware, sellerGuard, async (c) =>
      from request_offers where request_id = ?1 and seller_id = ?2`
   )
     .bind(id, auth.sellerId)
-    .first();
+    .first<{ id: number }>();
+
+  // Deduplicated per offer: updates or re-offers after a withdrawal don't re-notify.
+  if (offer) runInBackground(c, notifyBuyerOfNewOffer(c.env, offer.id));
 
   return okRes(c, offer);
 });
