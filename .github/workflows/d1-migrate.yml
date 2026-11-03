@@ -46,9 +46,14 @@ jobs:
 
       - name: 0005 request photos (add column if missing)
         run: |
-          out=$(npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --json \
-            --command "SELECT COUNT(*) AS n FROM pragma_table_info('part_requests') WHERE name = 'images'")
-          has=$(echo "$out" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const r=JSON.parse(s);console.log(r[0].results[0].n)})")
+          # D1 blocks PRAGMA functions, so read the column list from sqlite_master.
+          if ! out=$(npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --json --command \
+            "SELECT CASE WHEN instr(sql, 'images') > 0 THEN 1 ELSE 0 END AS n FROM sqlite_master WHERE type='table' AND name='part_requests'"); then
+            echo "$out"
+            exit 1
+          fi
+          has=$(echo "$out" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const r=JSON.parse(s);console.log(r[0].results[0]?.n ?? 0)})")
+          echo "images column present: $has"
           if [ "$has" = "1" ]; then
             echo "part_requests.images already exists — skipping 0005"
           else
@@ -62,4 +67,4 @@ jobs:
                (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='part_requests') AS part_requests,
                (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='request_offers') AS request_offers,
                (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='whatsapp_notifications') AS whatsapp_notifications,
-               (SELECT COUNT(*) FROM pragma_table_info('part_requests') WHERE name='images') AS images_column"
+               (SELECT CASE WHEN instr(sql, 'images') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='part_requests') AS images_column"
