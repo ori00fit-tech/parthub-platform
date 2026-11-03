@@ -11,20 +11,20 @@ export default function VehicleContextBar() {
 
   if (!selectedVehicle && (!savedVehicles || savedVehicles.length === 0)) {
     return (
-      <div className="rounded-3xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm text-blue-700 shadow-sm">
+      <div className="rounded-3xl border border-navy/70 bg-navy/20 px-4 py-4 text-sm text-link shadow-sm">
         Select and save a vehicle to unlock faster fitment-aware shopping.
       </div>
     );
   }
 
   return (
-    <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
+    <div className="rounded-3xl border border-line bg-surface p-4 shadow-sm">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+          <p className="text-xs font-semibold uppercase tracking-wide text-faint">
             Vehicle context
           </p>
-          <p className="mt-1 text-sm font-semibold text-gray-900">
+          <p className="mt-1 text-sm font-semibold text-ink">
             {selectedVehicle ? selectedVehicle.label : "No active vehicle selected"}
           </p>
         </div>
@@ -35,7 +35,7 @@ export default function VehicleContextBar() {
               <button
                 type="button"
                 onClick={() => saveVehicle(selectedVehicle)}
-                className="inline-flex h-10 items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                className="inline-flex h-10 items-center justify-center rounded-2xl border border-navy/70 bg-navy/20 px-4 text-sm font-semibold text-link transition hover:bg-navy/30"
               >
                 Save vehicle
               </button>
@@ -43,7 +43,7 @@ export default function VehicleContextBar() {
               <button
                 type="button"
                 onClick={clearVehicle}
-                className="inline-flex h-10 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                className="inline-flex h-10 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
               >
                 Clear
               </button>
@@ -55,7 +55,7 @@ export default function VehicleContextBar() {
               key={`${vehicle.label}-${index}`}
               type="button"
               onClick={() => selectSavedVehicle(vehicle)}
-              className="inline-flex h-10 items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
+              className="inline-flex h-10 items-center justify-center rounded-2xl border border-line bg-surface-2 px-4 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
             >
               {vehicle.year} {vehicle.make_name || vehicle.make}
             </button>

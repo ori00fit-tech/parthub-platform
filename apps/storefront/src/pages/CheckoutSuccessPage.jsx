@@ -49,27 +49,27 @@ export default function CheckoutSuccessPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900">What happens next</h2>
+        <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-ink">What happens next</h2>
 
           <div className="mt-5 space-y-4">
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <p className="text-sm font-semibold text-gray-900">1. Seller reviews the order</p>
-              <p className="mt-1 text-sm text-gray-600">
+            <div className="rounded-2xl bg-surface-2 p-4">
+              <p className="text-sm font-semibold text-ink">1. Seller reviews the order</p>
+              <p className="mt-1 text-sm text-muted">
                 The seller checks availability, fitment context, and order details.
               </p>
             </div>
 
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <p className="text-sm font-semibold text-gray-900">2. Fitment may be reconfirmed</p>
-              <p className="mt-1 text-sm text-gray-600">
+            <div className="rounded-2xl bg-surface-2 p-4">
+              <p className="text-sm font-semibold text-ink">2. Fitment may be reconfirmed</p>
+              <p className="mt-1 text-sm text-muted">
                 SKU, OEM reference, and seller notes may still be used to confirm final compatibility.
               </p>
             </div>
 
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <p className="text-sm font-semibold text-gray-900">3. Delivery and payment follow-up</p>
-              <p className="mt-1 text-sm text-gray-600">
+            <div className="rounded-2xl bg-surface-2 p-4">
+              <p className="text-sm font-semibold text-ink">3. Delivery and payment follow-up</p>
+              <p className="mt-1 text-sm text-muted">
                 Shipping timing and final fulfillment steps are handled after seller confirmation.
               </p>
             </div>
@@ -78,14 +78,14 @@ export default function CheckoutSuccessPage() {
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               to="/parts"
-              className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700"
+              className="inline-flex h-12 items-center justify-center rounded-2xl bg-navy px-6 text-sm font-semibold text-white transition hover:bg-navy-deep"
             >
               Continue browsing
             </Link>
 
             <Link
               to="/cart"
-              className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-200 bg-white px-6 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+              className="inline-flex h-12 items-center justify-center rounded-2xl border border-line bg-surface px-6 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
             >
               Back to cart
             </Link>
@@ -94,7 +94,7 @@ export default function CheckoutSuccessPage() {
               href={whatsappLink}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-12 items-center justify-center rounded-2xl border border-green-200 bg-green-50 px-6 text-sm font-semibold text-green-700 transition hover:bg-green-100"
+              className="inline-flex h-12 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-6 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-400/20"
             >
               Confirm on WhatsApp
             </a>
@@ -102,38 +102,38 @@ export default function CheckoutSuccessPage() {
         </div>
 
         <aside className="space-y-6">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Order summary</h2>
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-ink">Order summary</h2>
 
             <div className="mt-5 space-y-3">
-              <div className="flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3">
-                <span className="text-sm text-gray-600">Order reference</span>
-                <span className="text-sm font-semibold text-gray-900">
+              <div className="flex items-center justify-between rounded-2xl bg-surface-2 px-4 py-3">
+                <span className="text-sm text-muted">Order reference</span>
+                <span className="text-sm font-semibold text-ink">
                   {orderId || "Generated successfully"}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3">
-                <span className="text-sm text-gray-600">Checkout type</span>
-                <span className="text-sm font-semibold text-gray-900">Guest checkout</span>
+              <div className="flex items-center justify-between rounded-2xl bg-surface-2 px-4 py-3">
+                <span className="text-sm text-muted">Checkout type</span>
+                <span className="text-sm font-semibold text-ink">Guest checkout</span>
               </div>
 
-              <div className="flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3">
-                <span className="text-sm text-gray-600">Vehicle context</span>
-                <span className="text-sm font-semibold text-gray-900">
+              <div className="flex items-center justify-between rounded-2xl bg-surface-2 px-4 py-3">
+                <span className="text-sm text-muted">Vehicle context</span>
+                <span className="text-sm font-semibold text-ink">
                   {selectedVehicle ? vehicleLabel : "Not attached"}
                 </span>
               </div>
             </div>
 
-            <p className="mt-4 text-xs text-gray-500">
+            <p className="mt-4 text-xs text-muted">
               Keep your SKU references and fitment notes nearby in case the seller asks for confirmation.
             </p>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Buyer advice</h2>
-            <div className="mt-4 space-y-3 text-sm text-gray-600">
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-ink">Buyer advice</h2>
+            <div className="mt-4 space-y-3 text-sm text-muted">
               <p>• Save your vehicle in the garage for faster future searches.</p>
               <p>• Use WhatsApp if you need confirmation before shipping.</p>
               <p>• Keep part SKU and vehicle year ready for follow-up.</p>

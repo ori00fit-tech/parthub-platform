@@ -58,23 +58,23 @@ export default function PhotoPicker({ onChange, onUploadingChange }) {
 
   return (
     <div>
-      <span className="mb-1.5 block text-sm font-semibold text-gray-800">Photos</span>
+      <span className="mb-1.5 block text-sm font-semibold text-ink-2">Photos</span>
       <div className="grid grid-cols-3 gap-3">
         {items.map((item) => (
           <div
             key={item.id}
             className={[
-              "relative aspect-square overflow-hidden rounded-xl border bg-gray-50",
-              item.status === "error" ? "border-red-300" : "border-gray-200",
+              "relative aspect-square overflow-hidden rounded-xl border bg-surface-2",
+              item.status === "error" ? "border-red-400/40" : "border-line",
             ].join(" ")}
           >
             {item.status === "error" ? (
-              <div className="flex h-full w-full items-start justify-center bg-red-50 pt-[22%] text-3xl">⚠️</div>
+              <div className="flex h-full w-full items-start justify-center bg-red-400/10 pt-[22%] text-3xl">⚠️</div>
             ) : (
               <img src={item.preview} alt="" className="h-full w-full object-cover" />
             )}
             {item.status === "uploading" ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/70 text-xs font-semibold text-gray-700">
+              <div className="absolute inset-0 flex items-center justify-center bg-surface/70 text-xs font-semibold text-ink-2">
                 Uploading…
               </div>
             ) : null}
@@ -98,7 +98,7 @@ export default function PhotoPicker({ onChange, onUploadingChange }) {
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="flex aspect-square flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 text-gray-500 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700"
+            className="flex aspect-square flex-col items-center justify-center rounded-xl border-2 border-dashed border-line-strong text-muted transition hover:border-sky-400 hover:bg-navy/30 hover:text-sky-200"
           >
             <span className="text-2xl">📷</span>
             <span className="mt-1 text-xs font-semibold">Add photo</span>
@@ -118,7 +118,7 @@ export default function PhotoPicker({ onChange, onUploadingChange }) {
         }}
       />
 
-      <span className="mt-1 block text-xs text-gray-500">
+      <span className="mt-1 block text-xs text-muted">
         {error || "Optional · up to 3 photos of the old part, its label or where it fits."}
       </span>
     </div>

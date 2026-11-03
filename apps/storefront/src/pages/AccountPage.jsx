@@ -26,33 +26,33 @@ export default function AccountPage() {
         <div className="grid gap-4 lg:grid-cols-3">
           <Link
             to="/auth?redirect=/account"
-            className="rounded-3xl border border-blue-200 bg-blue-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="rounded-3xl border border-navy/70 bg-navy/20 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            <p className="text-sm font-medium text-blue-700">Recommended</p>
-            <p className="mt-1 text-xl font-bold text-gray-900">Buyer sign in</p>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="text-sm font-medium text-link">Recommended</p>
+            <p className="mt-1 text-xl font-bold text-ink">Buyer sign in</p>
+            <p className="mt-2 text-sm text-muted">
               Unlock account and order continuity.
             </p>
           </Link>
 
           <Link
             to="/cart"
-            className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="rounded-3xl border border-line bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            <p className="text-sm font-medium text-gray-500">Current cart</p>
-            <p className="mt-1 text-xl font-bold text-gray-900">Go to cart</p>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="text-sm font-medium text-muted">Current cart</p>
+            <p className="mt-1 text-xl font-bold text-ink">Go to cart</p>
+            <p className="mt-2 text-sm text-muted">
               Review your parts before checkout.
             </p>
           </Link>
 
           <Link
             to="/parts"
-            className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="rounded-3xl border border-line bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            <p className="text-sm font-medium text-gray-500">Catalog</p>
-            <p className="mt-1 text-xl font-bold text-gray-900">Browse parts</p>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="text-sm font-medium text-muted">Catalog</p>
+            <p className="mt-1 text-xl font-bold text-ink">Browse parts</p>
+            <p className="mt-2 text-sm text-muted">
               Continue exploring inventory.
             </p>
           </Link>
@@ -78,7 +78,7 @@ export default function AccountPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               to="/orders"
-              className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
+              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/30"
             >
               View orders
             </Link>
@@ -95,53 +95,53 @@ export default function AccountPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="space-y-4">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900">Buyer profile</h2>
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">Buyer profile</h2>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Email</p>
-                <p className="mt-1 font-semibold text-gray-900">{user?.email || "Not available"}</p>
+              <div className="rounded-2xl bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-wide text-faint">Email</p>
+                <p className="mt-1 font-semibold text-ink">{user?.email || "Not available"}</p>
               </div>
 
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Role</p>
-                <p className="mt-1 font-semibold text-gray-900">{user?.role || "buyer"}</p>
+              <div className="rounded-2xl bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-wide text-faint">Role</p>
+                <p className="mt-1 font-semibold text-ink">{user?.role || "buyer"}</p>
               </div>
 
-              <div className="rounded-2xl bg-gray-50 p-4 sm:col-span-2">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Session state</p>
-                <p className="mt-1 font-semibold text-gray-900">Authenticated storefront buyer session active</p>
+              <div className="rounded-2xl bg-surface-2 p-4 sm:col-span-2">
+                <p className="text-xs uppercase tracking-wide text-faint">Session state</p>
+                <p className="mt-1 font-semibold text-ink">Authenticated storefront buyer session active</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900">Selected vehicle</h2>
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">Selected vehicle</h2>
 
             {hasVehicle && selectedVehicle ? (
               <div className="mt-5 space-y-4">
-                <div className="rounded-2xl bg-blue-50 p-4">
-                  <p className="text-xs uppercase tracking-wide text-blue-700">Active vehicle</p>
-                  <p className="mt-1 text-lg font-semibold text-gray-900">{selectedVehicle.label}</p>
+                <div className="rounded-2xl bg-navy/20 p-4">
+                  <p className="text-xs uppercase tracking-wide text-link">Active vehicle</p>
+                  <p className="mt-1 text-lg font-semibold text-ink">{selectedVehicle.label}</p>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-2xl bg-gray-50 p-4">
-                    <p className="text-xs uppercase tracking-wide text-gray-400">Make</p>
-                    <p className="mt-1 font-semibold text-gray-900">
+                  <div className="rounded-2xl bg-surface-2 p-4">
+                    <p className="text-xs uppercase tracking-wide text-faint">Make</p>
+                    <p className="mt-1 font-semibold text-ink">
                       {selectedVehicle.make_name || selectedVehicle.make || "—"}
                     </p>
                   </div>
-                  <div className="rounded-2xl bg-gray-50 p-4">
-                    <p className="text-xs uppercase tracking-wide text-gray-400">Model</p>
-                    <p className="mt-1 font-semibold text-gray-900">
+                  <div className="rounded-2xl bg-surface-2 p-4">
+                    <p className="text-xs uppercase tracking-wide text-faint">Model</p>
+                    <p className="mt-1 font-semibold text-ink">
                       {selectedVehicle.model_name || selectedVehicle.model || "—"}
                     </p>
                   </div>
-                  <div className="rounded-2xl bg-gray-50 p-4">
-                    <p className="text-xs uppercase tracking-wide text-gray-400">Year</p>
-                    <p className="mt-1 font-semibold text-gray-900">
+                  <div className="rounded-2xl bg-surface-2 p-4">
+                    <p className="text-xs uppercase tracking-wide text-faint">Year</p>
+                    <p className="mt-1 font-semibold text-ink">
                       {selectedVehicle.year || "—"}
                     </p>
                   </div>
@@ -149,18 +149,18 @@ export default function AccountPage() {
 
                 <Link
                   to="/vehicle-selector"
-                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-line-strong bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
                 >
                   Update vehicle
                 </Link>
               </div>
             ) : (
-              <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-sm text-gray-500">
+              <div className="mt-5 rounded-2xl border border-dashed border-line-strong bg-surface-2 px-4 py-6 text-sm text-muted">
                 No vehicle selected yet.
                 <div className="mt-3">
                   <Link
                     to="/vehicle-selector"
-                    className="font-semibold text-blue-600 hover:text-blue-700"
+                    className="font-semibold text-link hover:text-sky-200"
                   >
                     Select your vehicle
                   </Link>
@@ -171,43 +171,43 @@ export default function AccountPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Storefront state</h2>
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-ink">Storefront state</h2>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Cart items</p>
-                <p className="mt-1 text-2xl font-bold text-gray-900">{totalItems}</p>
+              <div className="rounded-2xl bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-wide text-faint">Cart items</p>
+                <p className="mt-1 text-2xl font-bold text-ink">{totalItems}</p>
               </div>
 
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Orders area</p>
-                <p className="mt-1 text-lg font-semibold text-gray-900">Ready</p>
+              <div className="rounded-2xl bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-wide text-faint">Orders area</p>
+                <p className="mt-1 text-lg font-semibold text-ink">Ready</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Quick actions</h2>
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-ink">Quick actions</h2>
 
             <div className="mt-4 flex flex-col gap-3">
               <Link
                 to="/orders"
-                className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                className="inline-flex h-12 items-center justify-center rounded-2xl bg-navy px-5 text-sm font-semibold text-white transition hover:bg-navy-deep"
               >
                 View orders
               </Link>
 
               <Link
                 to="/checkout"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
               >
                 Go to checkout
               </Link>
 
               <Link
                 to="/cart"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
               >
                 Review cart
               </Link>
@@ -221,16 +221,16 @@ export default function AccountPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-900">What comes next</h2>
-            <div className="mt-4 space-y-3 text-sm text-gray-600">
-              <div className="rounded-2xl bg-gray-50 p-4">
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-ink">What comes next</h2>
+            <div className="mt-4 space-y-3 text-sm text-muted">
+              <div className="rounded-2xl bg-surface-2 p-4">
                 Orders history can plug into real buyer order APIs later.
               </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
+              <div className="rounded-2xl bg-surface-2 p-4">
                 Account profile details can expand without touching seller/admin portals.
               </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
+              <div className="rounded-2xl bg-surface-2 p-4">
                 Vehicle context remains reusable across browsing and checkout.
               </div>
             </div>

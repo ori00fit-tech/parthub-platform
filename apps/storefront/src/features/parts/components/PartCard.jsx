@@ -12,8 +12,8 @@ export default function PartCard({ part }) {
       : null;
 
   return (
-    <div className="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md hover:border-blue-300 transition flex flex-col">
-      <Link to={`/parts/${part.slug}`} className="block relative aspect-square bg-gray-50 overflow-hidden">
+    <div className="group bg-surface border border-line rounded-xl overflow-hidden hover:shadow-md hover:border-navy transition flex flex-col">
+      <Link to={`/parts/${part.slug}`} className="block relative aspect-square bg-surface-2 overflow-hidden">
         <img
           src={part.thumbnail ?? DEFAULT_IMG}
           alt={part.title}
@@ -27,44 +27,44 @@ export default function PartCard({ part }) {
         )}
         <span className={`absolute top-2 right-2 text-xs px-2 py-0.5 rounded font-medium ${
           part.condition === "new"
-            ? "bg-green-100 text-green-700"
+            ? "bg-emerald-400/15 text-emerald-300"
             : part.condition === "used"
-            ? "bg-yellow-100 text-yellow-700"
-            : "bg-blue-100 text-blue-700"
+            ? "bg-amber-400/15 text-amber-300"
+            : "bg-navy/25 text-link"
         }`}>
           {part.condition}
         </span>
       </Link>
 
       <div className="p-3 flex flex-col flex-1">
-        <Link to={`/parts/${part.slug}`} className="text-sm font-medium text-gray-800 hover:text-blue-600 line-clamp-2 mb-1">
+        <Link to={`/parts/${part.slug}`} className="text-sm font-medium text-ink-2 hover:text-sky-200 line-clamp-2 mb-1">
           {part.title}
         </Link>
 
-        <p className="text-xs text-gray-400 mb-2">{part.seller_name}</p>
+        <p className="text-xs text-faint mb-2">{part.seller_name}</p>
 
         {part.rating_count > 0 && (
           <div className="flex items-center gap-1 mb-2">
             <span className="text-yellow-400 text-xs">★</span>
-            <span className="text-xs text-gray-600">{part.avg_rating}</span>
-            <span className="text-xs text-gray-400">({part.rating_count})</span>
+            <span className="text-xs text-muted">{part.avg_rating}</span>
+            <span className="text-xs text-faint">({part.rating_count})</span>
           </div>
         )}
 
         <div className="mt-auto flex items-center justify-between gap-2">
           <div>
-            <span className="text-base font-bold text-gray-900">
+            <span className="text-base font-bold text-ink">
               ${(part.price / 100).toFixed(2)}
             </span>
             {part.compare_price && (
-              <span className="text-xs text-gray-400 line-through ml-1">
+              <span className="text-xs text-faint line-through ml-1">
                 ${(part.compare_price / 100).toFixed(2)}
               </span>
             )}
           </div>
           <button
             onClick={() => addItem(part)}
-            className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition shrink-0"
+            className="text-xs bg-navy text-white px-3 py-1.5 rounded-lg hover:bg-navy-deep transition shrink-0"
           >
             Add
           </button>

@@ -44,14 +44,14 @@ export default function CartPage() {
           </p>
         </div>
 
-        <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900">Your cart is empty</h2>
-          <p className="mt-2 text-sm text-gray-500">
+        <div className="rounded-3xl border border-dashed border-line-strong bg-surface p-10 text-center shadow-sm">
+          <h2 className="text-2xl font-bold text-ink">Your cart is empty</h2>
+          <p className="mt-2 text-sm text-muted">
             Browse the marketplace and add parts to continue.
           </p>
           <Link
             to="/parts"
-            className="mt-5 inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700"
+            className="mt-5 inline-flex h-12 items-center justify-center rounded-2xl bg-navy px-6 text-sm font-semibold text-white transition hover:bg-navy-deep"
           >
             Browse parts
           </Link>
@@ -78,12 +78,12 @@ export default function CartPage() {
       </div>
 
       {selectedVehicle ? (
-        <div className="rounded-3xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-800 shadow-sm">
+        <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-4 text-sm text-emerald-300 shadow-sm">
           Checkout context includes your selected vehicle:
           <span className="ml-2 font-semibold">{vehicleLabel}</span>
         </div>
       ) : (
-        <div className="rounded-3xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm text-blue-700 shadow-sm">
+        <div className="rounded-3xl border border-navy/70 bg-navy/20 px-4 py-4 text-sm text-link shadow-sm">
           No vehicle selected. You can still checkout, but fitment confirmation is stronger when a vehicle is selected.
         </div>
       )}
@@ -93,10 +93,10 @@ export default function CartPage() {
           {items.map((item) => (
             <div
               key={item.id || item.part_id}
-              className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm"
+              className="rounded-3xl border border-line bg-surface p-5 shadow-sm"
             >
               <div className="flex flex-col gap-4 sm:flex-row">
-                <div className="h-24 w-full overflow-hidden rounded-2xl bg-gray-100 sm:w-28">
+                <div className="h-24 w-full overflow-hidden rounded-2xl bg-surface-2 sm:w-28">
                   {item.image_url || item.thumbnail ? (
                     <img
                       src={item.image_url || item.thumbnail}
@@ -104,7 +104,7 @@ export default function CartPage() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-xs text-gray-400">
+                    <div className="flex h-full items-center justify-center text-xs text-faint">
                       No image
                     </div>
                   )}
@@ -113,11 +113,11 @@ export default function CartPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                      <h2 className="text-lg font-bold text-gray-900">{item.title}</h2>
-                      <p className="mt-1 text-sm text-gray-500">
+                      <h2 className="text-lg font-bold text-ink">{item.title}</h2>
+                      <p className="mt-1 text-sm text-muted">
                         Seller: {item.seller_name || "Unknown seller"}
                       </p>
-                      <p className="mt-2 text-base font-bold text-gray-900">
+                      <p className="mt-2 text-base font-bold text-ink">
                         {formatPriceGBP(item.price)}
                       </p>
                     </div>
@@ -125,7 +125,7 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={() => removeItem(item.id || item.part_id)}
-                      className="inline-flex h-10 items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                      className="inline-flex h-10 items-center justify-center rounded-2xl border border-red-400/30 bg-red-400/10 px-4 text-sm font-semibold text-red-300 transition hover:bg-red-400/20"
                     >
                       Remove
                     </button>
@@ -137,12 +137,12 @@ export default function CartPage() {
                       onClick={() =>
                         updateItemQuantity(item.id || item.part_id, Math.max(1, Number(item.quantity || 1) - 1))
                       }
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-200 bg-white text-lg text-gray-700"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-line bg-surface text-lg text-ink-2"
                     >
                       −
                     </button>
 
-                    <span className="min-w-[44px] text-center text-sm font-semibold text-gray-900">
+                    <span className="min-w-[44px] text-center text-sm font-semibold text-ink">
                       {item.quantity || 1}
                     </span>
 
@@ -151,7 +151,7 @@ export default function CartPage() {
                       onClick={() =>
                         updateItemQuantity(item.id || item.part_id, Number(item.quantity || 1) + 1)
                       }
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-200 bg-white text-lg text-gray-700"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-line bg-surface text-lg text-ink-2"
                     >
                       +
                     </button>
@@ -162,29 +162,29 @@ export default function CartPage() {
           ))}
         </div>
 
-        <aside className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900">Order summary</h2>
+        <aside className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-ink">Order summary</h2>
 
           <div className="mt-5 space-y-3">
-            <div className="flex items-center justify-between text-sm text-gray-600">
+            <div className="flex items-center justify-between text-sm text-muted">
               <span>Items</span>
               <span>{totalItems}</span>
             </div>
 
-            <div className="flex items-center justify-between text-sm text-gray-600">
+            <div className="flex items-center justify-between text-sm text-muted">
               <span>Subtotal</span>
               <span>{formatPriceGBP(subtotal)}</span>
             </div>
 
-            <div className="flex items-center justify-between text-sm text-gray-600">
+            <div className="flex items-center justify-between text-sm text-muted">
               <span>Shipping</span>
               <span>Calculated at checkout</span>
             </div>
 
-            <div className="border-t border-gray-100 pt-3">
+            <div className="border-t border-line pt-3">
               <div className="flex items-center justify-between">
-                <span className="text-base font-semibold text-gray-900">Estimated total</span>
-                <span className="text-xl font-bold text-gray-900">{formatPriceGBP(subtotal)}</span>
+                <span className="text-base font-semibold text-ink">Estimated total</span>
+                <span className="text-xl font-bold text-ink">{formatPriceGBP(subtotal)}</span>
               </div>
             </div>
           </div>
@@ -192,7 +192,7 @@ export default function CartPage() {
           <div className="mt-6 space-y-3">
             <Link
               to="/checkout"
-              className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
+              className="btn-cta h-12 w-full rounded-2xl px-5 text-sm"
             >
               Continue to checkout
             </Link>
@@ -200,13 +200,13 @@ export default function CartPage() {
             <button
               type="button"
               onClick={clearCart}
-              className="inline-flex h-12 w-full items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+              className="inline-flex h-12 w-full items-center justify-center rounded-2xl border border-line bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
             >
               Clear cart
             </button>
           </div>
 
-          <p className="mt-4 text-xs text-gray-500">
+          <p className="mt-4 text-xs text-muted">
             Guest checkout is supported. Final fitment confirmation should still rely on SKU, OEM reference, and seller guidance.
           </p>
         </aside>

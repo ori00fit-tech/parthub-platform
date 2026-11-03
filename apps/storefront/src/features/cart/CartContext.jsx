@@ -27,6 +27,8 @@ function normalizePrice(value) {
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState(() => readCart());
+  // Slide-over cart drawer. Adding an item opens it so the buyer sees the result.
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -64,6 +66,7 @@ export function CartProvider({ children }) {
           },
         ];
       });
+      setDrawerOpen(true);
     }
 
     function updateQuantity(partId, quantity) {
@@ -99,8 +102,11 @@ export function CartProvider({ children }) {
       clearCart,
       totalItems,
       subtotal,
+      drawerOpen,
+      openCart: () => setDrawerOpen(true),
+      closeCart: () => setDrawerOpen(false),
     };
-  }, [items]);
+  }, [items, drawerOpen]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

@@ -28,9 +28,9 @@ export default function MyRequestsPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-        <h1 className="text-xl font-bold text-gray-900">Sign in to see your part requests</h1>
-        <Link to="/auth" className="mt-4 inline-flex h-11 items-center rounded-xl bg-blue-600 px-6 text-sm font-bold text-white">
+      <div className="rounded-3xl border border-line bg-surface p-8 text-center shadow-sm">
+        <h1 className="text-xl font-bold text-ink">Sign in to see your part requests</h1>
+        <Link to="/auth" className="mt-4 inline-flex h-11 items-center rounded-xl bg-navy px-6 text-sm font-bold text-white">
           Sign in
         </Link>
       </div>
@@ -41,12 +41,12 @@ export default function MyRequestsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-950">My part requests</h1>
-          <p className="mt-1 text-sm text-gray-500">Offers from sellers appear here as they come in.</p>
+          <h1 className="text-3xl font-black tracking-tight text-ink">My part requests</h1>
+          <p className="mt-1 text-sm text-muted">Offers from sellers appear here as they come in.</p>
         </div>
         <Link
           to="/request-part"
-          className="inline-flex h-11 items-center rounded-xl bg-blue-600 px-5 text-sm font-bold text-white transition hover:bg-blue-700"
+          className="inline-flex h-11 items-center rounded-xl bg-navy px-5 text-sm font-bold text-white transition hover:bg-navy-deep"
         >
           + New request
         </Link>
@@ -55,19 +55,19 @@ export default function MyRequestsPage() {
       {loading ? (
         <div className="grid gap-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-2xl bg-white" />
+            <div key={i} className="h-24 animate-pulse rounded-2xl bg-surface" />
           ))}
         </div>
       ) : error ? (
-        <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+        <p className="rounded-2xl bg-red-400/10 px-4 py-3 text-sm text-red-300">{error}</p>
       ) : requests.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center">
+        <div className="rounded-3xl border border-dashed border-line-strong bg-surface p-10 text-center">
           <div className="text-4xl">🔎</div>
-          <h2 className="mt-3 text-lg font-bold text-gray-900">No requests yet</h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <h2 className="mt-3 text-lg font-bold text-ink">No requests yet</h2>
+          <p className="mt-1 text-sm text-muted">
             Looking for a part that isn't listed? Describe it once and sellers will reply with offers.
           </p>
-          <Link to="/request-part" className="mt-5 inline-flex h-11 items-center rounded-xl bg-blue-600 px-5 text-sm font-bold text-white">
+          <Link to="/request-part" className="mt-5 inline-flex h-11 items-center rounded-xl bg-navy px-5 text-sm font-bold text-white">
             Request a part
           </Link>
         </div>
@@ -79,9 +79,9 @@ export default function MyRequestsPage() {
               <Link
                 key={r.id}
                 to={`/requests/${r.id}`}
-                className="flex flex-wrap items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow"
+                className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-surface p-5 shadow-sm transition hover:border-navy hover:shadow"
               >
-                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100">
+                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface-2">
                   {r.images?.[0] ? (
                     <img src={mediaUrl(r.images[0])} alt="" loading="lazy" className="h-full w-full object-cover" />
                   ) : (
@@ -93,18 +93,18 @@ export default function MyRequestsPage() {
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${status.className}`}>
                       {status.label}
                     </span>
-                    <span className="text-xs text-gray-400">{r.reference}</span>
+                    <span className="text-xs text-faint">{r.reference}</span>
                   </div>
-                  <p className="mt-1.5 truncate text-base font-bold text-gray-900">{r.part_name}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="mt-1.5 truncate text-base font-bold text-ink">{r.part_name}</p>
+                  <p className="text-sm text-muted">
                     {[r.make, r.model, r.year].filter(Boolean).join(" ")} · {r.city}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-black text-slate-950">{r.offer_count}</p>
-                  <p className="text-xs text-gray-500">{Number(r.offer_count) === 1 ? "offer" : "offers"}</p>
+                  <p className="text-2xl font-black text-ink">{r.offer_count}</p>
+                  <p className="text-xs text-muted">{Number(r.offer_count) === 1 ? "offer" : "offers"}</p>
                   {r.best_price != null ? (
-                    <p className="mt-1 text-xs font-semibold text-emerald-700">from {formatMAD(r.best_price)}</p>
+                    <p className="mt-1 text-xs font-semibold text-emerald-300">from {formatMAD(r.best_price)}</p>
                   ) : null}
                 </div>
               </Link>

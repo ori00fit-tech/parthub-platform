@@ -154,11 +154,11 @@ function detectFitmentStatus(compatibility, selectedVehicle) {
 function toneClasses(tone) {
   switch (tone) {
     case "positive":
-      return "border-green-200 bg-green-50 text-green-800";
+      return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
     case "warning":
-      return "border-amber-200 bg-amber-50 text-amber-800";
+      return "border-amber-400/30 bg-amber-400/10 text-amber-200";
     default:
-      return "border-blue-200 bg-blue-50 text-blue-800";
+      return "border-navy/70 bg-navy/20 text-link";
   }
 }
 
@@ -286,7 +286,7 @@ export default function PartDetailsPage() {
 
   if (loading) {
     return (
-      <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
         Loading part details...
       </div>
     );
@@ -294,7 +294,7 @@ export default function PartDetailsPage() {
 
   if (error || !part) {
     return (
-      <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
+      <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-6 text-red-300 shadow-sm">
         {error || "Part not found"}
       </div>
     );
@@ -306,7 +306,7 @@ export default function PartDetailsPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
         <div className="space-y-4">
-          <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-3xl border border-line bg-surface shadow-sm">
             {activeImage ? (
               <img
                 src={activeImage.url}
@@ -314,7 +314,7 @@ export default function PartDetailsPage() {
                 className="h-[320px] w-full object-cover sm:h-[420px]"
               />
             ) : (
-              <div className="flex h-[320px] items-center justify-center bg-gray-100 text-sm text-gray-400 sm:h-[420px]">
+              <div className="flex h-[320px] items-center justify-center bg-surface-2 text-sm text-faint sm:h-[420px]">
                 No image available
               </div>
             )}
@@ -328,10 +328,10 @@ export default function PartDetailsPage() {
                   type="button"
                   onClick={() => setGalleryIndex(index)}
                   className={[
-                    "overflow-hidden rounded-2xl border bg-white",
+                    "overflow-hidden rounded-2xl border bg-surface",
                     galleryIndex === index
-                      ? "border-blue-500 ring-2 ring-blue-100"
-                      : "border-gray-200",
+                      ? "border-sky-400 ring-2 ring-sky-400/20"
+                      : "border-line",
                   ].join(" ")}
                 >
                   <img
@@ -345,19 +345,19 @@ export default function PartDetailsPage() {
           ) : null}
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-gray-400">Condition</p>
-              <p className="mt-1 text-sm font-semibold text-gray-900">{part.condition}</p>
+            <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-faint">Condition</p>
+              <p className="mt-1 text-sm font-semibold text-ink">{part.condition}</p>
             </div>
-            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-gray-400">Stock status</p>
-              <p className="mt-1 text-sm font-semibold text-gray-900">
+            <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-faint">Stock status</p>
+              <p className="mt-1 text-sm font-semibold text-ink">
                 {inStock ? `${stock} available` : "Out of stock"}
               </p>
             </div>
-            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-gray-400">Compatibility</p>
-              <p className="mt-1 text-sm font-semibold text-gray-900">
+            <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-faint">Compatibility</p>
+              <p className="mt-1 text-sm font-semibold text-ink">
                 {compatibility.length} row{compatibility.length === 1 ? "" : "s"}
               </p>
             </div>
@@ -365,59 +365,59 @@ export default function PartDetailsPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
             <div className="flex flex-wrap items-center gap-2">
               {part.brand_name ? (
-                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-ink-2">
                   {part.brand_name}
                 </span>
               ) : null}
 
               {part.category_name ? (
-                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-ink-2">
                   {part.category_name}
                 </span>
               ) : null}
 
-              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+              <span className="rounded-full bg-navy/20 px-3 py-1 text-xs font-semibold text-link">
                 {part.condition}
               </span>
 
               {selectedVehicleMatch ? (
-                <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-300">
                   Vehicle-matched
                 </span>
               ) : null}
             </div>
 
-            <h1 className="mt-4 text-3xl font-bold text-gray-900">{part.title}</h1>
+            <h1 className="mt-4 text-3xl font-bold text-ink">{part.title}</h1>
 
-            <p className="mt-3 text-sm leading-6 text-gray-600">
+            <p className="mt-3 text-sm leading-6 text-muted">
               {part.description || "No description available for this part yet."}
             </p>
 
             <div className="mt-5 flex items-end justify-between gap-4">
               <div>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-3xl font-bold text-ink">
                   {formatPriceGBP(part.price)}
                 </p>
                 {part.compare_price ? (
-                  <p className="text-sm text-gray-400 line-through">
+                  <p className="text-sm text-faint line-through">
                     {formatPriceGBP(part.compare_price)}
                   </p>
                 ) : null}
               </div>
 
               <div className="text-right text-sm">
-                <p className={inStock ? "font-semibold text-green-700" : "font-semibold text-red-600"}>
+                <p className={inStock ? "font-semibold text-emerald-300" : "font-semibold text-red-300"}>
                   {inStock ? `In stock (${stock})` : "Out of stock"}
                 </p>
-                <p className="text-gray-500">
+                <p className="text-muted">
                   Seller:{" "}
                   {part.seller_slug ? (
                     <Link
                       to={`/sellers/${part.seller_slug}`}
-                      className="font-semibold text-blue-700 hover:underline"
+                      className="font-semibold text-link hover:underline"
                     >
                       {part.seller_name || "Unknown seller"}
                     </Link>
@@ -433,12 +433,12 @@ export default function PartDetailsPage() {
               <p className="mt-1 text-sm">{fitment.description}</p>
 
               <div className="mt-3 flex flex-wrap gap-2">
-                <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-current">
+                <span className="rounded-full bg-surface/70 px-3 py-1 text-xs font-semibold text-current">
                   {compatibility.length} compatibility row{compatibility.length === 1 ? "" : "s"}
                 </span>
 
                 {selectedVehicleMatch ? (
-                  <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-current">
+                  <span className="rounded-full bg-surface/70 px-3 py-1 text-xs font-semibold text-current">
                     Exact match confirmed
                   </span>
                 ) : null}
@@ -447,7 +447,7 @@ export default function PartDetailsPage() {
                   <button
                     type="button"
                     onClick={() => saveVehicle(selectedVehicle)}
-                    className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-current transition hover:bg-white"
+                    className="rounded-full bg-surface/70 px-3 py-1 text-xs font-semibold text-current transition hover:bg-surface-3"
                   >
                     Save vehicle
                   </button>
@@ -461,21 +461,21 @@ export default function PartDetailsPage() {
 
             <div className="mt-6 flex flex-col gap-3">
               <div className="flex flex-col gap-3 sm:flex-row">
-                <div className="inline-flex h-12 items-center rounded-2xl border border-gray-200 bg-white">
+                <div className="inline-flex h-12 items-center rounded-2xl border border-line bg-surface">
                   <button
                     type="button"
                     onClick={() => handleQuantityChange(quantity - 1)}
-                    className="h-full px-4 text-lg text-gray-700"
+                    className="h-full px-4 text-lg text-ink-2"
                   >
                     −
                   </button>
-                  <span className="min-w-[44px] text-center text-sm font-semibold text-gray-900">
+                  <span className="min-w-[44px] text-center text-sm font-semibold text-ink">
                     {quantity}
                   </span>
                   <button
                     type="button"
                     onClick={() => handleQuantityChange(quantity + 1)}
-                    className="h-full px-4 text-lg text-gray-700"
+                    className="h-full px-4 text-lg text-ink-2"
                   >
                     +
                   </button>
@@ -485,14 +485,14 @@ export default function PartDetailsPage() {
                   type="button"
                   onClick={handleAddToCart}
                   disabled={!inStock || adding}
-                  className="inline-flex h-12 flex-1 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="btn-cta h-12 flex-1 rounded-2xl px-6 text-sm"
                 >
                   {adding ? "Adding..." : added ? "Added to cart" : "Add to cart"}
                 </button>
 
                 <Link
                   to="/cart"
-                  className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-200 bg-white px-6 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                  className="inline-flex h-12 items-center justify-center rounded-2xl border border-line bg-surface px-6 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
                 >
                   Cart ({totalItems})
                 </Link>
@@ -502,16 +502,16 @@ export default function PartDetailsPage() {
                 href={whatsappLink}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-green-200 bg-green-50 px-6 text-sm font-semibold text-green-700 transition hover:bg-green-100"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-6 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-400/20"
               >
                 Ask seller on WhatsApp
               </a>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-900">Why buyers trust this listing</h2>
-            <div className="mt-4 space-y-3 text-sm text-gray-600">
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-ink">Why buyers trust this listing</h2>
+            <div className="mt-4 space-y-3 text-sm text-muted">
               <p>• SKU and structured compatibility improve confidence before purchase.</p>
               <p>• Stock visibility helps reduce surprise checkout failures.</p>
               <p>• Seller contact via WhatsApp makes pre-purchase confirmation easier.</p>
@@ -519,15 +519,15 @@ export default function PartDetailsPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-900">Seller trust</h2>
-            <div className="mt-4 space-y-3 text-sm text-gray-600">
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-ink">Seller trust</h2>
+            <div className="mt-4 space-y-3 text-sm text-muted">
               <p>
-                <span className="font-semibold text-gray-900">Seller:</span>{" "}
+                <span className="font-semibold text-ink">Seller:</span>{" "}
                 {part.seller_slug ? (
                   <Link
                     to={`/sellers/${part.seller_slug}`}
-                    className="font-semibold text-blue-700 hover:underline"
+                    className="font-semibold text-link hover:underline"
                   >
                     {part.seller_name || "Unknown"}
                   </Link>
@@ -536,25 +536,25 @@ export default function PartDetailsPage() {
                 )}
               </p>
               <p>
-                <span className="font-semibold text-gray-900">Location:</span>{" "}
+                <span className="font-semibold text-ink">Location:</span>{" "}
                 {part.seller_location || "Not specified"}
               </p>
               <p>
-                <span className="font-semibold text-gray-900">Listing status:</span>{" "}
+                <span className="font-semibold text-ink">Listing status:</span>{" "}
                 {part.status}
               </p>
               <p>
-                <span className="font-semibold text-gray-900">Availability:</span>{" "}
+                <span className="font-semibold text-ink">Availability:</span>{" "}
                 {inStock ? `${stock} unit(s) available` : "Currently unavailable"}
               </p>
               {part.sku ? (
                 <p>
-                  <span className="font-semibold text-gray-900">SKU:</span> {part.sku}
+                  <span className="font-semibold text-ink">SKU:</span> {part.sku}
                 </p>
               ) : null}
             </div>
 
-            <p className="mt-4 text-xs text-gray-500">
+            <p className="mt-4 text-xs text-muted">
               Strong parts usually include stock, SKU, compatibility, and easy seller confirmation paths.
             </p>
           </div>
@@ -563,40 +563,40 @@ export default function PartDetailsPage() {
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-6">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900">Quick fitment summary</h2>
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">Quick fitment summary</h2>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Selected vehicle</p>
-                <p className="mt-1 text-sm font-semibold text-gray-900">
+              <div className="rounded-2xl bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-wide text-faint">Selected vehicle</p>
+                <p className="mt-1 text-sm font-semibold text-ink">
                   {selectedVehicle ? getVehicleLabel(selectedVehicle) : "Not selected"}
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Compatibility rows</p>
-                <p className="mt-1 text-sm font-semibold text-gray-900">
+              <div className="rounded-2xl bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-wide text-faint">Compatibility rows</p>
+                <p className="mt-1 text-sm font-semibold text-ink">
                   {compatibility.length}
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Match status</p>
-                <p className="mt-1 text-sm font-semibold text-gray-900">
+              <div className="rounded-2xl bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-wide text-faint">Match status</p>
+                <p className="mt-1 text-sm font-semibold text-ink">
                   {selectedVehicleMatch ? "Confirmed match" : "Not confirmed"}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900">Compatibility</h2>
-            <p className="mt-1 text-sm text-gray-500">
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">Compatibility</h2>
+            <p className="mt-1 text-sm text-muted">
               Review all known vehicle matches for this part.
             </p>
 
             {compatibility.length === 0 ? (
-              <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500">
+              <div className="mt-5 rounded-2xl border border-dashed border-line-strong bg-surface-2 p-5 text-sm text-muted">
                 No compatibility rows are available yet for this part.
               </div>
             ) : (
@@ -610,22 +610,22 @@ export default function PartDetailsPage() {
                       className={[
                         "rounded-2xl border p-4",
                         rowMatch
-                          ? "border-green-200 bg-green-50"
-                          : "border-gray-200 bg-gray-50",
+                          ? "border-emerald-400/30 bg-emerald-400/10"
+                          : "border-line bg-surface-2",
                       ].join(" ")}
                     >
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-semibold text-ink">
                           {row.make} • {row.model}
                         </p>
                         {rowMatch ? (
-                          <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                          <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-300">
                             Your selected vehicle matches
                           </span>
                         ) : null}
                       </div>
 
-                      <p className="mt-2 text-sm text-gray-600">
+                      <p className="mt-2 text-sm text-muted">
                         {row.year_start}
                         {row.year_end ? ` → ${row.year_end}` : ""}
                         {row.engine ? ` • ${row.engine}` : ""}
@@ -633,7 +633,7 @@ export default function PartDetailsPage() {
                       </p>
 
                       {row.notes ? (
-                        <p className="mt-2 text-sm text-gray-500">{row.notes}</p>
+                        <p className="mt-2 text-sm text-muted">{row.notes}</p>
                       ) : null}
                     </div>
                   );
@@ -644,11 +644,11 @@ export default function PartDetailsPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900">Specifications</h2>
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">Specifications</h2>
 
             {specs.length === 0 ? (
-              <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500">
+              <div className="mt-5 rounded-2xl border border-dashed border-line-strong bg-surface-2 p-5 text-sm text-muted">
                 No technical specifications available yet.
               </div>
             ) : (
@@ -656,12 +656,12 @@ export default function PartDetailsPage() {
                 {specs.map((spec, index) => (
                   <div
                     key={`${spec.label}-${index}`}
-                    className="rounded-2xl bg-gray-50 p-4"
+                    className="rounded-2xl bg-surface-2 p-4"
                   >
-                    <p className="text-xs uppercase tracking-wide text-gray-400">
+                    <p className="text-xs uppercase tracking-wide text-faint">
                       {spec.label}
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-gray-900">
+                    <p className="mt-1 text-sm font-semibold text-ink">
                       {spec.value}
                     </p>
                   </div>
@@ -670,9 +670,9 @@ export default function PartDetailsPage() {
             )}
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900">Purchase reassurance</h2>
-            <div className="mt-4 space-y-3 text-sm text-gray-600">
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">Purchase reassurance</h2>
+            <div className="mt-4 space-y-3 text-sm text-muted">
               <p>• Confirm exact fitment when your vehicle has engine or trim variations.</p>
               <p>• Use seller contact before checkout if you need additional confidence.</p>
               <p>• SKU and compatibility rows are stronger trust signals than title alone.</p>
@@ -680,14 +680,14 @@ export default function PartDetailsPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900">Need another option?</h2>
-            <p className="mt-1 text-sm text-gray-500">
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-ink">Need another option?</h2>
+            <p className="mt-1 text-sm text-muted">
               Explore related parts from the marketplace inventory.
             </p>
 
             {safeRelatedParts.length === 0 ? (
-              <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500">
+              <div className="mt-5 rounded-2xl border border-dashed border-line-strong bg-surface-2 p-5 text-sm text-muted">
                 No related parts available yet.
               </div>
             ) : (
@@ -696,9 +696,9 @@ export default function PartDetailsPage() {
                   <Link
                     key={item.id}
                     to={`/parts/${item.slug}`}
-                    className="overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:-translate-y-0.5 hover:shadow-md"
+                    className="overflow-hidden rounded-2xl border border-line bg-surface transition hover:-translate-y-0.5 hover:shadow-md"
                   >
-                    <div className="bg-gray-100">
+                    <div className="bg-surface-2">
                       {item.image_url ? (
                         <img
                           src={item.image_url}
@@ -706,20 +706,20 @@ export default function PartDetailsPage() {
                           className="h-36 w-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-36 items-center justify-center text-sm text-gray-400">
+                        <div className="flex h-36 items-center justify-center text-sm text-faint">
                           No image
                         </div>
                       )}
                     </div>
 
                     <div className="p-4">
-                      <p className="line-clamp-2 font-semibold text-gray-900">
+                      <p className="line-clamp-2 font-semibold text-ink">
                         {item.title}
                       </p>
-                      <p className="mt-1 text-sm text-gray-500">
+                      <p className="mt-1 text-sm text-muted">
                         {item.brand_name || "Brand"} • {item.category_name || "Category"}
                       </p>
-                      <p className="mt-3 text-lg font-bold text-gray-900">
+                      <p className="mt-3 text-lg font-bold text-ink">
                         {formatPriceGBP(item.price)}
                       </p>
                     </div>
@@ -731,14 +731,14 @@ export default function PartDetailsPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 z-40 border-t border-gray-200 bg-white/95 px-4 py-3 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden">
+      <div className="fixed bottom-0 inset-x-0 z-40 border-t border-line bg-surface/95 px-4 py-3 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden">
         <div className="mx-auto flex max-w-7xl items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-gray-900">{part.title}</p>
+            <p className="truncate text-sm font-semibold text-ink">{part.title}</p>
             <div className="flex items-center gap-2">
-              <p className="text-base font-bold text-gray-900">{formatPriceGBP(part.price)}</p>
+              <p className="text-base font-bold text-ink">{formatPriceGBP(part.price)}</p>
               {selectedVehicleMatch ? (
-                <span className="rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-semibold text-green-700">
+                <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-300">
                   Match
                 </span>
               ) : null}
@@ -749,7 +749,7 @@ export default function PartDetailsPage() {
             type="button"
             onClick={handleAddToCart}
             disabled={!inStock || adding}
-            className="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-cta h-11 rounded-2xl px-5 text-sm"
           >
             {adding ? "Adding..." : added ? "Added" : "Add to cart"}
           </button>

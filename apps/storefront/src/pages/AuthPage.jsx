@@ -26,7 +26,7 @@ export default function AuthPage() {
   const [success, setSuccess] = useState("");
 
   const inputCls =
-    "h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500";
+    "h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400";
 
   function setField(key) {
     return (e) => {
@@ -96,35 +96,35 @@ export default function AuthPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900">Signed-in session</h2>
+        <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-ink">Signed-in session</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <p className="text-xs uppercase tracking-wide text-gray-400">Email</p>
-              <p className="mt-1 font-semibold text-gray-900">{user?.email || "Buyer account"}</p>
+            <div className="rounded-2xl bg-surface-2 p-4">
+              <p className="text-xs uppercase tracking-wide text-faint">Email</p>
+              <p className="mt-1 font-semibold text-ink">{user?.email || "Buyer account"}</p>
             </div>
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <p className="text-xs uppercase tracking-wide text-gray-400">Cart items</p>
-              <p className="mt-1 font-semibold text-gray-900">{totalItems}</p>
+            <div className="rounded-2xl bg-surface-2 p-4">
+              <p className="text-xs uppercase tracking-wide text-faint">Cart items</p>
+              <p className="mt-1 font-semibold text-ink">{totalItems}</p>
             </div>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               to={redirectTo}
-              className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+              className="rounded-2xl bg-navy px-5 py-3 text-sm font-semibold text-white transition hover:bg-navy-deep"
             >
               Continue
             </Link>
             <Link
               to="/account"
-              className="rounded-2xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+              className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
             >
               Go to account
             </Link>
             <Link
               to="/parts"
-              className="rounded-2xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+              className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
             >
               Browse parts
             </Link>
@@ -165,44 +165,44 @@ export default function AuthPage() {
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-4">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Why sign in?</h2>
-            <div className="mt-4 space-y-3 text-sm text-gray-600">
-              <div className="rounded-2xl bg-gray-50 p-4">
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-ink">Why sign in?</h2>
+            <div className="mt-4 space-y-3 text-sm text-muted">
+              <div className="rounded-2xl bg-surface-2 p-4">
                 Continue more smoothly from cart to checkout.
               </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
+              <div className="rounded-2xl bg-surface-2 p-4">
                 Prepare access to buyer account and order history foundation.
               </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
+              <div className="rounded-2xl bg-surface-2 p-4">
                 Keep the storefront flow cleaner across future sessions.
               </div>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Current storefront state</h2>
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-ink">Current storefront state</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Cart items</p>
-                <p className="mt-1 text-lg font-semibold text-gray-900">{totalItems}</p>
+              <div className="rounded-2xl bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-wide text-faint">Cart items</p>
+                <p className="mt-1 text-lg font-semibold text-ink">{totalItems}</p>
               </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Post-login redirect</p>
-                <p className="mt-1 text-sm font-semibold text-gray-900">{redirectTo}</p>
+              <div className="rounded-2xl bg-surface-2 p-4">
+                <p className="text-xs uppercase tracking-wide text-faint">Post-login redirect</p>
+                <p className="mt-1 text-sm font-semibold text-ink">{redirectTo}</p>
               </div>
             </div>
 
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
                 to="/cart"
-                className="rounded-2xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                className="rounded-2xl border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
               >
                 Back to cart
               </Link>
               <Link
                 to="/parts"
-                className="rounded-2xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                className="rounded-2xl border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
               >
                 Browse parts
               </Link>
@@ -210,7 +210,7 @@ export default function AuthPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm sm:p-8">
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
@@ -219,7 +219,7 @@ export default function AuthPage() {
                 "rounded-2xl px-5 py-2.5 text-sm font-semibold transition",
                 mode === "login"
                   ? "bg-slate-950 text-white"
-                  : "border border-gray-300 bg-white text-gray-800 hover:bg-gray-50",
+                  : "border border-line-strong bg-surface text-ink-2 hover:bg-white/5",
               ].join(" ")}
             >
               Sign in
@@ -232,7 +232,7 @@ export default function AuthPage() {
                 "rounded-2xl px-5 py-2.5 text-sm font-semibold transition",
                 mode === "register"
                   ? "bg-slate-950 text-white"
-                  : "border border-gray-300 bg-white text-gray-800 hover:bg-gray-50",
+                  : "border border-line-strong bg-surface text-ink-2 hover:bg-white/5",
               ].join(" ")}
             >
               Create account
@@ -240,10 +240,10 @@ export default function AuthPage() {
           </div>
 
           <div className="mt-6">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-ink">
               {mode === "login" ? "Buyer sign in" : "Buyer registration"}
             </h2>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-muted">
               {mode === "login"
                 ? "Enter your email and password to continue."
                 : "Create your buyer account with basic details."}
@@ -251,13 +251,13 @@ export default function AuthPage() {
           </div>
 
           {error ? (
-            <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="mt-5 rounded-2xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-300">
               {error}
             </div>
           ) : null}
 
           {success ? (
-            <div className="mt-5 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            <div className="mt-5 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-300">
               {success}
             </div>
           ) : null}
@@ -265,7 +265,7 @@ export default function AuthPage() {
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             {mode === "register" ? (
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-sm font-medium text-ink-2">
                   Full name
                 </label>
                 <input
@@ -278,7 +278,7 @@ export default function AuthPage() {
             ) : null}
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">
                 Email
               </label>
               <input
@@ -291,7 +291,7 @@ export default function AuthPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">
                 Password
               </label>
               <input
@@ -306,7 +306,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+              className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-navy px-5 text-sm font-semibold text-white transition hover:bg-navy-deep disabled:cursor-not-allowed disabled:bg-navy/50"
             >
               {loading
                 ? "Please wait..."
@@ -316,14 +316,14 @@ export default function AuthPage() {
             </button>
           </form>
 
-          <div className="mt-6 rounded-2xl bg-gray-50 p-4 text-sm text-gray-600">
+          <div className="mt-6 rounded-2xl bg-surface-2 p-4 text-sm text-muted">
             {mode === "login" ? (
               <>
                 Don’t have an account?{" "}
                 <button
                   type="button"
                   onClick={() => switchMode("register")}
-                  className="font-semibold text-blue-600 hover:text-blue-700"
+                  className="font-semibold text-link hover:text-sky-200"
                 >
                   Create one
                 </button>
@@ -334,7 +334,7 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => switchMode("login")}
-                  className="font-semibold text-blue-600 hover:text-blue-700"
+                  className="font-semibold text-link hover:text-sky-200"
                 >
                   Sign in
                 </button>

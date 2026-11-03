@@ -135,9 +135,9 @@ export default function CheckoutPage() {
 
   if (!items.length) {
     return (
-      <section className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-900">Your cart is empty</h1>
-        <p className="mt-2 text-sm text-gray-500">
+      <section className="rounded-3xl border border-dashed border-line-strong bg-surface p-10 text-center shadow-sm">
+        <h1 className="text-2xl font-bold text-ink">Your cart is empty</h1>
+        <p className="mt-2 text-sm text-muted">
           Add parts to your cart before proceeding to checkout.
         </p>
       </section>
@@ -154,134 +154,134 @@ export default function CheckoutPage() {
       </div>
 
       {selectedVehicle ? (
-        <div className="rounded-3xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-800 shadow-sm">
+        <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-4 text-sm text-emerald-300 shadow-sm">
           Your selected vehicle will be attached as checkout context:
           <span className="ml-2 font-semibold">{vehicleLabel}</span>
         </div>
       ) : (
-        <div className="rounded-3xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm text-blue-700 shadow-sm">
+        <div className="rounded-3xl border border-navy/70 bg-navy/20 px-4 py-4 text-sm text-link shadow-sm">
           No vehicle selected. You can still place the order, but fitment confidence is stronger when a vehicle is selected.
         </div>
       )}
 
       {error ? (
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-5 text-red-700 shadow-sm">
+        <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-5 text-red-300 shadow-sm">
           {error}
         </div>
       ) : null}
 
       {success ? (
-        <div className="rounded-3xl border border-green-200 bg-green-50 p-5 text-green-700 shadow-sm">
+        <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 p-5 text-emerald-300 shadow-sm">
           {success}
         </div>
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-        <form onSubmit={handleSubmit} className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900">Delivery details</h2>
-          <p className="mt-1 text-sm text-gray-500">
+        <form onSubmit={handleSubmit} className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-ink">Delivery details</h2>
+          <p className="mt-1 text-sm text-muted">
             Fill in your information to place the order as a guest.
           </p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Full name</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">Full name</label>
               <input
                 value={form.buyer_name}
                 onChange={setField("buyer_name")}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+                className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder="John Smith"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Email (optional)</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">Email (optional)</label>
               <input
                 value={form.buyer_email}
                 onChange={setField("buyer_email")}
                 type="email"
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+                className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder="john@example.com"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Phone</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">Phone</label>
               <input
                 value={form.buyer_phone}
                 onChange={setField("buyer_phone")}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+                className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder="+44..."
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Address line 1</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">Address line 1</label>
               <input
                 value={form.address_line1}
                 onChange={setField("address_line1")}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+                className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder="Street address"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Address line 2 (optional)</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">Address line 2 (optional)</label>
               <input
                 value={form.address_line2}
                 onChange={setField("address_line2")}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+                className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder="Apartment, suite, etc."
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">City</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">City</label>
               <input
                 value={form.city}
                 onChange={setField("city")}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+                className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder="London"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">State / Region</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">State / Region</label>
               <input
                 value={form.state}
                 onChange={setField("state")}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+                className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder="Greater London"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Postal code</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">Postal code</label>
               <input
                 value={form.postal_code}
                 onChange={setField("postal_code")}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+                className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder="SW1A 1AA"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Country</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">Country</label>
               <input
                 value={form.country}
                 onChange={setField("country")}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+                className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder="GB"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Order notes (optional)</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">Order notes (optional)</label>
               <textarea
                 value={form.notes}
                 onChange={setField("notes")}
                 rows={4}
-                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500"
+                className="w-full rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder="Add delivery notes or fitment confirmation requests..."
               />
             </div>
@@ -291,7 +291,7 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="btn-cta h-12 rounded-2xl px-6 text-sm"
             >
               {saving ? "Placing order..." : "Place order"}
             </button>
@@ -299,50 +299,50 @@ export default function CheckoutPage() {
         </form>
 
         <aside className="space-y-6">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900">Order summary</h2>
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-ink">Order summary</h2>
 
           <div className="mt-5 space-y-4">
             {items.map((item) => (
-              <div key={item.id || item.part_id} className="rounded-2xl bg-gray-50 p-4">
-                <p className="font-semibold text-gray-900">{item.title}</p>
-                <p className="mt-1 text-sm text-gray-500">
+              <div key={item.id || item.part_id} className="rounded-2xl bg-surface-2 p-4">
+                <p className="font-semibold text-ink">{item.title}</p>
+                <p className="mt-1 text-sm text-muted">
                   Qty: {item.quantity || 1} • {formatPriceGBP(item.price)}
                 </p>
               </div>
             ))}
           </div>
 
-          <div className="mt-6 space-y-3 border-t border-gray-100 pt-4">
-            <div className="flex items-center justify-between text-sm text-gray-600">
+          <div className="mt-6 space-y-3 border-t border-line pt-4">
+            <div className="flex items-center justify-between text-sm text-muted">
               <span>Items</span>
               <span>{totalItems}</span>
             </div>
 
-            <div className="flex items-center justify-between text-sm text-gray-600">
+            <div className="flex items-center justify-between text-sm text-muted">
               <span>Subtotal</span>
               <span>{formatPriceGBP(subtotal)}</span>
             </div>
 
-            <div className="flex items-center justify-between text-sm text-gray-600">
+            <div className="flex items-center justify-between text-sm text-muted">
               <span>Shipping</span>
               <span>To be confirmed</span>
             </div>
 
-            <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-              <span className="text-base font-semibold text-gray-900">Estimated total</span>
-              <span className="text-xl font-bold text-gray-900">{formatPriceGBP(subtotal)}</span>
+            <div className="flex items-center justify-between border-t border-line pt-3">
+              <span className="text-base font-semibold text-ink">Estimated total</span>
+              <span className="text-xl font-bold text-ink">{formatPriceGBP(subtotal)}</span>
             </div>
           </div>
 
-          <p className="mt-4 text-xs text-gray-500">
+          <p className="mt-4 text-xs text-muted">
             Final fitment confirmation should still rely on SKU, OEM reference, and seller confirmation where needed.
           </p>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Checkout trust</h2>
-            <div className="mt-4 space-y-3 text-sm text-gray-600">
+          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-ink">Checkout trust</h2>
+            <div className="mt-4 space-y-3 text-sm text-muted">
               <p>• Guest checkout is enabled for faster ordering.</p>
               <p>• Vehicle context is attached when selected.</p>
               <p>• Seller follow-up can still confirm final fitment before fulfillment.</p>
