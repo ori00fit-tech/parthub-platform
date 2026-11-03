@@ -60,13 +60,14 @@ export default function MainLayout() {
     { label: "Electrical", to: "/parts?q=battery" },
     { label: "Filters", to: "/parts?q=filter" },
     { label: "Flash Deals", to: "/parts?sort=price_asc" },
+    { label: "Request a part", to: "/request-part" },
   ];
 
   const mobileNav = [
     { label: "Home", to: "/", icon: "⌂" },
     { label: "Parts", to: "/parts", icon: "⚙️" },
     { label: "Garage", to: "/vehicle-selector", icon: "🚗" },
-    { label: "Compare", to: "/compare", icon: "⇄" },
+    { label: "Request", to: "/request-part", icon: "📨" },
     { label: "Cart", to: "/cart", icon: "🛒" },
   ];
 
@@ -114,6 +115,13 @@ export default function MainLayout() {
             >
               <span>🚗</span>
               <span className="max-w-[170px] truncate">{vehicleLabel}</span>
+            </Link>
+
+            <Link
+              to="/request-part"
+              className="hidden rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 sm:inline-flex"
+            >
+              Request a part
             </Link>
 
             <Link

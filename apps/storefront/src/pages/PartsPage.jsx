@@ -896,6 +896,13 @@ export default function PartsPage() {
                     Reset search filters
                   </button>
 
+                  <Link
+                    to={`/request-part${searchParams.get("q") ? `?part=${encodeURIComponent(searchParams.get("q"))}` : ""}`}
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-5 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                  >
+                    Can't find it? Request this part
+                  </Link>
+
                   {hasVehicle ? (
                     <button
                       type="button"

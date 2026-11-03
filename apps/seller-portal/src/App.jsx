@@ -14,6 +14,8 @@ import OrderDetailsPage from "./pages/OrderDetailsPage";
 import ReviewsPage from "./pages/ReviewsPage";
 import InsightsPage from "./pages/InsightsPage";
 import StoreSettingsPage from "./pages/StoreSettingsPage";
+import RequestsInboxPage from "./pages/RequestsInboxPage";
+import RequestDetailsPage from "./pages/RequestDetailsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 function ProtectedShell({ children }) {
@@ -97,6 +99,24 @@ export default function App() {
         element={
           <ProtectedShell>
             <OrderDetailsPage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
+        path="/requests"
+        element={
+          <ProtectedShell>
+            <RequestsInboxPage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
+        path="/requests/:id"
+        element={
+          <ProtectedShell>
+            <RequestDetailsPage />
           </ProtectedShell>
         }
       />

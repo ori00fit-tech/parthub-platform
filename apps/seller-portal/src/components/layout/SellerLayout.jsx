@@ -26,6 +26,7 @@ export default function SellerLayout({ children }) {
               <NavLink to="/" className={navClass}>Dashboard</NavLink>
               <NavLink to="/parts" className={navClass}>Inventory</NavLink>
               <NavLink to="/orders" className={navClass}>Orders</NavLink>
+              <NavLink to="/requests" className={navClass}>Requests</NavLink>
               <NavLink to="/reviews" className={navClass}>Reviews</NavLink>
               <NavLink to="/insights" className={navClass}>Insights</NavLink>
               <NavLink to="/store-settings" className={navClass}>Store</NavLink>
@@ -57,10 +58,11 @@ export default function SellerLayout({ children }) {
         </div>
 
         <div className="border-t border-gray-100 bg-white md:hidden">
-          <div className="mx-auto grid max-w-7xl grid-cols-5 gap-2 px-4 py-3 sm:px-6">
+          <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-3 sm:px-6">
             <NavLink to="/" className={navClass}>Home</NavLink>
             <NavLink to="/parts" className={navClass}>Parts</NavLink>
             <NavLink to="/orders" className={navClass}>Orders</NavLink>
+            <NavLink to="/requests" className={navClass}>Requests</NavLink>
             <NavLink to="/reviews" className={navClass}>Reviews</NavLink>
             <NavLink to="/insights" className={navClass}>Insights</NavLink>
             <NavLink to="/store-settings" className={navClass}>Store</NavLink>
