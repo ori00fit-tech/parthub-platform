@@ -34,6 +34,7 @@ jobs:
           node-version: 20
 
       - name: Show tables before
+        continue-on-error: true
         run: |
           npx --yes wrangler@4 d1 execute "$DB_NAME" --remote \
             --command "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
@@ -44,27 +45,32 @@ jobs:
       - name: 0004 WhatsApp notification log (create table if missing)
         run: npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0004_whatsapp_notifications.sql"
 
+      # File imports keep working even when D1's daily read limit is hit,
+      # so no step below depends on a read query.
       - name: 0005 request photos (add column if missing)
         run: |
-          # D1 blocks PRAGMA functions, so read the column list from sqlite_master.
-          if ! out=$(npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --json --command \
-            "SELECT CASE WHEN instr(sql, 'images') > 0 THEN 1 ELSE 0 END AS n FROM sqlite_master WHERE type='table' AND name='part_requests'"); then
-            echo "$out"
-            exit 1
-          fi
-          has=$(echo "$out" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const r=JSON.parse(s);console.log(r[0].results[0]?.n ?? 0)})")
-          echo "images column present: $has"
-          if [ "$has" = "1" ]; then
-            echo "part_requests.images already exists — skipping 0005"
-          else
-            npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0005_part_request_images.sql"
+          set +e
+          out=$(npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0005_part_request_images.sql" 2>&1)
+          code=$?
+          echo "$out"
+          if [ $code -ne 0 ]; then
+            if echo "$out" | grep -qi "duplicate column"; then
+              echo "part_requests.images already exists — nothing to do"
+            else
+              exit $code
+            fi
           fi
 
+      - name: 0006 core indexes (create if missing)
+        run: npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0006_core_indexes.sql"
+
+      # Read query: fails while the daily read limit is exceeded, which
+      # doesn't mean the migrations failed.
       - name: Verify
+        continue-on-error: true
         run: |
           npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --command \
             "SELECT
-               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='part_requests') AS part_requests,
-               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='request_offers') AS request_offers,
-               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='whatsapp_notifications') AS whatsapp_notifications,
-               (SELECT CASE WHEN instr(sql, 'images') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='part_requests') AS images_column"
+               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('part_requests','request_offers','whatsapp_notifications')) AS new_tables_of_3,
+               (SELECT CASE WHEN instr(sql, 'images') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='part_requests') AS images_column,
+               (SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name IN ('idx_part_images_part','idx_compat_part_id','idx_parts_seller_id','idx_parts_status')) AS key_indexes_of_4"
