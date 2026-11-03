@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
+import { formatMoney } from "@parthub/shared";
 
 function normalizeRows(payload) {
   return Array.isArray(payload?.data) ? payload.data : [];
@@ -72,7 +73,7 @@ export default function OrdersPage() {
                       shipping: {order.shipping_status}
                     </span>
                     <span className="rounded-full bg-green-50 px-3 py-1 text-green-700">
-                      total: {order.total}
+                      total: {formatMoney(order.total)}
                     </span>
                   </div>
                 </div>

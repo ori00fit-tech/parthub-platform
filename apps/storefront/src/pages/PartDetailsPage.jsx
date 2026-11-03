@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiGet } from "../lib/api";
-import { formatPriceGBP } from "../lib/formatters";
+import { formatPrice } from "../lib/formatters";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import VehicleContextBar from "../features/vehicles/VehicleContextBar";
 import { useCart } from "../features/cart/CartContext";
@@ -399,11 +399,11 @@ export default function PartDetailsPage() {
             <div className="mt-5 flex items-end justify-between gap-4">
               <div>
                 <p className="text-3xl font-bold text-ink">
-                  {formatPriceGBP(part.price)}
+                  {formatPrice(part.price)}
                 </p>
                 {part.compare_price ? (
                   <p className="text-sm text-faint line-through">
-                    {formatPriceGBP(part.compare_price)}
+                    {formatPrice(part.compare_price)}
                   </p>
                 ) : null}
               </div>
@@ -720,7 +720,7 @@ export default function PartDetailsPage() {
                         {item.brand_name || "Brand"} • {item.category_name || "Category"}
                       </p>
                       <p className="mt-3 text-lg font-bold text-ink">
-                        {formatPriceGBP(item.price)}
+                        {formatPrice(item.price)}
                       </p>
                     </div>
                   </Link>
@@ -736,7 +736,7 @@ export default function PartDetailsPage() {
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-ink">{part.title}</p>
             <div className="flex items-center gap-2">
-              <p className="text-base font-bold text-ink">{formatPriceGBP(part.price)}</p>
+              <p className="text-base font-bold text-ink">{formatPrice(part.price)}</p>
               {selectedVehicleMatch ? (
                 <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-300">
                   Match

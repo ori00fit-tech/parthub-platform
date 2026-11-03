@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
+import { parseMoneyInput } from "@parthub/shared";
 
 function slugify(value) {
   return String(value || "")
@@ -314,6 +315,17 @@ export default function PartCreatePage() {
       return;
     }
 
+    const priceCentimes = parseMoneyInput(form.price);
+    const compareCentimes = parseMoneyInput(form.compare_price);
+    if (priceCentimes === null || Number.isNaN(priceCentimes) || priceCentimes <= 0) {
+      setError("Enter the price in dirhams, e.g. 350 or 349,90.");
+      return;
+    }
+    if (Number.isNaN(compareCentimes)) {
+      setError("Enter the compare-at price in dirhams, e.g. 420.");
+      return;
+    }
+
     if (!form.quantity && form.quantity !== "0") {
       setError("Quantity is required.");
       return;
@@ -329,8 +341,8 @@ export default function PartCreatePage() {
         sku: form.sku.trim(),
         category_id: Number(form.category_id),
         brand_id: form.brand_id ? Number(form.brand_id) : null,
-        price: Number(form.price),
-        compare_price: form.compare_price ? Number(form.compare_price) : null,
+        price: priceCentimes,
+        compare_price: compareCentimes,
         quantity: Number(form.quantity),
         condition: form.condition,
         status: form.status,
@@ -532,26 +544,26 @@ export default function PartCreatePage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Price
+                Price (MAD)
               </label>
               <input
                 value={form.price}
                 onChange={setField("price")}
-                inputMode="numeric"
-                placeholder="35000"
+                inputMode="decimal"
+                placeholder="350"
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Compare price
+                Compare-at price (MAD)
               </label>
               <input
                 value={form.compare_price}
                 onChange={setField("compare_price")}
-                inputMode="numeric"
-                placeholder="42000"
+                inputMode="decimal"
+                placeholder="420"
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>

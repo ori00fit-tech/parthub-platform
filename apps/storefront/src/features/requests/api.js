@@ -8,23 +8,17 @@ export const requestsApi = {
   close: (id) => apiPost(`/api/v1/requests/mine/${id}/close`, {}, { auth: true }),
 };
 
-export function formatMAD(cents) {
-  if (cents == null) return "—";
-  return new Intl.NumberFormat("fr-MA", {
-    style: "currency",
-    currency: "MAD",
-    maximumFractionDigits: 2,
-  }).format(Number(cents) / 100);
-}
+// Offers are priced in centimes (MAD).
+export { formatMoney as formatMAD } from "@parthub/shared";
 
 export function requestStatus(request) {
   if (!request) return { label: "", className: "" };
   if (request.status === "fulfilled") {
-    return { label: "Offer accepted", className: "bg-emerald-50 text-emerald-700" };
+    return { label: "Offer accepted", className: "bg-emerald-400/10 text-emerald-300" };
   }
-  if (request.status === "closed") return { label: "Closed", className: "bg-gray-100 text-gray-600" };
-  if (Number(request.is_expired)) return { label: "Expired", className: "bg-amber-50 text-amber-700" };
-  return { label: "Open", className: "bg-blue-50 text-blue-700" };
+  if (request.status === "closed") return { label: "Closed", className: "bg-surface-2 text-muted" };
+  if (Number(request.is_expired)) return { label: "Expired", className: "bg-amber-400/10 text-amber-300" };
+  return { label: "Open", className: "bg-navy/20 text-link" };
 }
 
 export const CONDITION_LABELS = {

@@ -121,9 +121,9 @@ catalogRoutes.get("/parts", async (c) => {
 
   return c.json(
     ok(result.results || [], {
-      currency: "GBP",
-      locale: "en-GB",
-      market: "United Kingdom",
+      currency: "MAD",
+      locale: "fr-MA",
+      market: "Morocco",
       vehicle_filter:
         make || model || year
           ? {
@@ -243,9 +243,9 @@ catalogRoutes.get("/parts/:slug", async (c) => {
         ),
       },
       {
-        currency: "GBP",
-        locale: "en-GB",
-        market: "United Kingdom",
+        currency: "MAD",
+        locale: "fr-MA",
+        market: "Morocco",
       }
     )
   );
@@ -261,7 +261,7 @@ catalogRoutes.get("/categories", async (c) => {
 
   return c.json(
     ok(result.results || [], {
-      market: "United Kingdom",
+      market: "Morocco",
     })
   );
 });
@@ -276,7 +276,7 @@ catalogRoutes.get("/brands", async (c) => {
 
   return c.json(
     ok(result.results || [], {
-      market: "United Kingdom",
+      market: "Morocco",
     })
   );
 });

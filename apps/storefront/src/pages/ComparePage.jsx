@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { formatPriceGBP } from "../lib/formatters";
+import { formatPrice } from "../lib/formatters";
 
 function readCompareItems() {
   try {
@@ -132,7 +132,7 @@ export default function ComparePage() {
           {[
             {
               label: "Price",
-              value: (item) => formatPriceGBP(item.price),
+              value: (item) => formatPrice(item.price),
             },
             {
               label: "Condition",

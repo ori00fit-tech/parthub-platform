@@ -1,15 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
+import { formatMoney } from "@parthub/shared";
 
-function formatMoney(value) {
-  const amount = Number(value || 0) / 100;
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
+// Revenue in whole dirhams; amounts arrive in centimes.
+const formatRevenue = (value) => formatMoney(value || 0, { whole: true });
 
 function safeStats(payload) {
   const data = payload?.data || {};
@@ -183,7 +178,7 @@ export default function DashboardPage() {
             />
             <StatCard
               title="Paid revenue"
-              value={formatMoney(stats.total_revenue)}
+              value={formatRevenue(stats.total_revenue)}
               subtitle="Total revenue from paid orders"
               to="/orders"
               tone="success"
@@ -291,7 +286,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3">
                   <span className="text-sm text-gray-600">Revenue tracked</span>
                   <span className="text-sm font-semibold text-gray-900">
-                    {formatMoney(stats.total_revenue)}
+                    {formatRevenue(stats.total_revenue)}
                   </span>
                 </div>
               </div>

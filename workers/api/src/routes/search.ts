@@ -338,9 +338,9 @@ searchRoutes.get("/", async (c) => {
           max_price: maxPrice,
           sort,
         },
-        currency: "GBP",
-        locale: "en-GB",
-        market: "United Kingdom",
+        currency: "MAD",
+        locale: "fr-MA",
+        market: "Morocco",
       })
     );
   } catch (error) {

@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { apiPost } from "../lib/api";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { apiGet, apiPost } from "../lib/api";
+import { useAuth } from "../features/auth/AuthContext";
 import { useCart } from "../features/cart/CartContext";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
-import { formatPriceGBP } from "../lib/formatters";
+import { formatPrice } from "../lib/formatters";
 
 function getVehicleLabel(vehicle) {
   if (!vehicle) return "";
@@ -27,21 +28,34 @@ export default function CheckoutPage() {
 
   const vehicleCtx = useSelectedVehicle();
   const selectedVehicle = vehicleCtx?.selectedVehicle || null;
+  const { isAuthenticated, user } = useAuth();
+
+  // Delivery fee comes from the API so the total shown is the total charged.
+  const [shippingFee, setShippingFee] = useState(null);
+  useEffect(() => {
+    let active = true;
+    apiGet("/api/v1/commerce/shipping")
+      .then((res) => active && setShippingFee(Number(res?.data?.flat_fee ?? 0)))
+      .catch(() => active && setShippingFee(null));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const [form, setForm] = useState({
-    buyer_name: "",
-    buyer_email: "",
-    buyer_phone: "",
+    buyer_name: user?.name || "",
+    buyer_email: user?.email || "",
+    buyer_phone: user?.phone || "",
     address_line1: "",
     address_line2: "",
     city: "",
     state: "",
     postal_code: "",
-    country: "GB",
+    country: "MA",
     notes: "",
   });
 
@@ -91,16 +105,18 @@ export default function CheckoutPage() {
     try {
       setSaving(true);
 
+      // Shape expected by POST /api/v1/commerce/orders.
       const payload = {
-        buyer_name: form.buyer_name.trim(),
-        buyer_email: form.buyer_email.trim() || null,
-        buyer_phone: form.buyer_phone.trim(),
-        address_line1: form.address_line1.trim(),
-        address_line2: form.address_line2.trim() || null,
-        city: form.city.trim(),
-        state: form.state.trim() || null,
-        postal_code: form.postal_code.trim() || null,
-        country: form.country.trim() || "GB",
+        shipping_address: {
+          full_name: form.buyer_name.trim(),
+          phone: form.buyer_phone.trim(),
+          address_line1: form.address_line1.trim(),
+          address_line2: form.address_line2.trim() || null,
+          city: form.city.trim(),
+          state: form.state.trim() || null,
+          postal_code: form.postal_code.trim() || null,
+          country: form.country.trim() || "MA",
+        },
         notes: [
           form.notes.trim(),
           selectedVehicle ? `Vehicle context: ${vehicleLabel}` : "",
@@ -113,8 +129,8 @@ export default function CheckoutPage() {
         })),
       };
 
-      const response = await apiPost("/api/v1/commerce/orders", payload);
-      const orderId = response?.data?.id || response?.data?.order_id || null;
+      const response = await apiPost("/api/v1/commerce/orders", payload, { auth: true });
+      const orderId = response?.data?.reference || response?.data?.id || null;
 
       setSuccess("Order placed successfully.");
       clearCart();
@@ -143,13 +159,28 @@ export default function CheckoutPage() {
       </section>
     );
   }
+  // Orders belong to an account (order history, tracking, seller follow-up).
+  if (!isAuthenticated) {
+    return (
+      <section className="mx-auto max-w-xl rounded-3xl border border-line bg-surface p-8 text-center shadow-panel">
+        <h1 className="text-3xl font-bold uppercase text-ink">Sign in to check out</h1>
+        <p className="mt-3 text-sm text-muted">
+          Your cart is saved. Sign in or create a free account so you can track the order and the seller can reach you.
+        </p>
+        <Link to="/auth?redirect=/checkout" className="btn-cta mt-6 h-12 px-6 text-sm">
+          Sign in to continue
+        </Link>
+      </section>
+    );
+  }
+
 
   return (
     <section className="space-y-6 pb-16">
       <div className="rounded-[28px] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-700 p-6 text-white shadow-lg sm:p-8">
-        <h1 className="text-3xl font-bold sm:text-5xl">Guest checkout</h1>
+        <h1 className="text-3xl font-bold sm:text-5xl">Checkout</h1>
         <p className="mt-3 text-sm text-blue-100 sm:text-base">
-          Complete your order without creating an account.
+          Confirm your delivery details. Sellers may call to confirm fitment before shipping.
         </p>
       </div>
 
@@ -180,7 +211,7 @@ export default function CheckoutPage() {
         <form onSubmit={handleSubmit} className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
           <h2 className="text-2xl font-bold text-ink">Delivery details</h2>
           <p className="mt-1 text-sm text-muted">
-            Fill in your information to place the order as a guest.
+            Where should the seller deliver your parts?
           </p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -190,7 +221,7 @@ export default function CheckoutPage() {
                 value={form.buyer_name}
                 onChange={setField("buyer_name")}
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
-                placeholder="John Smith"
+                placeholder="Youssef Benali"
               />
             </div>
 
@@ -201,7 +232,7 @@ export default function CheckoutPage() {
                 onChange={setField("buyer_email")}
                 type="email"
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
-                placeholder="john@example.com"
+                placeholder="youssef@exemple.ma"
               />
             </div>
 
@@ -211,7 +242,7 @@ export default function CheckoutPage() {
                 value={form.buyer_phone}
                 onChange={setField("buyer_phone")}
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
-                placeholder="+44..."
+                placeholder="06 12 34 56 78"
               />
             </div>
 
@@ -241,7 +272,7 @@ export default function CheckoutPage() {
                 value={form.city}
                 onChange={setField("city")}
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
-                placeholder="London"
+                placeholder="Casablanca"
               />
             </div>
 
@@ -251,7 +282,7 @@ export default function CheckoutPage() {
                 value={form.state}
                 onChange={setField("state")}
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
-                placeholder="Greater London"
+                placeholder="Casablanca-Settat"
               />
             </div>
 
@@ -261,7 +292,7 @@ export default function CheckoutPage() {
                 value={form.postal_code}
                 onChange={setField("postal_code")}
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
-                placeholder="SW1A 1AA"
+                placeholder="20000"
               />
             </div>
 
@@ -271,7 +302,7 @@ export default function CheckoutPage() {
                 value={form.country}
                 onChange={setField("country")}
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
-                placeholder="GB"
+                placeholder="MA"
               />
             </div>
 
@@ -307,7 +338,7 @@ export default function CheckoutPage() {
               <div key={item.id || item.part_id} className="rounded-2xl bg-surface-2 p-4">
                 <p className="font-semibold text-ink">{item.title}</p>
                 <p className="mt-1 text-sm text-muted">
-                  Qty: {item.quantity || 1} • {formatPriceGBP(item.price)}
+                  Qty: {item.quantity || 1} • {formatPrice(item.price)}
                 </p>
               </div>
             ))}
@@ -321,17 +352,19 @@ export default function CheckoutPage() {
 
             <div className="flex items-center justify-between text-sm text-muted">
               <span>Subtotal</span>
-              <span>{formatPriceGBP(subtotal)}</span>
+              <span>{formatPrice(subtotal)}</span>
             </div>
 
             <div className="flex items-center justify-between text-sm text-muted">
-              <span>Shipping</span>
-              <span>To be confirmed</span>
+              <span>Delivery (flat rate)</span>
+              <span className="font-mono">{shippingFee == null ? "—" : formatPrice(shippingFee)}</span>
             </div>
 
             <div className="flex items-center justify-between border-t border-line pt-3">
-              <span className="text-base font-semibold text-ink">Estimated total</span>
-              <span className="text-xl font-bold text-ink">{formatPriceGBP(subtotal)}</span>
+              <span className="text-base font-semibold text-ink">Total</span>
+              <span className="font-mono text-xl font-bold text-ink">
+                {formatPrice(subtotal + (shippingFee || 0))}
+              </span>
             </div>
           </div>
 
@@ -343,7 +376,7 @@ export default function CheckoutPage() {
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
             <h2 className="text-xl font-bold text-ink">Checkout trust</h2>
             <div className="mt-4 space-y-3 text-sm text-muted">
-              <p>• Guest checkout is enabled for faster ordering.</p>
+              <p>• Your order appears in your account with a tracking reference.</p>
               <p>• Vehicle context is attached when selected.</p>
               <p>• Seller follow-up can still confirm final fitment before fulfillment.</p>
               <p>• SKU and notes remain important for high-confidence orders.</p>

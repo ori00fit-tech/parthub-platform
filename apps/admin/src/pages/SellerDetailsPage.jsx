@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../lib/api";
+import { formatMoney } from "@parthub/shared";
 
 function statusClasses(status) {
   switch (status) {
@@ -189,7 +190,7 @@ export default function SellerDetailsPage() {
                       </span>
                     </div>
                     <p className="text-sm text-gray-500">
-                      slug: {part.slug} • price: {part.price}
+                      slug: {part.slug} • price: {formatMoney(part.price)}
                     </p>
                   </Link>
                 ))}

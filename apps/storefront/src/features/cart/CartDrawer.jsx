@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "./CartContext";
 import { useSelectedVehicle } from "../vehicles/SelectedVehicleContext";
-import { formatPriceGBP } from "../../lib/formatters";
+import { formatPrice } from "../../lib/formatters";
 import { mediaUrl } from "../../lib/media";
 
 const MAX_QTY = 10;
@@ -211,10 +211,10 @@ export default function CartDrawer() {
                           +
                         </button>
                       </div>
-                      <span className="font-mono text-[15px] font-semibold tabular-nums">{formatPriceGBP(item.price * item.quantity)}</span>
+                      <span className="font-mono text-[15px] font-semibold tabular-nums">{formatPrice(item.price * item.quantity)}</span>
                     </div>
                     <div className="mt-1.5 flex items-center justify-between text-xs text-faint">
-                      <span className="font-mono">{formatPriceGBP(item.price)} each</span>
+                      <span className="font-mono">{formatPrice(item.price)} each</span>
                       <button type="button" onClick={() => removeItem(item.part_id)} className="underline underline-offset-2 hover:text-red-300">
                         Remove
                       </button>
@@ -227,7 +227,7 @@ export default function CartDrawer() {
             <div className="space-y-3 border-t border-line-strong bg-[#0C1424] px-4 pb-4 pt-3.5">
               <dl className="grid grid-cols-[1fr_auto] gap-y-1.5 text-sm text-ink-2">
                 <dt>Subtotal</dt>
-                <dd className="text-right font-mono tabular-nums text-ink">{formatPriceGBP(subtotal)}</dd>
+                <dd className="text-right font-mono tabular-nums text-ink">{formatPrice(subtotal)}</dd>
                 <dt>Shipping</dt>
                 <dd className="text-right text-muted">Calculated at checkout</dd>
               </dl>
@@ -239,7 +239,7 @@ export default function CartDrawer() {
                 }}
                 className="btn-cta h-[52px] w-full text-base"
               >
-                Checkout · <span className="font-mono">{formatPriceGBP(subtotal)}</span>
+                Checkout · <span className="font-mono">{formatPrice(subtotal)}</span>
               </button>
               <button
                 type="button"

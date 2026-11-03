@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../lib/api";
+import { formatMoney } from "@parthub/shared";
 
 function statusClasses(status) {
   switch (status) {
@@ -157,7 +158,7 @@ export default function PartDetailsPage() {
               <p><span className="font-semibold text-gray-900">Seller:</span> {part.seller_name || "Unknown"}</p>
               <p><span className="font-semibold text-gray-900">Brand:</span> {part.brand_name || "Unknown"}</p>
               <p><span className="font-semibold text-gray-900">Category:</span> {part.category_name || "Unknown"}</p>
-              <p><span className="font-semibold text-gray-900">Price:</span> {part.price}</p>
+              <p><span className="font-semibold text-gray-900">Price:</span> {formatMoney(part.price)}</p>
               <p><span className="font-semibold text-gray-900">Quantity:</span> {part.quantity}</p>
             </div>
 

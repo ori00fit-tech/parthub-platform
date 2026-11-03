@@ -14,6 +14,7 @@ export * from "./constants/parts";
 // Lib
 export * from "./lib/tokens";
 export * from "./lib/formatters";
+export * from "./lib/money";
 
 // API
 export * from "./api/client";

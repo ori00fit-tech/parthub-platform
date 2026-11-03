@@ -4,7 +4,7 @@ import { useCart } from "../../features/cart/CartContext";
 import CartDrawer from "../../features/cart/CartDrawer";
 import { useAuth } from "../../features/auth/AuthContext";
 import { useSelectedVehicle } from "../../features/vehicles/SelectedVehicleContext";
-import { formatPriceGBP } from "../../lib/formatters";
+import { formatPrice } from "../../lib/formatters";
 import BrandMark, { Wordmark } from "../brand/BrandMark";
 import Footer from "./Footer";
 
@@ -211,7 +211,7 @@ export default function MainLayout() {
               </span>
               <span className="hidden text-left sm:block">
                 <small className="block text-[11px] leading-tight text-[#A9BBF5]">Cart</small>
-                <b className="block font-mono text-[13.5px] leading-tight">{formatPriceGBP(subtotal)}</b>
+                <b className="block font-mono text-[13.5px] leading-tight">{formatPrice(subtotal)}</b>
               </span>
             </button>
           </div>
