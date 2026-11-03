@@ -106,6 +106,8 @@ adminRoutes.get("/orders", async (c) => {
 adminRoutes.patch("/orders/:id/status", async (c) => {
   const id = c.req.param("id");
   const { status } = await c.req.json<{ status: string }>();
+  const allowed = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
+  if (!allowed.includes(status)) return fail(c, "Invalid status");
   await dbRun(c.env.DB, "UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", [status, id]);
   return ok(c, { message: "Order updated" });
 });
@@ -131,6 +133,8 @@ adminRoutes.get("/reviews", async (c) => {
 adminRoutes.patch("/reviews/:id/status", async (c) => {
   const id = c.req.param("id");
   const { status } = await c.req.json<{ status: string }>();
+  const allowed = ["approved", "rejected"];
+  if (!allowed.includes(status)) return fail(c, "Invalid status");
   await dbRun(c.env.DB, "UPDATE reviews SET status = ? WHERE id = ?", [status, id]);
   return ok(c, { message: "Review updated" });
 });

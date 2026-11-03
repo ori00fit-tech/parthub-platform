@@ -58,15 +58,37 @@ async function resolveActor(c: {
   return { ok: true, isAdmin: false, sellerId: seller.id };
 }
 
+const PART_STATUSES = ["draft", "pending", "active", "rejected", "archived"] as const;
+
+// Decide the stored status of a part after a create/update.
+// Admins may set any valid status. Sellers cannot self-publish: asking for
+// "active" keeps an already-approved part active, otherwise it goes to the
+// moderation queue ("pending"). Sellers may still save drafts or archive.
+function resolvePartStatus(
+  requested: unknown,
+  current: string | null,
+  isAdmin: boolean
+): string {
+  const wanted = typeof requested === "string" ? requested.trim() : "";
+
+  if (isAdmin) {
+    return (PART_STATUSES as readonly string[]).includes(wanted) ? wanted : current ?? "active";
+  }
+
+  if (wanted === "draft" || wanted === "archived") return wanted;
+  if (current === "active" && (wanted === "active" || wanted === "")) return "active";
+  return "pending";
+}
+
 // Returns the part if the actor may modify it, otherwise null.
 async function findOwnedPart(
   DB: D1Database,
   partId: number,
   actor: { isAdmin: boolean; sellerId: number | null }
 ) {
-  const part = await DB.prepare("select id, title, seller_id from parts where id = ?1 limit 1")
+  const part = await DB.prepare("select id, title, seller_id, status from parts where id = ?1 limit 1")
     .bind(partId)
-    .first<{ id: number; title: string; seller_id: number }>();
+    .first<{ id: number; title: string; seller_id: number; status: string }>();
 
   if (!part) return null;
   if (!actor.isAdmin && part.seller_id !== actor.sellerId) return null;
@@ -196,7 +218,7 @@ marketplaceRoutes.post("/parts", authMiddleware, sellerGuard, async (c) => {
         condition ? String(condition).trim() : "new",
         quantity != null && quantity !== "" ? Number(quantity) : 1,
         weight_kg != null && weight_kg !== "" ? Number(weight_kg) : null,
-        status ? String(status).trim() : "active",
+        resolvePartStatus(status, null, actor.isAdmin),
         featured ? 1 : 0
       )
       .run();
@@ -354,7 +376,7 @@ marketplaceRoutes.put("/parts/:id", authMiddleware, sellerGuard, async (c) => {
         condition ? String(condition).trim() : "new",
         quantity != null && quantity !== "" ? Number(quantity) : 1,
         weight_kg != null && weight_kg !== "" ? Number(weight_kg) : null,
-        status ? String(status).trim() : "active",
+        resolvePartStatus(status, existing.status, actor.isAdmin),
         featured ? 1 : 0,
         id
       )
@@ -689,7 +711,7 @@ marketplaceRoutes.post("/onboarding", authMiddleware, async (c) => {
       location,
       description,
       status
-    ) values (?1, ?2, ?3, ?4, ?5, ?6, 'active')
+    ) values (?1, ?2, ?3, ?4, ?5, ?6, 'pending')
   `)
     .bind(userId, displayName, slug, phone || null, city, description || null)
     .run();
@@ -832,7 +854,7 @@ marketplaceRoutes.post("/me/parts", authMiddleware, async (c) => {
         condition ? String(condition).trim() : "new",
         quantity != null && quantity !== "" ? Number(quantity) : 1,
         weight_kg != null && weight_kg !== "" ? Number(weight_kg) : null,
-        status ? String(status).trim() : "active",
+        resolvePartStatus(status, null, false),
         featured ? 1 : 0
       )
       .run();
@@ -960,10 +982,10 @@ marketplaceRoutes.put("/me/parts/:id", authMiddleware, async (c) => {
     } = body ?? {};
 
     const existing = await c.env.DB.prepare(
-      "select id from parts where id = ?1 and seller_id = ?2 limit 1"
+      "select id, status from parts where id = ?1 and seller_id = ?2 limit 1"
     )
       .bind(partId, Number(sellerId))
-      .first();
+      .first<{ id: number; status: string }>();
 
     if (!existing) {
       return c.json(failure("PART_NOT_FOUND", "Part not found for this seller"), 404);
@@ -1019,7 +1041,7 @@ marketplaceRoutes.put("/me/parts/:id", authMiddleware, async (c) => {
         condition ? String(condition).trim() : "new",
         quantity != null && quantity !== "" ? Number(quantity) : 1,
         weight_kg != null && weight_kg !== "" ? Number(weight_kg) : null,
-        status ? String(status).trim() : "active",
+        resolvePartStatus(status, existing.status, false),
         featured ? 1 : 0,
         partId,
         Number(sellerId)

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { Env, HonoVariables } from "../types";
 import { authMiddleware } from "../middlewares/auth";
 import { ok, fail, created } from "../utils/response";
-import { hashPassword, verifyPassword, signToken } from "../utils/auth";
+import { hashPassword, verifyPassword, needsRehash, signToken } from "../utils/auth";
 import { dbFirst, dbRun } from "../utils/db";
 
 export const authRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
@@ -18,6 +18,9 @@ authRoutes.post("/register", async (c) => {
 
   if (!body.name || !body.email || !body.password) {
     return fail(c, "name, email and password are required");
+  }
+  if (body.password.length < 8) {
+    return fail(c, "password must be at least 8 characters");
   }
 
   const existing = await dbFirst(c.env.DB, "SELECT id FROM users WHERE email = ?", [body.email]);
@@ -71,6 +74,14 @@ authRoutes.post("/login", async (c) => {
 
   const valid = await verifyPassword(body.password, user.password_hash);
   if (!valid) return fail(c, "Invalid credentials", 401);
+
+  // Transparently upgrade legacy (unsalted SHA-256) hashes to PBKDF2.
+  if (needsRehash(user.password_hash)) {
+    await dbRun(c.env.DB, "UPDATE users SET password_hash = ? WHERE id = ?", [
+      await hashPassword(body.password),
+      user.id,
+    ]);
+  }
 
   const payload =
     user.seller_id != null
