@@ -1,0 +1,65 @@
+name: D1 migrations
+
+# Run manually: GitHub → Actions → "D1 migrations" → Run workflow.
+# Applies the database migrations the API needs, against the production
+# D1 database (parthub-db), using the same Cloudflare secrets as "Deploy API".
+# Safe to run more than once: each migration is skipped if already applied.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: d1-migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/api
+    env:
+      CLOUDFLARE_EMAIL: ${{ secrets.CF_EMAIL }}
+      CLOUDFLARE_API_KEY: ${{ secrets.CF_GLOBAL_API_KEY }}
+      CI: "true"
+      DB_NAME: parthub-db
+      MIGRATIONS: ../../infra/d1/migrations
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Show tables before
+        run: |
+          npx --yes wrangler@4 d1 execute "$DB_NAME" --remote \
+            --command "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+
+      - name: 0003 part requests (create tables if missing)
+        run: npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0003_part_requests.sql"
+
+      - name: 0004 WhatsApp notification log (create table if missing)
+        run: npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0004_whatsapp_notifications.sql"
+
+      - name: 0005 request photos (add column if missing)
+        run: |
+          out=$(npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --json \
+            --command "SELECT COUNT(*) AS n FROM pragma_table_info('part_requests') WHERE name = 'images'")
+          has=$(echo "$out" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const r=JSON.parse(s);console.log(r[0].results[0].n)})")
+          if [ "$has" = "1" ]; then
+            echo "part_requests.images already exists — skipping 0005"
+          else
+            npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0005_part_request_images.sql"
+          fi
+
+      - name: Verify
+        run: |
+          npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --command \
+            "SELECT
+               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='part_requests') AS part_requests,
+               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='request_offers') AS request_offers,
+               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='whatsapp_notifications') AS whatsapp_notifications,
+               (SELECT COUNT(*) FROM pragma_table_info('part_requests') WHERE name='images') AS images_column"
