@@ -14,6 +14,9 @@ import SellerProfilePage from "./pages/SellerProfilePage";
 import OrdersPage from "./pages/OrdersPage";
 import AccountPage from "./pages/AccountPage";
 import OrderTrackingPage from "./pages/OrderTrackingPage";
+import RequestPartPage from "./pages/RequestPartPage";
+import MyRequestsPage from "./pages/MyRequestsPage";
+import RequestDetailsPage from "./pages/RequestDetailsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 export default function App() {
@@ -33,6 +36,10 @@ export default function App() {
         <Route path="/compare" element={<ComparePage />} />
 
         <Route path="/sellers/:slug" element={<SellerProfilePage />} />
+
+        <Route path="/request-part" element={<RequestPartPage />} />
+        <Route path="/requests" element={<MyRequestsPage />} />
+        <Route path="/requests/:id" element={<RequestDetailsPage />} />
 
         <Route path="/account" element={<AccountPage />} />
         <Route path="/orders" element={<OrdersPage />} />
