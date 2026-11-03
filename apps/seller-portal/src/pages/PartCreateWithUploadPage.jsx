@@ -1,6 +1,12 @@
 import { useMemo, useState } from "react";
+import { SELLER_TOKEN_KEY } from "@parthub/shared";
 
 const API_BASE = "https://parthub-api.ori00fit-c96.workers.dev";
+
+function authHeaders() {
+  const token = localStorage.getItem(SELLER_TOKEN_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 function slugify(value) {
   return String(value || "")
@@ -59,6 +65,7 @@ export default function PartCreateWithUploadPage() {
 
       const res = await fetch(`${API_BASE}/api/v1/media/upload`, {
         method: "POST",
+        headers: authHeaders(),
         body,
       });
 
@@ -108,6 +115,7 @@ export default function PartCreateWithUploadPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...authHeaders(),
         },
         body: JSON.stringify(payload),
       });

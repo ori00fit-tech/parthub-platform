@@ -1,6 +1,12 @@
 import { useState } from "react";
+import { SELLER_TOKEN_KEY } from "@parthub/shared";
 
 const API_BASE = "https://parthub-api.ori00fit-c96.workers.dev";
+
+function authHeaders() {
+  const token = localStorage.getItem(SELLER_TOKEN_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 export default function MediaUploadPage() {
   const [file, setFile] = useState(null);
@@ -26,6 +32,7 @@ export default function MediaUploadPage() {
 
       const res = await fetch(`${API_BASE}/api/v1/media/upload`, {
         method: "POST",
+        headers: authHeaders(),
         body: formData,
       });
 

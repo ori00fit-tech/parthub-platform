@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Env, HonoVariables } from "../types";
 import { authMiddleware } from "../middlewares/auth";
+import { sellerGuard } from "../middlewares/seller";
 
 export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -20,6 +21,56 @@ function failure(code: string, message: string) {
     meta: null,
     error: { code, message },
   };
+}
+
+type ActorResult =
+  | { ok: true; isAdmin: boolean; sellerId: number | null }
+  | { ok: false; status: 403; code: string; message: string };
+
+// Resolve which seller the authenticated user acts as.
+// Admins may act on any seller; sellers only on their own, active store.
+async function resolveActor(c: {
+  env: Env;
+  get: (key: "user_id" | "user_role" | "seller_id") => unknown;
+}): Promise<ActorResult> {
+  const role = c.get("user_role");
+  if (role === "admin") return { ok: true, isAdmin: true, sellerId: null };
+
+  const sellerId = Number(c.get("seller_id"));
+  const userId = Number(c.get("user_id"));
+  if (!sellerId) {
+    return { ok: false, status: 403, code: "SELLER_REQUIRED", message: "Seller account required" };
+  }
+
+  const seller = await c.env.DB.prepare(
+    "select id, status from sellers where id = ?1 and user_id = ?2 limit 1"
+  )
+    .bind(sellerId, userId)
+    .first<{ id: number; status: string }>();
+
+  if (!seller) {
+    return { ok: false, status: 403, code: "SELLER_REQUIRED", message: "Seller account required" };
+  }
+  if (seller.status !== "active") {
+    return { ok: false, status: 403, code: "SELLER_INACTIVE", message: "Seller account is not active" };
+  }
+
+  return { ok: true, isAdmin: false, sellerId: seller.id };
+}
+
+// Returns the part if the actor may modify it, otherwise null.
+async function findOwnedPart(
+  DB: D1Database,
+  partId: number,
+  actor: { isAdmin: boolean; sellerId: number | null }
+) {
+  const part = await DB.prepare("select id, title, seller_id from parts where id = ?1 limit 1")
+    .bind(partId)
+    .first<{ id: number; title: string; seller_id: number }>();
+
+  if (!part) return null;
+  if (!actor.isAdmin && part.seller_id !== actor.sellerId) return null;
+  return part;
 }
 
 async function getPartById(DB: D1Database, id: number) {
@@ -78,8 +129,11 @@ marketplaceRoutes.get("/health", (c) => {
   );
 });
 
-marketplaceRoutes.post("/parts", async (c) => {
+marketplaceRoutes.post("/parts", authMiddleware, sellerGuard, async (c) => {
   try {
+    const actor = await resolveActor(c);
+    if (!actor.ok) return c.json(failure(actor.code, actor.message), actor.status);
+
     const body = await c.req.json<Record<string, unknown>>();
 
     const {
@@ -100,7 +154,10 @@ marketplaceRoutes.post("/parts", async (c) => {
       image_url,
     } = body ?? {};
 
-    if (!seller_id) return c.json(failure("SELLER_ID_REQUIRED", "seller_id is required"), 400);
+    // Sellers always create parts for their own store; only admins may pick a seller.
+    const targetSellerId = actor.isAdmin ? Number(seller_id) : actor.sellerId;
+
+    if (!targetSellerId) return c.json(failure("SELLER_ID_REQUIRED", "seller_id is required"), 400);
     if (!category_id) return c.json(failure("CATEGORY_ID_REQUIRED", "category_id is required"), 400);
     if (!slug) return c.json(failure("SLUG_REQUIRED", "slug is required"), 400);
     if (!title) return c.json(failure("TITLE_REQUIRED", "title is required"), 400);
@@ -127,7 +184,7 @@ marketplaceRoutes.post("/parts", async (c) => {
       `
     )
       .bind(
-        Number(seller_id),
+        targetSellerId,
         Number(category_id),
         brand_id ? Number(brand_id) : null,
         String(slug).trim(),
@@ -214,8 +271,11 @@ marketplaceRoutes.get("/parts/:id", async (c) => {
   }
 });
 
-marketplaceRoutes.put("/parts/:id", async (c) => {
+marketplaceRoutes.put("/parts/:id", authMiddleware, sellerGuard, async (c) => {
   try {
+    const actor = await resolveActor(c);
+    if (!actor.ok) return c.json(failure(actor.code, actor.message), actor.status);
+
     const id = Number(c.req.param("id"));
     if (Number.isNaN(id)) {
       return c.json(failure("INVALID_ID", "Invalid part id"), 400);
@@ -238,11 +298,7 @@ marketplaceRoutes.put("/parts/:id", async (c) => {
       featured,
     } = body ?? {};
 
-    const existing = await c.env.DB.prepare(
-      "select id from parts where id = ?1 limit 1"
-    )
-      .bind(id)
-      .first();
+    const existing = await findOwnedPart(c.env.DB, id, actor);
 
     if (!existing) {
       return c.json(failure("NOT_FOUND", "Part not found"), 404);
@@ -317,8 +373,11 @@ marketplaceRoutes.put("/parts/:id", async (c) => {
   }
 });
 
-marketplaceRoutes.post("/parts/:id/images", async (c) => {
+marketplaceRoutes.post("/parts/:id/images", authMiddleware, sellerGuard, async (c) => {
   try {
+    const actor = await resolveActor(c);
+    if (!actor.ok) return c.json(failure(actor.code, actor.message), actor.status);
+
     const partId = Number(c.req.param("id"));
     if (Number.isNaN(partId)) {
       return c.json(failure("INVALID_ID", "Invalid part id"), 400);
@@ -336,11 +395,7 @@ marketplaceRoutes.post("/parts/:id/images", async (c) => {
       return c.json(failure("URL_REQUIRED", "url is required"), 400);
     }
 
-    const part = await c.env.DB.prepare(
-      "select id, title from parts where id = ?1 limit 1"
-    )
-      .bind(partId)
-      .first<{ id: number; title: string }>();
+    const part = await findOwnedPart(c.env.DB, partId, actor);
 
     if (!part) {
       return c.json(failure("NOT_FOUND", "Part not found"), 404);
@@ -394,13 +449,20 @@ marketplaceRoutes.post("/parts/:id/images", async (c) => {
   }
 });
 
-marketplaceRoutes.put("/parts/:id/images/:imageId/feature", async (c) => {
+marketplaceRoutes.put("/parts/:id/images/:imageId/feature", authMiddleware, sellerGuard, async (c) => {
   try {
+    const actor = await resolveActor(c);
+    if (!actor.ok) return c.json(failure(actor.code, actor.message), actor.status);
+
     const partId = Number(c.req.param("id"));
     const imageId = Number(c.req.param("imageId"));
 
     if (Number.isNaN(partId) || Number.isNaN(imageId)) {
       return c.json(failure("INVALID_ID", "Invalid id"), 400);
+    }
+
+    if (!(await findOwnedPart(c.env.DB, partId, actor))) {
+      return c.json(failure("NOT_FOUND", "Part not found"), 404);
     }
 
     const image = await c.env.DB.prepare(
@@ -448,13 +510,20 @@ marketplaceRoutes.put("/parts/:id/images/:imageId/feature", async (c) => {
   }
 });
 
-marketplaceRoutes.delete("/parts/:id/images/:imageId", async (c) => {
+marketplaceRoutes.delete("/parts/:id/images/:imageId", authMiddleware, sellerGuard, async (c) => {
   try {
+    const actor = await resolveActor(c);
+    if (!actor.ok) return c.json(failure(actor.code, actor.message), actor.status);
+
     const partId = Number(c.req.param("id"));
     const imageId = Number(c.req.param("imageId"));
 
     if (Number.isNaN(partId) || Number.isNaN(imageId)) {
       return c.json(failure("INVALID_ID", "Invalid id"), 400);
+    }
+
+    if (!(await findOwnedPart(c.env.DB, partId, actor))) {
+      return c.json(failure("NOT_FOUND", "Part not found"), 404);
     }
 
     const image = await c.env.DB.prepare(
