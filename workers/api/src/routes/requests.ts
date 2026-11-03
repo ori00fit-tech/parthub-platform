@@ -1,7 +1,8 @@
 // ============================================================
 // Part requests — "Request a part"
 //
-// Buyer:  POST   /api/v1/requests                         create a request
+// Buyer:  POST   /api/v1/requests/images                  upload a photo (max 3 per request)
+//         POST   /api/v1/requests                         create a request
 //         GET    /api/v1/requests/mine                    list my requests
 //         GET    /api/v1/requests/mine/:id                request + offers
 //         POST   /api/v1/requests/mine/:id/accept/:offerId accept an offer
@@ -23,6 +24,13 @@ import { sellerGuard } from "../middlewares/seller";
 import { resolveActor } from "../utils/seller-actor";
 import { runInBackground } from "../utils/whatsapp";
 import {
+  MEDIA_URL_PREFIX,
+  buildRequestImageKey,
+  readImageUpload,
+  requestImagePrefix,
+  utcDayBucket,
+} from "../utils/media";
+import {
   notifyBuyerOfNewOffer,
   notifySellerOfAcceptance,
   notifySellersOfNewRequest,
@@ -35,6 +43,8 @@ const REQUEST_TTL_DAYS = 14;
 const MAX_OPEN_REQUESTS_PER_BUYER = 5;
 const MAX_REQUESTS_PER_BUYER_PER_DAY = 10;
 const MAX_OFFER_PRICE_CENTS = 10_000_000; // 100,000.00
+const MAX_IMAGES_PER_REQUEST = 3;
+const MAX_IMAGE_UPLOADS_PER_DAY = 20;
 const CONDITION_PREFS = ["any", "new", "used"] as const;
 const OFFER_CONDITIONS = ["new", "used", "refurbished"] as const;
 
@@ -57,8 +67,32 @@ function optionalInt(value: unknown): number | null | "invalid" {
   return Number.isInteger(n) ? n : "invalid";
 }
 
-function isAllowedImageUrl(url: string): boolean {
-  return url.startsWith("/api/v1/media/") || /^https:\/\/[^\s]+$/i.test(url);
+function isSafeKeyPath(url: string, prefix: string): boolean {
+  return url.startsWith(prefix) && /^[a-z0-9/_.-]+$/i.test(url) && !url.includes("..");
+}
+
+// Offers: any image stored in our media bucket (e.g. the seller's part photos).
+function isOwnMediaUrl(url: string): boolean {
+  return isSafeKeyPath(url, `${MEDIA_URL_PREFIX}uploads/`);
+}
+
+// Requests: only photos this buyer uploaded through POST /requests/images.
+function isBuyerRequestImage(url: string, buyerId: number): boolean {
+  return isSafeKeyPath(url, `${MEDIA_URL_PREFIX}${requestImagePrefix(buyerId)}`);
+}
+
+// part_requests.images holds a JSON array; older rows only have image_url.
+function withImages<T extends Record<string, unknown> | null>(row: T): T {
+  if (!row) return row;
+  let images: string[] = [];
+  try {
+    const parsed = JSON.parse(String(row.images ?? "[]"));
+    if (Array.isArray(parsed)) images = parsed.filter((u) => typeof u === "string");
+  } catch {
+    images = [];
+  }
+  if (!images.length && typeof row.image_url === "string" && row.image_url) images = [row.image_url];
+  return { ...row, images };
 }
 
 function generateRequestReference(): string {
@@ -75,12 +109,42 @@ function parseId(raw: string | undefined): number | null {
 // Fields every viewer may see (no buyer identity or phone).
 const PUBLIC_REQUEST_FIELDS = `
   r.id, r.reference, r.make, r.model, r.year, r.engine, r.vin, r.category_id,
-  c.name as category_name, r.part_name, r.oem_number, r.description, r.image_url,
+  c.name as category_name, r.part_name, r.oem_number, r.description, r.image_url, r.images,
   r.condition_pref, r.city, r.status, r.expires_at, r.created_at,
   case when r.status = 'open' and r.expires_at <= datetime('now') then 1 else 0 end as is_expired
 `;
 
 // ── Buyer ────────────────────────────────────────────────────
+
+requestsRoutes.post("/images", authMiddleware, async (c) => {
+  const userId = c.get("user_id");
+
+  // Daily cap, counted from the user's R2 prefix for today.
+  const today = await c.env.MEDIA.list({
+    prefix: `${requestImagePrefix(userId)}${utcDayBucket()}/`,
+    limit: MAX_IMAGE_UPLOADS_PER_DAY,
+  });
+  if ((today.objects?.length ?? 0) >= MAX_IMAGE_UPLOADS_PER_DAY) {
+    return failRes(c, 429, "UPLOAD_LIMIT", "Daily photo upload limit reached, try again tomorrow");
+  }
+
+  const form = await c.req.formData().catch(() => null);
+  const image = await readImageUpload(form?.get("file"));
+  if (!image.ok) {
+    return c.json(
+      { ok: false, success: false, data: null, meta: null, error: { code: image.code, message: image.message } },
+      image.status
+    );
+  }
+
+  const key = buildRequestImageKey(userId, image.type);
+  await c.env.MEDIA.put(key, image.bytes, {
+    httpMetadata: { contentType: image.type.mime },
+    customMetadata: { uploaded_by: String(userId), purpose: "part_request" },
+  });
+
+  return okRes(c, { key, url: `${MEDIA_URL_PREFIX}${key}` }, 201);
+});
 
 requestsRoutes.post("/", authMiddleware, async (c) => {
   const buyerId = c.get("user_id");
@@ -95,7 +159,8 @@ requestsRoutes.post("/", authMiddleware, async (c) => {
   const oemNumber = cleanText(body.oem_number, 60) || null;
   const description = cleanText(body.description, 1000) || null;
   const vin = cleanText(body.vin, 17).toUpperCase() || null;
-  const imageUrl = cleanText(body.image_url, 500) || null;
+  const rawImages = Array.isArray(body.images) ? body.images : body.image_url ? [body.image_url] : [];
+  const images = [...new Set(rawImages.map((u) => cleanText(u, 300)).filter(Boolean))];
   const conditionPref = cleanText(body.condition_pref, 10) || "any";
   const year = optionalInt(body.year);
   const categoryId = optionalInt(body.category_id);
@@ -116,8 +181,11 @@ requestsRoutes.post("/", authMiddleware, async (c) => {
   if (!(CONDITION_PREFS as readonly string[]).includes(conditionPref)) {
     return failRes(c, 400, "CONDITION_INVALID", "condition_pref must be any, new or used");
   }
-  if (imageUrl && !isAllowedImageUrl(imageUrl)) {
-    return failRes(c, 400, "IMAGE_INVALID", "Invalid image URL");
+  if (images.length > MAX_IMAGES_PER_REQUEST) {
+    return failRes(c, 400, "TOO_MANY_IMAGES", `At most ${MAX_IMAGES_PER_REQUEST} photos per request`);
+  }
+  if (images.some((u) => !isBuyerRequestImage(u, buyerId))) {
+    return failRes(c, 400, "IMAGE_INVALID", "Photos must be uploaded through PartHub");
   }
   if (categoryId === "invalid") return failRes(c, 400, "CATEGORY_INVALID", "Invalid category");
   if (categoryId !== null) {
@@ -146,13 +214,14 @@ requestsRoutes.post("/", authMiddleware, async (c) => {
   await c.env.DB.prepare(
     `insert into part_requests (
        reference, buyer_id, make, model, year, engine, vin, category_id, part_name,
-       oem_number, description, image_url, condition_pref, city, phone, expires_at
-     ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15,
-       datetime('now', ?16))`
+       oem_number, description, image_url, images, condition_pref, city, phone, expires_at
+     ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16,
+       datetime('now', ?17))`
   )
     .bind(
       reference, buyerId, make, model, year, engine, vin, categoryId, partName,
-      oemNumber, description, imageUrl, conditionPref, city, phone, `+${REQUEST_TTL_DAYS} days`
+      oemNumber, description, images[0] ?? null, JSON.stringify(images), conditionPref, city, phone,
+      `+${REQUEST_TTL_DAYS} days`
     )
     .run();
 
@@ -166,7 +235,7 @@ requestsRoutes.post("/", authMiddleware, async (c) => {
 
   if (created) runInBackground(c, notifySellersOfNewRequest(c.env, created.id));
 
-  return okRes(c, created, 201);
+  return okRes(c, withImages(created), 201);
 });
 
 requestsRoutes.get("/mine", authMiddleware, async (c) => {
@@ -185,7 +254,7 @@ requestsRoutes.get("/mine", authMiddleware, async (c) => {
     .bind(buyerId)
     .all();
 
-  return okRes(c, rows.results || []);
+  return okRes(c, (rows.results || []).map(withImages));
 });
 
 requestsRoutes.get("/mine/:id", authMiddleware, async (c) => {
@@ -216,7 +285,7 @@ requestsRoutes.get("/mine/:id", authMiddleware, async (c) => {
     .bind(id)
     .all();
 
-  return okRes(c, { ...request, offers: offers.results || [] });
+  return okRes(c, { ...withImages(request), offers: offers.results || [] });
 });
 
 requestsRoutes.post("/mine/:id/accept/:offerId", authMiddleware, async (c) => {
@@ -367,7 +436,7 @@ requestsRoutes.get("/inbox", authMiddleware, sellerGuard, async (c) => {
     .bind(...params)
     .all();
 
-  return okRes(c, rows.results || []);
+  return okRes(c, (rows.results || []).map(withImages));
 });
 
 requestsRoutes.get("/inbox/:id", authMiddleware, sellerGuard, async (c) => {
@@ -400,7 +469,7 @@ requestsRoutes.get("/inbox/:id", authMiddleware, sellerGuard, async (c) => {
     .bind(id, auth.sellerId)
     .first();
 
-  return okRes(c, { ...row, my_offer: myOffer ?? null });
+  return okRes(c, { ...withImages(row), my_offer: myOffer ?? null });
 });
 
 requestsRoutes.put("/inbox/:id/offer", authMiddleware, sellerGuard, async (c) => {
@@ -429,8 +498,8 @@ requestsRoutes.put("/inbox/:id/offer", authMiddleware, sellerGuard, async (c) =>
   if (delivery === "invalid" || (delivery !== null && (delivery < 0 || delivery > 60))) {
     return failRes(c, 400, "DELIVERY_INVALID", "Delivery must be 0–60 days");
   }
-  if (imageUrl && !isAllowedImageUrl(imageUrl)) {
-    return failRes(c, 400, "IMAGE_INVALID", "Invalid image URL");
+  if (imageUrl && !isOwnMediaUrl(imageUrl)) {
+    return failRes(c, 400, "IMAGE_INVALID", "Images must be uploaded through PartHub");
   }
 
   const request = await c.env.DB.prepare(

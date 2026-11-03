@@ -7,6 +7,7 @@ import {
   requestsApi,
   whatsappLink,
 } from "../features/requests/api";
+import { mediaUrl } from "../lib/media";
 
 function Spec({ label, value }) {
   if (!value) return null;
@@ -212,6 +213,16 @@ export default function RequestDetailsPage() {
               <Spec label="City" value={request.city} />
             </dl>
             {request.description ? <p className="mt-4 text-sm text-gray-600">{request.description}</p> : null}
+
+            {request.images?.length ? (
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {request.images.map((src) => (
+                  <a key={src} href={mediaUrl(src)} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                    <img src={mediaUrl(src)} alt="" loading="lazy" className="h-full w-full object-cover" />
+                  </a>
+                ))}
+              </div>
+            ) : null}
 
             {isOpen ? (
               <>

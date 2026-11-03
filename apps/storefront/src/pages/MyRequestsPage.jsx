@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
 import { formatMAD, requestStatus, requestsApi } from "../features/requests/api";
+import { mediaUrl } from "../lib/media";
 
 export default function MyRequestsPage() {
   const { isAuthenticated } = useAuth();
@@ -80,6 +81,13 @@ export default function MyRequestsPage() {
                 to={`/requests/${r.id}`}
                 className="flex flex-wrap items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow"
               >
+                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100">
+                  {r.images?.[0] ? (
+                    <img src={mediaUrl(r.images[0])} alt="" loading="lazy" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-xl">⚙️</div>
+                  )}
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${status.className}`}>

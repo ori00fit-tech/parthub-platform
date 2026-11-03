@@ -4,6 +4,7 @@ import { apiGet } from "../lib/api";
 import { useAuth } from "../features/auth/AuthContext";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import { requestsApi } from "../features/requests/api";
+import PhotoPicker from "../features/requests/PhotoPicker";
 
 const inputClass =
   "h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
@@ -52,6 +53,8 @@ export default function RequestPartPage() {
   const [categories, setCategories] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [images, setImages] = useState([]);
+  const [photosUploading, setPhotosUploading] = useState(false);
 
   useEffect(() => {
     apiGet("/api/v1/vehicles/makes")
@@ -105,6 +108,7 @@ export default function RequestPartPage() {
     try {
       const payload = {
         ...form,
+        images,
         year: form.year ? Number(form.year) : null,
         category_id: form.category_id ? Number(form.category_id) : null,
       };
@@ -288,6 +292,9 @@ export default function RequestPartPage() {
                     />
                   </Field>
                 </div>
+                <div className="sm:col-span-2">
+                  <PhotoPicker onChange={setImages} onUploadingChange={setPhotosUploading} />
+                </div>
               </div>
             </section>
           </div>
@@ -323,10 +330,10 @@ export default function RequestPartPage() {
 
               <button
                 type="submit"
-                disabled={saving}
+                disabled={saving || photosUploading}
                 className="mt-5 h-12 w-full rounded-xl bg-blue-600 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
               >
-                {saving ? "Sending…" : "Send request to sellers"}
+                {saving ? "Sending…" : photosUploading ? "Uploading photos…" : "Send request to sellers"}
               </button>
               <p className="mt-3 text-center text-xs text-gray-500">
                 Free · Open for 14 days · No obligation to buy

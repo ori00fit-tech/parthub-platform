@@ -103,7 +103,7 @@ export default function MediaUploadPage() {
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
-            <img src={result.url} alt="Uploaded preview" className="w-full object-cover" />
+            <img src={`${API_BASE}${result.url}`} alt="Uploaded preview" className="w-full object-cover" />
           </div>
         </div>
       ) : null}

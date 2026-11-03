@@ -1,3 +1,11 @@
+import { BASE_URL } from "./api";
+
+// Uploaded media is served by the API (/api/v1/media/...).
+export function mediaUrl(path) {
+  if (!path) return "";
+  return path.startsWith("/") ? `${BASE_URL}${path}` : path;
+}
+
 export function formatMAD(cents) {
   if (cents == null) return "—";
   return new Intl.NumberFormat("fr-MA", {

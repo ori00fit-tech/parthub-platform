@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../lib/api";
-import { CONDITION_LABELS, formatMAD, offerBadge, whatsappLink } from "../lib/requests";
+import { CONDITION_LABELS, formatMAD, mediaUrl, offerBadge, whatsappLink } from "../lib/requests";
 
 const inputClass =
   "h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
@@ -146,6 +146,19 @@ export default function RequestDetailsPage() {
 
           {request.description ? (
             <div className="mt-6 rounded-2xl bg-gray-50 p-4 text-sm text-gray-700">{request.description}</div>
+          ) : null}
+
+          {request.images?.length ? (
+            <div className="mt-6">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Buyer's photos</p>
+              <div className="grid grid-cols-3 gap-3">
+                {request.images.map((src) => (
+                  <a key={src} href={mediaUrl(src)} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
+                    <img src={mediaUrl(src)} alt="" loading="lazy" className="h-full w-full object-cover transition hover:scale-105" />
+                  </a>
+                ))}
+              </div>
+            </div>
           ) : null}
 
           <p className="mt-6 text-xs text-gray-500">
