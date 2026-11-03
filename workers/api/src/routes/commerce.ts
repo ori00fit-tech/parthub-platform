@@ -6,6 +6,17 @@ import { dbFirst, dbAll, dbRun } from "../utils/db";
 
 export const commerceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
+const MAX_ORDER_LINES = 50;
+const MAX_QTY_PER_LINE = 100;
+
+// Unguessable reference, e.g. PH-2026-7K3QX9MD (no 0/O/1/I to avoid confusion).
+function generateOrderReference(): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  const code = Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
+  return `PH-${new Date().getFullYear()}-${code}`;
+}
+
 // POST /api/v1/commerce/orders
 commerceRoutes.post("/orders", authMiddleware, async (c) => {
   const buyerId = c.get("user_id");
@@ -18,74 +29,96 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
     notes?: string;
   }>();
 
-  if (!body.items?.length) return fail(c, "items are required");
-  if (!body.shipping_address) return fail(c, "shipping_address is required");
+  if (!Array.isArray(body.items) || !body.items.length) return fail(c, "items are required");
+  if (body.items.length > MAX_ORDER_LINES) return fail(c, `At most ${MAX_ORDER_LINES} items per order`);
 
-  // Validate parts exist and are active
+  const addr = body.shipping_address;
+  if (!addr) return fail(c, "shipping_address is required");
+  for (const field of ["full_name", "phone", "address_line1", "city", "country"] as const) {
+    if (typeof addr[field] !== "string" || !addr[field].trim()) {
+      return fail(c, `shipping_address.${field} is required`);
+    }
+  }
+
+  // Validate quantities and merge duplicate lines for the same part.
+  const requested = new Map<number, number>();
+  for (const item of body.items) {
+    const partId = Number(item?.part_id);
+    const qty = Number(item?.quantity);
+    if (!Number.isInteger(partId) || partId <= 0) return fail(c, "Invalid part_id");
+    if (!Number.isInteger(qty) || qty < 1 || qty > MAX_QTY_PER_LINE) {
+      return fail(c, `quantity must be a whole number between 1 and ${MAX_QTY_PER_LINE}`);
+    }
+    requested.set(partId, (requested.get(partId) ?? 0) + qty);
+  }
+
   let subtotal = 0;
   const resolvedItems: Array<{
     part_id: number; seller_id: number; title: string;
     price: number; quantity: number; subtotal: number;
   }> = [];
 
-  for (const item of body.items) {
+  for (const [partId, quantity] of requested) {
     const part = await dbFirst<{
       id: number; seller_id: number; title: string; price: number; quantity: number; status: string;
-    }>(c.env.DB, "SELECT id, seller_id, title, price, quantity, status FROM parts WHERE id = ?", [item.part_id]);
+    }>(c.env.DB, "SELECT id, seller_id, title, price, quantity, status FROM parts WHERE id = ?", [partId]);
 
-    if (!part || part.status !== "active") return fail(c, `Part ${item.part_id} not available`);
-    if (part.quantity < item.quantity) return fail(c, `Insufficient stock for: ${part.title}`);
+    if (!part || part.status !== "active") return fail(c, `Part ${partId} not available`);
+    if (part.quantity < quantity) return fail(c, `Insufficient stock for: ${part.title}`);
 
-    const lineTotal = part.price * item.quantity;
+    const lineTotal = part.price * quantity;
     subtotal += lineTotal;
     resolvedItems.push({
       part_id: part.id, seller_id: part.seller_id,
       title: part.title, price: part.price,
-      quantity: item.quantity, subtotal: lineTotal,
+      quantity, subtotal: lineTotal,
     });
   }
 
-  const shipping_fee = 500; // cents — $5.00 flat rate
+  const shipping_fee = 500; // cents — flat rate
   const total = subtotal + shipping_fee;
+  const ref = generateOrderReference();
+  const orderIdSql = "(SELECT id FROM orders WHERE reference = ?)";
 
-  // Create order
-  const orderResult = await dbRun(
-    c.env.DB,
-    `INSERT INTO orders (buyer_id, subtotal, shipping_fee, total, status, payment_status, shipping_status, notes)
-     VALUES (?, ?, ?, ?, 'pending', 'unpaid', 'pending', ?)`,
-    [buyerId, subtotal, shipping_fee, total, body.notes ?? null]
-  );
-  const orderId = orderResult.lastRowId!;
+  // Everything runs in one D1 batch (a single transaction). The stock update sets
+  // quantity to NULL when stock ran out since the check above; the NOT NULL
+  // constraint then aborts the batch, so no partial order or oversell is written.
+  const db = c.env.DB;
+  const statements = [
+    ...resolvedItems.map((item) =>
+      db.prepare(
+        `UPDATE parts
+         SET quantity = CASE WHEN quantity >= ?1 AND status = 'active' THEN quantity - ?1 ELSE NULL END
+         WHERE id = ?2`
+      ).bind(item.quantity, item.part_id)
+    ),
+    db.prepare(
+      `INSERT INTO orders (buyer_id, reference, subtotal, shipping_fee, total, status, payment_status, shipping_status, notes)
+       VALUES (?, ?, ?, ?, ?, 'pending', 'unpaid', 'pending', ?)`
+    ).bind(buyerId, ref, subtotal, shipping_fee, total, body.notes ?? null),
+    db.prepare(
+      `INSERT INTO order_addresses (order_id, full_name, phone, address_line1, city, country)
+       VALUES (${orderIdSql}, ?, ?, ?, ?, ?)`
+    ).bind(ref, addr.full_name.trim(), addr.phone.trim(), addr.address_line1.trim(), addr.city.trim(), addr.country.trim()),
+    ...resolvedItems.map((item) =>
+      db.prepare(
+        `INSERT INTO order_items (order_id, part_id, seller_id, title, price, quantity, subtotal)
+         VALUES (${orderIdSql}, ?, ?, ?, ?, ?, ?)`
+      ).bind(ref, item.part_id, item.seller_id, item.title, item.price, item.quantity, item.subtotal)
+    ),
+  ];
 
-  // Generate reference
-  const ref = `PH-${new Date().getFullYear()}-${String(orderId).padStart(5, "0")}`;
-  await dbRun(c.env.DB, "UPDATE orders SET reference = ? WHERE id = ?", [ref, orderId]);
-
-  // Insert shipping address
-  const addr = body.shipping_address;
-  await dbRun(
-    c.env.DB,
-    `INSERT INTO order_addresses (order_id, full_name, phone, address_line1, city, country)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [orderId, addr.full_name, addr.phone, addr.address_line1, addr.city, addr.country]
-  );
-
-  // Insert items & deduct stock
-  for (const item of resolvedItems) {
-    await dbRun(
-      c.env.DB,
-      `INSERT INTO order_items (order_id, part_id, seller_id, title, price, quantity, subtotal)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [orderId, item.part_id, item.seller_id, item.title, item.price, item.quantity, item.subtotal]
-    );
-    await dbRun(
-      c.env.DB,
-      "UPDATE parts SET quantity = quantity - ? WHERE id = ?",
-      [item.quantity, item.part_id]
-    );
+  try {
+    await db.batch(statements);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (/NOT NULL constraint failed: parts\.quantity/i.test(message)) {
+      return fail(c, "Some items are no longer in stock, please review your cart", 409);
+    }
+    throw err;
   }
 
-  const order = await dbFirst(c.env.DB, "SELECT * FROM orders WHERE id = ?", [orderId]);
+  const order = await dbFirst(c.env.DB, "SELECT * FROM orders WHERE reference = ?", [ref]);
   return created(c, order);
 });
 
@@ -151,7 +184,7 @@ commerceRoutes.post("/reviews", authMiddleware, async (c) => {
   const result = await dbRun(
     c.env.DB,
     `INSERT INTO reviews (part_id, buyer_id, order_item_id, rating, body, is_verified_purchase, status)
-     VALUES (?, ?, ?, ?, ?, ?, 'approved')`,
+     VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
     [body.part_id, buyerId, body.order_item_id ?? null, body.rating, body.body ?? null, is_verified ? 1 : 0]
   );
 
