@@ -3,6 +3,8 @@ import type { Env, HonoVariables } from "../types";
 import { authMiddleware } from "../middlewares/auth";
 import { sellerGuard } from "../middlewares/seller";
 import { resolveActor } from "../utils/seller-actor";
+import { signToken } from "../utils/auth";
+import { loadReadiness } from "../utils/seller-readiness";
 
 export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -59,6 +61,28 @@ async function findOwnedPart(
   if (!part) return null;
   if (!actor.isAdmin && part.seller_id !== actor.sellerId) return null;
   return part;
+}
+
+// Store images: our own uploads or an https URL (no javascript:, data:, …).
+function cleanImageUrl(value: unknown): string | null | "invalid" {
+  const v = typeof value === "string" ? value.trim() : "";
+  if (!v) return null;
+  if (/^\/api\/v1\/media\/uploads\/[a-z0-9/_.-]+$/i.test(v) && !v.includes("..")) return v;
+  if (/^https:\/\/[^\s"'<>]+$/i.test(v) && v.length <= 500) return v;
+  return "invalid";
+}
+
+function cleanPhone(value: unknown): string | null | "invalid" {
+  const v = typeof value === "string" ? value.trim() : "";
+  if (!v) return null;
+  return /^\+?[0-9 ()-]{6,30}$/.test(v) ? v : "invalid";
+}
+
+// A token that carries the seller id, so a seller who just created their
+// store doesn't have to sign in again.
+async function sellerSessionToken(env: Env, userId: number, sellerId: number) {
+  if (!env.JWT_SECRET) return null;
+  return signToken({ user_id: userId, role: "seller", seller_id: sellerId }, env.JWT_SECRET);
 }
 
 async function getPartById(DB: D1Database, id: number) {
@@ -603,6 +627,37 @@ marketplaceRoutes.get("/dashboard", authMiddleware, async (c) => {
   );
 });
 
+// GET /api/v1/marketplace/me/readiness — store status + setup checklist.
+// Looks the store up by user, so it also works with a token issued before
+// the store existed; in that case it returns a fresh token with seller_id.
+marketplaceRoutes.get("/me/readiness", authMiddleware, async (c) => {
+  const userId = Number(c.get("user_id"));
+  const role = c.get("user_role");
+  if (role !== "seller" && role !== "admin") {
+    return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  }
+
+  const readiness = await loadReadiness(c.env.DB, userId);
+  const tokenSellerId = c.get("seller_id");
+  const access_token =
+    readiness.seller && Number(tokenSellerId) !== readiness.seller.id && role === "seller"
+      ? await sellerSessionToken(c.env, userId, readiness.seller.id)
+      : null;
+
+  return c.json(
+    success({
+      status: readiness.status,
+      percent: readiness.percent,
+      items: readiness.items,
+      parts: readiness.parts,
+      seller: readiness.seller
+        ? { id: readiness.seller.id, name: readiness.seller.name, slug: readiness.seller.slug, status: readiness.seller.status }
+        : null,
+      access_token,
+    })
+  );
+});
+
 marketplaceRoutes.get("/me", authMiddleware, async (c) => {
   const sellerId = c.get("seller_id");
   const userId = c.get("user_id");
@@ -647,10 +702,18 @@ marketplaceRoutes.post("/onboarding", authMiddleware, async (c) => {
   const phone = String(body.phone ?? "").trim();
   const city = String(body.city ?? "").trim();
   const description = String(body.description ?? "").trim();
+  const whatsapp = cleanPhone(body.whatsapp);
+  const logoUrl = cleanImageUrl(body.logo_url);
 
   if (!displayName) return c.json(failure("DISPLAY_NAME_REQUIRED", "display_name is required"), 400);
   if (!slug) return c.json(failure("SLUG_REQUIRED", "slug is required"), 400);
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+    return c.json(failure("SLUG_INVALID", "Store address may only use lowercase letters, digits and dashes"), 400);
+  }
   if (!city) return c.json(failure("CITY_REQUIRED", "city is required"), 400);
+  if (cleanPhone(phone) === "invalid") return c.json(failure("PHONE_INVALID", "Enter a valid phone number"), 400);
+  if (whatsapp === "invalid") return c.json(failure("WHATSAPP_INVALID", "Enter a valid WhatsApp number"), 400);
+  if (logoUrl === "invalid") return c.json(failure("LOGO_INVALID", "Logo must be an uploaded image or an https link"), 400);
 
   const existingSeller = await c.env.DB.prepare(
     "select id from sellers where user_id = ?1 limit 1"
@@ -676,13 +739,21 @@ marketplaceRoutes.post("/onboarding", authMiddleware, async (c) => {
       phone,
       location,
       description,
+      whatsapp,
+      logo_url,
       status
-    ) values (?1, ?2, ?3, ?4, ?5, ?6, 'pending')
+    ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'pending')
   `)
-    .bind(userId, displayName, slug, phone || null, city, description || null)
+    .bind(userId, displayName, slug, phone || null, city, description || null, whatsapp, logoUrl)
     .run();
 
   const sellerId = Number(inserted.meta.last_row_id);
+
+  // A buyer opening a store becomes a seller.
+  await c.env.DB.prepare("update users set role = 'seller' where id = ?1 and role = 'buyer'")
+    .bind(userId)
+    .run();
+  const access_token = await sellerSessionToken(c.env, Number(userId), sellerId);
 
   const seller = await c.env.DB.prepare(`
     select
@@ -696,7 +767,7 @@ marketplaceRoutes.post("/onboarding", authMiddleware, async (c) => {
     limit 1
   `).bind(sellerId).first();
 
-  return c.json(success(seller, { message: "Seller onboarding completed" }), 201);
+  return c.json(success({ ...(seller as Record<string, unknown>), access_token }, { message: "Seller onboarding completed" }), 201);
 });
 
 marketplaceRoutes.put("/onboarding", authMiddleware, async (c) => {
@@ -712,6 +783,13 @@ marketplaceRoutes.put("/onboarding", authMiddleware, async (c) => {
   const phone = String(body.phone ?? "").trim();
   const city = String(body.city ?? "").trim();
   const description = String(body.description ?? "").trim();
+  const whatsapp = cleanPhone(body.whatsapp);
+  const logoUrl = cleanImageUrl(body.logo_url);
+  const bannerUrl = cleanImageUrl(body.banner_url);
+  if (cleanPhone(phone) === "invalid") return c.json(failure("PHONE_INVALID", "Enter a valid phone number"), 400);
+  if (whatsapp === "invalid") return c.json(failure("WHATSAPP_INVALID", "Enter a valid WhatsApp number"), 400);
+  if (logoUrl === "invalid") return c.json(failure("LOGO_INVALID", "Logo must be an uploaded image or an https link"), 400);
+  if (bannerUrl === "invalid") return c.json(failure("BANNER_INVALID", "Banner must be an uploaded image or an https link"), 400);
 
   if (!displayName) return c.json(failure("DISPLAY_NAME_REQUIRED", "display_name is required"), 400);
   if (!slug) return c.json(failure("SLUG_REQUIRED", "slug is required"), 400);
@@ -732,10 +810,14 @@ marketplaceRoutes.put("/onboarding", authMiddleware, async (c) => {
       slug = ?2,
       phone = ?3,
       location = ?4,
-      description = ?5
-    where id = ?6
+      description = ?5,
+      whatsapp = ?6,
+      logo_url = ?7,
+      banner_url = ?8,
+      updated_at = datetime('now')
+    where id = ?9
   `)
-    .bind(displayName, slug, phone || null, city, description || null, sellerId)
+    .bind(displayName, slug, phone || null, city, description || null, whatsapp, logoUrl, bannerUrl, sellerId)
     .run();
 
   const seller = await c.env.DB.prepare(`

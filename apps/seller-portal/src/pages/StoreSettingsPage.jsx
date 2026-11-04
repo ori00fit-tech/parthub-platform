@@ -1,5 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
+import { STATUS_COPY, useReadiness } from "../lib/readiness";
+import { mediaUrl } from "../lib/requests";
+import StoreChecklist, { StoreStatusBanner } from "../components/store/StoreChecklist";
 
 function slugify(value) {
   return String(value || "")
@@ -9,20 +14,13 @@ function slugify(value) {
     .replace(/^-+|-+$/g, "");
 }
 
-function computeCompletion(form) {
-  const checks = [
-    Boolean(form.display_name?.trim()),
-    Boolean(form.slug?.trim()),
-    Boolean(form.phone?.trim()),
-    Boolean(form.city?.trim()),
-    Boolean(form.description?.trim()),
-  ];
-
-  const passed = checks.filter(Boolean).length;
-  return Math.round((passed / checks.length) * 100);
-}
-
 export default function StoreSettingsPage() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user, setSessionToken } = useAuth();
+  const { readiness, loading: readinessLoading, error: readinessError, reload: reloadReadiness } = useReadiness();
+  const hasStore = Boolean(readiness?.seller);
+  const isWelcome = searchParams.get("welcome") === "1";
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -32,6 +30,7 @@ export default function StoreSettingsPage() {
     display_name: "",
     slug: "",
     phone: "",
+    whatsapp: "",
     city: "",
     description: "",
     logo_url: "",
@@ -39,6 +38,13 @@ export default function StoreSettingsPage() {
   });
 
   useEffect(() => {
+    if (readinessLoading) return undefined;
+    // No store yet: start from the account's details.
+    if (!hasStore) {
+      setForm((prev) => ({ ...prev, phone: prev.phone || user?.phone || "" }));
+      setLoading(false);
+      return undefined;
+    }
     let active = true;
 
     async function loadStore() {
@@ -55,6 +61,7 @@ export default function StoreSettingsPage() {
           display_name: seller.display_name || seller.name || "",
           slug: seller.slug || "",
           phone: seller.phone || "",
+          whatsapp: seller.whatsapp || "",
           city: seller.city || seller.location || "",
           description: seller.description || "",
           logo_url: seller.logo_url || "",
@@ -73,21 +80,19 @@ export default function StoreSettingsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [readinessLoading, hasStore]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const completion = useMemo(() => computeCompletion(form), [form]);
-
-  const storeStatus = useMemo(() => {
-    if (completion >= 100) return "Ready";
-    if (completion >= 60) return "Almost ready";
-    return "Needs setup";
-  }, [completion]);
+  const completion = readiness?.percent ?? 0;
+  const storeStatus = (STATUS_COPY[readiness?.status] || STATUS_COPY.setup).title;
 
   function setField(key) {
     return (e) => {
       setError("");
       setSuccess("");
-      const value = e.target.value;
+      const value =
+        key === "slug"
+          ? e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+/, "")
+          : e.target.value;
 
       setForm((prev) => {
         if (key === "display_name" && !prev.slug) {
@@ -129,17 +134,28 @@ export default function StoreSettingsPage() {
     try {
       setSaving(true);
 
-      await api.put("/api/v1/marketplace/onboarding", {
+      const payload = {
         display_name: form.display_name.trim(),
-        slug: form.slug.trim(),
+        slug: form.slug.trim().replace(/-+$/, ""),
         phone: form.phone.trim(),
+        whatsapp: form.whatsapp.trim(),
         city: form.city.trim(),
         description: form.description.trim(),
         logo_url: form.logo_url.trim(),
         banner_url: form.banner_url.trim(),
-      });
+      };
 
-      setSuccess("Store settings saved successfully.");
+      if (hasStore) {
+        await api.put("/api/v1/marketplace/onboarding", payload);
+        setSuccess("Store settings saved.");
+      } else {
+        const res = await api.post("/api/v1/marketplace/onboarding", payload);
+        // The new token carries the seller id, so the rest of the portal works right away.
+        setSessionToken(res?.data?.access_token);
+        setSuccess("Store created. PartHub will review it; meanwhile you can add your first parts.");
+        if (isWelcome) navigate("/store-settings", { replace: true });
+      }
+      await reloadReadiness();
     } catch (err) {
       setError(err?.message || "Failed to save store settings");
     } finally {
@@ -147,7 +163,7 @@ export default function StoreSettingsPage() {
     }
   }
 
-  if (loading) {
+  if (loading || readinessLoading) {
     return (
       <section className="space-y-6">
         <div className="rounded-3xl border border-gray-200 bg-white p-6 text-sm text-gray-500 shadow-sm">
@@ -165,9 +181,11 @@ export default function StoreSettingsPage() {
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
               Store settings
             </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">Manage your seller profile</h1>
+            <h1 className="text-3xl font-bold sm:text-5xl">{hasStore ? "Manage your seller profile" : "Create your store"}</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Complete your store identity so your listings and seller presence look stronger.
+              {hasStore
+                ? "Complete your store identity so your listings and seller presence look stronger."
+                : "Name, web address and city are enough to start. You can add the rest later."}
             </p>
           </div>
 
@@ -178,6 +196,8 @@ export default function StoreSettingsPage() {
           </div>
         </div>
       </div>
+
+      {hasStore ? <StoreStatusBanner readiness={readiness} /> : null}
 
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <form onSubmit={handleSubmit} className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -208,19 +228,19 @@ export default function StoreSettingsPage() {
               <input
                 value={form.display_name}
                 onChange={setField("display_name")}
-                placeholder="PartHub Motors"
+                placeholder="Casse Hay Hassani"
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Store slug
+                Store web address
               </label>
               <input
                 value={form.slug}
                 onChange={setField("slug")}
-                placeholder="parthub-motors"
+                placeholder="casse-hay-hassani"
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
@@ -232,7 +252,21 @@ export default function StoreSettingsPage() {
               <input
                 value={form.phone}
                 onChange={setField("phone")}
-                placeholder="+44 ..."
+                inputMode="tel"
+                placeholder="06 12 34 56 78"
+                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                WhatsApp
+              </label>
+              <input
+                value={form.whatsapp}
+                onChange={setField("whatsapp")}
+                inputMode="tel"
+                placeholder="2126 12 34 56 78"
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
@@ -244,7 +278,7 @@ export default function StoreSettingsPage() {
               <input
                 value={form.city}
                 onChange={setField("city")}
-                placeholder="London"
+                placeholder="Casablanca"
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
@@ -293,27 +327,18 @@ export default function StoreSettingsPage() {
               disabled={saving}
               className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
             >
-              {saving ? "Saving..." : "Save store settings"}
+              {saving ? "Saving…" : hasStore ? "Save store settings" : "Create store"}
             </button>
           </div>
         </form>
 
         <div className="space-y-4">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Store status</h2>
-
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Completion</p>
-                <p className="mt-1 text-2xl font-bold text-gray-900">{completion}%</p>
-              </div>
-
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Status</p>
-                <p className="mt-1 text-lg font-semibold text-gray-900">{storeStatus}</p>
-              </div>
-            </div>
-          </div>
+          <StoreChecklist
+            readiness={readiness}
+            loading={readinessLoading}
+            error={readinessError}
+            onRetry={reloadReadiness}
+          />
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-bold text-gray-900">Preview snapshot</h2>
@@ -321,7 +346,7 @@ export default function StoreSettingsPage() {
             <div className="mt-5 overflow-hidden rounded-3xl border border-gray-200 bg-white">
               <div className="h-28 bg-gray-100">
                 {form.banner_url ? (
-                  <img src={form.banner_url} alt="Store banner" className="h-full w-full object-cover" />
+                  <img src={mediaUrl(form.banner_url)} alt="Store banner" className="h-full w-full object-cover" />
                 ) : null}
               </div>
 
@@ -329,7 +354,7 @@ export default function StoreSettingsPage() {
                 <div className="flex items-start gap-4">
                   <div className="h-16 w-16 overflow-hidden rounded-2xl bg-gray-100">
                     {form.logo_url ? (
-                      <img src={form.logo_url} alt="Store logo" className="h-full w-full object-cover" />
+                      <img src={mediaUrl(form.logo_url)} alt="Store logo" className="h-full w-full object-cover" />
                     ) : null}
                   </div>
 

@@ -55,13 +55,14 @@ authRoutes.post("/login", async (c) => {
     id: number;
     name: string;
     email: string;
+    phone: string | null;
     role: "buyer" | "seller" | "admin";
     password_hash: string;
     is_active: number;
     seller_id: number | null;
   }>(
     c.env.DB,
-    `SELECT u.id, u.name, u.email, u.role, u.password_hash, u.is_active,
+    `SELECT u.id, u.name, u.email, u.phone, u.role, u.password_hash, u.is_active,
             s.id as seller_id
      FROM users u
      LEFT JOIN sellers s ON s.user_id = u.id
@@ -100,6 +101,7 @@ authRoutes.post("/login", async (c) => {
       id: user.id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
       role: user.role,
       seller_id: user.seller_id,
     },
