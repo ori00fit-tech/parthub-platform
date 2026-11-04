@@ -8,6 +8,7 @@ import {
   whatsappLink,
 } from "../features/requests/api";
 import { mediaUrl } from "../lib/media";
+import { useI18n, useT } from "../i18n";
 
 function Spec({ label, value }) {
   if (!value) return null;
@@ -20,11 +21,12 @@ function Spec({ label, value }) {
 }
 
 function OfferCard({ offer, request, cheapest, onAccept, accepting }) {
+  const t = useT();
   const accepted = offer.status === "accepted";
   const canAccept = request.status === "open" && !Number(request.is_expired) && offer.status === "pending";
   const wa = whatsappLink(
     offer.seller_whatsapp || offer.seller_phone,
-    `Hello, I accepted your offer on PartHub for "${request.part_name}" (${request.reference}).`
+    t('Hello, I accepted your offer on PartHub for "{part}" ({ref}).', { part: request.part_name, ref: request.reference })
   );
 
   return (
@@ -41,16 +43,16 @@ function OfferCard({ offer, request, cheapest, onAccept, accepting }) {
             {offer.seller_name}
           </Link>
           <p className="text-xs text-muted">
-            {[offer.seller_location, offer.seller_type === "dismantler" ? "Dismantler" : null]
+            {[offer.seller_location, offer.seller_type === "dismantler" ? t("Dismantler") : null]
               .filter(Boolean)
               .join(" · ")}
           </p>
         </div>
-        <div className="text-right">
+        <div className="text-end">
           <p className="text-2xl font-black text-ink">{formatMAD(offer.price)}</p>
           {cheapest && !accepted ? (
             <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
-              Best price
+              {t("Best price")}
             </span>
           ) : null}
         </div>
@@ -58,14 +60,14 @@ function OfferCard({ offer, request, cheapest, onAccept, accepting }) {
 
       <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
         <span className="rounded-full bg-surface-2 px-2.5 py-1 text-ink-2">
-          {CONDITION_LABELS[offer.condition] || offer.condition}
+          {CONDITION_LABELS[offer.condition] ? t(CONDITION_LABELS[offer.condition]) : offer.condition}
         </span>
         <span className="rounded-full bg-surface-2 px-2.5 py-1 text-ink-2">
-          {Number(offer.warranty_months) > 0 ? `${offer.warranty_months} months warranty` : "No warranty"}
+          {Number(offer.warranty_months) > 0 ? t("{n} months warranty", { n: offer.warranty_months }) : t("No warranty")}
         </span>
         {offer.delivery_days != null ? (
           <span className="rounded-full bg-surface-2 px-2.5 py-1 text-ink-2">
-            {Number(offer.delivery_days) === 0 ? "Available today" : `Ready in ${offer.delivery_days} days`}
+            {Number(offer.delivery_days) === 0 ? t("Available today") : t("Ready in {n} days", { n: offer.delivery_days })}
           </span>
         ) : null}
       </div>
@@ -74,7 +76,7 @@ function OfferCard({ offer, request, cheapest, onAccept, accepting }) {
 
       {accepted ? (
         <div className="mt-4 rounded-xl bg-emerald-400/10 p-4">
-          <p className="text-sm font-bold text-emerald-700">You accepted this offer. Contact the seller to arrange the sale:</p>
+          <p className="text-sm font-bold text-emerald-700">{t("You accepted this offer. Contact the seller to arrange the sale:")}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {wa ? (
               <a
@@ -83,7 +85,7 @@ function OfferCard({ offer, request, cheapest, onAccept, accepting }) {
                 rel="noreferrer"
                 className="inline-flex h-10 items-center rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white hover:bg-emerald-700"
               >
-                WhatsApp seller
+                {t("WhatsApp seller")}
               </a>
             ) : null}
             {offer.seller_phone ? (
@@ -103,7 +105,7 @@ function OfferCard({ offer, request, cheapest, onAccept, accepting }) {
           disabled={accepting}
           className="btn-cta mt-4 h-11 w-full rounded-xl text-sm"
         >
-          {accepting ? "Accepting…" : "Accept this offer"}
+          {accepting ? t("Accepting…") : t("Accept this offer")}
         </button>
       ) : null}
     </div>
@@ -111,6 +113,7 @@ function OfferCard({ offer, request, cheapest, onAccept, accepting }) {
 }
 
 export default function RequestDetailsPage() {
+  const { t, lang } = useI18n();
   const { id } = useParams();
   const location = useLocation();
   const [request, setRequest] = useState(null);
@@ -124,7 +127,7 @@ export default function RequestDetailsPage() {
       setRequest(res.data);
       setError("");
     } catch (err) {
-      setError(err.message || "Could not load this request");
+      setError(err.message || t("Could not load this request"));
     } finally {
       setLoading(false);
     }
@@ -135,7 +138,7 @@ export default function RequestDetailsPage() {
   }, [load]);
 
   async function accept(offer) {
-    if (!window.confirm(`Accept the offer from ${offer.seller_name} for ${formatMAD(offer.price)}? Other offers will be declined.`)) {
+    if (!window.confirm(t("Accept the offer from {seller} for {price}? Other offers will be declined.", { seller: offer.seller_name, price: formatMAD(offer.price) }))) {
       return;
     }
     setBusy(true);
@@ -143,20 +146,20 @@ export default function RequestDetailsPage() {
       await requestsApi.accept(id, offer.id);
       await load();
     } catch (err) {
-      setError(err.message || "Could not accept this offer");
+      setError(err.message || t("Could not accept this offer"));
     } finally {
       setBusy(false);
     }
   }
 
   async function close() {
-    if (!window.confirm("Close this request? Sellers won't be able to send more offers.")) return;
+    if (!window.confirm(t("Close this request? Sellers won't be able to send more offers."))) return;
     setBusy(true);
     try {
       await requestsApi.close(id);
       await load();
     } catch (err) {
-      setError(err.message || "Could not close this request");
+      setError(err.message || t("Could not close this request"));
     } finally {
       setBusy(false);
     }
@@ -166,9 +169,9 @@ export default function RequestDetailsPage() {
   if (!request) {
     return (
       <div className="rounded-3xl border border-line bg-surface p-8 text-center">
-        <p className="text-sm text-red-700">{error || "Request not found"}</p>
+        <p className="text-sm text-red-700">{error || t("Request not found")}</p>
         <Link to="/requests" className="mt-4 inline-block text-sm font-semibold text-link">
-          ← Back to my requests
+          {t("← Back to my requests")}
         </Link>
       </div>
     );
@@ -183,12 +186,12 @@ export default function RequestDetailsPage() {
   return (
     <div className="space-y-6">
       <Link to="/requests" className="text-sm font-semibold text-link">
-        ← My requests
+        {t("← My requests")}
       </Link>
 
       {location.state?.justCreated ? (
         <div className="rounded-2xl bg-emerald-400/10 px-5 py-4 text-sm text-emerald-700">
-          <strong>Request sent!</strong> Matching sellers can see it now. Come back here to compare their offers.
+          <strong>{t("Request sent!")}</strong> {t("Matching sellers can see it now. Come back here to compare their offers.")}
         </div>
       ) : null}
 
@@ -205,12 +208,12 @@ export default function RequestDetailsPage() {
             </p>
 
             <dl className="mt-5 grid grid-cols-2 gap-4">
-              <Spec label="Engine" value={request.engine} />
+              <Spec label={t("Engine")} value={request.engine} />
               <Spec label="VIN" value={request.vin} />
-              <Spec label="Category" value={request.category_name} />
-              <Spec label="OEM number" value={request.oem_number} />
-              <Spec label="Condition" value={CONDITION_LABELS[request.condition_pref]} />
-              <Spec label="City" value={request.city} />
+              <Spec label={t("Category")} value={request.category_name ? t(request.category_name) : ""} />
+              <Spec label={t("OEM number")} value={request.oem_number} />
+              <Spec label={t("Condition")} value={CONDITION_LABELS[request.condition_pref] ? t(CONDITION_LABELS[request.condition_pref]) : ""} />
+              <Spec label={t("City")} value={request.city} />
             </dl>
             {request.description ? <p className="mt-4 text-sm text-muted">{request.description}</p> : null}
 
@@ -227,7 +230,7 @@ export default function RequestDetailsPage() {
             {isOpen ? (
               <>
                 <p className="mt-5 text-xs text-muted">
-                  Open until {new Date(`${request.expires_at.replace(" ", "T")}Z`).toLocaleDateString()}
+                  {t("Open until {date}", { date: new Date(`${request.expires_at.replace(" ", "T")}Z`).toLocaleDateString(lang === "ar" ? "ar-MA" : lang === "fr" ? "fr-MA" : "en-GB") })}
                 </p>
                 <button
                   type="button"
@@ -235,7 +238,7 @@ export default function RequestDetailsPage() {
                   disabled={busy}
                   className="mt-3 h-10 w-full rounded-xl border border-line text-sm font-semibold text-muted transition hover:bg-surface-3"
                 >
-                  Close request
+                  {t("Close request")}
                 </button>
               </>
             ) : null}
@@ -244,7 +247,7 @@ export default function RequestDetailsPage() {
 
         <section className="space-y-4">
           <h2 className="text-lg font-bold text-ink">
-            {offers.length} {offers.length === 1 ? "offer" : "offers"}
+            {offers.length === 1 ? t("1 offer") : t("{n} offers", { n: offers.length })}
           </h2>
 
           {error ? <p className="rounded-xl bg-red-400/10 px-4 py-3 text-sm text-red-700">{error}</p> : null}
@@ -252,9 +255,9 @@ export default function RequestDetailsPage() {
           {offers.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-line-strong bg-surface p-10 text-center">
               <div className="text-4xl">⏳</div>
-              <p className="mt-3 text-base font-bold text-ink">Waiting for offers</p>
+              <p className="mt-3 text-base font-bold text-ink">{t("Waiting for offers")}</p>
               <p className="mt-1 text-sm text-muted">
-                Sellers who stock parts for your {request.make} can see your request in their inbox.
+                {t("Sellers who stock parts for your {make} can see your request in their inbox.", { make: request.make })}
               </p>
             </div>
           ) : (

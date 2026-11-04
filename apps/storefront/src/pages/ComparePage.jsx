@@ -1,5 +1,7 @@
+import { Fragment } from "react";
 import { Link } from "react-router-dom";
 import { formatPrice } from "../lib/formatters";
+import { t, useT } from "../i18n";
 
 function readCompareItems() {
   try {
@@ -20,13 +22,14 @@ function writeCompareItems(items) {
 }
 
 function getBadge(part) {
-  if (Number(part?.exact_vehicle_match || 0) === 1) return "Exact fit";
-  if (Number(part?.partial_vehicle_match || 0) === 1) return "Vehicle match";
-  if (Number(part?.compatibility_count || 0) > 0) return "Compatibility added";
-  return "Basic listing";
+  if (Number(part?.exact_vehicle_match || 0) === 1) return t("Exact fit");
+  if (Number(part?.partial_vehicle_match || 0) === 1) return t("Vehicle match");
+  if (Number(part?.compatibility_count || 0) > 0) return t("Compatibility added");
+  return t("Basic listing");
 }
 
 export default function ComparePage() {
+  const t = useT();
   const items = readCompareItems();
 
   function removeItem(id) {
@@ -44,22 +47,22 @@ export default function ComparePage() {
     return (
       <section className="space-y-6">
         <div className="rounded-[28px] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-700 p-6 text-white shadow-lg sm:p-8">
-          <h1 className="text-3xl font-bold sm:text-5xl">Compare parts</h1>
+          <h1 className="text-3xl font-bold sm:text-5xl">{t("Compare parts")}</h1>
           <p className="mt-3 text-sm text-blue-100 sm:text-base">
-            Compare shortlisted parts side by side.
+            {t("Compare shortlisted parts side by side.")}
           </p>
         </div>
 
         <div className="rounded-3xl border border-dashed border-line-strong bg-surface p-10 text-center shadow-sm">
-          <h2 className="text-2xl font-bold text-ink">No parts selected for comparison</h2>
+          <h2 className="text-2xl font-bold text-ink">{t("No parts selected for comparison")}</h2>
           <p className="mt-2 text-sm text-muted">
-            Add parts to shortlist from the search results first.
+            {t("Add parts to shortlist from the search results first.")}
           </p>
           <Link
             to="/parts"
             className="mt-5 inline-flex h-12 items-center justify-center rounded-2xl bg-navy px-6 text-sm font-semibold text-white transition hover:bg-navy-deep"
           >
-            Browse parts
+            {t("Browse parts")}
           </Link>
         </div>
       </section>
@@ -71,9 +74,9 @@ export default function ComparePage() {
       <div className="rounded-[28px] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-700 p-6 text-white shadow-lg sm:p-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-3xl font-bold sm:text-5xl">Compare parts</h1>
+            <h1 className="text-3xl font-bold sm:text-5xl">{t("Compare parts")}</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Review price, stock, fitment depth, and seller quality side by side.
+              {t("Review price, stock, fitment depth, and seller quality side by side.")}
             </p>
           </div>
 
@@ -82,19 +85,22 @@ export default function ComparePage() {
             onClick={clearAll}
             className="inline-flex h-11 items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 text-sm font-semibold text-white transition hover:bg-white/15"
           >
-            Clear compare
+            {t("Clear compare")}
           </button>
         </div>
       </div>
 
       <div className="overflow-x-auto rounded-3xl border border-line bg-surface shadow-sm">
-        <div className="grid min-w-[980px] grid-cols-[220px_repeat(auto-fit,minmax(220px,1fr))]">
-          <div className="border-r border-line bg-surface-2 p-5">
-            <p className="font-semibold text-ink">Field</p>
+        <div
+          className="grid min-w-[980px]"
+          style={{ gridTemplateColumns: `220px repeat(${items.length}, minmax(220px, 1fr))` }}
+        >
+          <div className="border-e border-line bg-surface-2 p-5">
+            <p className="font-semibold text-ink">{t("Field")}</p>
           </div>
 
           {items.map((item) => (
-            <div key={item.id} className="border-r border-line p-5 last:border-r-0">
+            <div key={item.id} className="border-e border-line p-5 last:border-e-0">
               <div className="flex items-start justify-between gap-3">
                 <p className="line-clamp-2 font-bold text-ink">{item.title}</p>
                 <button
@@ -102,7 +108,7 @@ export default function ComparePage() {
                   onClick={() => removeItem(item.id)}
                   className="rounded-xl border border-red-400/30 bg-red-400/10 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-400/20"
                 >
-                  Remove
+                  {t("Remove")}
                 </button>
               </div>
 
@@ -115,7 +121,7 @@ export default function ComparePage() {
                   />
                 ) : (
                   <div className="flex h-36 items-center justify-center text-sm text-faint">
-                    No image
+                    {t("No image")}
                   </div>
                 )}
               </div>
@@ -124,64 +130,64 @@ export default function ComparePage() {
                 to={`/parts/${item.slug}`}
                 className="mt-4 inline-flex h-10 items-center justify-center rounded-2xl bg-navy px-4 text-sm font-semibold text-white transition hover:bg-navy-deep"
               >
-                Open part
+                {t("Open part")}
               </Link>
             </div>
           ))}
 
           {[
             {
-              label: "Price",
+              label: t("Price"),
               value: (item) => formatPrice(item.price),
             },
             {
-              label: "Condition",
+              label: t("Condition"),
               value: (item) => item.condition || "—",
             },
             {
-              label: "Stock",
+              label: t("Stock"),
               value: (item) =>
-                Number(item.quantity || 0) > 0 ? `${item.quantity} available` : "Out of stock",
+                Number(item.quantity || 0) > 0 ? t("{n} available", { n: item.quantity }) : t("Out of stock"),
             },
             {
-              label: "Compatibility",
-              value: (item) => `${Number(item.compatibility_count || 0)} row(s)`,
+              label: t("Compatibility"),
+              value: (item) => t("{n} row(s)", { n: Number(item.compatibility_count || 0) }),
             },
             {
-              label: "Fitment signal",
+              label: t("Fitment signal"),
               value: (item) => getBadge(item),
             },
             {
-              label: "Brand",
+              label: t("Brand"),
               value: (item) => item.brand_name || "—",
             },
             {
-              label: "Category",
-              value: (item) => item.category_name || "—",
+              label: t("Category"),
+              value: (item) => (item.category_name ? t(item.category_name) : "—"),
             },
             {
-              label: "Seller",
-              value: (item) => item.seller_name || "Unknown seller",
+              label: t("Seller"),
+              value: (item) => item.seller_name || t("Unknown seller"),
             },
             {
-              label: "Relevance",
+              label: t("Relevance"),
               value: (item) =>
-                Number(item.ranking_score || 0) >= 100 ? "High relevance" : "Standard",
+                Number(item.ranking_score || 0) >= 100 ? t("High relevance") : t("Standard"),
             },
-          ].map((row) => (
-            <>
-              <div key={row.label} className="border-t border-r border-line bg-surface-2 p-5">
+          ].map((row, rowIndex) => (
+            <Fragment key={rowIndex}>
+              <div className="border-t border-e border-line bg-surface-2 p-5">
                 <p className="text-sm font-semibold text-ink">{row.label}</p>
               </div>
               {items.map((item) => (
                 <div
-                  key={`${row.label}-${item.id}`}
-                  className="border-t border-r border-line p-5 last:border-r-0"
+                  key={`${rowIndex}-${item.id}`}
+                  className="border-t border-e border-line p-5 last:border-e-0"
                 >
                   <p className="text-sm text-ink-2">{row.value(item)}</p>
                 </div>
               ))}
-            </>
+            </Fragment>
           ))}
         </div>
       </div>
