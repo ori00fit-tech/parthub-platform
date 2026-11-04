@@ -28,9 +28,9 @@ export default function PartCard({ part }) {
         )}
         <span className={`absolute top-2 right-2 text-xs px-2 py-0.5 rounded font-medium ${
           part.condition === "new"
-            ? "bg-emerald-400/15 text-emerald-300"
+            ? "bg-emerald-400/15 text-emerald-700"
             : part.condition === "used"
-            ? "bg-amber-400/15 text-amber-300"
+            ? "bg-amber-400/15 text-amber-700"
             : "bg-navy/25 text-link"
         }`}>
           {part.condition}
@@ -38,7 +38,7 @@ export default function PartCard({ part }) {
       </Link>
 
       <div className="p-3 flex flex-col flex-1">
-        <Link to={`/parts/${part.slug}`} className="text-sm font-medium text-ink-2 hover:text-sky-200 line-clamp-2 mb-1">
+        <Link to={`/parts/${part.slug}`} className="text-sm font-medium text-ink-2 hover:text-blue-800 line-clamp-2 mb-1">
           {part.title}
         </Link>
 

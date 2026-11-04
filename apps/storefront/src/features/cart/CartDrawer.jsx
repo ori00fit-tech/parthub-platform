@@ -148,8 +148,8 @@ export default function CartDrawer() {
                 className={[
                   "flex gap-2.5 rounded-xl border px-3 py-2.5 text-[13px] leading-snug",
                   vehicle
-                    ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
-                    : "border-amber-400/30 bg-amber-400/10 text-amber-200",
+                    ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-800"
+                    : "border-amber-400/30 bg-amber-400/10 text-amber-800",
                 ].join(" ")}
               >
                 <svg className="mt-0.5 h-4 w-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
@@ -158,13 +158,13 @@ export default function CartDrawer() {
                 <span>
                   {vehicle ? (
                     <>
-                      Shopping for <strong className="font-semibold text-white">{vehicle}</strong>. Check the fitment on each
+                      Shopping for <strong className="font-semibold text-emerald-900">{vehicle}</strong>. Check the fitment on each
                       part's page, or confirm the OEM number with the seller.
                     </>
                   ) : (
                     <>
                       No vehicle selected, so fitment hasn't been checked.{" "}
-                      <Link to="/vehicle-selector" className="font-semibold text-amber-100 underline underline-offset-2">
+                      <Link to="/vehicle-selector" className="font-semibold text-amber-900 underline underline-offset-2">
                         Select your vehicle
                       </Link>
                     </>
@@ -194,7 +194,7 @@ export default function CartDrawer() {
                           onClick={() => updateQuantity(item.part_id, item.quantity - 1)}
                           disabled={item.quantity <= 1}
                           aria-label="Decrease quantity"
-                          className="h-8 w-8 text-lg leading-none text-ink transition hover:bg-white/5 disabled:cursor-not-allowed disabled:text-faint/50"
+                          className="h-8 w-8 text-lg leading-none text-ink transition hover:bg-surface-3 disabled:cursor-not-allowed disabled:text-faint"
                         >
                           −
                         </button>
@@ -206,7 +206,7 @@ export default function CartDrawer() {
                           onClick={() => updateQuantity(item.part_id, item.quantity + 1)}
                           disabled={item.quantity >= MAX_QTY}
                           aria-label="Increase quantity"
-                          className="h-8 w-8 text-lg leading-none text-ink transition hover:bg-white/5 disabled:cursor-not-allowed disabled:text-faint/50"
+                          className="h-8 w-8 text-lg leading-none text-ink transition hover:bg-surface-3 disabled:cursor-not-allowed disabled:text-faint"
                         >
                           +
                         </button>
@@ -215,7 +215,7 @@ export default function CartDrawer() {
                     </div>
                     <div className="mt-1.5 flex items-center justify-between text-xs text-faint">
                       <span className="font-mono">{formatPrice(item.price)} each</span>
-                      <button type="button" onClick={() => removeItem(item.part_id)} className="underline underline-offset-2 hover:text-red-300">
+                      <button type="button" onClick={() => removeItem(item.part_id)} className="underline underline-offset-2 hover:text-red-700">
                         Remove
                       </button>
                     </div>
@@ -224,7 +224,7 @@ export default function CartDrawer() {
               ))}
             </div>
 
-            <div className="space-y-3 border-t border-line-strong bg-[#0C1424] px-4 pb-4 pt-3.5">
+            <div className="space-y-3 border-t border-line-strong bg-surface-2 px-4 pb-4 pt-3.5">
               <dl className="grid grid-cols-[1fr_auto] gap-y-1.5 text-sm text-ink-2">
                 <dt>Subtotal</dt>
                 <dd className="text-right font-mono tabular-nums text-ink">{formatPrice(subtotal)}</dd>
@@ -247,7 +247,7 @@ export default function CartDrawer() {
                   closeCart();
                   navigate("/cart");
                 }}
-                className="h-10 w-full rounded-xl text-sm font-semibold text-link transition hover:bg-white/5"
+                className="h-10 w-full rounded-xl text-sm font-semibold text-link transition hover:bg-surface-3"
               >
                 View full cart
               </button>

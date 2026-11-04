@@ -16,13 +16,13 @@ function getSellerBadges(seller) {
   if (Number(seller?.active_parts_count || 0) >= 5) {
     badges.push({
       label: "Well stocked",
-      className: "bg-emerald-400/10 text-emerald-300",
+      className: "bg-emerald-400/10 text-emerald-700",
     });
   }
 
   badges.push({
     label: "Active seller",
-    className: "bg-amber-400/10 text-amber-300",
+    className: "bg-amber-400/10 text-amber-700",
   });
 
   return badges.slice(0, 3);
@@ -46,14 +46,14 @@ function getPartBadges(part) {
   if (Number(part?.featured || 0) === 1) {
     badges.push({
       label: "Featured",
-      className: "bg-amber-400/10 text-amber-300",
+      className: "bg-amber-400/10 text-amber-700",
     });
   }
 
   if (Number(part?.quantity || 0) >= 5) {
     badges.push({
       label: "In stock",
-      className: "bg-emerald-400/10 text-emerald-300",
+      className: "bg-emerald-400/10 text-emerald-700",
     });
   }
 
@@ -128,7 +128,7 @@ export default function SellerProfilePage() {
 
   if (error || !seller) {
     return (
-      <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-6 text-red-300 shadow-sm">
+      <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-6 text-red-700 shadow-sm">
         {error || "Seller not found"}
       </div>
     );

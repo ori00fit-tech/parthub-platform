@@ -5,7 +5,7 @@ import { useSelectedVehicle } from "../../features/vehicles/SelectedVehicleConte
 function navClass({ isActive }) {
   return [
     "px-4 py-2 rounded-xl text-sm font-semibold transition",
-    isActive ? "bg-navy/20 text-link" : "text-ink-2 hover:bg-white/5",
+    isActive ? "bg-navy/20 text-link" : "text-ink-2 hover:bg-surface-3",
   ].join(" ");
 }
 
@@ -55,14 +55,14 @@ export default function Header() {
         <div className="hidden xl:flex items-center gap-2">
           <Link
             to="/vehicle-selector"
-            className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-ink-2 hover:border-navy hover:text-sky-200"
+            className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-ink-2 hover:border-navy hover:text-blue-800"
           >
             {selectedVehicle?.label || "My vehicle"}
           </Link>
 
           <Link
             to="/cart"
-            className="relative rounded-xl border border-line px-4 py-2 text-sm font-semibold text-ink-2 hover:border-navy hover:text-sky-200"
+            className="relative rounded-xl border border-line px-4 py-2 text-sm font-semibold text-ink-2 hover:border-navy hover:text-blue-800"
           >
             Cart
             {cart?.items?.length ? (

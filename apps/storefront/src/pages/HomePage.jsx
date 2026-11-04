@@ -64,7 +64,7 @@ function ProductCard({ brand, title, price, was, fitment, to, badge, icon }) {
         <h3 className="mt-2 line-clamp-2 text-sm font-semibold leading-6 text-ink">
           {title}
         </h3>
-        <div className="mt-3 inline-flex rounded-md border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-300">
+        <div className="mt-3 inline-flex rounded-md border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
           {fitment}
         </div>
         <div className="mt-4 flex items-end justify-between gap-3">
@@ -101,7 +101,7 @@ function SellerCard({ initials, name, location, rating, sales, to, color }) {
           </span>
         </div>
         <p className="mt-1 text-xs text-muted">{location}</p>
-        <p className="mt-1 text-xs font-semibold text-amber-300">
+        <p className="mt-1 text-xs font-semibold text-amber-700">
           {rating} · {sales} sales
         </p>
       </div>
@@ -268,7 +268,7 @@ export default function HomePage() {
 
                     <Link
                       to="/vehicle-selector"
-                      className="inline-flex h-12 items-center justify-center rounded-2xl border border-line px-5 text-sm font-bold text-ink-2 transition hover:bg-white/5"
+                      className="inline-flex h-12 items-center justify-center rounded-2xl border border-line px-5 text-sm font-bold text-ink-2 transition hover:bg-surface-3"
                     >
                       {selectedVehicle ? "Change Vehicle" : "Open Garage"}
                     </Link>
@@ -325,7 +325,7 @@ export default function HomePage() {
                   <Link
                     key={item}
                     to={`/parts?q=${encodeURIComponent(item)}`}
-                    className="rounded-full border border-line bg-canvas px-3 py-1.5 font-semibold text-ink-2 transition hover:border-navy hover:bg-navy/30 hover:text-sky-200"
+                    className="rounded-full border border-line bg-canvas px-3 py-1.5 font-semibold text-ink-2 transition hover:border-navy hover:bg-navy/30 hover:text-blue-800"
                   >
                     {item}
                   </Link>

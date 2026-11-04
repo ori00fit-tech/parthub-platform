@@ -32,7 +32,7 @@ function categoryNavClass(isActive) {
 function mobileNavItemClass(active) {
   return [
     "flex flex-col items-center justify-center rounded-xl px-2 py-2 text-[11px] font-semibold transition",
-    active ? "bg-navy/30 text-white" : "text-muted hover:bg-white/5 hover:text-ink",
+    active ? "bg-navy/10 text-navy" : "text-muted hover:bg-surface-3 hover:text-ink",
   ].join(" ");
 }
 
@@ -112,7 +112,7 @@ export default function MainLayout() {
       <div className="border-b border-line bg-[#0B1222] text-[12.5px] text-muted">
         <div className="mx-auto flex min-h-[34px] max-w-[1380px] flex-wrap items-center gap-x-5 gap-y-1 px-4 py-1.5 lg:px-6">
           <span>
-            <strong className="font-semibold text-ink-2">Vehicle-checked parts</strong> from verified sellers
+            <strong className="font-semibold text-white">Vehicle-checked parts</strong> from verified sellers
           </span>
           <span className="hidden sm:inline">Compare listings · Seller trust badges</span>
           <span className="hidden md:inline">Can't find it? Sellers reply to part requests</span>
@@ -241,7 +241,7 @@ export default function MainLayout() {
 
       <nav
         aria-label="Quick navigation"
-        className="sticky bottom-0 z-30 border-t border-line bg-canvas/95 backdrop-blur md:hidden"
+        className="sticky bottom-0 z-30 border-t border-line bg-surface/95 shadow-[0_-6px_18px_-12px_rgba(15,23,42,.25)] backdrop-blur md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         <div className="mx-auto grid max-w-[1380px] grid-cols-5 gap-1 px-3 py-1.5">
@@ -261,7 +261,7 @@ export default function MainLayout() {
             <Icon name="cart" />
             <span className="mt-0.5">Cart</span>
             {totalItems > 0 ? (
-              <span className="absolute right-3 top-1 h-4 min-w-[18px] rounded-full bg-white px-1 text-center font-mono text-[10px] font-bold leading-4 text-navy-deep">
+              <span className="absolute right-3 top-1 h-4 min-w-[18px] rounded-full bg-navy px-1 text-center font-mono text-[10px] font-bold leading-4 text-white">
                 {totalItems}
               </span>
             ) : null}

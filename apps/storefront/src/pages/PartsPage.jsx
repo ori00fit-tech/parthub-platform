@@ -133,12 +133,12 @@ function getRankingBadges(part, hasVehicle) {
   if (Number(part?.exact_vehicle_match || 0) === 1) {
     badges.push({
       label: "Exact fit",
-      className: "bg-emerald-400/10 text-emerald-300",
+      className: "bg-emerald-400/10 text-emerald-700",
     });
   } else if (Number(part?.partial_vehicle_match || 0) === 1 && hasVehicle) {
     badges.push({
       label: "Vehicle match",
-      className: "bg-emerald-400/10 text-emerald-300",
+      className: "bg-emerald-400/10 text-emerald-700",
     });
   }
 
@@ -157,14 +157,14 @@ function getRankingBadges(part, hasVehicle) {
   if (Number(part?.featured || 0) === 1) {
     badges.push({
       label: "Featured",
-      className: "bg-amber-400/10 text-amber-300",
+      className: "bg-amber-400/10 text-amber-700",
     });
   }
 
   if (Number(part?.quantity || 0) > 0 && Number(part?.quantity || 0) <= 2) {
     badges.push({
       label: "Low stock",
-      className: "bg-red-400/10 text-red-300",
+      className: "bg-red-400/10 text-red-700",
     });
   }
 
@@ -185,14 +185,14 @@ function getSellerBadges(part) {
   if (Number(part?.quantity || 0) >= 5) {
     badges.push({
       label: "Well stocked",
-      className: "bg-emerald-400/10 text-emerald-300",
+      className: "bg-emerald-400/10 text-emerald-700",
     });
   }
 
   if (Number(part?.featured || 0) === 1) {
     badges.push({
       label: "Trusted seller",
-      className: "bg-amber-400/10 text-amber-300",
+      className: "bg-amber-400/10 text-amber-700",
     });
   }
 
@@ -213,7 +213,7 @@ function getOriginBadge(part) {
   if (origin === "used") {
     return {
       label: "Used",
-      className: "border border-amber-400/35 bg-canvas/80 text-amber-300",
+      className: "border border-amber-400/35 bg-canvas/80 text-amber-700",
     };
   }
 
@@ -590,7 +590,7 @@ export default function PartsPage() {
         <button
           type="button"
           onClick={clearAllFilters}
-          className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+          className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
         >
           Clear filters
         </button>
@@ -599,7 +599,7 @@ export default function PartsPage() {
           <button
             type="button"
             onClick={clearVehicle}
-            className="inline-flex h-11 items-center justify-center rounded-2xl border border-red-400/30 bg-red-400/10 px-4 text-sm font-semibold text-red-300 transition hover:bg-red-400/20"
+            className="inline-flex h-11 items-center justify-center rounded-2xl border border-red-400/30 bg-red-400/10 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-400/20"
           >
             Clear vehicle
           </button>
@@ -734,7 +734,7 @@ export default function PartsPage() {
                 ) : null}
 
                 {hasVehicle ? (
-                  <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+                  <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-700">
                     Vehicle-aware
                   </span>
                 ) : null}
@@ -744,10 +744,10 @@ export default function PartsPage() {
             {hasVehicle ? (
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
                     Exact matches
                   </p>
-                  <p className="mt-1 text-2xl font-bold text-emerald-200">{exactMatchesCount}</p>
+                  <p className="mt-1 text-2xl font-bold text-emerald-800">{exactMatchesCount}</p>
                 </div>
 
                 <div className="rounded-2xl border border-navy/70 bg-navy/20 px-4 py-3">
@@ -770,7 +770,7 @@ export default function PartsPage() {
             <div className="rounded-3xl border border-emerald-400/30 bg-gradient-to-br from-emerald-400/10 to-surface p-5 shadow-sm">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
-                  <div className="mb-2 inline-flex rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-300">
+                  <div className="mb-2 inline-flex rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-700">
                     Top result
                   </div>
                   <h3 className="truncate text-xl font-bold text-ink">{topMatch.title}</h3>
@@ -811,7 +811,7 @@ export default function PartsPage() {
                   <button
                     type="button"
                     onClick={() => toggleShortlist(topMatch)}
-                    className="inline-flex h-12 items-center justify-center rounded-2xl border border-line bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+                    className="inline-flex h-12 items-center justify-center rounded-2xl border border-line bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
                   >
                     {shortlistIds.includes(topMatch.id) ? "Remove from shortlist" : "Add to shortlist"}
                   </button>
@@ -821,7 +821,7 @@ export default function PartsPage() {
           ) : null}
 
           {error ? (
-            <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-6 text-red-300 shadow-sm">
+            <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-6 text-red-700 shadow-sm">
               {error}
             </div>
           ) : null}
@@ -888,7 +888,7 @@ export default function PartsPage() {
                     <button
                       type="button"
                       onClick={clearVehicle}
-                      className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+                      className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
                     >
                       Clear vehicle filter
                     </button>
@@ -896,7 +896,7 @@ export default function PartsPage() {
 
                   <Link
                     to="/parts"
-                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
                   >
                     Browse all parts
                   </Link>
@@ -933,7 +933,7 @@ export default function PartsPage() {
                             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                           />
                         ) : (
-                          <svg viewBox="0 0 64 64" className="h-20 w-20 text-[#46587A]" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                          <svg viewBox="0 0 64 64" className="h-20 w-20 text-[#B4BFD0]" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                             <circle cx="32" cy="32" r="9" />
                             <path d="M32 6v8M32 50v8M6 32h8M50 32h8M13.6 13.6l5.7 5.7M44.7 44.7l5.7 5.7M13.6 50.4l5.7-5.7M44.7 19.3l5.7-5.7" strokeLinecap="round" />
                             <circle cx="32" cy="32" r="20" strokeDasharray="4 5" />
@@ -950,7 +950,7 @@ export default function PartsPage() {
                         </div>
 
                         {part.sku ? (
-                          <span className="absolute bottom-2 right-2.5 font-mono text-[10.5px] tracking-[0.06em] text-[#6E81A3]">
+                          <span className="absolute bottom-2 right-2.5 font-mono text-[10.5px] tracking-[0.06em] text-faint">
                             {part.sku}
                           </span>
                         ) : null}
@@ -958,7 +958,7 @@ export default function PartsPage() {
 
                       <div className="flex flex-1 flex-col gap-3 p-3.5">
                         <div className="flex items-center justify-between gap-2 text-xs text-muted">
-                          <span className="truncate font-semibold uppercase tracking-[0.08em] text-[#A9BBF5]">
+                          <span className="truncate font-semibold uppercase tracking-[0.08em] text-navy">
                             {part.brand_name || "Unbranded"}
                           </span>
                           {part.category_name ? <span className="truncate">{part.category_name}</span> : null}
@@ -987,17 +987,17 @@ export default function PartsPage() {
                             className={[
                               "inline-flex h-6 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium before:h-1.5 before:w-1.5 before:rounded-full before:bg-current",
                               !inStock
-                                ? "border-red-400/25 bg-red-400/10 text-red-300"
+                                ? "border-red-400/25 bg-red-400/10 text-red-700"
                                 : lowStock
-                                ? "border-amber-400/25 bg-amber-400/10 text-amber-300"
-                                : "border-emerald-400/25 bg-emerald-400/10 text-emerald-300",
+                                ? "border-amber-400/25 bg-amber-400/10 text-amber-700"
+                                : "border-emerald-400/25 bg-emerald-400/10 text-emerald-700",
                             ].join(" ")}
                           >
                             {!inStock ? "Out of stock" : lowStock ? `Low stock · ${part.quantity} left` : `In stock · ${part.quantity}`}
                           </span>
 
                           {exactMatched ? (
-                            <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 text-xs font-medium text-emerald-300 before:h-1.5 before:w-1.5 before:rounded-full before:bg-current">
+                            <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 text-xs font-medium text-emerald-700 before:h-1.5 before:w-1.5 before:rounded-full before:bg-current">
                               Fits your vehicle
                             </span>
                           ) : compatibilityCount > 0 ? (
@@ -1027,7 +1027,7 @@ export default function PartsPage() {
                             {part.compare_price ? (
                               <s className="mb-1 block text-xs text-faint">{formatPrice(part.compare_price)}</s>
                             ) : null}
-                            <span className="text-[22px] font-semibold leading-none text-white">{formatPrice(part.price)}</span>
+                            <span className="text-[22px] font-semibold leading-none text-ink">{formatPrice(part.price)}</span>
                           </div>
 
                           <div className="relative z-10 flex items-center gap-1.5">
@@ -1082,7 +1082,7 @@ export default function PartsPage() {
                     type="button"
                     disabled={meta.page <= 1}
                     onClick={() => goToPage(meta.page - 1)}
-                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-surface-3 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Previous
                   </button>
@@ -1095,7 +1095,7 @@ export default function PartsPage() {
                     type="button"
                     disabled={meta.page >= meta.totalPages}
                     onClick={() => goToPage(meta.page + 1)}
-                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-surface-3 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Next
                   </button>
@@ -1130,7 +1130,7 @@ export default function PartsPage() {
                 <Link
                   key={item.id}
                   to={`/parts/${item.slug}`}
-                  className="inline-flex h-10 items-center justify-center rounded-2xl border border-line bg-surface px-3 text-xs font-semibold text-ink-2 transition hover:bg-white/5"
+                  className="inline-flex h-10 items-center justify-center rounded-2xl border border-line bg-surface px-3 text-xs font-semibold text-ink-2 transition hover:bg-surface-3"
                 >
                   View
                 </Link>

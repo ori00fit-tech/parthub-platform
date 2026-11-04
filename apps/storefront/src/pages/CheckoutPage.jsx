@@ -185,7 +185,7 @@ export default function CheckoutPage() {
       </div>
 
       {selectedVehicle ? (
-        <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-4 text-sm text-emerald-300 shadow-sm">
+        <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-4 text-sm text-emerald-700 shadow-sm">
           Your selected vehicle will be attached as checkout context:
           <span className="ml-2 font-semibold">{vehicleLabel}</span>
         </div>
@@ -196,13 +196,13 @@ export default function CheckoutPage() {
       )}
 
       {error ? (
-        <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-5 text-red-300 shadow-sm">
+        <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-5 text-red-700 shadow-sm">
           {error}
         </div>
       ) : null}
 
       {success ? (
-        <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 p-5 text-emerald-300 shadow-sm">
+        <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 p-5 text-emerald-700 shadow-sm">
           {success}
         </div>
       ) : null}

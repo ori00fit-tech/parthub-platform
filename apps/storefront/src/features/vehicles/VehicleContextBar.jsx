@@ -43,7 +43,7 @@ export default function VehicleContextBar() {
               <button
                 type="button"
                 onClick={clearVehicle}
-                className="inline-flex h-10 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+                className="inline-flex h-10 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
               >
                 Clear
               </button>
@@ -55,7 +55,7 @@ export default function VehicleContextBar() {
               key={`${vehicle.label}-${index}`}
               type="button"
               onClick={() => selectSavedVehicle(vehicle)}
-              className="inline-flex h-10 items-center justify-center rounded-2xl border border-line bg-surface-2 px-4 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+              className="inline-flex h-10 items-center justify-center rounded-2xl border border-line bg-surface-2 px-4 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
             >
               {vehicle.year} {vehicle.make_name || vehicle.make}
             </button>

@@ -118,13 +118,13 @@ export default function AuthPage() {
             </Link>
             <Link
               to="/account"
-              className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+              className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
             >
               Go to account
             </Link>
             <Link
               to="/parts"
-              className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+              className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
             >
               Browse parts
             </Link>
@@ -196,13 +196,13 @@ export default function AuthPage() {
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
                 to="/cart"
-                className="rounded-2xl border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+                className="rounded-2xl border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
               >
                 Back to cart
               </Link>
               <Link
                 to="/parts"
-                className="rounded-2xl border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+                className="rounded-2xl border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
               >
                 Browse parts
               </Link>
@@ -219,7 +219,7 @@ export default function AuthPage() {
                 "rounded-2xl px-5 py-2.5 text-sm font-semibold transition",
                 mode === "login"
                   ? "bg-slate-950 text-white"
-                  : "border border-line-strong bg-surface text-ink-2 hover:bg-white/5",
+                  : "border border-line-strong bg-surface text-ink-2 hover:bg-surface-3",
               ].join(" ")}
             >
               Sign in
@@ -232,7 +232,7 @@ export default function AuthPage() {
                 "rounded-2xl px-5 py-2.5 text-sm font-semibold transition",
                 mode === "register"
                   ? "bg-slate-950 text-white"
-                  : "border border-line-strong bg-surface text-ink-2 hover:bg-white/5",
+                  : "border border-line-strong bg-surface text-ink-2 hover:bg-surface-3",
               ].join(" ")}
             >
               Create account
@@ -251,13 +251,13 @@ export default function AuthPage() {
           </div>
 
           {error ? (
-            <div className="mt-5 rounded-2xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-300">
+            <div className="mt-5 rounded-2xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-700">
               {error}
             </div>
           ) : null}
 
           {success ? (
-            <div className="mt-5 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-300">
+            <div className="mt-5 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-700">
               {success}
             </div>
           ) : null}
@@ -323,7 +323,7 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => switchMode("register")}
-                  className="font-semibold text-link hover:text-sky-200"
+                  className="font-semibold text-link hover:text-blue-800"
                 >
                   Create one
                 </button>
@@ -334,7 +334,7 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => switchMode("login")}
-                  className="font-semibold text-link hover:text-sky-200"
+                  className="font-semibold text-link hover:text-blue-800"
                 >
                   Sign in
                 </button>

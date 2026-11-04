@@ -273,7 +273,7 @@ export default function RequestPartPage() {
                           "h-11 rounded-xl border text-sm font-semibold transition",
                           form.condition_pref === value
                             ? "border-sky-400 bg-navy/20 text-link"
-                            : "border-line text-muted hover:bg-white/5",
+                            : "border-line text-muted hover:bg-surface-3",
                         ].join(" ")}
                       >
                         {label}
@@ -325,7 +325,7 @@ export default function RequestPartPage() {
               </div>
 
               {error ? (
-                <p className="mt-4 rounded-xl bg-red-400/10 px-3 py-2 text-sm text-red-300">{error}</p>
+                <p className="mt-4 rounded-xl bg-red-400/10 px-3 py-2 text-sm text-red-700">{error}</p>
               ) : null}
 
               <button
@@ -342,7 +342,7 @@ export default function RequestPartPage() {
 
             <Link
               to="/requests"
-              className="block rounded-2xl border border-line bg-surface px-4 py-3 text-center text-sm font-semibold text-ink-2 shadow-sm transition hover:bg-white/5"
+              className="block rounded-2xl border border-line bg-surface px-4 py-3 text-center text-sm font-semibold text-ink-2 shadow-sm transition hover:bg-surface-3"
             >
               View my requests →
             </Link>
