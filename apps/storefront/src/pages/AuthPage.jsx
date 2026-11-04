@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
 import { useCart } from "../features/cart/CartContext";
+import { useT } from "../i18n";
 
 function getRedirectPath(location) {
   const params = new URLSearchParams(location.search);
@@ -9,6 +10,7 @@ function getRedirectPath(location) {
 }
 
 export default function AuthPage() {
+  const t = useT();
   const location = useLocation();
   const navigate = useNavigate();
   const redirectTo = useMemo(() => getRedirectPath(location), [location]);
@@ -49,12 +51,12 @@ export default function AuthPage() {
 
     try {
       if (!form.email.trim() || !form.password.trim()) {
-        setError("Please enter your email and password.");
+        setError(t("Please enter your email and password."));
         return;
       }
 
       if (mode === "register" && !form.name.trim()) {
-        setError("Please enter your full name.");
+        setError(t("Please enter your full name."));
         return;
       }
 
@@ -70,14 +72,14 @@ export default function AuthPage() {
         password: form.password,
       });
 
-      setSuccess("Account created successfully. Please sign in.");
+      setSuccess(t("Account created successfully. Please sign in."));
       setMode("login");
       setForm((prev) => ({
         ...prev,
         password: "",
       }));
     } catch (err) {
-      setError(err?.message || "Authentication failed.");
+      setError(err?.message || t("Authentication failed."));
     }
   }
 
@@ -87,24 +89,24 @@ export default function AuthPage() {
         <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Buyer account
+              {t("Buyer account")}
             </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">You are already signed in</h1>
+            <h1 className="text-3xl font-bold sm:text-5xl">{t("You are already signed in")}</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Continue to your account, orders, checkout, or return to the catalog.
+              {t("Continue to your account, orders, checkout, or return to the catalog.")}
             </p>
           </div>
         </div>
 
         <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-          <h2 className="text-2xl font-bold text-ink">Signed-in session</h2>
+          <h2 className="text-2xl font-bold text-ink">{t("Signed-in session")}</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div className="rounded-2xl bg-surface-2 p-4">
-              <p className="text-xs uppercase tracking-wide text-faint">Email</p>
-              <p className="mt-1 font-semibold text-ink">{user?.email || "Buyer account"}</p>
+              <p className="text-xs uppercase tracking-wide text-faint">{t("Email")}</p>
+              <p className="mt-1 font-semibold text-ink">{user?.email || t("Buyer account")}</p>
             </div>
             <div className="rounded-2xl bg-surface-2 p-4">
-              <p className="text-xs uppercase tracking-wide text-faint">Cart items</p>
+              <p className="text-xs uppercase tracking-wide text-faint">{t("Cart items")}</p>
               <p className="mt-1 font-semibold text-ink">{totalItems}</p>
             </div>
           </div>
@@ -114,19 +116,19 @@ export default function AuthPage() {
               to={redirectTo}
               className="rounded-2xl bg-navy px-5 py-3 text-sm font-semibold text-white transition hover:bg-navy-deep"
             >
-              Continue
+              {t("Continue")}
             </Link>
             <Link
               to="/account"
               className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
             >
-              Go to account
+              {t("Go to account")}
             </Link>
             <Link
               to="/parts"
               className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
             >
-              Browse parts
+              {t("Browse parts")}
             </Link>
           </div>
         </div>
@@ -140,24 +142,24 @@ export default function AuthPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Buyer auth foundation
+              {t("Buyer auth foundation")}
             </div>
             <h1 className="text-3xl font-bold sm:text-5xl">
-              {mode === "login" ? "Sign in to continue" : "Create your buyer account"}
+              {mode === "login" ? t("Sign in to continue") : t("Create your buyer account")}
             </h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
               {mode === "login"
-                ? "Access your buyer session for account, orders, cart, and checkout flow."
-                : "Create a buyer account to prepare a smoother storefront and checkout experience."}
+                ? t("Access your buyer session for account, orders, cart, and checkout flow.")
+                : t("Create a buyer account to prepare a smoother storefront and checkout experience.")}
             </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm">
-              ✔ Buyer-only storefront auth
+              {t("✔ Buyer-only storefront auth")}
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm">
-              ✔ Session-ready checkout flow
+              {t("✔ Session-ready checkout flow")}
             </div>
           </div>
         </div>
@@ -166,29 +168,29 @@ export default function AuthPage() {
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-4">
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-ink">Why sign in?</h2>
+            <h2 className="text-xl font-bold text-ink">{t("Why sign in?")}</h2>
             <div className="mt-4 space-y-3 text-sm text-muted">
               <div className="rounded-2xl bg-surface-2 p-4">
-                Continue more smoothly from cart to checkout.
+                {t("Continue more smoothly from cart to checkout.")}
               </div>
               <div className="rounded-2xl bg-surface-2 p-4">
-                Prepare access to buyer account and order history foundation.
+                {t("Prepare access to buyer account and order history foundation.")}
               </div>
               <div className="rounded-2xl bg-surface-2 p-4">
-                Keep the storefront flow cleaner across future sessions.
+                {t("Keep the storefront flow cleaner across future sessions.")}
               </div>
             </div>
           </div>
 
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-ink">Current storefront state</h2>
+            <h2 className="text-xl font-bold text-ink">{t("Current storefront state")}</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">Cart items</p>
+                <p className="text-xs uppercase tracking-wide text-faint">{t("Cart items")}</p>
                 <p className="mt-1 text-lg font-semibold text-ink">{totalItems}</p>
               </div>
               <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">Post-login redirect</p>
+                <p className="text-xs uppercase tracking-wide text-faint">{t("Post-login redirect")}</p>
                 <p className="mt-1 text-sm font-semibold text-ink">{redirectTo}</p>
               </div>
             </div>
@@ -198,13 +200,13 @@ export default function AuthPage() {
                 to="/cart"
                 className="rounded-2xl border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
               >
-                Back to cart
+                {t("Back to cart")}
               </Link>
               <Link
                 to="/parts"
                 className="rounded-2xl border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
               >
-                Browse parts
+                {t("Browse parts")}
               </Link>
             </div>
           </div>
@@ -222,7 +224,7 @@ export default function AuthPage() {
                   : "border border-line-strong bg-surface text-ink-2 hover:bg-surface-3",
               ].join(" ")}
             >
-              Sign in
+              {t("Sign in")}
             </button>
 
             <button
@@ -235,18 +237,18 @@ export default function AuthPage() {
                   : "border border-line-strong bg-surface text-ink-2 hover:bg-surface-3",
               ].join(" ")}
             >
-              Create account
+              {t("Create account")}
             </button>
           </div>
 
           <div className="mt-6">
             <h2 className="text-2xl font-bold text-ink">
-              {mode === "login" ? "Buyer sign in" : "Buyer registration"}
+              {mode === "login" ? t("Buyer sign in") : t("Buyer registration")}
             </h2>
             <p className="mt-2 text-sm text-muted">
               {mode === "login"
-                ? "Enter your email and password to continue."
-                : "Create your buyer account with basic details."}
+                ? t("Enter your email and password to continue.")
+                : t("Create your buyer account with basic details.")}
             </p>
           </div>
 
@@ -266,12 +268,12 @@ export default function AuthPage() {
             {mode === "register" ? (
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-ink-2">
-                  Full name
+                  {t("Full name")}
                 </label>
                 <input
                   value={form.name}
                   onChange={setField("name")}
-                  placeholder="John Doe"
+                  placeholder={t("John Doe")}
                   className={inputCls}
                 />
               </div>
@@ -279,7 +281,7 @@ export default function AuthPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-ink-2">
-                Email
+                {t("Email")}
               </label>
               <input
                 type="email"
@@ -292,7 +294,7 @@ export default function AuthPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-ink-2">
-                Password
+                {t("Password")}
               </label>
               <input
                 type="password"
@@ -309,34 +311,34 @@ export default function AuthPage() {
               className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-navy px-5 text-sm font-semibold text-white transition hover:bg-navy-deep disabled:cursor-not-allowed disabled:bg-navy/50"
             >
               {loading
-                ? "Please wait..."
+                ? t("Please wait...")
                 : mode === "login"
-                  ? "Sign in"
-                  : "Create buyer account"}
+                  ? t("Sign in")
+                  : t("Create buyer account")}
             </button>
           </form>
 
           <div className="mt-6 rounded-2xl bg-surface-2 p-4 text-sm text-muted">
             {mode === "login" ? (
               <>
-                Don’t have an account?{" "}
+                {t("Don’t have an account?")}{" "}
                 <button
                   type="button"
                   onClick={() => switchMode("register")}
                   className="font-semibold text-link hover:text-blue-800"
                 >
-                  Create one
+                  {t("Create one")}
                 </button>
               </>
             ) : (
               <>
-                Already have an account?{" "}
+                {t("Already have an account?")}{" "}
                 <button
                   type="button"
                   onClick={() => switchMode("login")}
                   className="font-semibold text-link hover:text-blue-800"
                 >
-                  Sign in
+                  {t("Sign in")}
                 </button>
               </>
             )}

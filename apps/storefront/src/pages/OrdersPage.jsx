@@ -24,7 +24,7 @@ export default function OrdersPage() {
         <div className="grid gap-4 lg:grid-cols-3">
           <Link
             to="/auth?redirect=/orders"
-            className="rounded-3xl border border-navy/70 bg-navy/20 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="rounded-3xl border border-navy/20 bg-navy/[0.06] p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
             <p className="text-sm font-medium text-link">Recommended</p>
             <p className="mt-1 text-xl font-bold text-ink">Buyer sign in</p>
@@ -70,7 +70,7 @@ export default function OrdersPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               to="/account"
-              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/30"
+              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/[0.12]"
             >
               Back to account
             </Link>

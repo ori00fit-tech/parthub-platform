@@ -21,9 +21,9 @@ export default {
         brand: { 600: "#1E40AF", 700: "#172F7E" },
       },
       fontFamily: {
-        sans: ['"IBM Plex Sans"', "system-ui", "-apple-system", '"Segoe UI"', "sans-serif"],
-        display: ['"Barlow Condensed"', '"Arial Narrow"', '"Roboto Condensed"', "sans-serif"],
-        mono: ['"IBM Plex Mono"', "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+        sans: ['"IBM Plex Sans"', '"IBM Plex Sans Arabic"', "system-ui", "-apple-system", '"Segoe UI"', "sans-serif"],
+        display: ['"Barlow Condensed"', '"IBM Plex Sans Arabic"', '"Arial Narrow"', '"Roboto Condensed"', "sans-serif"],
+        mono: ['"IBM Plex Mono"', '"IBM Plex Sans Arabic"', "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
       boxShadow: {
         panel: "0 1px 2px rgba(15,23,42,.05), 0 6px 18px -10px rgba(15,23,42,.14)",

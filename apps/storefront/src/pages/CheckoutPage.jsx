@@ -5,6 +5,7 @@ import { useAuth } from "../features/auth/AuthContext";
 import { useCart } from "../features/cart/CartContext";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import { formatPrice } from "../lib/formatters";
+import { useT } from "../i18n";
 
 function getVehicleLabel(vehicle) {
   if (!vehicle) return "";
@@ -22,6 +23,7 @@ function getVehicleLabel(vehicle) {
 }
 
 export default function CheckoutPage() {
+  const t = useT();
   const navigate = useNavigate();
   const cart = useCart() || {};
   const { items = [], subtotal = 0, totalItems = 0, clearCart = () => {} } = cart;
@@ -78,27 +80,27 @@ export default function CheckoutPage() {
     setSuccess("");
 
     if (!items.length) {
-      setError("Your cart is empty.");
+      setError(t("Your cart is empty."));
       return;
     }
 
     if (!form.buyer_name.trim()) {
-      setError("Full name is required.");
+      setError(t("Full name is required."));
       return;
     }
 
     if (!form.buyer_phone.trim()) {
-      setError("Phone number is required.");
+      setError(t("Phone number is required."));
       return;
     }
 
     if (!form.address_line1.trim()) {
-      setError("Address line 1 is required.");
+      setError(t("Address line 1 is required."));
       return;
     }
 
     if (!form.city.trim()) {
-      setError("City is required.");
+      setError(t("City is required."));
       return;
     }
 
@@ -132,7 +134,7 @@ export default function CheckoutPage() {
       const response = await apiPost("/api/v1/commerce/orders", payload, { auth: true });
       const orderId = response?.data?.reference || response?.data?.id || null;
 
-      setSuccess("Order placed successfully.");
+      setSuccess(t("Order placed successfully."));
       clearCart();
 
       setTimeout(() => {
@@ -143,7 +145,7 @@ export default function CheckoutPage() {
         }
       }, 900);
     } catch (err) {
-      setError(err?.message || "Failed to place order");
+      setError(err?.message || t("Failed to place order"));
     } finally {
       setSaving(false);
     }
@@ -152,9 +154,9 @@ export default function CheckoutPage() {
   if (!items.length) {
     return (
       <section className="rounded-3xl border border-dashed border-line-strong bg-surface p-10 text-center shadow-sm">
-        <h1 className="text-2xl font-bold text-ink">Your cart is empty</h1>
+        <h1 className="text-2xl font-bold text-ink">{t("Your cart is empty")}</h1>
         <p className="mt-2 text-sm text-muted">
-          Add parts to your cart before proceeding to checkout.
+          {t("Add parts to your cart before proceeding to checkout.")}
         </p>
       </section>
     );
@@ -163,12 +165,12 @@ export default function CheckoutPage() {
   if (!isAuthenticated) {
     return (
       <section className="mx-auto max-w-xl rounded-3xl border border-line bg-surface p-8 text-center shadow-panel">
-        <h1 className="text-3xl font-bold uppercase text-ink">Sign in to check out</h1>
+        <h1 className="text-3xl font-bold uppercase text-ink">{t("Sign in to check out")}</h1>
         <p className="mt-3 text-sm text-muted">
-          Your cart is saved. Sign in or create a free account so you can track the order and the seller can reach you.
+          {t("Your cart is saved. Sign in or create a free account so you can track the order and the seller can reach you.")}
         </p>
         <Link to="/auth?redirect=/checkout" className="btn-cta mt-6 h-12 px-6 text-sm">
-          Sign in to continue
+          {t("Sign in to continue")}
         </Link>
       </section>
     );
@@ -178,20 +180,20 @@ export default function CheckoutPage() {
   return (
     <section className="space-y-6 pb-16">
       <div className="rounded-[28px] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-700 p-6 text-white shadow-lg sm:p-8">
-        <h1 className="text-3xl font-bold sm:text-5xl">Checkout</h1>
+        <h1 className="text-3xl font-bold sm:text-5xl">{t("Checkout")}</h1>
         <p className="mt-3 text-sm text-blue-100 sm:text-base">
-          Confirm your delivery details. Sellers may call to confirm fitment before shipping.
+          {t("Confirm your delivery details. Sellers may call to confirm fitment before shipping.")}
         </p>
       </div>
 
       {selectedVehicle ? (
         <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-4 text-sm text-emerald-700 shadow-sm">
-          Your selected vehicle will be attached as checkout context:
-          <span className="ml-2 font-semibold">{vehicleLabel}</span>
+          {t("Your selected vehicle will be attached as checkout context:")}
+          <span className="ms-2 font-semibold">{vehicleLabel}</span>
         </div>
       ) : (
-        <div className="rounded-3xl border border-navy/70 bg-navy/20 px-4 py-4 text-sm text-link shadow-sm">
-          No vehicle selected. You can still place the order, but fitment confidence is stronger when a vehicle is selected.
+        <div className="rounded-3xl border border-navy/20 bg-navy/[0.06] px-4 py-4 text-sm text-link shadow-sm">
+          {t("No vehicle selected. You can still place the order, but fitment confidence is stronger when a vehicle is selected.")}
         </div>
       )}
 
@@ -209,24 +211,24 @@ export default function CheckoutPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <form onSubmit={handleSubmit} className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-          <h2 className="text-2xl font-bold text-ink">Delivery details</h2>
+          <h2 className="text-2xl font-bold text-ink">{t("Delivery details")}</h2>
           <p className="mt-1 text-sm text-muted">
-            Where should the seller deliver your parts?
+            {t("Where should the seller deliver your parts?")}
           </p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">Full name</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Full name")}</label>
               <input
                 value={form.buyer_name}
                 onChange={setField("buyer_name")}
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
-                placeholder="Youssef Benali"
+                placeholder={t("Youssef Benali")}
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">Email (optional)</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Email (optional)")}</label>
               <input
                 value={form.buyer_email}
                 onChange={setField("buyer_email")}
@@ -237,7 +239,7 @@ export default function CheckoutPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">Phone</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Phone")}</label>
               <input
                 value={form.buyer_phone}
                 onChange={setField("buyer_phone")}
@@ -247,47 +249,47 @@ export default function CheckoutPage() {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">Address line 1</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Address line 1")}</label>
               <input
                 value={form.address_line1}
                 onChange={setField("address_line1")}
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
-                placeholder="Street address"
+                placeholder={t("Street address")}
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">Address line 2 (optional)</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Address line 2 (optional)")}</label>
               <input
                 value={form.address_line2}
                 onChange={setField("address_line2")}
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
-                placeholder="Apartment, suite, etc."
+                placeholder={t("Apartment, suite, etc.")}
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">City</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("City")}</label>
               <input
                 value={form.city}
                 onChange={setField("city")}
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
-                placeholder="Casablanca"
+                placeholder={t("Casablanca")}
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">State / Region</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("State / Region")}</label>
               <input
                 value={form.state}
                 onChange={setField("state")}
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
-                placeholder="Casablanca-Settat"
+                placeholder={t("Casablanca-Settat")}
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">Postal code</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Postal code")}</label>
               <input
                 value={form.postal_code}
                 onChange={setField("postal_code")}
@@ -297,23 +299,23 @@ export default function CheckoutPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">Country</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Country")}</label>
               <input
                 value={form.country}
                 onChange={setField("country")}
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
-                placeholder="MA"
+                placeholder={t("MA")}
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">Order notes (optional)</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Order notes (optional)")}</label>
               <textarea
                 value={form.notes}
                 onChange={setField("notes")}
                 rows={4}
                 className="w-full rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:border-sky-400"
-                placeholder="Add delivery notes or fitment confirmation requests..."
+                placeholder={t("Add delivery notes or fitment confirmation requests...")}
               />
             </div>
           </div>
@@ -324,14 +326,14 @@ export default function CheckoutPage() {
               disabled={saving}
               className="btn-cta h-12 rounded-2xl px-6 text-sm"
             >
-              {saving ? "Placing order..." : "Place order"}
+              {saving ? t("Placing order...") : t("Place order")}
             </button>
           </div>
         </form>
 
         <aside className="space-y-6">
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-          <h2 className="text-2xl font-bold text-ink">Order summary</h2>
+          <h2 className="text-2xl font-bold text-ink">{t("Order summary")}</h2>
 
           <div className="mt-5 space-y-4">
             {items.map((item) => (
@@ -346,22 +348,22 @@ export default function CheckoutPage() {
 
           <div className="mt-6 space-y-3 border-t border-line pt-4">
             <div className="flex items-center justify-between text-sm text-muted">
-              <span>Items</span>
+              <span>{t("Items")}</span>
               <span>{totalItems}</span>
             </div>
 
             <div className="flex items-center justify-between text-sm text-muted">
-              <span>Subtotal</span>
+              <span>{t("Subtotal")}</span>
               <span>{formatPrice(subtotal)}</span>
             </div>
 
             <div className="flex items-center justify-between text-sm text-muted">
-              <span>Delivery (flat rate)</span>
+              <span>{t("Delivery (flat rate)")}</span>
               <span className="font-mono">{shippingFee == null ? "—" : formatPrice(shippingFee)}</span>
             </div>
 
             <div className="flex items-center justify-between border-t border-line pt-3">
-              <span className="text-base font-semibold text-ink">Total</span>
+              <span className="text-base font-semibold text-ink">{t("Total")}</span>
               <span className="font-mono text-xl font-bold text-ink">
                 {formatPrice(subtotal + (shippingFee || 0))}
               </span>
@@ -369,17 +371,17 @@ export default function CheckoutPage() {
           </div>
 
           <p className="mt-4 text-xs text-muted">
-            Final fitment confirmation should still rely on SKU, OEM reference, and seller confirmation where needed.
+            {t("Final fitment confirmation should still rely on SKU, OEM reference, and seller confirmation where needed.")}
           </p>
           </div>
 
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-ink">Checkout trust</h2>
+            <h2 className="text-xl font-bold text-ink">{t("Checkout trust")}</h2>
             <div className="mt-4 space-y-3 text-sm text-muted">
-              <p>• Your order appears in your account with a tracking reference.</p>
-              <p>• Vehicle context is attached when selected.</p>
-              <p>• Seller follow-up can still confirm final fitment before fulfillment.</p>
-              <p>• SKU and notes remain important for high-confidence orders.</p>
+              <p>{t("• Your order appears in your account with a tracking reference.")}</p>
+              <p>{t("• Vehicle context is attached when selected.")}</p>
+              <p>{t("• Seller follow-up can still confirm final fitment before fulfillment.")}</p>
+              <p>{t("• SKU and notes remain important for high-confidence orders.")}</p>
             </div>
           </div>
         </aside>

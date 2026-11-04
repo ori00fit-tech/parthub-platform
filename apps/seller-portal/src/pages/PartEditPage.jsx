@@ -159,6 +159,7 @@ export default function PartEditPage() {
   const [loadingPart, setLoadingPart] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [moderation, setModeration] = useState({ status: "", note: "" });
   const [success, setSuccess] = useState("");
 
   const [categories, setCategories] = useState([]);
@@ -229,6 +230,7 @@ export default function PartEditPage() {
         if (!part) {
           throw new Error("Part not found");
         }
+        setModeration({ status: part.status || "", note: part.moderation_note || "" });
 
         setForm({
           title: part.title || "",
@@ -470,6 +472,18 @@ export default function PartEditPage() {
               Edit your product data and keep the listing accurate.
             </p>
           </div>
+
+          {(moderation.status === "rejected" || moderation.status === "archived") && moderation.note ? (
+            <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="status">
+              <p className="font-semibold">
+                {moderation.status === "rejected" ? "PartHub didn't approve this listing" : "PartHub archived this listing"}
+              </p>
+              <p className="mt-1">{moderation.note}</p>
+              {moderation.status === "rejected" ? (
+                <p className="mt-2 text-xs text-red-700">Fix the issue and save: the listing goes back for review.</p>
+              ) : null}
+            </div>
+          ) : null}
 
           {error ? (
             <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

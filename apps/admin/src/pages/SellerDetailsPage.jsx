@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../lib/api";
+import { reasonPromptFor, useReasonDialog } from "../components/ReasonDialog";
 import { formatMoney } from "@parthub/shared";
 
 function statusClasses(status) {
@@ -47,11 +48,19 @@ export default function SellerDetailsPage() {
     loadSeller();
   }, [id]);
 
+  const { ask: askReason, dialog: reasonDialog } = useReasonDialog();
+
   async function updateStatus(status) {
+    const prompt = reasonPromptFor("seller", status, seller?.name);
+    let reason;
+    if (prompt) {
+      reason = await askReason(prompt);
+      if (reason === null) return;
+    }
     try {
       setWorking(true);
       setError("");
-      await api.patch(`/api/v1/admin/sellers/${id}/status`, { status });
+      await api.patch(`/api/v1/admin/sellers/${id}/status`, { status, reason });
       await loadSeller();
     } catch (err) {
       setError(err?.message || "Failed to update seller status");
@@ -144,6 +153,11 @@ export default function SellerDetailsPage() {
               >
                 {seller.status}
               </span>
+              {seller.moderation_note ? (
+                <p className="basis-full rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <span className="font-semibold">Message to seller:</span> {seller.moderation_note}
+                </p>
+              ) : null}
               <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
                 slug: {seller.slug}
               </span>
@@ -240,6 +254,7 @@ export default function SellerDetailsPage() {
           </div>
         </aside>
       </div>
+      {reasonDialog}
     </section>
   );
 }

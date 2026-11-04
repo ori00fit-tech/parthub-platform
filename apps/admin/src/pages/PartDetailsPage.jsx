@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../lib/api";
+import { reasonPromptFor, useReasonDialog } from "../components/ReasonDialog";
 import { formatMoney } from "@parthub/shared";
 
 function statusClasses(status) {
@@ -44,11 +45,19 @@ export default function PartDetailsPage() {
     loadPart();
   }, [id]);
 
+  const { ask: askReason, dialog: reasonDialog } = useReasonDialog();
+
   async function updateStatus(status) {
+    const prompt = reasonPromptFor("part", status, part?.title);
+    let reason;
+    if (prompt) {
+      reason = await askReason(prompt);
+      if (reason === null) return;
+    }
     try {
       setWorking(true);
       setError("");
-      await api.patch(`/api/v1/admin/parts/${id}/status`, { status });
+      await api.patch(`/api/v1/admin/parts/${id}/status`, { status, reason });
       await loadPart();
     } catch (err) {
       setError(err?.message || "Failed to update part status");
@@ -145,6 +154,11 @@ export default function PartDetailsPage() {
               >
                 {part.status}
               </span>
+              {part.moderation_note ? (
+                <p className="basis-full rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <span className="font-semibold">Message to seller:</span> {part.moderation_note}
+                </p>
+              ) : null}
               {part.condition ? (
                 <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
                   {part.condition}
@@ -263,6 +277,7 @@ export default function PartDetailsPage() {
           ) : null}
         </aside>
       </div>
+      {reasonDialog}
     </section>
   );
 }

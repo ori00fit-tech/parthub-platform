@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { useReadiness } from "../lib/readiness";
+import StoreChecklist, { StoreStatusBanner } from "../components/store/StoreChecklist";
 
 function statCards(stats) {
   return [
@@ -23,8 +25,18 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { readiness, loading: readinessLoading, error: readinessError, reload: reloadReadiness } = useReadiness();
+  const sellerId = readiness?.seller?.id ?? null;
 
+  // Stats need a store; load them once readiness has confirmed (and, if
+  // needed, refreshed the token for) the seller.
   useEffect(() => {
+    if (readinessLoading) return undefined;
+    if (!sellerId) {
+      setStats(null);
+      setLoading(false);
+      return undefined;
+    }
     let active = true;
 
     async function loadDashboard() {
@@ -46,7 +58,7 @@ export default function DashboardPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [readinessLoading, sellerId]);
 
   const cards = useMemo(() => statCards(stats), [stats]);
 
@@ -60,9 +72,6 @@ export default function DashboardPage() {
   const recentOrders =
     Array.isArray(stats?.recent_orders) ? stats.recent_orders.slice(0, 5) : [];
 
-  const storeStatus =
-    stats?.store_status ||
-    (stats?.store_ready ? "ready" : "incomplete");
 
   return (
     <section className="space-y-6">
@@ -96,6 +105,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <StoreStatusBanner readiness={readiness} />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
@@ -203,36 +214,16 @@ export default function DashboardPage() {
         </div>
 
         <div className="space-y-4">
+          <StoreChecklist
+            readiness={readiness}
+            loading={readinessLoading}
+            error={readinessError}
+            onRetry={reloadReadiness}
+          />
+
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Store readiness</h2>
-
-            <div className="mt-5 space-y-4">
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Store status</p>
-                <p className="mt-1 text-lg font-semibold text-gray-900">{storeStatus}</p>
-              </div>
-
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Low stock parts</p>
-                <p className="mt-1 text-lg font-semibold text-gray-900">{lowStockCount}</p>
-              </div>
-
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Seller email</p>
-                <p className="mt-1 text-sm font-semibold text-gray-900">
-                  {user?.email || "Not available"}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5">
-              <Link
-                to="/store-settings"
-                className="inline-flex h-11 items-center justify-center rounded-2xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-              >
-                Open store settings
-              </Link>
-            </div>
+            <p className="text-xs uppercase tracking-wide text-gray-400">Low stock parts</p>
+            <p className="mt-1 text-lg font-semibold text-gray-900">{lowStockCount}</p>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">

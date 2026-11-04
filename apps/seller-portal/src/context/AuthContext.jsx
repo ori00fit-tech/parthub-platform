@@ -24,13 +24,30 @@ export function AuthProvider({ children }) {
     setUser(res.data.user);
   }
 
+  // Seller sign-up: create the account as a seller, then sign in.
+  async function register({ name, email, phone, password }) {
+    await api.post("/api/v1/auth/register", { name, email, phone, password, role: "seller" });
+    await login(email, password);
+  }
+
+  // The API hands out a new token when the store is created (it carries the
+  // seller id). The API client reads the token from storage on every call.
+  function setSessionToken(token) {
+    if (!token) return;
+    try {
+      localStorage.setItem(SELLER_TOKEN_KEY, token);
+    } catch {
+      // ignore
+    }
+  }
+
   function logout() {
     localStorage.removeItem(SELLER_TOKEN_KEY);
     setUser(null);
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, loading, login, register, setSessionToken, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

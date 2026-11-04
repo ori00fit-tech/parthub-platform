@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS sellers (
   whatsapp    TEXT,
   location    TEXT,
   seller_type TEXT DEFAULT 'shop',          -- shop | breaker | importer (see migrations/0007)
+  moderation_note TEXT,                     -- why rejected/suspended (see migrations/0011)
   status      TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','active','suspended','rejected')),
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
@@ -97,6 +98,7 @@ CREATE TABLE IF NOT EXISTS parts (
   quantity       INTEGER NOT NULL DEFAULT 1,
   weight_kg      REAL,
   part_origin    TEXT DEFAULT 'aftermarket',  -- oem | aftermarket | used (see migrations/0008)
+  moderation_note TEXT,                      -- why rejected/archived (see migrations/0010)
   status         TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('draft','pending','active','rejected','archived')),
   featured       INTEGER NOT NULL DEFAULT 0,
   view_count     INTEGER NOT NULL DEFAULT 0,

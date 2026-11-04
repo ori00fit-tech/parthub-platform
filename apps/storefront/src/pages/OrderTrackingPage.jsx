@@ -56,7 +56,7 @@ export default function OrderTrackingPage() {
         <div className="grid gap-4 lg:grid-cols-3">
           <Link
             to={`/auth?redirect=/orders/${orderNumber}/tracking`}
-            className="rounded-3xl border border-navy/70 bg-navy/20 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="rounded-3xl border border-navy/20 bg-navy/[0.06] p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
             <p className="text-sm font-medium text-link">Recommended</p>
             <p className="mt-1 text-xl font-bold text-ink">Buyer sign in</p>
@@ -108,7 +108,7 @@ export default function OrderTrackingPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               to="/orders"
-              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/30"
+              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/[0.12]"
             >
               Back to orders
             </Link>
@@ -133,7 +133,7 @@ export default function OrderTrackingPage() {
                 </p>
               </div>
 
-              <span className="rounded-full bg-navy/20 px-4 py-2 text-sm font-semibold text-link">
+              <span className="rounded-full bg-navy/[0.06] px-4 py-2 text-sm font-semibold text-link">
                 {orderNumber || "Order number unavailable"}
               </span>
             </div>

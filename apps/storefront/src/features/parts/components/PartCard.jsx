@@ -31,7 +31,7 @@ export default function PartCard({ part }) {
             ? "bg-emerald-400/15 text-emerald-700"
             : part.condition === "used"
             ? "bg-amber-400/15 text-amber-700"
-            : "bg-navy/25 text-link"
+            : "bg-navy/10 text-link"
         }`}>
           {part.condition}
         </span>

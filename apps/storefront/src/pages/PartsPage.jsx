@@ -8,6 +8,7 @@ import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext"
 import GaragePanel from "../features/vehicles/GaragePanel";
 import VehicleContextBar from "../features/vehicles/VehicleContextBar";
 import SavedSearchesPanel, { saveSearchItem } from "../features/search/SavedSearchesPanel";
+import { conditionLabel, t, useT } from "../i18n";
 
 function normalizeList(payload, fallbackKey) {
   const list =
@@ -60,7 +61,7 @@ function normalizeMeta(meta, loadedCount = 0) {
 function buildSearchParamsFromState(filters) {
   const params = new URLSearchParams();
 
-  if (filters.q) params.set("search", filters.q);
+  if (filters.q) params.set("q", filters.q);
   if (filters.category) params.set("category", filters.category);
   if (filters.brand) params.set("brand", filters.brand);
   if (filters.condition) params.set("condition", filters.condition);
@@ -68,6 +69,7 @@ function buildSearchParamsFromState(filters) {
   if (filters.max_price) params.set("max_price", filters.max_price);
   if (filters.sort) params.set("sort", filters.sort);
   if (filters.page && String(filters.page) !== "1") params.set("page", String(filters.page));
+  if (filters.fit === "rank") params.set("fit", "rank");
 
   return params;
 }
@@ -93,6 +95,9 @@ function buildApiQuery(filters, vehicle) {
     params.set("year", String(vehicle.year));
   }
 
+  // With a vehicle: only parts that fit (default) or all parts, best fit first.
+  if (vehicle) params.set("fit", filters.fit === "rank" ? "rank" : "only");
+
   return params.toString();
 }
 
@@ -102,26 +107,26 @@ function buildEmptyStateHints({ q, hasVehicle, selectedVehicle, filters }) {
   const hints = [];
 
   if (q) {
-    hints.push(`Try a broader keyword than "${q}".`);
+    hints.push(t('Try a broader keyword than "{q}".', { q }));
   } else {
-    hints.push("Try searching by part name, SKU, or brand.");
+    hints.push(t("Try searching by part name, SKU, or brand."));
   }
 
   if (hasVehicle && selectedVehicle?.label) {
-    hints.push(`Your current vehicle filter is ${selectedVehicle.label}.`);
-    hints.push("Clear the vehicle context to see a wider catalog.");
+    hints.push(t("Your current vehicle filter is {vehicle}.", { vehicle: selectedVehicle.label }));
+    hints.push(t("Clear the vehicle context to see a wider catalog."));
   }
 
   if (filters?.category) {
-    hints.push("Try removing the category filter.");
+    hints.push(t("Try removing the category filter."));
   }
 
   if (filters?.brand) {
-    hints.push("Try removing the brand filter.");
+    hints.push(t("Try removing the brand filter."));
   }
 
   if (filters?.condition) {
-    hints.push("Try switching condition or removing it.");
+    hints.push(t("Try switching condition or removing it."));
   }
 
   return [...new Set(hints)].slice(0, 4);
@@ -132,38 +137,38 @@ function getRankingBadges(part, hasVehicle) {
 
   if (Number(part?.exact_vehicle_match || 0) === 1) {
     badges.push({
-      label: "Exact fit",
+      label: t("Exact fit"),
       className: "bg-emerald-400/10 text-emerald-700",
     });
   } else if (Number(part?.partial_vehicle_match || 0) === 1 && hasVehicle) {
     badges.push({
-      label: "Vehicle match",
+      label: t("Vehicle match"),
       className: "bg-emerald-400/10 text-emerald-700",
     });
   }
 
   if (Number(part?.compatibility_count || 0) >= 3) {
     badges.push({
-      label: "Strong compatibility",
-      className: "bg-navy/20 text-link",
+      label: t("Strong compatibility"),
+      className: "bg-navy/[0.06] text-link",
     });
   } else if (Number(part?.compatibility_count || 0) > 0) {
     badges.push({
-      label: "Compatibility added",
-      className: "bg-navy/20 text-link",
+      label: t("Compatibility added"),
+      className: "bg-navy/[0.06] text-link",
     });
   }
 
   if (Number(part?.featured || 0) === 1) {
     badges.push({
-      label: "Featured",
+      label: t("Featured"),
       className: "bg-amber-400/10 text-amber-700",
     });
   }
 
   if (Number(part?.quantity || 0) > 0 && Number(part?.quantity || 0) <= 2) {
     badges.push({
-      label: "Low stock",
+      label: t("Low stock"),
       className: "bg-red-400/10 text-red-700",
     });
   }
@@ -177,21 +182,21 @@ function getSellerBadges(part) {
 
   if (Number(part?.compatibility_count || 0) > 0) {
     badges.push({
-      label: "Fitment-ready seller",
-      className: "bg-navy/20 text-link",
+      label: t("Fitment-ready seller"),
+      className: "bg-navy/[0.06] text-link",
     });
   }
 
   if (Number(part?.quantity || 0) >= 5) {
     badges.push({
-      label: "Well stocked",
+      label: t("Well stocked"),
       className: "bg-emerald-400/10 text-emerald-700",
     });
   }
 
   if (Number(part?.featured || 0) === 1) {
     badges.push({
-      label: "Trusted seller",
+      label: t("Trusted seller"),
       className: "bg-amber-400/10 text-amber-700",
     });
   }
@@ -212,13 +217,13 @@ function getOriginBadge(part) {
 
   if (origin === "used") {
     return {
-      label: "Used",
+      label: t("Used"),
       className: "border border-amber-400/35 bg-canvas/80 text-amber-700",
     };
   }
 
   return {
-    label: "Aftermarket",
+    label: t("Aftermarket"),
     className: "border border-line-strong bg-canvas/80 text-ink-2",
   };
 }
@@ -229,6 +234,7 @@ function vehicleMatchesCard(part, vehicle) {
 }
 
 export default function PartsPage() {
+  const t = useT();
   const vehicleCtx = normalizeVehicleContext(useSelectedVehicle());
   const { selectedVehicle, hasVehicle, clearVehicle } = vehicleCtx;
   const { items: cartItems, addItem } = useCart();
@@ -244,6 +250,7 @@ export default function PartsPage() {
     max_price: searchParams.get("max_price") || "",
     sort: searchParams.get("sort") || "relevance",
     page: Number(searchParams.get("page") || 1),
+    fit: searchParams.get("fit") === "rank" ? "rank" : "only",
   });
 
   const [parts, setParts] = useState([]);
@@ -312,7 +319,7 @@ export default function PartsPage() {
         setError("");
 
         const query = buildApiQuery(filters, selectedVehicle);
-        const response = await apiGet(`/api/v1/catalog/parts?${query}`);
+        const response = await apiGet(`/api/v1/search?${query}`);
 
         if (!active) return;
 
@@ -321,7 +328,7 @@ export default function PartsPage() {
         setMeta(normalizeMeta(response?.meta, nextParts.length));
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load parts");
+        setError(err?.message || t("Failed to load parts"));
       } finally {
         if (active) setLoading(false);
       }
@@ -350,7 +357,7 @@ export default function PartsPage() {
           condition: filters.condition,
         },
       }),
-    [filters.q, filters.category, filters.brand, filters.condition, hasVehicle, selectedVehicle]
+    [filters.q, filters.category, filters.brand, filters.condition, hasVehicle, selectedVehicle, t]
   );
 
   const exactMatchesCount = useMemo(
@@ -432,6 +439,7 @@ export default function PartsPage() {
       max_price: "",
       sort: "relevance",
       page: 1,
+      fit: "only",
     });
   }
 
@@ -447,7 +455,7 @@ export default function PartsPage() {
 
     saveSearchItem({
       query,
-      label: filters.q ? `Search: ${filters.q}` : "Filtered marketplace search",
+      label: filters.q ? t("Search: {q}", { q: filters.q }) : t("Filtered marketplace search"),
       vehicleLabel: vehicleLabel || "",
       createdAt: new Date().toISOString(),
     });
@@ -473,36 +481,38 @@ export default function PartsPage() {
   }
 
   const resultsLabel = loading
-    ? "Loading parts..."
-    : `${meta.total} result${meta.total === 1 ? "" : "s"} found`;
+    ? t("Loading parts...")
+    : meta.total === 1
+      ? t("1 result found")
+      : t("{n} results found", { n: meta.total });
 
   const FilterPanel = (
     <div className="space-y-5">
       <div>
         <label className="mb-1.5 block text-sm font-medium text-ink-2">
-          Search
+          {t("Search")}
         </label>
         <input
           value={filters.q}
           onChange={setField("q")}
-          placeholder="Search by title, SKU, keyword..."
+          placeholder={t("Search by title, SKU, keyword...")}
           className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
         />
       </div>
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-ink-2">
-          Category
+          {t("Category")}
         </label>
         <select
           value={filters.category}
           onChange={setField("category")}
           className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
         >
-          <option value="">All categories</option>
+          <option value="">{t("All categories")}</option>
           {categories.map((item) => (
             <option key={item.id || item.slug} value={item.slug}>
-              {item.name}
+              {t(item.name)}
             </option>
           ))}
         </select>
@@ -510,14 +520,14 @@ export default function PartsPage() {
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-ink-2">
-          Brand
+          {t("Brand")}
         </label>
         <select
           value={filters.brand}
           onChange={setField("brand")}
           className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
         >
-          <option value="">All brands</option>
+          <option value="">{t("All brands")}</option>
           {brands.map((item) => (
             <option key={item.id || item.slug} value={item.slug}>
               {item.name}
@@ -528,24 +538,24 @@ export default function PartsPage() {
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-ink-2">
-          Condition
+          {t("Condition")}
         </label>
         <select
           value={filters.condition}
           onChange={setField("condition")}
           className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
         >
-          <option value="">All conditions</option>
-          <option value="new">New</option>
-          <option value="used">Used</option>
-          <option value="refurbished">Refurbished</option>
+          <option value="">{t("All conditions")}</option>
+          <option value="new">{t("New")}</option>
+          <option value="used">{t("Used")}</option>
+          <option value="refurbished">{t("Refurbished")}</option>
         </select>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="mb-1.5 block text-sm font-medium text-ink-2">
-            Min price
+            {t("Min price")}
           </label>
           <input
             value={filters.min_price}
@@ -558,7 +568,7 @@ export default function PartsPage() {
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-ink-2">
-            Max price
+            {t("Max price")}
           </label>
           <input
             value={filters.max_price}
@@ -572,17 +582,17 @@ export default function PartsPage() {
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-ink-2">
-          Sort
+          {t("Sort")}
         </label>
         <select
           value={filters.sort}
           onChange={setField("sort")}
           className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
         >
-          <option value="relevance">Relevance</option>
-          <option value="newest">Newest</option>
-          <option value="price_asc">Price: Low to high</option>
-          <option value="price_desc">Price: High to low</option>
+          <option value="relevance">{t("Relevance")}</option>
+          <option value="newest">{t("Newest")}</option>
+          <option value="price_asc">{t("Price: Low to high")}</option>
+          <option value="price_desc">{t("Price: High to low")}</option>
         </select>
       </div>
 
@@ -592,7 +602,7 @@ export default function PartsPage() {
           onClick={clearAllFilters}
           className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
         >
-          Clear filters
+          {t("Clear filters")}
         </button>
 
         {hasVehicle ? (
@@ -601,7 +611,7 @@ export default function PartsPage() {
             onClick={clearVehicle}
             className="inline-flex h-11 items-center justify-center rounded-2xl border border-red-400/30 bg-red-400/10 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-400/20"
           >
-            Clear vehicle
+            {t("Clear vehicle")}
           </button>
         ) : null}
       </div>
@@ -614,32 +624,32 @@ export default function PartsPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Vehicle-aware parts search
+              {t("Vehicle-aware parts search")}
             </div>
 
             <h1 className="text-3xl font-bold sm:text-5xl">
-              Find the right part faster
+              {t("Find the right part faster")}
             </h1>
 
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Search listings by keyword, brand, category, and your selected vehicle context.
+              {t("Search listings by keyword, brand, category, and your selected vehicle context.")}
             </p>
 
             {hasVehicle ? (
               <div className="mt-5 inline-flex flex-wrap items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white">
-                <span className="font-semibold">Selected vehicle:</span>
+                <span className="font-semibold">{t("Selected vehicle:")}</span>
                 <span>{vehicleLabel}</span>
                 <button
                   type="button"
                   onClick={clearVehicle}
                   className="rounded-xl bg-white/15 px-3 py-1 font-semibold text-white transition hover:bg-white/20"
                 >
-                  Clear
+                  {t("Clear")}
                 </button>
               </div>
             ) : (
               <div className="mt-5 inline-flex rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-blue-100">
-                No vehicle selected. Search still works, but ranking is stronger with a vehicle selected.
+                {t("No vehicle selected. Search still works, but ranking is stronger with a vehicle selected.")}
               </div>
             )}
           </div>
@@ -648,17 +658,17 @@ export default function PartsPage() {
             <button
               type="button"
               onClick={() => setMobileFiltersOpen(true)}
-              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/30 xl:hidden"
+              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/[0.12] xl:hidden"
             >
-              Filters
+              {t("Filters")}
             </button>
 
             <button
               type="button"
               onClick={handleSaveSearch}
-              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/30"
+              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/[0.12]"
             >
-              Save search
+              {t("Save search")}
             </button>
 
             <button
@@ -666,7 +676,7 @@ export default function PartsPage() {
               onClick={clearAllFilters}
               className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
             >
-              Reset search
+              {t("Reset search")}
             </button>
           </div>
         </div>
@@ -678,14 +688,14 @@ export default function PartsPage() {
         <aside className="hidden space-y-6 xl:block">
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
             <div className="mb-5">
-              <h2 className="text-xl font-bold text-ink">Filters</h2>
+              <h2 className="text-xl font-bold text-ink">{t("Filters")}</h2>
               <p className="mt-1 text-sm text-muted">
-                Refine results for faster matching.
+                {t("Refine results for faster matching.")}
               </p>
             </div>
 
             {loadingMeta ? (
-              <div className="text-sm text-muted">Loading filters...</div>
+              <div className="text-sm text-muted">{t("Loading filters...")}</div>
             ) : (
               FilterPanel
             )}
@@ -702,18 +712,33 @@ export default function PartsPage() {
                 <p className="text-lg font-bold text-ink">{resultsLabel}</p>
                 <p className="mt-1 text-sm text-muted">
                   {hasVehicle
-                    ? `${exactMatchesCount} exact match${exactMatchesCount === 1 ? "" : "es"} for ${vehicleLabel}`
-                    : "Showing broader marketplace results"}
+                    ? t(exactMatchesCount === 1 ? "1 exact match for {vehicle}" : "{n} exact matches for {vehicle}", { n: exactMatchesCount, vehicle: vehicleLabel })
+                    : t("Showing broader marketplace results")}
                 </p>
+                {hasVehicle ? (
+                  <label className="mt-3 inline-flex cursor-pointer select-none items-center gap-2.5 text-sm font-semibold text-ink-2">
+                    <input
+                      type="checkbox"
+                      className="peer sr-only"
+                      checked={filters.fit !== "rank"}
+                      onChange={(e) => setFilters((prev) => ({ ...prev, fit: e.target.checked ? "only" : "rank", page: 1 }))}
+                    />
+                    <span
+                      aria-hidden="true"
+                      className="relative h-6 w-11 flex-none rounded-full bg-line-strong transition peer-checked:bg-navy peer-focus-visible:ring-2 peer-focus-visible:ring-link peer-focus-visible:ring-offset-2 after:absolute after:start-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5 rtl:peer-checked:after:-translate-x-5"
+                    />
+                    {t("Only parts that fit my {vehicle}", { vehicle: vehicleLabel })}
+                  </label>
+                ) : null}
               </div>
 
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={handleSaveSearch}
-                  className="rounded-full bg-navy/20 px-3 py-1 text-xs font-semibold text-link transition hover:bg-navy/30"
+                  className="rounded-full bg-navy/[0.06] px-3 py-1 text-xs font-semibold text-link transition hover:bg-navy/[0.12]"
                 >
-                  Save this search
+                  {t("Save this search")}
                 </button>
                 {filters.q ? (
                   <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-ink-2">
@@ -735,7 +760,7 @@ export default function PartsPage() {
 
                 {hasVehicle ? (
                   <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-700">
-                    Vehicle-aware
+                    {t("Vehicle-aware")}
                   </span>
                 ) : null}
               </div>
@@ -745,14 +770,14 @@ export default function PartsPage() {
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                    Exact matches
+                    {t("Exact matches")}
                   </p>
                   <p className="mt-1 text-2xl font-bold text-emerald-800">{exactMatchesCount}</p>
                 </div>
 
-                <div className="rounded-2xl border border-navy/70 bg-navy/20 px-4 py-3">
+                <div className="rounded-2xl border border-navy/20 bg-navy/[0.06] px-4 py-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-link">
-                    Broader fitment candidates
+                    {t("Broader fitment candidates")}
                   </p>
                   <p className="mt-1 text-2xl font-bold text-link">{partialMatchesCount}</p>
                 </div>
@@ -761,8 +786,8 @@ export default function PartsPage() {
           </div>
 
           {!hasVehicle ? (
-            <div className="rounded-3xl border border-navy/70 bg-navy/20 px-4 py-3 text-sm text-link shadow-sm">
-              Select your vehicle to unlock exact fitment ranking and stronger part matching.
+            <div className="rounded-3xl border border-navy/20 bg-navy/[0.06] px-4 py-3 text-sm text-link shadow-sm">
+              {t("Select your vehicle to unlock exact fitment ranking and stronger part matching.")}
             </div>
           ) : null}
 
@@ -771,12 +796,12 @@ export default function PartsPage() {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
                   <div className="mb-2 inline-flex rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-700">
-                    Top result
+                    {t("Top result")}
                   </div>
                   <h3 className="truncate text-xl font-bold text-ink">{topMatch.title}</h3>
                   <p className="mt-1 text-sm text-muted">
-                    {topMatch.brand_name || "Brand unavailable"}
-                    {topMatch.category_name ? ` • ${topMatch.category_name}` : ""}
+                    {topMatch.brand_name || t("Brand unavailable")}
+                    {topMatch.category_name ? ` • ${t(topMatch.category_name)}` : ""}
                     {hasVehicle && Number(topMatch?.exact_vehicle_match || 0) === 1
                       ? " • Exact fit for your vehicle"
                       : ""}
@@ -805,7 +830,7 @@ export default function PartsPage() {
                     to={`/parts/${topMatch.slug}`}
                     className="inline-flex h-12 items-center justify-center rounded-2xl bg-navy px-5 text-sm font-semibold text-white transition hover:bg-navy-deep"
                   >
-                    View best match
+                    {t("View best match")}
                   </Link>
 
                   <button
@@ -813,7 +838,7 @@ export default function PartsPage() {
                     onClick={() => toggleShortlist(topMatch)}
                     className="inline-flex h-12 items-center justify-center rounded-2xl border border-line bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
                   >
-                    {shortlistIds.includes(topMatch.id) ? "Remove from shortlist" : "Add to shortlist"}
+                    {shortlistIds.includes(topMatch.id) ? t("Remove from shortlist") : t("Add to shortlist")}
                   </button>
                 </div>
               </div>
@@ -847,14 +872,14 @@ export default function PartsPage() {
               <div className="max-w-2xl">
                 <h3 className="text-xl font-bold text-ink">
                   {hasVehicle
-                    ? "No exact matches found for your selected vehicle"
-                    : "No parts found"}
+                    ? t("No exact matches found for your selected vehicle")
+                    : t("No parts found")}
                 </h3>
 
                 <p className="mt-2 text-sm text-muted">
                   {hasVehicle
-                    ? "No listings matched your current vehicle and filter combination."
-                    : "No listings matched your current search and filter combination."}
+                    ? t("No listings matched your current vehicle and filter combination.")
+                    : t("No listings matched your current search and filter combination.")}
                 </p>
 
                 <div className="mt-5 space-y-3">
@@ -869,19 +894,28 @@ export default function PartsPage() {
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-3">
+                  {hasVehicle && filters.fit !== "rank" ? (
+                    <button
+                      type="button"
+                      onClick={() => setFilters((prev) => ({ ...prev, fit: "rank", page: 1 }))}
+                      className="inline-flex h-11 items-center justify-center rounded-2xl bg-navy px-5 text-sm font-semibold text-white transition hover:bg-navy-deep"
+                    >
+                      {t("Show all parts, best fit first")}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={clearAllFilters}
                     className="inline-flex h-11 items-center justify-center rounded-2xl bg-navy px-5 text-sm font-semibold text-white transition hover:bg-navy-deep"
                   >
-                    Reset search filters
+                    {t("Reset search filters")}
                   </button>
 
                   <Link
                     to={`/request-part${searchParams.get("q") ? `?part=${encodeURIComponent(searchParams.get("q"))}` : ""}`}
-                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-navy/70 bg-navy/20 px-5 text-sm font-semibold text-link transition hover:bg-navy/30"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-navy/20 bg-navy/[0.06] px-5 text-sm font-semibold text-link transition hover:bg-navy/[0.12]"
                   >
-                    Can't find it? Request this part
+                    {t("Can't find it? Request this part")}
                   </Link>
 
                   {hasVehicle ? (
@@ -890,7 +924,7 @@ export default function PartsPage() {
                       onClick={clearVehicle}
                       className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
                     >
-                      Clear vehicle filter
+                      {t("Clear vehicle filter")}
                     </button>
                   ) : null}
 
@@ -898,7 +932,7 @@ export default function PartsPage() {
                     to="/parts"
                     className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
                   >
-                    Browse all parts
+                    {t("Browse all parts")}
                   </Link>
                 </div>
               </div>
@@ -940,17 +974,17 @@ export default function PartsPage() {
                           </svg>
                         )}
 
-                        <div className="absolute left-2.5 top-2.5 flex flex-wrap gap-1.5">
+                        <div className="absolute start-2.5 top-2.5 flex flex-wrap gap-1.5">
                           <span className={["rounded px-2 py-1 text-[10.5px] font-semibold uppercase tracking-[0.1em]", origin.className].join(" ")}>
                             {origin.label}
                           </span>
                           <span className="rounded border border-line-strong bg-canvas/80 px-2 py-1 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-ink-2">
-                            {part.condition}
+                            {conditionLabel(part.condition)}
                           </span>
                         </div>
 
                         {part.sku ? (
-                          <span className="absolute bottom-2 right-2.5 font-mono text-[10.5px] tracking-[0.06em] text-faint">
+                          <span className="absolute bottom-2 end-2.5 font-mono text-[10.5px] tracking-[0.06em] text-faint">
                             {part.sku}
                           </span>
                         ) : null}
@@ -959,24 +993,24 @@ export default function PartsPage() {
                       <div className="flex flex-1 flex-col gap-3 p-3.5">
                         <div className="flex items-center justify-between gap-2 text-xs text-muted">
                           <span className="truncate font-semibold uppercase tracking-[0.08em] text-navy">
-                            {part.brand_name || "Unbranded"}
+                            {part.brand_name || t("Unbranded")}
                           </span>
-                          {part.category_name ? <span className="truncate">{part.category_name}</span> : null}
+                          {part.category_name ? <span className="truncate">{t(part.category_name)}</span> : null}
                         </div>
 
                         <h3 className="line-clamp-2 font-sans text-[15.5px] font-semibold leading-snug text-ink">{part.title}</h3>
 
                         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5 rounded-lg border border-line bg-surface-2 px-2.5 py-2 text-xs">
-                          <dt className="self-center text-[10.5px] uppercase tracking-[0.06em] text-muted">SKU</dt>
+                          <dt className="self-center text-[10.5px] uppercase tracking-[0.06em] text-muted">{t("SKU")}</dt>
                           <dd className="break-all font-mono text-ink">{part.sku || "—"}</dd>
-                          <dt className="self-center text-[10.5px] uppercase tracking-[0.06em] text-muted">Seller</dt>
+                          <dt className="self-center text-[10.5px] uppercase tracking-[0.06em] text-muted">{t("Seller")}</dt>
                           <dd className="relative z-10 min-w-0 truncate">
                             {part.seller_slug ? (
                               <Link to={`/sellers/${part.seller_slug}`} className="font-semibold text-link hover:underline">
-                                {part.seller_name || "Unknown seller"}
+                                {part.seller_name || t("Unknown seller")}
                               </Link>
                             ) : (
-                              <span className="text-ink-2">{part.seller_name || "Unknown seller"}</span>
+                              <span className="text-ink-2">{part.seller_name || t("Unknown seller")}</span>
                             )}
                             {part.seller_location ? <span className="text-faint"> · {part.seller_location}</span> : null}
                           </dd>
@@ -993,20 +1027,24 @@ export default function PartsPage() {
                                 : "border-emerald-400/25 bg-emerald-400/10 text-emerald-700",
                             ].join(" ")}
                           >
-                            {!inStock ? "Out of stock" : lowStock ? `Low stock · ${part.quantity} left` : `In stock · ${part.quantity}`}
+                            {!inStock ? t("Out of stock") : lowStock ? t("Low stock · {n} left", { n: part.quantity }) : t("In stock · {n}", { n: part.quantity })}
                           </span>
 
                           {exactMatched ? (
                             <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 text-xs font-medium text-emerald-700 before:h-1.5 before:w-1.5 before:rounded-full before:bg-current">
-                              Fits your vehicle
+                              {t("Fits your vehicle")}
+                            </span>
+                          ) : hasVehicle && Number(part?.partial_vehicle_match || 0) === 1 ? (
+                            <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 text-xs font-medium text-amber-800 before:h-1.5 before:w-1.5 before:rounded-full before:bg-current">
+                              {t("Same model, check the year")}
                             </span>
                           ) : compatibilityCount > 0 ? (
                             <span className="inline-flex h-6 items-center rounded-full border border-line bg-white/[0.03] px-2.5 text-xs font-medium text-muted">
-                              Fits {compatibilityCount} vehicle setup{compatibilityCount === 1 ? "" : "s"}
+                              {compatibilityCount === 1 ? t("Fits 1 vehicle setup") : t("Fits {n} vehicle setups", { n: compatibilityCount })}
                             </span>
                           ) : (
                             <span className="inline-flex h-6 items-center rounded-full border border-line bg-white/[0.03] px-2.5 text-xs font-medium text-faint">
-                              No fitment data yet
+                              {t("No fitment data yet")}
                             </span>
                           )}
 
@@ -1035,12 +1073,12 @@ export default function PartsPage() {
                               type="button"
                               onClick={() => toggleShortlist(part)}
                               aria-pressed={shortlistIds.includes(part.id)}
-                              aria-label={shortlistIds.includes(part.id) ? "Remove from shortlist" : "Add to shortlist"}
-                              title={shortlistIds.includes(part.id) ? "Shortlisted" : "Shortlist"}
+                              aria-label={shortlistIds.includes(part.id) ? t("Remove from shortlist") : t("Add to shortlist")}
+                              title={shortlistIds.includes(part.id) ? t("Shortlisted") : t("Shortlist")}
                               className={[
                                 "flex h-[42px] w-[42px] items-center justify-center rounded-xl border transition",
                                 shortlistIds.includes(part.id)
-                                  ? "border-navy bg-navy/30 text-white"
+                                  ? "border-navy bg-navy text-white"
                                   : "border-line-strong text-muted hover:border-muted hover:text-ink",
                               ].join(" ")}
                             >
@@ -1066,7 +1104,7 @@ export default function PartsPage() {
                               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
                                 <path d="M12 5v14M5 12h14" />
                               </svg>
-                              {inStock ? (inCart ? "Add more" : "Add to Cart") : "Sold out"}
+                              {inStock ? (inCart ? t("Add more") : t("Add to Cart")) : t("Sold out")}
                             </button>
                           </div>
                         </div>
@@ -1084,7 +1122,7 @@ export default function PartsPage() {
                     onClick={() => goToPage(meta.page - 1)}
                     className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-surface-3 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Previous
+                    {t("Previous")}
                   </button>
 
                   <span className="text-sm font-medium text-ink-2">
@@ -1097,7 +1135,7 @@ export default function PartsPage() {
                     onClick={() => goToPage(meta.page + 1)}
                     className="inline-flex h-11 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-surface-3 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Next
+                    {t("Next")}
                   </button>
                 </div>
               ) : null}
@@ -1111,10 +1149,10 @@ export default function PartsPage() {
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wide text-faint">
-                Shortlist
+                {t("Shortlist")}
               </p>
               <p className="truncate text-sm font-semibold text-ink">
-                {shortlist.length} saved part{shortlist.length === 1 ? "" : "s"}
+                {shortlist.length === 1 ? t("1 saved part") : t("{n} saved parts", { n: shortlist.length })}
               </p>
             </div>
 
@@ -1123,7 +1161,7 @@ export default function PartsPage() {
                 to="/compare"
                 className="inline-flex h-10 items-center justify-center rounded-2xl bg-navy px-4 text-xs font-semibold text-white transition hover:bg-navy-deep"
               >
-                Compare
+                {t("Compare")}
               </Link>
 
               {shortlist.slice(-2).map((item) => (
@@ -1132,7 +1170,7 @@ export default function PartsPage() {
                   to={`/parts/${item.slug}`}
                   className="inline-flex h-10 items-center justify-center rounded-2xl border border-line bg-surface px-3 text-xs font-semibold text-ink-2 transition hover:bg-surface-3"
                 >
-                  View
+                  {t("View")}
                 </Link>
               ))}
             </div>
@@ -1145,8 +1183,8 @@ export default function PartsPage() {
           <div className="mx-auto flex h-full max-w-lg flex-col rounded-[28px] bg-surface shadow-2xl">
             <div className="flex items-center justify-between border-b border-line px-5 py-4">
               <div>
-                <h2 className="text-lg font-bold text-ink">Filters</h2>
-                <p className="text-xs text-muted">Refine marketplace results</p>
+                <h2 className="text-lg font-bold text-ink">{t("Filters")}</h2>
+                <p className="text-xs text-muted">{t("Refine marketplace results")}</p>
               </div>
 
               <button
@@ -1154,13 +1192,13 @@ export default function PartsPage() {
                 onClick={() => setMobileFiltersOpen(false)}
                 className="inline-flex h-10 items-center justify-center rounded-2xl border border-line px-4 text-sm font-semibold text-ink-2"
               >
-                Close
+                {t("Close")}
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-5">
               {loadingMeta ? (
-                <div className="text-sm text-muted">Loading filters...</div>
+                <div className="text-sm text-muted">{t("Loading filters...")}</div>
               ) : (
                 FilterPanel
               )}

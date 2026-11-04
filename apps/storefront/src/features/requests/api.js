@@ -18,7 +18,7 @@ export function requestStatus(request) {
   }
   if (request.status === "closed") return { label: "Closed", className: "bg-surface-2 text-muted" };
   if (Number(request.is_expired)) return { label: "Expired", className: "bg-amber-400/10 text-amber-700" };
-  return { label: "Open", className: "bg-navy/20 text-link" };
+  return { label: "Open", className: "bg-navy/[0.06] text-link" };
 }
 
 export const CONDITION_LABELS = {

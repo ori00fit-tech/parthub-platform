@@ -7,6 +7,8 @@ import { useSelectedVehicle } from "../../features/vehicles/SelectedVehicleConte
 import { formatPrice } from "../../lib/formatters";
 import BrandMark, { Wordmark } from "../brand/BrandMark";
 import Footer from "./Footer";
+import { useT } from "../../i18n";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 function getVehicleLabel(vehicle) {
   if (!vehicle) return "";
@@ -70,6 +72,7 @@ function Icon({ name, className = "h-5 w-5" }) {
 }
 
 export default function MainLayout() {
+  const t = useT();
   const location = useLocation();
   const navigate = useNavigate();
   const { totalItems, subtotal, openCart } = useCart();
@@ -112,14 +115,15 @@ export default function MainLayout() {
       <div className="border-b border-line bg-[#0B1222] text-[12.5px] text-muted">
         <div className="mx-auto flex min-h-[34px] max-w-[1380px] flex-wrap items-center gap-x-5 gap-y-1 px-4 py-1.5 lg:px-6">
           <span>
-            <strong className="font-semibold text-white">Vehicle-checked parts</strong> from verified sellers
+            <strong className="font-semibold text-white">{t("Vehicle-checked parts")}</strong> {t("from verified sellers")}
           </span>
-          <span className="hidden sm:inline">Compare listings · Seller trust badges</span>
-          <span className="hidden md:inline">Can't find it? Sellers reply to part requests</span>
+          <span className="hidden sm:inline">{t("Compare listings · Seller trust badges")}</span>
+          <span className="hidden md:inline">{t("Can't find it? Sellers reply to part requests")}</span>
           <span className="flex-1" />
           <Link to="/orders" className="hidden hover:text-ink sm:inline">
-            Track order
+            {t("Track order")}
           </Link>
+          <LanguageSwitcher />
         </div>
       </div>
 
@@ -128,12 +132,12 @@ export default function MainLayout() {
         style={{ top: "env(safe-area-inset-top, 0px)" }}
       >
         <div className="mx-auto grid max-w-[1380px] grid-cols-[auto_1fr] items-center gap-x-4 gap-y-3 px-4 py-3 md:grid-cols-[auto_1fr_auto] lg:gap-x-6 lg:px-6">
-          <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label="PartHub home">
+          <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label={t("PartHub home")}>
             <BrandMark className="h-10 w-10" />
             <span className="min-w-0">
               <Wordmark />
               <span className="mt-0.5 hidden font-mono text-[10px] uppercase tracking-[0.14em] text-[#A9BBF5] sm:block">
-                OEM · aftermarket · used
+                {t("OEM · aftermarket · used")}
               </span>
             </span>
           </Link>
@@ -144,17 +148,17 @@ export default function MainLayout() {
             className="order-3 col-span-2 flex min-w-0 overflow-hidden rounded-xl border border-white/15 bg-navy-night focus-within:border-link md:order-none md:col-span-1"
           >
             <label htmlFor="header-search" className="sr-only">
-              Search parts
+              {t("Search parts")}
             </label>
             <input
               id="header-search"
               type="search"
               value={headerQuery}
               onChange={(e) => setHeaderQuery(e.target.value)}
-              placeholder="Part name, SKU or OEM number…"
+              placeholder={t("Part name, SKU or OEM number…")}
               className="h-11 min-w-0 flex-1 bg-transparent px-4 text-sm text-white outline-none placeholder:text-[#8FA2CF]"
             />
-            <button type="submit" aria-label="Search" className="flex w-12 items-center justify-center text-navy-ink transition hover:bg-white/5">
+            <button type="submit" aria-label={t("Search")} className="flex w-12 items-center justify-center text-navy-ink transition hover:bg-white/5">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <circle cx="11" cy="11" r="7" />
                 <path d="m20 20-3.5-3.5" />
@@ -165,12 +169,12 @@ export default function MainLayout() {
           <div className="flex items-center justify-end gap-1.5 text-white">
             <Link
               to="/vehicle-selector"
-              className="hidden max-w-[220px] items-center gap-2 rounded-lg px-3 py-1.5 text-left transition hover:bg-white/10 xl:flex"
+              className="hidden max-w-[220px] items-center gap-2 rounded-lg px-3 py-1.5 text-start transition hover:bg-white/10 xl:flex"
             >
               <Icon name="garage" className="h-6 w-6 flex-none" />
               <span className="min-w-0">
-                <small className="block text-[11px] leading-tight text-[#A9BBF5]">{vehicleLabel ? "Your vehicle" : "No vehicle"}</small>
-                <b className="block truncate text-[13.5px] leading-tight">{vehicleLabel || "Select vehicle"}</b>
+                <small className="block text-[11px] leading-tight text-[#A9BBF5]">{vehicleLabel ? t("Your vehicle") : t("No vehicle")}</small>
+                <b className="block truncate text-[13.5px] leading-tight">{vehicleLabel || t("Select vehicle")}</b>
               </span>
             </Link>
 
@@ -178,7 +182,7 @@ export default function MainLayout() {
               to="/request-part"
               className="hidden rounded-lg border border-white/20 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/10 lg:inline-flex"
             >
-              Request a part
+              {t("Request a part")}
             </Link>
 
             <Link
@@ -190,34 +194,34 @@ export default function MainLayout() {
                 <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
               </svg>
               <span className="hidden sm:block">
-                <small className="block text-[11px] leading-tight text-[#A9BBF5]">{isAuthenticated ? "Signed in" : "Hello, sign in"}</small>
-                <b className="block text-[13.5px] leading-tight">Account</b>
+                <small className="block text-[11px] leading-tight text-[#A9BBF5]">{isAuthenticated ? t("Signed in") : t("Hello, sign in")}</small>
+                <b className="block text-[13.5px] leading-tight">{t("Account")}</b>
               </span>
             </Link>
 
             <button
               type="button"
               onClick={openCart}
-              aria-label={`Open cart, ${totalItems} ${totalItems === 1 ? "item" : "items"}`}
-              className="relative flex items-center gap-2.5 rounded-lg border border-white/15 bg-black/20 py-1.5 pl-2 pr-3 transition hover:bg-black/30"
+              aria-label={totalItems === 1 ? t("Open cart, 1 item") : t("Open cart, {n} items", { n: totalItems })}
+              className="relative flex items-center gap-2.5 rounded-lg border border-white/15 bg-black/20 py-1.5 ps-2 pe-3 transition hover:bg-black/30"
             >
               <Icon name="cart" className="h-[26px] w-[26px]" />
               <span
                 key={totalItems}
-                className="absolute -top-1.5 left-6 h-5 min-w-[20px] animate-[cartbump_.35s_ease] rounded-full bg-white px-1.5 text-center font-mono text-[11.5px] font-bold leading-5 text-navy-deep shadow-[0_0_0_2px_#172F7E]"
+                className="absolute -top-1.5 start-6 h-5 min-w-[20px] animate-[cartbump_.35s_ease] rounded-full bg-white px-1.5 text-center font-mono text-[11.5px] font-bold leading-5 text-navy-deep shadow-[0_0_0_2px_#172F7E]"
                 aria-hidden="true"
               >
                 {totalItems}
               </span>
-              <span className="hidden text-left sm:block">
-                <small className="block text-[11px] leading-tight text-[#A9BBF5]">Cart</small>
+              <span className="hidden text-start sm:block">
+                <small className="block text-[11px] leading-tight text-[#A9BBF5]">{t("Cart")}</small>
                 <b className="block font-mono text-[13.5px] leading-tight">{formatPrice(subtotal)}</b>
               </span>
             </button>
           </div>
         </div>
 
-        <nav aria-label="Categories" className="hidden border-t border-white/10 lg:block">
+        <nav aria-label={t("Categories")} className="hidden border-t border-white/10 lg:block">
           <div className="mx-auto flex max-w-[1380px] items-center gap-1 overflow-x-auto px-4 lg:px-6">
             {categoryLinks.map((item) => (
               <Link
@@ -226,7 +230,7 @@ export default function MainLayout() {
                 aria-current={location.pathname + location.search === item.to ? "page" : undefined}
                 className={categoryNavClass(location.pathname + location.search === item.to)}
               >
-                {item.label}
+                {t(item.label)}
               </Link>
             ))}
           </div>
@@ -240,7 +244,7 @@ export default function MainLayout() {
       <Footer />
 
       <nav
-        aria-label="Quick navigation"
+        aria-label={t("Quick navigation")}
         className="sticky bottom-0 z-30 border-t border-line bg-surface/95 shadow-[0_-6px_18px_-12px_rgba(15,23,42,.25)] backdrop-blur md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
@@ -253,15 +257,15 @@ export default function MainLayout() {
             return (
               <Link key={item.to} to={item.to} className={mobileNavItemClass(active)}>
                 <Icon name={item.icon} />
-                <span className="mt-0.5">{item.label}</span>
+                <span className="mt-0.5">{t(item.label)}</span>
               </Link>
             );
           })}
           <button type="button" onClick={openCart} className={`${mobileNavItemClass(false)} relative`}>
             <Icon name="cart" />
-            <span className="mt-0.5">Cart</span>
+            <span className="mt-0.5">{t("Cart")}</span>
             {totalItems > 0 ? (
-              <span className="absolute right-3 top-1 h-4 min-w-[18px] rounded-full bg-navy px-1 text-center font-mono text-[10px] font-bold leading-4 text-white">
+              <span className="absolute end-3 top-1 h-4 min-w-[18px] rounded-full bg-navy px-1 text-center font-mono text-[10px] font-bold leading-4 text-white">
                 {totalItems}
               </span>
             ) : null}

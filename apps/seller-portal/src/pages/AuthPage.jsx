@@ -11,13 +11,20 @@ export default function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const redirectTo = useMemo(() => getRedirectPath(location), [location]);
-  const { login, loading, isAuthenticated, user } = useAuth();
+  const { login, register, loading, isAuthenticated, user } = useAuth();
 
+  const [mode, setMode] = useState(() =>
+    new URLSearchParams(location.search).get("mode") === "signup" ? "signup" : "signin"
+  );
   const [form, setForm] = useState({
+    name: "",
+    phone: "",
     email: "",
     password: "",
   });
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const isSignup = mode === "signup";
 
   function setField(key) {
     return (e) => {
@@ -31,15 +38,37 @@ export default function AuthPage() {
     setError("");
 
     if (!form.email.trim() || !form.password.trim()) {
-      setError("Please enter your seller email and password.");
+      setError("Please enter your email and password.");
+      return;
+    }
+    if (isSignup && !form.name.trim()) {
+      setError("Please enter your name.");
+      return;
+    }
+    if (isSignup && form.password.length < 8) {
+      setError("Use at least 8 characters for your password.");
       return;
     }
 
     try {
-      await login(form.email.trim(), form.password);
-      navigate(redirectTo);
+      setSubmitting(true);
+      if (isSignup) {
+        await register({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim() || undefined,
+          password: form.password,
+        });
+        // New sellers go straight to creating their store.
+        navigate("/store-settings?welcome=1");
+      } else {
+        await login(form.email.trim(), form.password);
+        navigate(redirectTo);
+      }
     } catch (err) {
-      setError(err?.message || "Seller sign-in failed.");
+      setError(err?.message || (isSignup ? "Could not create your account." : "Seller sign-in failed."));
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -102,9 +131,11 @@ export default function AuthPage() {
           <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
             Seller auth foundation
           </div>
-          <h1 className="text-3xl font-bold sm:text-5xl">Sign in to seller portal</h1>
+          <h1 className="text-3xl font-bold sm:text-5xl">{isSignup ? "Sell your parts on PartHub" : "Sign in to seller portal"}</h1>
           <p className="mt-3 text-sm text-blue-100 sm:text-base">
-            Access your dashboard, inventory, orders, media tools, and store settings.
+            {isSignup
+              ? "Create a free seller account, set up your store in a few minutes, and start answering buyer requests."
+              : "Access your dashboard, inventory, orders, media tools, and store settings."}
           </p>
         </div>
       </div>
@@ -122,9 +153,34 @@ export default function AuthPage() {
         </div>
 
         <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
-          <h2 className="text-2xl font-bold text-gray-900">Seller sign in</h2>
+          <div className="grid grid-cols-2 gap-1 rounded-2xl bg-gray-100 p-1" role="tablist">
+            {[
+              ["signin", "Sign in"],
+              ["signup", "Create seller account"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={mode === value}
+                onClick={() => {
+                  setMode(value);
+                  setError("");
+                }}
+                className={[
+                  "h-10 rounded-xl text-sm font-semibold transition",
+                  mode === value ? "bg-white text-blue-700 shadow-sm" : "text-gray-600 hover:text-gray-900",
+                ].join(" ")}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <h2 className="mt-6 text-2xl font-bold text-gray-900">{isSignup ? "Create your seller account" : "Seller sign in"}</h2>
           <p className="mt-2 text-sm text-gray-500">
-            Use your seller account credentials to continue.
+            {isSignup
+              ? "Next you'll set up your store. PartHub reviews new stores before their parts go live."
+              : "Use your seller account credentials to continue."}
           </p>
 
           {error ? (
@@ -134,6 +190,37 @@ export default function AuthPage() {
           ) : null}
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            {isSignup ? (
+              <>
+                <div>
+                  <label htmlFor="signup-name" className="mb-1.5 block text-sm font-medium text-gray-700">
+                    Your name
+                  </label>
+                  <input
+                    id="signup-name"
+                    value={form.name}
+                    onChange={setField("name")}
+                    autoComplete="name"
+                    placeholder="Youssef Benali"
+                    className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="signup-phone" className="mb-1.5 block text-sm font-medium text-gray-700">
+                    Phone (optional)
+                  </label>
+                  <input
+                    id="signup-phone"
+                    value={form.phone}
+                    onChange={setField("phone")}
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="06 12 34 56 78"
+                    className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+                  />
+                </div>
+              </>
+            ) : null}
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 Email
@@ -162,10 +249,10 @@ export default function AuthPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || submitting}
               className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
             >
-              {loading ? "Signing in..." : "Sign in"}
+              {submitting ? (isSignup ? "Creating account…" : "Signing in…") : isSignup ? "Create account" : "Sign in"}
             </button>
           </form>
         </div>

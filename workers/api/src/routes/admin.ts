@@ -51,14 +51,80 @@ adminRoutes.get("/sellers", async (c) => {
   return paginated(c, sellers, { page, limit, total });
 });
 
-// PATCH /api/v1/admin/sellers/:id/status
+// GET /api/v1/admin/sellers/:id — store, owner contact and their parts.
+adminRoutes.get("/sellers/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  if (!Number.isInteger(id) || id <= 0) return fail(c, "Invalid seller id");
+  const seller = await dbFirst<Record<string, unknown>>(
+    c.env.DB,
+    `SELECT s.*, u.name AS user_name, u.email AS user_email, u.phone AS user_phone
+     FROM sellers s JOIN users u ON u.id = s.user_id WHERE s.id = ?`,
+    [id]
+  );
+  if (!seller) return fail(c, "Seller not found", 404);
+  const parts = await dbAll(
+    c.env.DB,
+    "SELECT id, slug, title, price, status, quantity, moderation_note FROM parts WHERE seller_id = ? ORDER BY created_at DESC LIMIT 100",
+    [id]
+  );
+  return ok(c, { ...seller, parts });
+});
+
+// GET /api/v1/admin/parts/:id — listing with seller, photos, fitment and specs.
+adminRoutes.get("/parts/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  if (!Number.isInteger(id) || id <= 0) return fail(c, "Invalid part id");
+  const part = await dbFirst<Record<string, unknown>>(
+    c.env.DB,
+    `SELECT p.*, s.name AS seller_name, s.slug AS seller_slug, s.status AS seller_status,
+            b.name AS brand_name, c.name AS category_name
+     FROM parts p
+     JOIN sellers s ON s.id = p.seller_id
+     LEFT JOIN brands b ON b.id = p.brand_id
+     LEFT JOIN categories c ON c.id = p.category_id
+     WHERE p.id = ?`,
+    [id]
+  );
+  if (!part) return fail(c, "Part not found", 404);
+  const [images, compatibility, specs] = await Promise.all([
+    dbAll(c.env.DB, "SELECT id, url, alt_text, is_featured, sort_order FROM part_images WHERE part_id = ? ORDER BY is_featured DESC, sort_order, id", [id]),
+    dbAll(c.env.DB, "SELECT id, make, model, year_start, year_end, engine, trim, notes FROM part_compatibility WHERE part_id = ? ORDER BY make, model, year_start", [id]),
+    dbAll(c.env.DB, "SELECT * FROM part_specs WHERE part_id = ?", [id]),
+  ]);
+  return ok(c, { ...part, images, compatibility, specs });
+});
+
+// Sellers see the reason, so negative decisions must explain what to fix.
+const MIN_REASON = 10;
+const MAX_REASON = 500;
+
+function readReason(body: { reason?: unknown }): string {
+  return typeof body.reason === "string" ? body.reason.trim().slice(0, MAX_REASON) : "";
+}
+
+// PATCH /api/v1/admin/sellers/:id/status  { status, reason? }
+// reason is required for "rejected" and "suspended"; approving clears it.
 adminRoutes.patch("/sellers/:id/status", async (c) => {
-  const id = c.req.param("id");
-  const { status } = await c.req.json<{ status: string }>();
+  const id = Number(c.req.param("id"));
+  const body = await c.req.json<{ status: string; reason?: string }>().catch(() => ({ status: "", reason: "" }));
+  const { status } = body;
   const allowed = ["active", "suspended", "rejected"];
   if (!allowed.includes(status)) return fail(c, "Invalid status");
-  await dbRun(c.env.DB, "UPDATE sellers SET status = ? WHERE id = ?", [status, id]);
-  return ok(c, { message: `Seller ${status}` });
+
+  const reason = readReason(body);
+  if ((status === "rejected" || status === "suspended") && reason.length < MIN_REASON) {
+    return fail(c, `Explain the decision to the seller (at least ${MIN_REASON} characters)`);
+  }
+
+  const seller = await dbFirst(c.env.DB, "SELECT id FROM sellers WHERE id = ?", [id]);
+  if (!seller) return fail(c, "Seller not found", 404);
+
+  await dbRun(
+    c.env.DB,
+    "UPDATE sellers SET status = ?, moderation_note = ?, updated_at = datetime('now') WHERE id = ?",
+    [status, status === "active" ? null : reason, id]
+  );
+  return ok(c, { message: `Seller ${status}`, status, moderation_note: status === "active" ? null : reason });
 });
 
 // GET /api/v1/admin/parts
@@ -78,14 +144,30 @@ adminRoutes.get("/parts", async (c) => {
   return paginated(c, parts, { page, limit, total });
 });
 
-// PATCH /api/v1/admin/parts/:id/status
+// PATCH /api/v1/admin/parts/:id/status  { status, reason? }
+// reason is required for "rejected", optional for "archived"; approving clears it.
 adminRoutes.patch("/parts/:id/status", async (c) => {
-  const id = c.req.param("id");
-  const { status } = await c.req.json<{ status: string }>();
+  const id = Number(c.req.param("id"));
+  const body = await c.req.json<{ status: string; reason?: string }>().catch(() => ({ status: "", reason: "" }));
+  const { status } = body;
   const allowed = ["active", "rejected", "archived"];
   if (!allowed.includes(status)) return fail(c, "Invalid status");
-  await dbRun(c.env.DB, "UPDATE parts SET status = ? WHERE id = ?", [status, id]);
-  return ok(c, { message: `Part ${status}` });
+
+  const reason = readReason(body);
+  if (status === "rejected" && reason.length < MIN_REASON) {
+    return fail(c, `Explain what the seller should fix (at least ${MIN_REASON} characters)`);
+  }
+
+  const part = await dbFirst(c.env.DB, "SELECT id FROM parts WHERE id = ?", [id]);
+  if (!part) return fail(c, "Part not found", 404);
+
+  const note = status === "active" ? null : reason || null;
+  await dbRun(
+    c.env.DB,
+    "UPDATE parts SET status = ?, moderation_note = ?, updated_at = datetime('now') WHERE id = ?",
+    [status, note, id]
+  );
+  return ok(c, { message: `Part ${status}`, status, moderation_note: note });
 });
 
 // GET /api/v1/admin/orders

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useT } from "../../i18n";
 
 const STORAGE_KEY = "parthub_saved_searches";
 
@@ -32,6 +33,7 @@ export function saveSearchItem(item) {
 }
 
 export default function SavedSearchesPanel({ onLoadSearch }) {
+  const t = useT();
   const items = readSavedSearches();
 
   function removeItem(query) {
@@ -43,13 +45,13 @@ export default function SavedSearchesPanel({ onLoadSearch }) {
   if (items.length === 0) {
     return (
       <section className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
-        <h2 className="text-xl font-bold text-ink">Saved searches</h2>
+        <h2 className="text-xl font-bold text-ink">{t("Saved searches")}</h2>
         <p className="mt-1 text-sm text-muted">
-          Save important searches and return to them quickly.
+          {t("Save important searches and return to them quickly.")}
         </p>
 
         <div className="mt-5 rounded-2xl border border-dashed border-line-strong bg-surface-2 p-4 text-sm text-muted">
-          No saved searches yet.
+          {t("No saved searches yet.")}
         </div>
       </section>
     );
@@ -57,9 +59,9 @@ export default function SavedSearchesPanel({ onLoadSearch }) {
 
   return (
     <section className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
-      <h2 className="text-xl font-bold text-ink">Saved searches</h2>
+      <h2 className="text-xl font-bold text-ink">{t("Saved searches")}</h2>
       <p className="mt-1 text-sm text-muted">
-        Re-open saved buyer intent in one click.
+        {t("Re-open saved buyer intent in one click.")}
       </p>
 
       <div className="mt-5 space-y-3">
@@ -69,12 +71,12 @@ export default function SavedSearchesPanel({ onLoadSearch }) {
             className="rounded-2xl border border-line bg-surface-2 p-4"
           >
             <p className="font-semibold text-ink">
-              {item.label || item.query || "Saved search"}
+              {item.label || item.query || t("Saved search")}
             </p>
 
             <p className="mt-1 text-xs text-muted">
               {item.vehicleLabel ? `${item.vehicleLabel} • ` : ""}
-              {item.query || "No keyword"}
+              {item.query || t("No keyword")}
             </p>
 
             <div className="mt-3 flex flex-wrap gap-2">
@@ -83,14 +85,14 @@ export default function SavedSearchesPanel({ onLoadSearch }) {
                 onClick={() => onLoadSearch(item)}
                 className="inline-flex h-10 items-center justify-center rounded-2xl bg-navy px-4 text-sm font-semibold text-white transition hover:bg-navy-deep"
               >
-                Open
+                {t("Open")}
               </button>
 
               <Link
                 to={`/parts?${item.query}`}
                 className="inline-flex h-10 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
               >
-                Open in page
+                {t("Open in page")}
               </Link>
 
               <button
@@ -98,7 +100,7 @@ export default function SavedSearchesPanel({ onLoadSearch }) {
                 onClick={() => removeItem(item.query)}
                 className="inline-flex h-10 items-center justify-center rounded-2xl border border-red-400/30 bg-red-400/10 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-400/20"
               >
-                Remove
+                {t("Remove")}
               </button>
             </div>
           </div>

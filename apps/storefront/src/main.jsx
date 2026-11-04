@@ -6,9 +6,11 @@ import "./styles/globals.css";
 import { SelectedVehicleProvider } from "./features/vehicles/SelectedVehicleContext";
 import { CartProvider } from "./features/cart/CartContext";
 import { AuthProvider } from "./features/auth/AuthContext";
+import { I18nProvider } from "./i18n";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
+    <I18nProvider>
     <BrowserRouter>
       <AuthProvider>
         <SelectedVehicleProvider>
@@ -18,5 +20,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         </SelectedVehicleProvider>
       </AuthProvider>
     </BrowserRouter>
+    </I18nProvider>
   </React.StrictMode>
 );

@@ -272,7 +272,7 @@ export default function RequestPartPage() {
                         className={[
                           "h-11 rounded-xl border text-sm font-semibold transition",
                           form.condition_pref === value
-                            ? "border-sky-400 bg-navy/20 text-link"
+                            ? "border-sky-400 bg-navy/[0.06] text-link"
                             : "border-line text-muted hover:bg-surface-3",
                         ].join(" ")}
                       >

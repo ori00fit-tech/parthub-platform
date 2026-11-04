@@ -68,6 +68,12 @@ jobs:
       - name: 0009 Morocco layer defaults and indexes
         run: npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0009_morocco_layer_backfill.sql"
 
+      - name: 0010 parts.moderation_note (add column if missing)
+        run: ../../.github/scripts/d1-apply-add-column.sh "$MIGRATIONS/0010_parts_moderation_note.sql"
+
+      - name: 0011 sellers.moderation_note (add column if missing)
+        run: ../../.github/scripts/d1-apply-add-column.sh "$MIGRATIONS/0011_sellers_moderation_note.sql"
+
       # Read query: fails while the daily read limit is exceeded, which
       # doesn't mean the migrations failed.
       - name: Verify
@@ -79,4 +85,6 @@ jobs:
                (SELECT CASE WHEN instr(sql, 'images') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='part_requests') AS images_column,
                (SELECT CASE WHEN instr(sql, 'seller_type') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='sellers') AS seller_type_column,
                (SELECT CASE WHEN instr(sql, 'part_origin') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='parts') AS part_origin_column,
+               (SELECT CASE WHEN instr(sql, 'moderation_note') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='parts') AS parts_note_column,
+               (SELECT CASE WHEN instr(sql, 'moderation_note') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='sellers') AS sellers_note_column,
                (SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name IN ('idx_part_images_part','idx_compat_part_id','idx_parts_seller_id','idx_parts_status')) AS key_indexes_of_4"
