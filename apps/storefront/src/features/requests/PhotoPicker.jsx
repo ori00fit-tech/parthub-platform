@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { uploadRequestImage } from "../../lib/media";
+import { useT } from "../../i18n";
 
 export const MAX_REQUEST_PHOTOS = 3;
 
@@ -8,6 +9,7 @@ let nextId = 1;
 // Lets the buyer add up to 3 photos. Each photo uploads as soon as it's picked
 // (compressed in the browser first); the parent receives the uploaded URLs.
 export default function PhotoPicker({ onChange, onUploadingChange }) {
+  const t = useT();
   const inputRef = useRef(null);
   const [items, setItems] = useState([]); // { id, preview, url, status, error }
   const [error, setError] = useState("");
@@ -36,14 +38,14 @@ export default function PhotoPicker({ onChange, onUploadingChange }) {
     const room = MAX_REQUEST_PHOTOS - items.length;
     const files = Array.from(fileList || []).filter((f) => f.type.startsWith("image/"));
     if (!files.length) return;
-    if (files.length > room) setError(`You can add up to ${MAX_REQUEST_PHOTOS} photos.`);
+    if (files.length > room) setError(t("You can add up to {n} photos.", { n: MAX_REQUEST_PHOTOS }));
 
     for (const file of files.slice(0, room)) {
       const id = nextId++;
       setItems((prev) => [...prev, { id, preview: URL.createObjectURL(file), url: "", status: "uploading", error: "" }]);
       uploadRequestImage(file)
         .then((data) => update(id, { url: data.url, status: "done" }))
-        .catch((err) => update(id, { status: "error", error: err.message || "Upload failed" }));
+        .catch((err) => update(id, { status: "error", error: err.message || t("Upload failed") }));
     }
   }
 
@@ -58,7 +60,7 @@ export default function PhotoPicker({ onChange, onUploadingChange }) {
 
   return (
     <div>
-      <span className="mb-1.5 block text-sm font-semibold text-ink-2">Photos</span>
+      <span className="mb-1.5 block text-sm font-semibold text-ink-2">{t("Photos")}</span>
       <div className="grid grid-cols-3 gap-3">
         {items.map((item) => (
           <div
@@ -75,7 +77,7 @@ export default function PhotoPicker({ onChange, onUploadingChange }) {
             )}
             {item.status === "uploading" ? (
               <div className="absolute inset-0 flex items-center justify-center bg-surface/70 text-xs font-semibold text-ink-2">
-                Uploading…
+                {t("Uploading…")}
               </div>
             ) : null}
             {item.status === "error" ? (
@@ -86,8 +88,8 @@ export default function PhotoPicker({ onChange, onUploadingChange }) {
             <button
               type="button"
               onClick={() => remove(item.id)}
-              aria-label="Remove photo"
-              className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-slate-950/70 text-sm font-bold text-white transition hover:bg-slate-950"
+              aria-label={t("Remove photo")}
+              className="absolute end-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-slate-950/70 text-sm font-bold text-white transition hover:bg-slate-950"
             >
               ×
             </button>
@@ -101,7 +103,7 @@ export default function PhotoPicker({ onChange, onUploadingChange }) {
             className="flex aspect-square flex-col items-center justify-center rounded-xl border-2 border-dashed border-line-strong text-muted transition hover:border-sky-400 hover:bg-navy/[0.12] hover:text-blue-800"
           >
             <span className="text-2xl">📷</span>
-            <span className="mt-1 text-xs font-semibold">Add photo</span>
+            <span className="mt-1 text-xs font-semibold">{t("Add photo")}</span>
           </button>
         ) : null}
       </div>
@@ -119,7 +121,7 @@ export default function PhotoPicker({ onChange, onUploadingChange }) {
       />
 
       <span className="mt-1 block text-xs text-muted">
-        {error || "Optional · up to 3 photos of the old part, its label or where it fits."}
+        {error || t("Optional · up to 3 photos of the old part, its label or where it fits.")}
       </span>
     </div>
   );

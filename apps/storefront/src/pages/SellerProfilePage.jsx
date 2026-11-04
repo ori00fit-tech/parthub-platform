@@ -2,26 +2,27 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiGet } from "../lib/api";
 import { formatPrice } from "../lib/formatters";
+import { t, useT } from "../i18n";
 
 function getSellerBadges(seller) {
   const badges = [];
 
   if (Number(seller?.fitment_ready_parts_count || 0) > 0) {
     badges.push({
-      label: "Fitment-ready seller",
+      label: t("Fitment-ready seller"),
       className: "bg-navy/[0.06] text-link",
     });
   }
 
   if (Number(seller?.active_parts_count || 0) >= 5) {
     badges.push({
-      label: "Well stocked",
+      label: t("Well stocked"),
       className: "bg-emerald-400/10 text-emerald-700",
     });
   }
 
   badges.push({
-    label: "Active seller",
+    label: t("Active seller"),
     className: "bg-amber-400/10 text-amber-700",
   });
 
@@ -33,26 +34,26 @@ function getPartBadges(part) {
 
   if (Number(part?.compatibility_count || 0) >= 3) {
     badges.push({
-      label: "Strong compatibility",
+      label: t("Strong compatibility"),
       className: "bg-navy/[0.06] text-link",
     });
   } else if (Number(part?.compatibility_count || 0) > 0) {
     badges.push({
-      label: "Compatibility added",
+      label: t("Compatibility added"),
       className: "bg-navy/[0.06] text-link",
     });
   }
 
   if (Number(part?.featured || 0) === 1) {
     badges.push({
-      label: "Featured",
+      label: t("Featured"),
       className: "bg-amber-400/10 text-amber-700",
     });
   }
 
   if (Number(part?.quantity || 0) >= 5) {
     badges.push({
-      label: "In stock",
+      label: t("In stock"),
       className: "bg-emerald-400/10 text-emerald-700",
     });
   }
@@ -64,20 +65,21 @@ function getPartBadges(part) {
 function getSellerTypeLabel(sellerType) {
   const value = String(sellerType || "").toLowerCase();
 
-  if (value === "breaker") return "Breaker";
-  if (value === "importer") return "Importer";
-  return "Parts Shop";
+  if (value === "breaker") return t("Breaker");
+  if (value === "importer") return t("Importer");
+  return t("Parts Shop");
 }
 
 function getPartOriginLabel(partOrigin) {
   const value = String(partOrigin || "").toLowerCase();
 
-  if (value === "oem") return "OEM Genuine";
-  if (value === "used") return "Used Part";
-  return "Aftermarket";
+  if (value === "oem") return t("OEM Genuine");
+  if (value === "used") return t("Used Part");
+  return t("Aftermarket");
 }
 
 export default function SellerProfilePage() {
+  const t = useT();
   const { slug } = useParams();
   const [seller, setSeller] = useState(null);
   const [parts, setParts] = useState([]);
@@ -100,7 +102,7 @@ export default function SellerProfilePage() {
         setParts(Array.isArray(nextSeller?.parts) ? nextSeller.parts : []);
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load seller profile");
+        setError(err?.message || t("Failed to load seller profile"));
       } finally {
         if (active) setLoading(false);
       }
@@ -121,7 +123,7 @@ export default function SellerProfilePage() {
   if (loading) {
     return (
       <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-        Loading seller profile...
+        {t("Loading seller profile...")}
       </div>
     );
   }
@@ -129,7 +131,7 @@ export default function SellerProfilePage() {
   if (error || !seller) {
     return (
       <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-6 text-red-700 shadow-sm">
-        {error || "Seller not found"}
+        {error || t("Seller not found")}
       </div>
     );
   }
@@ -140,13 +142,13 @@ export default function SellerProfilePage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Seller profile
+              {t("Seller profile")}
             </div>
 
             <h1 className="text-3xl font-bold sm:text-5xl">{seller.name}</h1>
 
             <p className="mt-3 text-sm text-indigo-100 sm:text-base">
-              Browse this seller’s active inventory and trust signals before purchase.
+              {t("Browse this seller’s active inventory and trust signals before purchase.")}
             </p>
 
             <div className="mt-5 flex flex-wrap gap-2">
@@ -165,7 +167,7 @@ export default function SellerProfilePage() {
           </div>
 
           <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-4 text-sm text-white">
-            {Number(seller.active_parts_count || 0)} active part{Number(seller.active_parts_count || 0) === 1 ? "" : "s"}
+            {Number(seller.active_parts_count || 0) === 1 ? t("1 active part") : t("{n} active parts", { n: Number(seller.active_parts_count || 0) })}
           </div>
         </div>
       </div>
@@ -173,51 +175,51 @@ export default function SellerProfilePage() {
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-6">
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-ink">About this seller</h2>
+            <h2 className="text-2xl font-bold text-ink">{t("About this seller")}</h2>
 
             <div className="mt-5 space-y-4 text-sm text-muted">
               <p>
-                <span className="font-semibold text-ink">Seller type:</span>{" "}
+                <span className="font-semibold text-ink">{t("Seller type:")}</span>{" "}
                 {getSellerTypeLabel(seller.seller_type)}
               </p>
 
               <p>
-                <span className="font-semibold text-ink">Location:</span>{" "}
-                {seller.location || "Not specified"}
+                <span className="font-semibold text-ink">{t("Location:")}</span>{" "}
+                {seller.location || t("Not specified")}
               </p>
 
               {seller.phone ? (
                 <p>
-                  <span className="font-semibold text-ink">Phone:</span>{" "}
+                  <span className="font-semibold text-ink">{t("Phone:")}</span>{" "}
                   {seller.phone}
                 </p>
               ) : null}
 
               <p>
-                <span className="font-semibold text-ink">Active listings:</span>{" "}
+                <span className="font-semibold text-ink">{t("Active listings:")}</span>{" "}
                 {seller.active_parts_count || 0}
               </p>
 
               <p>
-                <span className="font-semibold text-ink">Fitment-ready listings:</span>{" "}
+                <span className="font-semibold text-ink">{t("Fitment-ready listings:")}</span>{" "}
                 {seller.fitment_ready_parts_count || 0}
               </p>
             </div>
 
             <div className="mt-5 rounded-2xl bg-surface-2 p-4">
-              <p className="text-sm font-semibold text-ink">Seller description</p>
+              <p className="text-sm font-semibold text-ink">{t("Seller description")}</p>
               <p className="mt-2 text-sm leading-6 text-muted">
-                {seller.description || "No seller description available yet."}
+                {seller.description || t("No seller description available yet.")}
               </p>
             </div>
           </div>
 
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-ink">Why this seller may be trusted</h2>
+            <h2 className="text-2xl font-bold text-ink">{t("Why this seller may be trusted")}</h2>
             <div className="mt-4 space-y-3 text-sm text-muted">
-              <p>• Active inventory indicates this seller is currently participating in the marketplace.</p>
-              <p>• Fitment-ready listings usually reduce buyer hesitation and improve part matching.</p>
-              <p>• Stock visibility and structured compatibility are stronger trust signals than title alone.</p>
+              <p>{t("• Active inventory indicates this seller is currently participating in the marketplace.")}</p>
+              <p>{t("• Fitment-ready listings usually reduce buyer hesitation and improve part matching.")}</p>
+              <p>{t("• Stock visibility and structured compatibility are stronger trust signals than title alone.")}</p>
             </div>
           </div>
         </div>
@@ -225,16 +227,16 @@ export default function SellerProfilePage() {
         <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-bold text-ink">Seller inventory</h2>
+              <h2 className="text-2xl font-bold text-ink">{t("Seller inventory")}</h2>
               <p className="mt-1 text-sm text-muted">
-                Active marketplace listings from this seller.
+                {t("Active marketplace listings from this seller.")}
               </p>
             </div>
           </div>
 
           {parts.length === 0 ? (
             <div className="mt-5 rounded-2xl border border-dashed border-line-strong bg-surface-2 p-5 text-sm text-muted">
-              No active parts found for this seller.
+              {t("No active parts found for this seller.")}
             </div>
           ) : (
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -253,7 +255,7 @@ export default function SellerProfilePage() {
                       />
                     ) : (
                       <div className="flex h-44 items-center justify-center text-sm text-faint">
-                        No image
+                        {t("No image")}
                       </div>
                     )}
                   </div>
@@ -264,8 +266,8 @@ export default function SellerProfilePage() {
                         {part.title}
                       </h3>
                       <p className="mt-1 text-sm text-muted">
-                        {part.brand_name || "Brand unavailable"}
-                        {part.category_name ? ` • ${part.category_name}` : ""}
+                        {part.brand_name || t("Brand unavailable")}
+                        {part.category_name ? ` • ${t(part.category_name)}` : ""}
                       </p>
                     </div>
 
@@ -299,14 +301,14 @@ export default function SellerProfilePage() {
                         ) : null}
                       </div>
 
-                      <div className="text-right text-xs text-muted">
-                        <p>{Number(part.quantity || 0) > 0 ? `${part.quantity} in stock` : "Out of stock"}</p>
+                      <div className="text-end text-xs text-muted">
+                        <p>{Number(part.quantity || 0) > 0 ? t("{n} in stock", { n: part.quantity }) : t("Out of stock")}</p>
                       </div>
                     </div>
 
                     <div className="border-t border-line pt-3">
                       <span className="text-sm font-semibold text-link">
-                        View part
+                        {t("View part")}
                       </span>
                     </div>
                   </div>

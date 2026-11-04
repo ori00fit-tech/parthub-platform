@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiGet } from "../lib/api";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
+import { useT } from "../i18n";
 
 export default function VehicleSelectorPage() {
+  const t = useT();
   const {
     selectedVehicle,
     setSelectedVehicle,
@@ -53,7 +55,7 @@ export default function VehicleSelectorPage() {
         setMakes(Array.isArray(res?.data) ? res.data : []);
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load vehicle makes");
+        setError(err?.message || t("Failed to load vehicle makes"));
       } finally {
         if (active) setLoadingMakes(false);
       }
@@ -94,7 +96,7 @@ export default function VehicleSelectorPage() {
         }
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load vehicle models");
+        setError(err?.message || t("Failed to load vehicle models"));
       } finally {
         if (active) setLoadingModels(false);
       }
@@ -131,7 +133,7 @@ export default function VehicleSelectorPage() {
         }
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load vehicle years");
+        setError(err?.message || t("Failed to load vehicle years"));
       } finally {
         if (active) setLoadingYears(false);
       }
@@ -164,7 +166,7 @@ export default function VehicleSelectorPage() {
 
   function handleSave() {
     if (!selectedMake || !selectedModel || !selectedYear) {
-      setError("Please choose make, model, and year.");
+      setError(t("Please choose make, model, and year."));
       return;
     }
 
@@ -197,27 +199,27 @@ export default function VehicleSelectorPage() {
       <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
         <div className="max-w-3xl">
           <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-            Vehicle Selector PRO MAX
+            {t("Vehicle Selector PRO MAX")}
           </div>
 
           <h1 className="text-3xl font-bold sm:text-5xl">
-            Choose your vehicle first
+            {t("Choose your vehicle first")}
           </h1>
 
           <p className="mt-3 text-sm text-blue-100 sm:text-base">
-            Select make, model, and year to browse parts faster and improve fitment accuracy.
+            {t("Select make, model, and year to browse parts faster and improve fitment accuracy.")}
           </p>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm">
-            ✔ 30 makes
+            {t("✔ 30 makes")}
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm">
-            ✔ 150 models
+            {t("✔ 150 models")}
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm">
-            ✔ 3300 year entries
+            {t("✔ 3300 year entries")}
           </div>
         </div>
       </div>
@@ -230,7 +232,7 @@ export default function VehicleSelectorPage() {
 
       {saved ? (
         <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 p-5 text-emerald-700 shadow-sm">
-          Vehicle saved successfully.
+          {t("Vehicle saved successfully.")}
         </div>
       ) : null}
 
@@ -238,15 +240,15 @@ export default function VehicleSelectorPage() {
         <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
           <div className="space-y-5">
             <div>
-              <h2 className="text-2xl font-bold text-ink">Select your vehicle</h2>
+              <h2 className="text-2xl font-bold text-ink">{t("Select your vehicle")}</h2>
               <p className="text-sm text-muted">
-                Start with the make, then model, then year.
+                {t("Start with the make, then model, then year.")}
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               <label className="space-y-2">
-                <span className="text-sm font-medium text-ink-2">Make</span>
+                <span className="text-sm font-medium text-ink-2">{t("Make")}</span>
                 <select
                   value={selectedMake}
                   onChange={handleMakeChange}
@@ -254,7 +256,7 @@ export default function VehicleSelectorPage() {
                   className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none"
                 >
                   <option value="">
-                    {loadingMakes ? "Loading makes..." : "Select make"}
+                    {loadingMakes ? t("Loading makes...") : t("Select make")}
                   </option>
                   {makes.map((make) => (
                     <option key={make.id || make.slug} value={make.slug}>
@@ -265,7 +267,7 @@ export default function VehicleSelectorPage() {
               </label>
 
               <label className="space-y-2">
-                <span className="text-sm font-medium text-ink-2">Model</span>
+                <span className="text-sm font-medium text-ink-2">{t("Model")}</span>
                 <select
                   value={selectedModel}
                   onChange={handleModelChange}
@@ -274,10 +276,10 @@ export default function VehicleSelectorPage() {
                 >
                   <option value="">
                     {!selectedMake
-                      ? "Choose make first"
+                      ? t("Choose make first")
                       : loadingModels
-                        ? "Loading models..."
-                        : "Select model"}
+                        ? t("Loading models...")
+                        : t("Select model")}
                   </option>
                   {models.map((model) => (
                     <option key={model.id || model.slug} value={model.slug}>
@@ -288,7 +290,7 @@ export default function VehicleSelectorPage() {
               </label>
 
               <label className="space-y-2">
-                <span className="text-sm font-medium text-ink-2">Year</span>
+                <span className="text-sm font-medium text-ink-2">{t("Year")}</span>
                 <select
                   value={selectedYear}
                   onChange={handleYearChange}
@@ -297,10 +299,10 @@ export default function VehicleSelectorPage() {
                 >
                   <option value="">
                     {!selectedModel
-                      ? "Choose model first"
+                      ? t("Choose model first")
                       : loadingYears
-                        ? "Loading years..."
-                        : "Select year"}
+                        ? t("Loading years...")
+                        : t("Select year")}
                   </option>
                   {years.map((item) => (
                     <option key={item.id || item.year} value={item.year}>
@@ -317,14 +319,14 @@ export default function VehicleSelectorPage() {
                 onClick={handleSave}
                 className="btn-cta rounded-2xl px-5 py-3 text-sm"
               >
-                Save vehicle
+                {t("Save vehicle")}
               </button>
 
               <Link
                 to="/parts"
                 className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
               >
-                Browse parts
+                {t("Browse parts")}
               </Link>
 
               <button
@@ -332,7 +334,7 @@ export default function VehicleSelectorPage() {
                 onClick={handleClearVehicle}
                 className="rounded-2xl border border-red-400/30 bg-red-400/10 px-5 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-400/20"
               >
-                Clear vehicle
+                {t("Clear vehicle")}
               </button>
             </div>
           </div>
@@ -340,25 +342,25 @@ export default function VehicleSelectorPage() {
 
         <div className="space-y-4">
           <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-ink">Current selection</h2>
+            <h2 className="text-lg font-bold text-ink">{t("Current selection")}</h2>
 
             <div className="mt-4 space-y-3">
               <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">Make</p>
+                <p className="text-xs uppercase tracking-wide text-faint">{t("Make")}</p>
                 <p className="mt-1 font-semibold text-ink">
                   {selectedMakeName || selectedVehicle?.make_name || "-"}
                 </p>
               </div>
 
               <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">Model</p>
+                <p className="text-xs uppercase tracking-wide text-faint">{t("Model")}</p>
                 <p className="mt-1 font-semibold text-ink">
                   {selectedModelName || selectedVehicle?.model_name || "-"}
                 </p>
               </div>
 
               <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">Year</p>
+                <p className="text-xs uppercase tracking-wide text-faint">{t("Year")}</p>
                 <p className="mt-1 font-semibold text-ink">
                   {selectedYear || selectedVehicle?.year || "-"}
                 </p>
@@ -367,12 +369,12 @@ export default function VehicleSelectorPage() {
           </div>
 
           <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-ink">Why this matters</h2>
+            <h2 className="text-lg font-bold text-ink">{t("Why this matters")}</h2>
             <div className="mt-3 space-y-2 text-sm text-muted">
-              <p>✔ Faster catalog browsing</p>
-              <p>✔ Better fitment workflows</p>
-              <p>✔ Stronger vehicle-specific search foundation</p>
-              <p>✔ Ready for VIN / plate lookup later</p>
+              <p>{t("✔ Faster catalog browsing")}</p>
+              <p>{t("✔ Better fitment workflows")}</p>
+              <p>{t("✔ Stronger vehicle-specific search foundation")}</p>
+              <p>{t("✔ Ready for VIN / plate lookup later")}</p>
             </div>
           </div>
         </div>
