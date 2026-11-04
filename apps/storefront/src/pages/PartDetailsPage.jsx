@@ -154,9 +154,9 @@ function detectFitmentStatus(compatibility, selectedVehicle) {
 function toneClasses(tone) {
   switch (tone) {
     case "positive":
-      return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
+      return "border-emerald-400/30 bg-emerald-400/10 text-emerald-700";
     case "warning":
-      return "border-amber-400/30 bg-amber-400/10 text-amber-200";
+      return "border-amber-400/30 bg-amber-400/10 text-amber-800";
     default:
       return "border-navy/70 bg-navy/20 text-link";
   }
@@ -294,7 +294,7 @@ export default function PartDetailsPage() {
 
   if (error || !part) {
     return (
-      <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-6 text-red-300 shadow-sm">
+      <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-6 text-red-700 shadow-sm">
         {error || "Part not found"}
       </div>
     );
@@ -384,7 +384,7 @@ export default function PartDetailsPage() {
               </span>
 
               {selectedVehicleMatch ? (
-                <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+                <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-700">
                   Vehicle-matched
                 </span>
               ) : null}
@@ -409,7 +409,7 @@ export default function PartDetailsPage() {
               </div>
 
               <div className="text-right text-sm">
-                <p className={inStock ? "font-semibold text-emerald-300" : "font-semibold text-red-300"}>
+                <p className={inStock ? "font-semibold text-emerald-700" : "font-semibold text-red-700"}>
                   {inStock ? `In stock (${stock})` : "Out of stock"}
                 </p>
                 <p className="text-muted">
@@ -492,7 +492,7 @@ export default function PartDetailsPage() {
 
                 <Link
                   to="/cart"
-                  className="inline-flex h-12 items-center justify-center rounded-2xl border border-line bg-surface px-6 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+                  className="inline-flex h-12 items-center justify-center rounded-2xl border border-line bg-surface px-6 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
                 >
                   Cart ({totalItems})
                 </Link>
@@ -502,7 +502,7 @@ export default function PartDetailsPage() {
                 href={whatsappLink}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-6 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-400/20"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-6 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-400/20"
               >
                 Ask seller on WhatsApp
               </a>
@@ -619,7 +619,7 @@ export default function PartDetailsPage() {
                           {row.make} • {row.model}
                         </p>
                         {rowMatch ? (
-                          <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-300">
+                          <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-700">
                             Your selected vehicle matches
                           </span>
                         ) : null}
@@ -738,7 +738,7 @@ export default function PartDetailsPage() {
             <div className="flex items-center gap-2">
               <p className="text-base font-bold text-ink">{formatPrice(part.price)}</p>
               {selectedVehicleMatch ? (
-                <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-300">
+                <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
                   Match
                 </span>
               ) : null}

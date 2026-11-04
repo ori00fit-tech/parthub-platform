@@ -85,7 +85,7 @@ export default function CheckoutSuccessPage() {
 
             <Link
               to="/cart"
-              className="inline-flex h-12 items-center justify-center rounded-2xl border border-line bg-surface px-6 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+              className="inline-flex h-12 items-center justify-center rounded-2xl border border-line bg-surface px-6 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
             >
               Back to cart
             </Link>
@@ -94,7 +94,7 @@ export default function CheckoutSuccessPage() {
               href={whatsappLink}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-12 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-6 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-400/20"
+              className="inline-flex h-12 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-6 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-400/20"
             >
               Confirm on WhatsApp
             </a>

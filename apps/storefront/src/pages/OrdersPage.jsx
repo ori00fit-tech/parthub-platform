@@ -106,7 +106,7 @@ export default function OrdersPage() {
               </Link>
               <Link
                 to="/parts"
-                className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+                className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
               >
                 Browse parts
               </Link>
@@ -141,13 +141,13 @@ export default function OrdersPage() {
               </Link>
               <Link
                 to="/cart"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
               >
                 Review cart
               </Link>
               <Link
                 to="/account"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
               >
                 Back to account
               </Link>

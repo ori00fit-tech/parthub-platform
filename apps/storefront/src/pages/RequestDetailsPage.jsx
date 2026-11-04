@@ -37,7 +37,7 @@ function OfferCard({ offer, request, cheapest, onAccept, accepting }) {
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link to={`/sellers/${offer.seller_slug}`} className="text-base font-bold text-ink hover:text-sky-200">
+          <Link to={`/sellers/${offer.seller_slug}`} className="text-base font-bold text-ink hover:text-blue-800">
             {offer.seller_name}
           </Link>
           <p className="text-xs text-muted">
@@ -49,7 +49,7 @@ function OfferCard({ offer, request, cheapest, onAccept, accepting }) {
         <div className="text-right">
           <p className="text-2xl font-black text-ink">{formatMAD(offer.price)}</p>
           {cheapest && !accepted ? (
-            <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[11px] font-bold text-emerald-300">
+            <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
               Best price
             </span>
           ) : null}
@@ -74,7 +74,7 @@ function OfferCard({ offer, request, cheapest, onAccept, accepting }) {
 
       {accepted ? (
         <div className="mt-4 rounded-xl bg-emerald-400/10 p-4">
-          <p className="text-sm font-bold text-emerald-300">You accepted this offer. Contact the seller to arrange the sale:</p>
+          <p className="text-sm font-bold text-emerald-700">You accepted this offer. Contact the seller to arrange the sale:</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {wa ? (
               <a
@@ -89,7 +89,7 @@ function OfferCard({ offer, request, cheapest, onAccept, accepting }) {
             {offer.seller_phone ? (
               <a
                 href={`tel:${offer.seller_phone}`}
-                className="inline-flex h-10 items-center rounded-xl border border-emerald-400/40 bg-surface px-4 text-sm font-bold text-emerald-300"
+                className="inline-flex h-10 items-center rounded-xl border border-emerald-400/40 bg-surface px-4 text-sm font-bold text-emerald-700"
               >
                 Call {offer.seller_phone}
               </a>
@@ -166,7 +166,7 @@ export default function RequestDetailsPage() {
   if (!request) {
     return (
       <div className="rounded-3xl border border-line bg-surface p-8 text-center">
-        <p className="text-sm text-red-300">{error || "Request not found"}</p>
+        <p className="text-sm text-red-700">{error || "Request not found"}</p>
         <Link to="/requests" className="mt-4 inline-block text-sm font-semibold text-link">
           ← Back to my requests
         </Link>
@@ -187,7 +187,7 @@ export default function RequestDetailsPage() {
       </Link>
 
       {location.state?.justCreated ? (
-        <div className="rounded-2xl bg-emerald-400/10 px-5 py-4 text-sm text-emerald-300">
+        <div className="rounded-2xl bg-emerald-400/10 px-5 py-4 text-sm text-emerald-700">
           <strong>Request sent!</strong> Matching sellers can see it now. Come back here to compare their offers.
         </div>
       ) : null}
@@ -233,7 +233,7 @@ export default function RequestDetailsPage() {
                   type="button"
                   onClick={close}
                   disabled={busy}
-                  className="mt-3 h-10 w-full rounded-xl border border-line text-sm font-semibold text-muted transition hover:bg-white/5"
+                  className="mt-3 h-10 w-full rounded-xl border border-line text-sm font-semibold text-muted transition hover:bg-surface-3"
                 >
                   Close request
                 </button>
@@ -247,7 +247,7 @@ export default function RequestDetailsPage() {
             {offers.length} {offers.length === 1 ? "offer" : "offers"}
           </h2>
 
-          {error ? <p className="rounded-xl bg-red-400/10 px-4 py-3 text-sm text-red-300">{error}</p> : null}
+          {error ? <p className="rounded-xl bg-red-400/10 px-4 py-3 text-sm text-red-700">{error}</p> : null}
 
           {offers.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-line-strong bg-surface p-10 text-center">

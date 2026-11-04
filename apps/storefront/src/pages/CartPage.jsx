@@ -78,7 +78,7 @@ export default function CartPage() {
       </div>
 
       {selectedVehicle ? (
-        <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-4 text-sm text-emerald-300 shadow-sm">
+        <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-4 text-sm text-emerald-700 shadow-sm">
           Checkout context includes your selected vehicle:
           <span className="ml-2 font-semibold">{vehicleLabel}</span>
         </div>
@@ -125,7 +125,7 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={() => removeItem(item.id || item.part_id)}
-                      className="inline-flex h-10 items-center justify-center rounded-2xl border border-red-400/30 bg-red-400/10 px-4 text-sm font-semibold text-red-300 transition hover:bg-red-400/20"
+                      className="inline-flex h-10 items-center justify-center rounded-2xl border border-red-400/30 bg-red-400/10 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-400/20"
                     >
                       Remove
                     </button>
@@ -200,7 +200,7 @@ export default function CartPage() {
             <button
               type="button"
               onClick={clearCart}
-              className="inline-flex h-12 w-full items-center justify-center rounded-2xl border border-line bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+              className="inline-flex h-12 w-full items-center justify-center rounded-2xl border border-line bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
             >
               Clear cart
             </button>

@@ -223,13 +223,13 @@ export default function VehicleSelectorPage() {
       </div>
 
       {error ? (
-        <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-5 text-red-300 shadow-sm">
+        <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-5 text-red-700 shadow-sm">
           {error}
         </div>
       ) : null}
 
       {saved ? (
-        <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 p-5 text-emerald-300 shadow-sm">
+        <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 p-5 text-emerald-700 shadow-sm">
           Vehicle saved successfully.
         </div>
       ) : null}
@@ -322,7 +322,7 @@ export default function VehicleSelectorPage() {
 
               <Link
                 to="/parts"
-                className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+                className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
               >
                 Browse parts
               </Link>
@@ -330,7 +330,7 @@ export default function VehicleSelectorPage() {
               <button
                 type="button"
                 onClick={handleClearVehicle}
-                className="rounded-2xl border border-red-400/30 bg-red-400/10 px-5 py-3 text-sm font-semibold text-red-300 transition hover:bg-red-400/20"
+                className="rounded-2xl border border-red-400/30 bg-red-400/10 px-5 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-400/20"
               >
                 Clear vehicle
               </button>

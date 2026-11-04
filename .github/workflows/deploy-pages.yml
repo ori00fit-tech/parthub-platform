@@ -1,0 +1,111 @@
+name: Deploy Pages
+
+# Builds the three web apps and publishes them to Cloudflare Pages
+# (direct upload, same as the manual `wrangler pages deploy` steps in
+# deploy-notes.yml). Runs on every push to main that touches an app or a
+# shared package, and can be run by hand: Actions → "Deploy Pages".
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "Which app to deploy"
+        type: choice
+        default: all
+        options: [all, storefront, seller-portal, admin]
+
+concurrency:
+  group: deploy-pages-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # The API every app talks to (same Worker that "Deploy API" ships).
+  API_BASE_URL: https://parthub-api.ori00fit-c96.workers.dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: storefront
+            package: "@parthub/storefront"
+            project: parthub-storefront
+          - app: seller-portal
+            package: "@parthub/seller-portal"
+            project: parthub-seller
+          - app: admin
+            package: "@parthub/admin"
+            project: parthub-admin
+
+    steps:
+      - name: Skip apps not selected
+        id: pick
+        run: |
+          wanted="${{ github.event.inputs.app || 'all' }}"
+          if [ "$wanted" = "all" ] || [ "$wanted" = "${{ matrix.app }}" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping ${{ matrix.app }} (selected: $wanted)"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.pick.outputs.run == 'true'
+
+      - name: Setup Node
+        if: steps.pick.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        if: steps.pick.outputs.run == 'true'
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        if: steps.pick.outputs.run == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build ${{ matrix.app }}
+        if: steps.pick.outputs.run == 'true'
+        env:
+          VITE_API_BASE_URL: ${{ env.API_BASE_URL }}
+          VITE_SELLER_API_BASE_URL: ${{ env.API_BASE_URL }}
+          VITE_ADMIN_API_BASE_URL: ${{ env.API_BASE_URL }}
+        run: pnpm --filter "${{ matrix.package }}" build
+
+      - name: Check the build
+        if: steps.pick.outputs.run == 'true'
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          test -f dist/index.html || { echo "dist/index.html missing"; exit 1; }
+          test -f dist/_redirects || { echo "dist/_redirects missing: deep links would 404"; exit 1; }
+          # Source maps aren't needed in production.
+          find dist -name "*.map" -delete
+          ls -la dist
+
+      - name: Deploy to Cloudflare Pages (${{ matrix.project }})
+        if: steps.pick.outputs.run == 'true'
+        working-directory: apps/${{ matrix.app }}
+        env:
+          CLOUDFLARE_EMAIL: ${{ secrets.CF_EMAIL }}
+          CLOUDFLARE_API_KEY: ${{ secrets.CF_GLOBAL_API_KEY }}
+          CI: "true"
+        run: |
+          npx --yes wrangler@4 pages deploy dist \
+            --project-name="${{ matrix.project }}" \
+            --branch=main \
+            --commit-hash="${{ github.sha }}" \
+            --commit-message="${{ github.event.head_commit.message || 'Manual deploy' }}" \
+            --commit-dirty=true

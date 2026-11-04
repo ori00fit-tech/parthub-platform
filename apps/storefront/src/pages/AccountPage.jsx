@@ -149,7 +149,7 @@ export default function AccountPage() {
 
                 <Link
                   to="/vehicle-selector"
-                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-line-strong bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-line-strong bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
                 >
                   Update vehicle
                 </Link>
@@ -160,7 +160,7 @@ export default function AccountPage() {
                 <div className="mt-3">
                   <Link
                     to="/vehicle-selector"
-                    className="font-semibold text-link hover:text-sky-200"
+                    className="font-semibold text-link hover:text-blue-800"
                   >
                     Select your vehicle
                   </Link>
@@ -200,14 +200,14 @@ export default function AccountPage() {
 
               <Link
                 to="/checkout"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
               >
                 Go to checkout
               </Link>
 
               <Link
                 to="/cart"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-white/5"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
               >
                 Review cart
               </Link>

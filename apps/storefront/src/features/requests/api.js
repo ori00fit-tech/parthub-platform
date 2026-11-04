@@ -14,10 +14,10 @@ export { formatMoney as formatMAD } from "@parthub/shared";
 export function requestStatus(request) {
   if (!request) return { label: "", className: "" };
   if (request.status === "fulfilled") {
-    return { label: "Offer accepted", className: "bg-emerald-400/10 text-emerald-300" };
+    return { label: "Offer accepted", className: "bg-emerald-400/10 text-emerald-700" };
   }
   if (request.status === "closed") return { label: "Closed", className: "bg-surface-2 text-muted" };
-  if (Number(request.is_expired)) return { label: "Expired", className: "bg-amber-400/10 text-amber-300" };
+  if (Number(request.is_expired)) return { label: "Expired", className: "bg-amber-400/10 text-amber-700" };
   return { label: "Open", className: "bg-navy/20 text-link" };
 }
 

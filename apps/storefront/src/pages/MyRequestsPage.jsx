@@ -59,7 +59,7 @@ export default function MyRequestsPage() {
           ))}
         </div>
       ) : error ? (
-        <p className="rounded-2xl bg-red-400/10 px-4 py-3 text-sm text-red-300">{error}</p>
+        <p className="rounded-2xl bg-red-400/10 px-4 py-3 text-sm text-red-700">{error}</p>
       ) : requests.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-line-strong bg-surface p-10 text-center">
           <div className="text-4xl">🔎</div>
@@ -104,7 +104,7 @@ export default function MyRequestsPage() {
                   <p className="text-2xl font-black text-ink">{r.offer_count}</p>
                   <p className="text-xs text-muted">{Number(r.offer_count) === 1 ? "offer" : "offers"}</p>
                   {r.best_price != null ? (
-                    <p className="mt-1 text-xs font-semibold text-emerald-300">from {formatMAD(r.best_price)}</p>
+                    <p className="mt-1 text-xs font-semibold text-emerald-700">from {formatMAD(r.best_price)}</p>
                   ) : null}
                 </div>
               </Link>
