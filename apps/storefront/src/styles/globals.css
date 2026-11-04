@@ -22,6 +22,17 @@
     @apply font-display tracking-[0.01em];
   }
 
+  /* Arabic: letter-spacing breaks joined letters, and caps don't exist. */
+  [dir="rtl"] body,
+  [dir="rtl"] body * {
+    letter-spacing: 0 !important;
+  }
+
+  [dir="rtl"] h1,
+  [dir="rtl"] h2 {
+    line-height: 1.35;
+  }
+
   ::selection {
     background: rgba(30, 64, 175, 0.18);
   }

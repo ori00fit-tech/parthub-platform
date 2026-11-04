@@ -4,6 +4,7 @@ import { apiGet } from "../../lib/api";
 import { formatPrice } from "../../lib/formatters";
 import { mediaUrl } from "../../lib/media";
 import { useSelectedVehicle } from "../vehicles/SelectedVehicleContext";
+import { useT } from "../../i18n";
 
 const MAX_CARDS = 4;
 
@@ -25,6 +26,7 @@ function vehicleLabel(v) {
 // Home page: parts verified for the buyer's saved vehicle. Hidden until a
 // vehicle is selected; when nothing fits yet, points to "Request a part".
 export default function PartsForYourVehicle() {
+  const t = useT();
   const { selectedVehicle } = useSelectedVehicle();
   const [parts, setParts] = useState([]);
   const [total, setTotal] = useState(0);
@@ -57,15 +59,15 @@ export default function PartsForYourVehicle() {
     <section aria-labelledby="for-your-vehicle">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-navy">Your garage</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-navy">{t("Your garage")}</p>
           <h2 id="for-your-vehicle" className="mt-1 text-2xl font-black tracking-tight text-ink">
-            Parts for your {label}
+            {t("Parts for your {vehicle}", { vehicle: label })}
           </h2>
-          <p className="mt-1 text-sm text-muted">Listings with compatibility data for this vehicle.</p>
+          <p className="mt-1 text-sm text-muted">{t("Listings with compatibility data for this vehicle.")}</p>
         </div>
         {total > 0 ? (
           <Link to={`/parts?${query}`} className="text-sm font-semibold text-link hover:underline">
-            See all {total} →
+            {t("See all {n}", { n: total })} <span aria-hidden="true" className="inline-block rtl:rotate-180">→</span>
           </Link>
         ) : null}
       </div>
@@ -79,19 +81,19 @@ export default function PartsForYourVehicle() {
       ) : parts.length === 0 ? (
         <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-dashed border-line-strong bg-surface p-6">
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-ink">No parts are listed for your {model || label} yet.</p>
+            <p className="font-semibold text-ink">{t("No parts are listed for your {vehicle} yet.", { vehicle: model || label })}</p>
             <p className="mt-1 text-sm text-muted">
-              Send a request and sellers who stock {make} parts can reply with offers.
+              {t("Send a request and sellers who stock {make} parts can reply with offers.", { make })}
             </p>
           </div>
           <Link to="/request-part" className="btn-cta h-11 rounded-xl px-5 text-sm">
-            Request a part
+            {t("Request a part")}
           </Link>
           <Link
             to={`/parts?${query}&fit=rank`}
             className="inline-flex h-11 items-center rounded-xl border border-line-strong px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
           >
-            Browse all parts
+            {t("Browse all parts")}
           </Link>
         </div>
       ) : (
@@ -110,10 +112,10 @@ export default function PartsForYourVehicle() {
                 )}
               </div>
               <div className="flex flex-1 flex-col gap-2 p-3.5">
-                <p className="truncate text-xs font-semibold uppercase tracking-[0.08em] text-navy">{part.brand_name || "Unbranded"}</p>
+                <p className="truncate text-xs font-semibold uppercase tracking-[0.08em] text-navy">{part.brand_name || t("Unbranded")}</p>
                 <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-ink">{part.title}</p>
                 <span className="inline-flex h-6 w-fit items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 text-xs font-medium text-emerald-700 before:h-1.5 before:w-1.5 before:rounded-full before:bg-current">
-                  Fits your {model || "vehicle"}
+                  {model ? t("Fits your {vehicle}", { vehicle: model }) : t("Fits your vehicle")}
                 </span>
                 <p className="mt-auto pt-1 font-mono text-lg font-semibold text-ink">{formatPrice(part.price)}</p>
               </div>

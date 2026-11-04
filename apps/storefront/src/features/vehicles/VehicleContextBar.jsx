@@ -1,6 +1,8 @@
 import { useSelectedVehicle } from "./SelectedVehicleContext";
+import { useT } from "../../i18n";
 
 export default function VehicleContextBar() {
+  const t = useT();
   const {
     selectedVehicle,
     savedVehicles,
@@ -12,7 +14,7 @@ export default function VehicleContextBar() {
   if (!selectedVehicle && (!savedVehicles || savedVehicles.length === 0)) {
     return (
       <div className="rounded-3xl border border-navy/20 bg-navy/[0.06] px-4 py-4 text-sm text-link shadow-sm">
-        Select and save a vehicle to unlock faster fitment-aware shopping.
+        {t("Select and save a vehicle to unlock faster fitment-aware shopping.")}
       </div>
     );
   }
@@ -22,10 +24,10 @@ export default function VehicleContextBar() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-faint">
-            Vehicle context
+            {t("Vehicle context")}
           </p>
           <p className="mt-1 text-sm font-semibold text-ink">
-            {selectedVehicle ? selectedVehicle.label : "No active vehicle selected"}
+            {selectedVehicle ? selectedVehicle.label : t("No active vehicle selected")}
           </p>
         </div>
 
@@ -37,7 +39,7 @@ export default function VehicleContextBar() {
                 onClick={() => saveVehicle(selectedVehicle)}
                 className="inline-flex h-10 items-center justify-center rounded-2xl border border-navy/20 bg-navy/[0.06] px-4 text-sm font-semibold text-link transition hover:bg-navy/[0.12]"
               >
-                Save vehicle
+                {t("Save vehicle")}
               </button>
 
               <button
@@ -45,7 +47,7 @@ export default function VehicleContextBar() {
                 onClick={clearVehicle}
                 className="inline-flex h-10 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
               >
-                Clear
+                {t("Clear")}
               </button>
             </>
           ) : null}

@@ -5,6 +5,7 @@ import { formatPrice } from "../lib/formatters";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import VehicleContextBar from "../features/vehicles/VehicleContextBar";
 import { useCart } from "../features/cart/CartContext";
+import { conditionLabel, t, useT } from "../i18n";
 
 function normalizeGallery(part) {
   const candidates = [
@@ -15,12 +16,12 @@ function normalizeGallery(part) {
   const items = candidates
     .map((item) => {
       if (typeof item === "string") {
-        return { url: item, alt: part?.title || "Part image" };
+        return { url: item, alt: part?.title || t("Part image") };
       }
 
       return {
         url: item?.url || item?.image_url || item?.src || "",
-        alt: item?.alt || item?.alt_text || part?.title || "Part image",
+        alt: item?.alt || item?.alt_text || part?.title || t("Part image"),
       };
     })
     .filter((item) => item.url);
@@ -28,7 +29,7 @@ function normalizeGallery(part) {
   if (items.length) return items;
 
   return part?.image_url
-    ? [{ url: part.image_url, alt: part?.title || "Part image" }]
+    ? [{ url: part.image_url, alt: part?.title || t("Part image") }]
     : [];
 }
 
@@ -45,12 +46,12 @@ function normalizeSpecs(part) {
   }
 
   const fallback = [
-    ["Brand", part?.brand_name],
-    ["Category", part?.category_name],
+    [t("Brand"), part?.brand_name],
+    [t("Category"), part?.category_name ? t(part.category_name) : ""],
     ["SKU", part?.sku],
-    ["Condition", part?.condition],
-    ["Location", part?.seller_location],
-    ["Weight", part?.weight_kg ? `${part.weight_kg} kg` : ""],
+    [t("Condition"), conditionLabel(part?.condition)],
+    [t("Location"), part?.seller_location],
+    [t("Weight"), part?.weight_kg ? `${part.weight_kg} kg` : ""],
   ];
 
   return fallback
@@ -115,9 +116,9 @@ function detectFitmentStatus(compatibility, selectedVehicle) {
   if (!selectedVehicle) {
     return {
       tone: "neutral",
-      title: "Select your vehicle to confirm fitment",
+      title: t("Select your vehicle to confirm fitment"),
       description:
-        "Choose make, model, and year to verify whether this part matches your vehicle.",
+        t("Choose make, model, and year to verify whether this part matches your vehicle."),
     };
   }
 
@@ -128,26 +129,26 @@ function detectFitmentStatus(compatibility, selectedVehicle) {
   if (exactMatch) {
     return {
       tone: "positive",
-      title: `Fits your ${getVehicleLabel(selectedVehicle)}`,
+      title: t("Fits your {vehicle}", { vehicle: getVehicleLabel(selectedVehicle) }),
       description:
-        "This part has a compatibility row that matches your selected vehicle.",
+        t("This part has a compatibility row that matches your selected vehicle."),
     };
   }
 
   if (compatibility.length > 0) {
     return {
       tone: "warning",
-      title: "Compatibility not confirmed for your vehicle",
+      title: t("Compatibility not confirmed for your vehicle"),
       description:
-        "This part includes compatibility data, but your selected vehicle is not an exact confirmed match.",
+        t("This part includes compatibility data, but your selected vehicle is not an exact confirmed match."),
     };
   }
 
   return {
     tone: "neutral",
-    title: "No structured compatibility data yet",
+    title: t("No structured compatibility data yet"),
     description:
-      "Use SKU, seller notes, and product details until compatibility data is expanded.",
+      t("Use SKU, seller notes, and product details until compatibility data is expanded."),
   };
 }
 
@@ -163,13 +164,13 @@ function toneClasses(tone) {
 }
 
 function buildWhatsAppLink(part, selectedVehicle) {
-  const vehicleLabel = selectedVehicle ? getVehicleLabel(selectedVehicle) : "No vehicle selected";
+  const vehicleLabel = selectedVehicle ? getVehicleLabel(selectedVehicle) : t("No vehicle selected");
 
   const message = [
-    "Hello, I want to confirm this part.",
-    `Part: ${part?.title || "Unknown part"}`,
+    t("Hello, I want to confirm this part."),
+    t("Part: {title}", { title: part?.title || t("Unknown part") }),
     part?.sku ? `SKU: ${part.sku}` : "",
-    `Vehicle: ${vehicleLabel}`,
+    t("Vehicle: {vehicle}", { vehicle: vehicleLabel }),
     part?.slug ? `Part slug: ${part.slug}` : "",
   ]
     .filter(Boolean)
@@ -179,6 +180,7 @@ function buildWhatsAppLink(part, selectedVehicle) {
 }
 
 export default function PartDetailsPage() {
+  const t = useT();
   const { slug } = useParams();
   const vehicleContext = useSelectedVehicle();
   const { selectedVehicle } = normalizeVehicleContext(vehicleContext);
@@ -219,7 +221,7 @@ export default function PartDetailsPage() {
         setRelatedParts(nextRelated);
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load part details");
+        setError(err?.message || t("Failed to load part details"));
       } finally {
         if (active) setLoading(false);
       }
@@ -233,15 +235,15 @@ export default function PartDetailsPage() {
   }, [slug]);
 
   const gallery = useMemo(() => normalizeGallery(part), [part]);
-  const specs = useMemo(() => normalizeSpecs(part), [part]);
+  const specs = useMemo(() => normalizeSpecs(part), [part, t]);
   const compatibility = useMemo(() => normalizeCompatibility(part), [part]);
   const fitment = useMemo(
     () => detectFitmentStatus(compatibility, selectedVehicle),
-    [compatibility, selectedVehicle]
+    [compatibility, selectedVehicle, t]
   );
   const whatsappLink = useMemo(
     () => (part ? buildWhatsAppLink(part, selectedVehicle) : "#"),
-    [part, selectedVehicle]
+    [part, selectedVehicle, t]
   );
 
   const activeImage = gallery[galleryIndex] || gallery[0] || null;
@@ -287,7 +289,7 @@ export default function PartDetailsPage() {
   if (loading) {
     return (
       <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-        Loading part details...
+        {t("Loading part details...")}
       </div>
     );
   }
@@ -295,7 +297,7 @@ export default function PartDetailsPage() {
   if (error || !part) {
     return (
       <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-6 text-red-700 shadow-sm">
-        {error || "Part not found"}
+        {error || t("Part not found")}
       </div>
     );
   }
@@ -315,7 +317,7 @@ export default function PartDetailsPage() {
               />
             ) : (
               <div className="flex h-[320px] items-center justify-center bg-surface-2 text-sm text-faint sm:h-[420px]">
-                No image available
+                {t("No image available")}
               </div>
             )}
           </div>
@@ -346,17 +348,17 @@ export default function PartDetailsPage() {
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-faint">Condition</p>
-              <p className="mt-1 text-sm font-semibold text-ink">{part.condition}</p>
+              <p className="text-xs uppercase tracking-wide text-faint">{t("Condition")}</p>
+              <p className="mt-1 text-sm font-semibold text-ink">{conditionLabel(part.condition)}</p>
             </div>
             <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-faint">Stock status</p>
+              <p className="text-xs uppercase tracking-wide text-faint">{t("Stock status")}</p>
               <p className="mt-1 text-sm font-semibold text-ink">
-                {inStock ? `${stock} available` : "Out of stock"}
+                {inStock ? t("{n} available", { n: stock }) : t("Out of stock")}
               </p>
             </div>
             <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-faint">Compatibility</p>
+              <p className="text-xs uppercase tracking-wide text-faint">{t("Compatibility")}</p>
               <p className="mt-1 text-sm font-semibold text-ink">
                 {compatibility.length} row{compatibility.length === 1 ? "" : "s"}
               </p>
@@ -375,17 +377,17 @@ export default function PartDetailsPage() {
 
               {part.category_name ? (
                 <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-ink-2">
-                  {part.category_name}
+                  {t(part.category_name)}
                 </span>
               ) : null}
 
               <span className="rounded-full bg-navy/[0.06] px-3 py-1 text-xs font-semibold text-link">
-                {part.condition}
+                {conditionLabel(part.condition)}
               </span>
 
               {selectedVehicleMatch ? (
                 <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-700">
-                  Vehicle-matched
+                  {t("Vehicle-matched")}
                 </span>
               ) : null}
             </div>
@@ -393,7 +395,7 @@ export default function PartDetailsPage() {
             <h1 className="mt-4 text-3xl font-bold text-ink">{part.title}</h1>
 
             <p className="mt-3 text-sm leading-6 text-muted">
-              {part.description || "No description available for this part yet."}
+              {part.description || t("No description available for this part yet.")}
             </p>
 
             <div className="mt-5 flex items-end justify-between gap-4">
@@ -408,21 +410,21 @@ export default function PartDetailsPage() {
                 ) : null}
               </div>
 
-              <div className="text-right text-sm">
+              <div className="text-end text-sm">
                 <p className={inStock ? "font-semibold text-emerald-700" : "font-semibold text-red-700"}>
-                  {inStock ? `In stock (${stock})` : "Out of stock"}
+                  {inStock ? t("In stock ({n})", { n: stock }) : t("Out of stock")}
                 </p>
                 <p className="text-muted">
-                  Seller:{" "}
+                  {t("Seller:")}{" "}
                   {part.seller_slug ? (
                     <Link
                       to={`/sellers/${part.seller_slug}`}
                       className="font-semibold text-link hover:underline"
                     >
-                      {part.seller_name || "Unknown seller"}
+                      {part.seller_name || t("Unknown seller")}
                     </Link>
                   ) : (
-                    part.seller_name || "Unknown seller"
+                    part.seller_name || t("Unknown seller")
                   )}
                 </p>
               </div>
@@ -434,12 +436,12 @@ export default function PartDetailsPage() {
 
               <div className="mt-3 flex flex-wrap gap-2">
                 <span className="rounded-full bg-surface/70 px-3 py-1 text-xs font-semibold text-current">
-                  {compatibility.length} compatibility row{compatibility.length === 1 ? "" : "s"}
+                  {compatibility.length === 1 ? t("1 compatibility row") : t("{n} compatibility rows", { n: compatibility.length })}
                 </span>
 
                 {selectedVehicleMatch ? (
                   <span className="rounded-full bg-surface/70 px-3 py-1 text-xs font-semibold text-current">
-                    Exact match confirmed
+                    {t("Exact match confirmed")}
                   </span>
                 ) : null}
 
@@ -449,13 +451,13 @@ export default function PartDetailsPage() {
                     onClick={() => saveVehicle(selectedVehicle)}
                     className="rounded-full bg-surface/70 px-3 py-1 text-xs font-semibold text-current transition hover:bg-surface-3"
                   >
-                    Save vehicle
+                    {t("Save vehicle")}
                   </button>
                 ) : null}
               </div>
 
               <p className="mt-3 text-xs opacity-80">
-                Final purchase confidence should still confirm SKU, OEM reference, and seller guidance.
+                {t("Final purchase confidence should still confirm SKU, OEM reference, and seller guidance.")}
               </p>
             </div>
 
@@ -487,7 +489,7 @@ export default function PartDetailsPage() {
                   disabled={!inStock || adding}
                   className="btn-cta h-12 flex-1 rounded-2xl px-6 text-sm"
                 >
-                  {adding ? "Adding..." : added ? "Added to cart" : "Add to cart"}
+                  {adding ? t("Adding...") : added ? t("Added to cart") : t("Add to cart")}
                 </button>
 
                 <Link
@@ -504,58 +506,58 @@ export default function PartDetailsPage() {
                 rel="noreferrer"
                 className="inline-flex h-12 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-6 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-400/20"
               >
-                Ask seller on WhatsApp
+                {t("Ask seller on WhatsApp")}
               </a>
             </div>
           </div>
 
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-ink">Why buyers trust this listing</h2>
+            <h2 className="text-lg font-bold text-ink">{t("Why buyers trust this listing")}</h2>
             <div className="mt-4 space-y-3 text-sm text-muted">
-              <p>• SKU and structured compatibility improve confidence before purchase.</p>
-              <p>• Stock visibility helps reduce surprise checkout failures.</p>
-              <p>• Seller contact via WhatsApp makes pre-purchase confirmation easier.</p>
-              <p>• Vehicle-aware matching helps rank the most relevant parts higher.</p>
+              <p>{t("• SKU and structured compatibility improve confidence before purchase.")}</p>
+              <p>{t("• Stock visibility helps reduce surprise checkout failures.")}</p>
+              <p>{t("• Seller contact via WhatsApp makes pre-purchase confirmation easier.")}</p>
+              <p>{t("• Vehicle-aware matching helps rank the most relevant parts higher.")}</p>
             </div>
           </div>
 
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-ink">Seller trust</h2>
+            <h2 className="text-lg font-bold text-ink">{t("Seller trust")}</h2>
             <div className="mt-4 space-y-3 text-sm text-muted">
               <p>
-                <span className="font-semibold text-ink">Seller:</span>{" "}
+                <span className="font-semibold text-ink">{t("Seller:")}</span>{" "}
                 {part.seller_slug ? (
                   <Link
                     to={`/sellers/${part.seller_slug}`}
                     className="font-semibold text-link hover:underline"
                   >
-                    {part.seller_name || "Unknown"}
+                    {part.seller_name || t("Unknown")}
                   </Link>
                 ) : (
-                  part.seller_name || "Unknown"
+                  part.seller_name || t("Unknown")
                 )}
               </p>
               <p>
-                <span className="font-semibold text-ink">Location:</span>{" "}
-                {part.seller_location || "Not specified"}
+                <span className="font-semibold text-ink">{t("Location:")}</span>{" "}
+                {part.seller_location || t("Not specified")}
               </p>
               <p>
-                <span className="font-semibold text-ink">Listing status:</span>{" "}
+                <span className="font-semibold text-ink">{t("Listing status:")}</span>{" "}
                 {part.status}
               </p>
               <p>
-                <span className="font-semibold text-ink">Availability:</span>{" "}
-                {inStock ? `${stock} unit(s) available` : "Currently unavailable"}
+                <span className="font-semibold text-ink">{t("Availability:")}</span>{" "}
+                {inStock ? t("{n} unit(s) available", { n: stock }) : t("Currently unavailable")}
               </p>
               {part.sku ? (
                 <p>
-                  <span className="font-semibold text-ink">SKU:</span> {part.sku}
+                  <span className="font-semibold text-ink">{t("SKU:")}</span> {part.sku}
                 </p>
               ) : null}
             </div>
 
             <p className="mt-4 text-xs text-muted">
-              Strong parts usually include stock, SKU, compatibility, and easy seller confirmation paths.
+              {t("Strong parts usually include stock, SKU, compatibility, and easy seller confirmation paths.")}
             </p>
           </div>
         </div>
@@ -564,40 +566,40 @@ export default function PartDetailsPage() {
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-6">
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-ink">Quick fitment summary</h2>
+            <h2 className="text-2xl font-bold text-ink">{t("Quick fitment summary")}</h2>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">Selected vehicle</p>
+                <p className="text-xs uppercase tracking-wide text-faint">{t("Selected vehicle")}</p>
                 <p className="mt-1 text-sm font-semibold text-ink">
-                  {selectedVehicle ? getVehicleLabel(selectedVehicle) : "Not selected"}
+                  {selectedVehicle ? getVehicleLabel(selectedVehicle) : t("Not selected")}
                 </p>
               </div>
 
               <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">Compatibility rows</p>
+                <p className="text-xs uppercase tracking-wide text-faint">{t("Compatibility rows")}</p>
                 <p className="mt-1 text-sm font-semibold text-ink">
                   {compatibility.length}
                 </p>
               </div>
 
               <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">Match status</p>
+                <p className="text-xs uppercase tracking-wide text-faint">{t("Match status")}</p>
                 <p className="mt-1 text-sm font-semibold text-ink">
-                  {selectedVehicleMatch ? "Confirmed match" : "Not confirmed"}
+                  {selectedVehicleMatch ? t("Confirmed match") : t("Not confirmed")}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-ink">Compatibility</h2>
+            <h2 className="text-2xl font-bold text-ink">{t("Compatibility")}</h2>
             <p className="mt-1 text-sm text-muted">
-              Review all known vehicle matches for this part.
+              {t("Review all known vehicle matches for this part.")}
             </p>
 
             {compatibility.length === 0 ? (
               <div className="mt-5 rounded-2xl border border-dashed border-line-strong bg-surface-2 p-5 text-sm text-muted">
-                No compatibility rows are available yet for this part.
+                {t("No compatibility rows are available yet for this part.")}
               </div>
             ) : (
               <div className="mt-5 space-y-3">
@@ -620,7 +622,7 @@ export default function PartDetailsPage() {
                         </p>
                         {rowMatch ? (
                           <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-700">
-                            Your selected vehicle matches
+                            {t("Your selected vehicle matches")}
                           </span>
                         ) : null}
                       </div>
@@ -645,11 +647,11 @@ export default function PartDetailsPage() {
 
         <div className="space-y-6">
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-ink">Specifications</h2>
+            <h2 className="text-2xl font-bold text-ink">{t("Specifications")}</h2>
 
             {specs.length === 0 ? (
               <div className="mt-5 rounded-2xl border border-dashed border-line-strong bg-surface-2 p-5 text-sm text-muted">
-                No technical specifications available yet.
+                {t("No technical specifications available yet.")}
               </div>
             ) : (
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -671,24 +673,24 @@ export default function PartDetailsPage() {
           </div>
 
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-ink">Purchase reassurance</h2>
+            <h2 className="text-2xl font-bold text-ink">{t("Purchase reassurance")}</h2>
             <div className="mt-4 space-y-3 text-sm text-muted">
-              <p>• Confirm exact fitment when your vehicle has engine or trim variations.</p>
-              <p>• Use seller contact before checkout if you need additional confidence.</p>
-              <p>• SKU and compatibility rows are stronger trust signals than title alone.</p>
-              <p>• In-stock parts with structured fitment usually move faster and convert better.</p>
+              <p>{t("• Confirm exact fitment when your vehicle has engine or trim variations.")}</p>
+              <p>{t("• Use seller contact before checkout if you need additional confidence.")}</p>
+              <p>{t("• SKU and compatibility rows are stronger trust signals than title alone.")}</p>
+              <p>{t("• In-stock parts with structured fitment usually move faster and convert better.")}</p>
             </div>
           </div>
 
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-ink">Need another option?</h2>
+            <h2 className="text-2xl font-bold text-ink">{t("Need another option?")}</h2>
             <p className="mt-1 text-sm text-muted">
-              Explore related parts from the marketplace inventory.
+              {t("Explore related parts from the marketplace inventory.")}
             </p>
 
             {safeRelatedParts.length === 0 ? (
               <div className="mt-5 rounded-2xl border border-dashed border-line-strong bg-surface-2 p-5 text-sm text-muted">
-                No related parts available yet.
+                {t("No related parts available yet.")}
               </div>
             ) : (
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -707,7 +709,7 @@ export default function PartDetailsPage() {
                         />
                       ) : (
                         <div className="flex h-36 items-center justify-center text-sm text-faint">
-                          No image
+                          {t("No image")}
                         </div>
                       )}
                     </div>
@@ -717,7 +719,7 @@ export default function PartDetailsPage() {
                         {item.title}
                       </p>
                       <p className="mt-1 text-sm text-muted">
-                        {item.brand_name || "Brand"} • {item.category_name || "Category"}
+                        {item.brand_name || t("Brand")} • {item.category_name ? t(item.category_name) : t("Category")}
                       </p>
                       <p className="mt-3 text-lg font-bold text-ink">
                         {formatPrice(item.price)}
@@ -739,7 +741,7 @@ export default function PartDetailsPage() {
               <p className="text-base font-bold text-ink">{formatPrice(part.price)}</p>
               {selectedVehicleMatch ? (
                 <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-                  Match
+                  {t("Match")}
                 </span>
               ) : null}
             </div>
@@ -751,7 +753,7 @@ export default function PartDetailsPage() {
             disabled={!inStock || adding}
             className="btn-cta h-11 rounded-2xl px-5 text-sm"
           >
-            {adding ? "Adding..." : added ? "Added" : "Add to cart"}
+            {adding ? t("Adding...") : added ? t("Added") : t("Add to cart")}
           </button>
         </div>
       </div>

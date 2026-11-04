@@ -4,6 +4,7 @@ import { useCart } from "./CartContext";
 import { useSelectedVehicle } from "../vehicles/SelectedVehicleContext";
 import { formatPrice } from "../../lib/formatters";
 import { mediaUrl } from "../../lib/media";
+import { useT } from "../../i18n";
 
 const MAX_QTY = 10;
 
@@ -17,6 +18,7 @@ function vehicleLabel(v) {
 
 // Slide-over cart. Opens from the header cart button and after "Add to cart".
 export default function CartDrawer() {
+  const t = useT();
   const { items, totalItems, subtotal, updateQuantity, removeItem, drawerOpen, closeCart } = useCart();
   const { selectedVehicle } = useSelectedVehicle();
   const navigate = useNavigate();
@@ -89,18 +91,18 @@ export default function CartDrawer() {
         aria-labelledby="cart-drawer-title"
         aria-hidden={!drawerOpen}
         className={[
-          "fixed inset-y-0 right-0 z-[80] flex w-full max-w-[440px] flex-col border-l border-line-strong bg-canvas shadow-[-24px_0_48px_-16px_rgba(0,0,0,.7)]",
+          "fixed inset-y-0 end-0 z-[80] flex w-full max-w-[440px] flex-col border-s border-line-strong bg-canvas shadow-[-24px_0_48px_-16px_rgba(0,0,0,.7)]",
           "transition-[transform,visibility] duration-300 ease-[cubic-bezier(.2,.8,.2,1)]",
-          drawerOpen ? "visible translate-x-0" : "invisible translate-x-[104%]",
+          drawerOpen ? "visible translate-x-0" : "invisible translate-x-[104%] rtl:-translate-x-[104%]",
         ].join(" ")}
         style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         <div className="flex items-center gap-3 bg-gradient-to-b from-navy to-navy-deep px-4 py-3.5 text-white">
           <h2 id="cart-drawer-title" className="flex-1 text-2xl font-bold uppercase tracking-[0.03em]">
-            Your cart
+            {t("Your cart")}
             {totalItems ? (
-              <span className="ml-2 font-mono text-sm font-medium normal-case tracking-normal text-navy-ink/80">
-                {totalItems} {totalItems === 1 ? "item" : "items"}
+              <span className="ms-2 font-mono text-sm font-medium normal-case tracking-normal text-navy-ink/80">
+                {totalItems === 1 ? t("1 item") : t("{n} items", { n: totalItems })}
               </span>
             ) : null}
           </h2>
@@ -108,7 +110,7 @@ export default function CartDrawer() {
             ref={closeRef}
             type="button"
             onClick={closeCart}
-            aria-label="Close cart"
+            aria-label={t("Close cart")}
             className="flex h-10 w-10 items-center justify-center rounded-lg transition hover:bg-white/10"
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -126,9 +128,9 @@ export default function CartDrawer() {
                 <circle cx="17.5" cy="20.5" r="1.4" />
               </svg>
             </div>
-            <h3 className="font-display text-2xl font-bold uppercase">Your cart is empty</h3>
+            <h3 className="font-display text-2xl font-bold uppercase">{t("Your cart is empty")}</h3>
             <p className="max-w-[30ch] text-sm text-muted">
-              {vehicle ? `Browse parts for your ${vehicle}.` : "Select your vehicle first so you only see parts that fit."}
+              {vehicle ? t("Browse parts for your {vehicle}.", { vehicle }) : t("Select your vehicle first so you only see parts that fit.")}
             </p>
             <button
               type="button"
@@ -138,7 +140,7 @@ export default function CartDrawer() {
               }}
               className="mt-2 h-11 rounded-xl border border-line-strong px-5 text-sm font-semibold text-ink-2 transition hover:border-muted hover:text-ink"
             >
-              {vehicle ? "Browse parts" : "Select vehicle"}
+              {vehicle ? t("Browse parts") : t("Select vehicle")}
             </button>
           </div>
         ) : (
@@ -158,14 +160,14 @@ export default function CartDrawer() {
                 <span>
                   {vehicle ? (
                     <>
-                      Shopping for <strong className="font-semibold text-emerald-900">{vehicle}</strong>. Check the fitment on each
-                      part's page, or confirm the OEM number with the seller.
+                      {t("Shopping for")} <strong className="font-semibold text-emerald-900">{vehicle}</strong>
+                      {t(". Check the fitment on each part's page, or confirm the OEM number with the seller.")}
                     </>
                   ) : (
                     <>
-                      No vehicle selected, so fitment hasn't been checked.{" "}
+                      {t("No vehicle selected, so fitment hasn't been checked.")}{" "}
                       <Link to="/vehicle-selector" className="font-semibold text-amber-900 underline underline-offset-2">
-                        Select your vehicle
+                        {t("Select your vehicle")}
                       </Link>
                     </>
                   )}
@@ -185,15 +187,15 @@ export default function CartDrawer() {
                     <Link to={`/parts/${item.slug}`} className="line-clamp-2 text-sm font-semibold leading-snug text-ink hover:text-link">
                       {item.title}
                     </Link>
-                    {item.seller_name ? <p className="mt-0.5 text-xs text-faint">Sold by {item.seller_name}</p> : null}
+                    {item.seller_name ? <p className="mt-0.5 text-xs text-faint">{t("Sold by {seller}", { seller: item.seller_name })}</p> : null}
 
                     <div className="mt-2.5 flex items-center justify-between gap-2">
-                      <div className="inline-flex items-center overflow-hidden rounded-lg border border-line-strong bg-surface-2" role="group" aria-label={`Quantity for ${item.title}`}>
+                      <div className="inline-flex items-center overflow-hidden rounded-lg border border-line-strong bg-surface-2" role="group" aria-label={t("Quantity for {title}", { title: item.title })}>
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.part_id, item.quantity - 1)}
                           disabled={item.quantity <= 1}
-                          aria-label="Decrease quantity"
+                          aria-label={t("Decrease quantity")}
                           className="h-8 w-8 text-lg leading-none text-ink transition hover:bg-surface-3 disabled:cursor-not-allowed disabled:text-faint"
                         >
                           −
@@ -205,7 +207,7 @@ export default function CartDrawer() {
                           type="button"
                           onClick={() => updateQuantity(item.part_id, item.quantity + 1)}
                           disabled={item.quantity >= MAX_QTY}
-                          aria-label="Increase quantity"
+                          aria-label={t("Increase quantity")}
                           className="h-8 w-8 text-lg leading-none text-ink transition hover:bg-surface-3 disabled:cursor-not-allowed disabled:text-faint"
                         >
                           +
@@ -214,9 +216,9 @@ export default function CartDrawer() {
                       <span className="font-mono text-[15px] font-semibold tabular-nums">{formatPrice(item.price * item.quantity)}</span>
                     </div>
                     <div className="mt-1.5 flex items-center justify-between text-xs text-faint">
-                      <span className="font-mono">{formatPrice(item.price)} each</span>
+                      <span className="font-mono">{t("{price} each", { price: formatPrice(item.price) })}</span>
                       <button type="button" onClick={() => removeItem(item.part_id)} className="underline underline-offset-2 hover:text-red-700">
-                        Remove
+                        {t("Remove")}
                       </button>
                     </div>
                   </div>
@@ -226,10 +228,10 @@ export default function CartDrawer() {
 
             <div className="space-y-3 border-t border-line-strong bg-surface-2 px-4 pb-4 pt-3.5">
               <dl className="grid grid-cols-[1fr_auto] gap-y-1.5 text-sm text-ink-2">
-                <dt>Subtotal</dt>
-                <dd className="text-right font-mono tabular-nums text-ink">{formatPrice(subtotal)}</dd>
-                <dt>Shipping</dt>
-                <dd className="text-right text-muted">Calculated at checkout</dd>
+                <dt>{t("Subtotal")}</dt>
+                <dd className="text-end font-mono tabular-nums text-ink">{formatPrice(subtotal)}</dd>
+                <dt>{t("Shipping")}</dt>
+                <dd className="text-end text-muted">{t("Calculated at checkout")}</dd>
               </dl>
               <button
                 type="button"
@@ -239,7 +241,7 @@ export default function CartDrawer() {
                 }}
                 className="btn-cta h-[52px] w-full text-base"
               >
-                Checkout · <span className="font-mono">{formatPrice(subtotal)}</span>
+                {t("Checkout ·")} <span className="font-mono">{formatPrice(subtotal)}</span>
               </button>
               <button
                 type="button"
@@ -249,7 +251,7 @@ export default function CartDrawer() {
                 }}
                 className="h-10 w-full rounded-xl text-sm font-semibold text-link transition hover:bg-surface-3"
               >
-                View full cart
+                {t("View full cart")}
               </button>
             </div>
           </>

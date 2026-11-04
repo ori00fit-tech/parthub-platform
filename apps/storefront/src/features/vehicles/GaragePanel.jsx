@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useSelectedVehicle } from "./SelectedVehicleContext";
+import { useT } from "../../i18n";
 
 function getVehicleKey(vehicle) {
   return [
@@ -11,6 +12,7 @@ function getVehicleKey(vehicle) {
 }
 
 export default function GaragePanel() {
+  const t = useT();
   const {
     selectedVehicle,
     savedVehicles,
@@ -29,9 +31,9 @@ export default function GaragePanel() {
     <section className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-ink">My garage</h2>
+          <h2 className="text-xl font-bold text-ink">{t("My garage")}</h2>
           <p className="mt-1 text-sm text-muted">
-            Save vehicles and switch fitment context instantly.
+            {t("Save vehicles and switch fitment context instantly.")}
           </p>
         </div>
 
@@ -41,7 +43,7 @@ export default function GaragePanel() {
             onClick={() => saveVehicle(selectedVehicle)}
             className="inline-flex h-10 items-center justify-center rounded-2xl border border-navy/20 bg-navy/[0.06] px-4 text-sm font-semibold text-link transition hover:bg-navy/[0.12]"
           >
-            Save current
+            {t("Save current")}
           </button>
         ) : null}
       </div>
@@ -49,7 +51,7 @@ export default function GaragePanel() {
       {selectedVehicle ? (
         <div className="mt-5 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-            Active vehicle
+            {t("Active vehicle")}
           </p>
           <p className="mt-1 text-sm font-semibold text-emerald-800">
             {selectedVehicle.label}
@@ -61,7 +63,7 @@ export default function GaragePanel() {
               onClick={() => saveVehicle(selectedVehicle)}
               className="inline-flex h-9 items-center justify-center rounded-2xl bg-surface px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-400/20"
             >
-              Save to garage
+              {t("Save to garage")}
             </button>
 
             <button
@@ -69,19 +71,19 @@ export default function GaragePanel() {
               onClick={clearVehicle}
               className="inline-flex h-9 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-400/25"
             >
-              Clear vehicle
+              {t("Clear vehicle")}
             </button>
           </div>
         </div>
       ) : (
         <div className="mt-5 rounded-2xl border border-dashed border-line-strong bg-surface-2 p-4 text-sm text-muted">
-          No active vehicle selected yet.
+          {t("No active vehicle selected yet.")}
         </div>
       )}
 
       {savedVehicles.length === 0 ? (
         <div className="mt-5 rounded-2xl border border-dashed border-line-strong bg-surface-2 p-4 text-sm text-muted">
-          No saved vehicles yet.
+          {t("No saved vehicles yet.")}
         </div>
       ) : (
         <div className="mt-5 space-y-3">
@@ -102,7 +104,7 @@ export default function GaragePanel() {
                 <div className="min-w-0">
                   <p className="font-semibold text-ink">{vehicle.label}</p>
                   <p className="mt-1 text-xs text-muted">
-                    {isActive ? "Currently active" : "Saved in garage"}
+                    {isActive ? t("Currently active") : t("Saved in garage")}
                   </p>
                 </div>
 
@@ -113,7 +115,7 @@ export default function GaragePanel() {
                       onClick={() => selectSavedVehicle(vehicle)}
                       className="inline-flex h-10 items-center justify-center rounded-2xl border border-line bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
                     >
-                      Use vehicle
+                      {t("Use vehicle")}
                     </button>
                   ) : null}
 
@@ -122,7 +124,7 @@ export default function GaragePanel() {
                     onClick={() => removeSavedVehicle(vehicle)}
                     className="inline-flex h-10 items-center justify-center rounded-2xl border border-red-400/30 bg-red-400/10 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-400/20"
                   >
-                    Remove
+                    {t("Remove")}
                   </button>
                 </div>
               </div>

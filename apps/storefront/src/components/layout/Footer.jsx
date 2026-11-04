@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import BrandMark, { Wordmark } from "../brand/BrandMark";
+import { useT } from "../../i18n";
 
 export default function Footer() {
+  const t = useT();
   return (
     <footer className="mt-10 border-t border-line bg-[#0B1222] text-white">
       <div className="mx-auto grid max-w-[1380px] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-4 lg:px-6">
@@ -12,8 +14,7 @@ export default function Footer() {
           </div>
 
           <p className="mt-4 max-w-xs text-sm leading-7 text-faint">
-            The trusted marketplace for OEM and aftermarket auto parts. Search by vehicle, compare
-            listings, and buy from sellers with clearer trust signals.
+            {t("The trusted marketplace for OEM and aftermarket auto parts. Search by vehicle, compare listings, and buy from sellers with clearer trust signals.")}
           </p>
 
           <div className="mt-5 flex gap-2">
@@ -29,42 +30,42 @@ export default function Footer() {
         </div>
 
         <div>
-          <div className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-white">Shop</div>
+          <div className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-white">{t("Shop")}</div>
           <div className="space-y-3 text-sm text-faint">
-            <Link to="/parts" className="block hover:text-blue-300">Browse All Parts</Link>
-            <Link to="/vehicle-selector" className="block hover:text-blue-300">Shop by Vehicle</Link>
-            <Link to="/parts?q=oem" className="block hover:text-blue-300">OEM Parts</Link>
-            <Link to="/parts?sort=price_asc" className="block hover:text-blue-300">Flash Deals</Link>
-            <Link to="/compare" className="block hover:text-blue-300">Compare Parts</Link>
+            <Link to="/parts" className="block hover:text-blue-300">{t("Browse All Parts")}</Link>
+            <Link to="/vehicle-selector" className="block hover:text-blue-300">{t("Shop by Vehicle")}</Link>
+            <Link to="/parts?q=oem" className="block hover:text-blue-300">{t("OEM Parts")}</Link>
+            <Link to="/parts?sort=price_asc" className="block hover:text-blue-300">{t("Flash Deals")}</Link>
+            <Link to="/compare" className="block hover:text-blue-300">{t("Compare Parts")}</Link>
           </div>
         </div>
 
         <div>
-          <div className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-white">Account</div>
+          <div className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-white">{t("Account")}</div>
           <div className="space-y-3 text-sm text-faint">
-            <Link to="/auth" className="block hover:text-blue-300">Sign In / Register</Link>
-            <Link to="/orders" className="block hover:text-blue-300">My Orders</Link>
-            <Link to="/vehicle-selector" className="block hover:text-blue-300">My Garage</Link>
-            <Link to="/compare" className="block hover:text-blue-300">Saved Compare</Link>
-            <Link to="/account" className="block hover:text-blue-300">My Account</Link>
+            <Link to="/auth" className="block hover:text-blue-300">{t("Sign In / Register")}</Link>
+            <Link to="/orders" className="block hover:text-blue-300">{t("My Orders")}</Link>
+            <Link to="/vehicle-selector" className="block hover:text-blue-300">{t("My Garage")}</Link>
+            <Link to="/compare" className="block hover:text-blue-300">{t("Saved Compare")}</Link>
+            <Link to="/account" className="block hover:text-blue-300">{t("My Account")}</Link>
           </div>
         </div>
 
         <div>
-          <div className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-white">Support</div>
+          <div className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-white">{t("Support")}</div>
           <div className="space-y-3 text-sm text-faint">
-            <Link to="/orders" className="block hover:text-blue-300">Track My Order</Link>
-            <Link to="/checkout/success" className="block hover:text-blue-300">Order Confirmation</Link>
-            <Link to="/parts" className="block hover:text-blue-300">Seller Center</Link>
-            <Link to="/account" className="block hover:text-blue-300">Contact Support</Link>
-            <Link to="/auth" className="block hover:text-blue-300">Help Center</Link>
+            <Link to="/orders" className="block hover:text-blue-300">{t("Track My Order")}</Link>
+            <Link to="/checkout/success" className="block hover:text-blue-300">{t("Order Confirmation")}</Link>
+            <Link to="/parts" className="block hover:text-blue-300">{t("Seller Center")}</Link>
+            <Link to="/account" className="block hover:text-blue-300">{t("Contact Support")}</Link>
+            <Link to="/auth" className="block hover:text-blue-300">{t("Help Center")}</Link>
           </div>
         </div>
       </div>
 
       <div className="border-t border-slate-800">
         <div className="mx-auto flex max-w-[1380px] flex-wrap items-center justify-between gap-3 px-4 py-5 text-xs text-faint sm:px-6 lg:px-6">
-          <div>© 2026 PartHub Inc. All rights reserved.</div>
+          <div>{t("© 2026 PartHub Inc. All rights reserved.")}</div>
           <div className="flex flex-wrap gap-2">
             {["VISA", "MASTERCARD", "PAYPAL", "APPLE PAY", "GOOGLE PAY"].map((item) => (
               <span
