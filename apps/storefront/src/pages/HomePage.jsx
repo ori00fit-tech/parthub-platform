@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
+import PartsForYourVehicle from "../features/parts/PartsForYourVehicle";
 
 function getVehicleLabel(vehicle) {
   if (!vehicle) return "No vehicle selected";
@@ -341,6 +342,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <PartsForYourVehicle />
 
       <section>
         <div className="mb-5 flex items-end justify-between gap-4">

@@ -37,6 +37,9 @@ searchRoutes.get("/", async (c) => {
     const maxPriceRaw = c.req.query("max_price")?.trim() || "";
     const sort = c.req.query("sort")?.trim() || "relevance";
     const pageRaw = c.req.query("page")?.trim() || "1";
+    // fit=only (default): only parts with compatibility for the vehicle.
+    // fit=rank: every part, best fit first (exact year, then same model).
+    const fitOnly = c.req.query("fit")?.trim() !== "rank";
 
     const year = yearRaw ? Number(yearRaw) : null;
     const minPrice = minPriceRaw ? Number(minPriceRaw) : null;
@@ -89,6 +92,9 @@ searchRoutes.get("/", async (c) => {
     let exactVehicleMatchSql = "0";
     let partialVehicleMatchSql = "0";
     let compatibilityWhereSql = "";
+    // Params pushed from here on belong to the vehicle match expressions
+    // (select list) and, with fit=only, the vehicle filter.
+    const vehicleParamsStart = params.length;
 
     if (make && model && year != null && !Number.isNaN(year)) {
       const start = params.length;
@@ -121,7 +127,7 @@ searchRoutes.get("/", async (c) => {
         end
       `;
 
-      compatibilityWhereSql = `
+      compatibilityWhereSql = !fitOnly ? "" : `
         and exists (
           select 1
           from part_compatibility pc
@@ -135,9 +141,10 @@ searchRoutes.get("/", async (c) => {
 
       params.push(
         make, model, year, year,
-        make, model,
-        make, model, year, year
+        make, model
       );
+      // The filter's params come last so they can be left out with it.
+      if (fitOnly) params.push(make, model, year, year);
     } else if (make && model) {
       const start = params.length;
 
@@ -156,7 +163,7 @@ searchRoutes.get("/", async (c) => {
 
       partialVehicleMatchSql = exactVehicleMatchSql;
 
-      compatibilityWhereSql = `
+      compatibilityWhereSql = !fitOnly ? "" : `
         and exists (
           select 1
           from part_compatibility pc
@@ -166,7 +173,8 @@ searchRoutes.get("/", async (c) => {
         )
       `;
 
-      params.push(make, model, make, model);
+      params.push(make, model);
+      if (fitOnly) params.push(make, model);
     } else if (make) {
       const start = params.length;
 
@@ -182,7 +190,7 @@ searchRoutes.get("/", async (c) => {
         end
       `;
 
-      compatibilityWhereSql = `
+      compatibilityWhereSql = !fitOnly ? "" : `
         and exists (
           select 1
           from part_compatibility pc
@@ -191,7 +199,8 @@ searchRoutes.get("/", async (c) => {
         )
       `;
 
-      params.push(make, make);
+      params.push(make);
+      if (fitOnly) params.push(make);
     }
 
     const whereClause = where.length ? `where ${where.join(" and ")}` : "";
@@ -288,7 +297,9 @@ searchRoutes.get("/", async (c) => {
 
     const result = await c.env.DB.prepare(sql).bind(...params, limit, offset).all();
 
-    const countParams = [...params];
+    // The count query has no select-list match expressions: with fit=rank it
+    // only references the filters pushed before the vehicle section.
+    const countParams = fitOnly ? [...params] : params.slice(0, vehicleParamsStart);
     const countSql = `
       select count(*) as total
       from parts p
@@ -307,14 +318,16 @@ searchRoutes.get("/", async (c) => {
       `
       insert into part_search_logs (
         query,
-        make_slug,
-        model_slug,
+        make,
+        model,
         year,
+        category_slug,
+        brand_slug,
         results_count
-      ) values (?1, ?2, ?3, ?4, ?5)
+      ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7)
       `
     )
-      .bind(q || null, make || null, model || null, year || null, total)
+      .bind(q, make || null, model || null, year || null, category || null, brand || null, total)
       .run()
       .catch(() => null);
 
@@ -337,6 +350,7 @@ searchRoutes.get("/", async (c) => {
           min_price: minPrice,
           max_price: maxPrice,
           sort,
+          fit: fitOnly ? "only" : "rank",
         },
         currency: "MAD",
         locale: "fr-MA",

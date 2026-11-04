@@ -60,7 +60,7 @@ function normalizeMeta(meta, loadedCount = 0) {
 function buildSearchParamsFromState(filters) {
   const params = new URLSearchParams();
 
-  if (filters.q) params.set("search", filters.q);
+  if (filters.q) params.set("q", filters.q);
   if (filters.category) params.set("category", filters.category);
   if (filters.brand) params.set("brand", filters.brand);
   if (filters.condition) params.set("condition", filters.condition);
@@ -68,6 +68,7 @@ function buildSearchParamsFromState(filters) {
   if (filters.max_price) params.set("max_price", filters.max_price);
   if (filters.sort) params.set("sort", filters.sort);
   if (filters.page && String(filters.page) !== "1") params.set("page", String(filters.page));
+  if (filters.fit === "rank") params.set("fit", "rank");
 
   return params;
 }
@@ -92,6 +93,9 @@ function buildApiQuery(filters, vehicle) {
   if (vehicle?.year) {
     params.set("year", String(vehicle.year));
   }
+
+  // With a vehicle: only parts that fit (default) or all parts, best fit first.
+  if (vehicle) params.set("fit", filters.fit === "rank" ? "rank" : "only");
 
   return params.toString();
 }
@@ -244,6 +248,7 @@ export default function PartsPage() {
     max_price: searchParams.get("max_price") || "",
     sort: searchParams.get("sort") || "relevance",
     page: Number(searchParams.get("page") || 1),
+    fit: searchParams.get("fit") === "rank" ? "rank" : "only",
   });
 
   const [parts, setParts] = useState([]);
@@ -312,7 +317,7 @@ export default function PartsPage() {
         setError("");
 
         const query = buildApiQuery(filters, selectedVehicle);
-        const response = await apiGet(`/api/v1/catalog/parts?${query}`);
+        const response = await apiGet(`/api/v1/search?${query}`);
 
         if (!active) return;
 
@@ -432,6 +437,7 @@ export default function PartsPage() {
       max_price: "",
       sort: "relevance",
       page: 1,
+      fit: "only",
     });
   }
 
@@ -705,6 +711,21 @@ export default function PartsPage() {
                     ? `${exactMatchesCount} exact match${exactMatchesCount === 1 ? "" : "es"} for ${vehicleLabel}`
                     : "Showing broader marketplace results"}
                 </p>
+                {hasVehicle ? (
+                  <label className="mt-3 inline-flex cursor-pointer select-none items-center gap-2.5 text-sm font-semibold text-ink-2">
+                    <input
+                      type="checkbox"
+                      className="peer sr-only"
+                      checked={filters.fit !== "rank"}
+                      onChange={(e) => setFilters((prev) => ({ ...prev, fit: e.target.checked ? "only" : "rank", page: 1 }))}
+                    />
+                    <span
+                      aria-hidden="true"
+                      className="relative h-6 w-11 flex-none rounded-full bg-line-strong transition peer-checked:bg-navy peer-focus-visible:ring-2 peer-focus-visible:ring-link peer-focus-visible:ring-offset-2 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5"
+                    />
+                    Only parts that fit my {vehicleLabel}
+                  </label>
+                ) : null}
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -869,6 +890,15 @@ export default function PartsPage() {
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-3">
+                  {hasVehicle && filters.fit !== "rank" ? (
+                    <button
+                      type="button"
+                      onClick={() => setFilters((prev) => ({ ...prev, fit: "rank", page: 1 }))}
+                      className="inline-flex h-11 items-center justify-center rounded-2xl bg-navy px-5 text-sm font-semibold text-white transition hover:bg-navy-deep"
+                    >
+                      Show all parts, best fit first
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={clearAllFilters}
@@ -999,6 +1029,10 @@ export default function PartsPage() {
                           {exactMatched ? (
                             <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 text-xs font-medium text-emerald-700 before:h-1.5 before:w-1.5 before:rounded-full before:bg-current">
                               Fits your vehicle
+                            </span>
+                          ) : hasVehicle && Number(part?.partial_vehicle_match || 0) === 1 ? (
+                            <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 text-xs font-medium text-amber-800 before:h-1.5 before:w-1.5 before:rounded-full before:bg-current">
+                              Same model, check the year
                             </span>
                           ) : compatibilityCount > 0 ? (
                             <span className="inline-flex h-6 items-center rounded-full border border-line bg-white/[0.03] px-2.5 text-xs font-medium text-muted">
