@@ -1,6 +1,8 @@
 // Find the Cloudflare Pages project that serves a given domain.
 // Usage: node find-pages-project.mjs <domain> <fallback-name>
-// Prints the project name on stdout; diagnostics go to stderr.
+// Prints "<name> <source>" on stdout, where source is "upload" for a
+// direct-upload project or the Git provider (e.g. "github") for a project
+// Cloudflare builds itself. Diagnostics go to stderr.
 // Auth: CLOUDFLARE_EMAIL + CLOUDFLARE_API_KEY (global key), as used by wrangler.
 const [domain, fallback] = process.argv.slice(2);
 const headers = {
@@ -23,13 +25,26 @@ for (const account of accounts) {
   for (let page = 1; page < 20; page++) {
     const body = await api(`/accounts/${account.id}/pages/projects?per_page=10&page=${page}`);
     const list = body.result || [];
-    for (const p of list) all.push({ account: account.name, name: p.name, domains: p.domains || [], subdomain: p.subdomain || "" });
+    for (const p of list) {
+      all.push({
+        account: account.name,
+        name: p.name,
+        domains: p.domains || [],
+        subdomain: p.subdomain || "",
+        source: p.source?.type || "upload",
+        repo: p.source?.config?.repo_name || "",
+      });
+    }
     if (list.length < 10) break;
   }
 }
 
 console.error(`Pages projects in your account (${all.length}):`);
-for (const p of all) console.error(`  - ${p.name}  →  ${[...new Set([p.subdomain, ...p.domains].filter(Boolean))].join(", ")}`);
+for (const p of all) {
+  const urls = [...new Set([p.subdomain, ...p.domains].filter(Boolean))].join(", ");
+  const how = p.source === "upload" ? "direct upload" : `built by Cloudflare from ${p.source}${p.repo ? ` (${p.repo})` : ""}`;
+  console.error(`  - ${p.name}  →  ${urls}  [${how}]`);
+}
 
 const wanted = domain.toLowerCase();
 const match =
@@ -41,5 +56,5 @@ if (!match) {
   console.error(`Create one (Workers & Pages → Create → Pages → Direct upload) or add ${domain} as a custom domain to the right project.`);
   process.exit(1);
 }
-console.error(`\n${domain} → ${match.name}`);
-console.log(match.name);
+console.error(`\n${domain} → ${match.name} [${match.source}]`);
+console.log(`${match.name} ${match.source}`);
