@@ -1,6 +1,10 @@
 name: Deploy Notes
 
 # Manual deployment guide – not auto-triggered
+#
+# Now automated: "Deploy API" ships the Worker, "Deploy Pages" builds and
+# publishes the three apps on every push to main, and "D1 migrations" applies
+# database migrations (run it by hand). The commands below still work locally.
 # Run deploy commands manually from Termux:
 #
 # API Worker:
