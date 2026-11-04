@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
+import { reasonPromptFor, useReasonDialog } from "../components/ReasonDialog";
 
 function normalizeRows(payload) {
   if (Array.isArray(payload?.data)) return payload.data;
@@ -63,9 +64,18 @@ export default function SellersPage() {
     loadRows();
   }, [status]);
 
-  async function updateStatus(id, nextStatus) {
+  const { ask: askReason, dialog: reasonDialog } = useReasonDialog();
+
+  async function updateStatus(id, nextStatus, label) {
+    // Negative decisions ask for a message the seller will see.
+    const prompt = reasonPromptFor("seller", nextStatus, label);
+    let reason;
+    if (prompt) {
+      reason = await askReason(prompt);
+      if (reason === null) return;
+    }
     try {
-      await api.patch(`/api/v1/admin/sellers/${id}/status`, { status: nextStatus });
+      await api.patch(`/api/v1/admin/sellers/${id}/status`, { status: nextStatus, reason });
       await loadRows();
     } catch (err) {
       setError(err?.message || "Failed to update seller status");
@@ -160,7 +170,7 @@ export default function SellersPage() {
 
                     <button
                       type="button"
-                      onClick={() => updateStatus(seller.id, "active")}
+                      onClick={() => updateStatus(seller.id, "active", seller.name)}
                       className="inline-flex h-10 items-center justify-center rounded-2xl bg-green-600 px-4 text-sm font-semibold text-white transition hover:bg-green-700"
                     >
                       Approve
@@ -168,7 +178,7 @@ export default function SellersPage() {
 
                     <button
                       type="button"
-                      onClick={() => updateStatus(seller.id, "suspended")}
+                      onClick={() => updateStatus(seller.id, "suspended", seller.name)}
                       className="inline-flex h-10 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 px-4 text-sm font-semibold text-amber-700 transition hover:bg-amber-100"
                     >
                       Suspend
@@ -176,7 +186,7 @@ export default function SellersPage() {
 
                     <button
                       type="button"
-                      onClick={() => updateStatus(seller.id, "rejected")}
+                      onClick={() => updateStatus(seller.id, "rejected", seller.name)}
                       className="inline-flex h-10 items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
                     >
                       Reject
@@ -188,6 +198,7 @@ export default function SellersPage() {
           </div>
         )}
       </div>
+      {reasonDialog}
     </section>
   );
 }

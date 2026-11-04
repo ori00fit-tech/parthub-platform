@@ -651,7 +651,17 @@ marketplaceRoutes.get("/me/readiness", authMiddleware, async (c) => {
       items: readiness.items,
       parts: readiness.parts,
       seller: readiness.seller
-        ? { id: readiness.seller.id, name: readiness.seller.name, slug: readiness.seller.slug, status: readiness.seller.status }
+        ? {
+            id: readiness.seller.id,
+            name: readiness.seller.name,
+            slug: readiness.seller.slug,
+            status: readiness.seller.status,
+            // Only shown while the decision stands.
+            moderation_note:
+              readiness.seller.status === "rejected" || readiness.seller.status === "suspended"
+                ? readiness.seller.moderation_note
+                : null,
+          }
         : null,
       access_token,
     })
@@ -964,6 +974,7 @@ marketplaceRoutes.get("/me/parts/:id", authMiddleware, async (c) => {
         p.quantity,
         p.weight_kg,
         p.status,
+        p.moderation_note,
         p.featured,
         p.created_at,
         p.updated_at,

@@ -30,6 +30,7 @@ type SellerRow = {
   description: string | null;
   logo_url: string | null;
   status: string;
+  moderation_note: string | null;
 };
 
 type PartStats = {
@@ -120,7 +121,7 @@ export function readinessPercent(items: ChecklistItem[]): number {
 
 export async function loadReadiness(DB: D1Database, userId: number) {
   const seller = await DB.prepare(
-    `select id, name, slug, phone, whatsapp, location, description, logo_url, status
+    `select id, name, slug, phone, whatsapp, location, description, logo_url, status, moderation_note
      from sellers where user_id = ?1 limit 1`
   )
     .bind(userId)

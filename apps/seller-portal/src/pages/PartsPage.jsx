@@ -302,6 +302,18 @@ export default function PartsPage() {
                       </span>
                     </div>
 
+                    {(part.status === "rejected" || part.status === "archived") && part.moderation_note ? (
+                      <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                        <p>
+                          <span className="font-semibold">{part.status === "rejected" ? "Not approved:" : "Archived:"}</span>{" "}
+                          {part.moderation_note}
+                        </p>
+                        {part.status === "rejected" ? (
+                          <p className="mt-1 text-xs text-red-700">Edit the listing and save it to send it for review again.</p>
+                        ) : null}
+                      </div>
+                    ) : null}
+
                     <p className="mt-3 line-clamp-3 text-sm text-gray-600">
                       {part.description || "No description available."}
                     </p>

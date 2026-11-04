@@ -24,6 +24,11 @@ export function StoreStatusBanner({ readiness }) {
       <div className="min-w-0 flex-1">
         <p className="font-semibold">{copy.title}</p>
         <p className="mt-0.5 text-sm opacity-90">{copy.text}</p>
+        {readiness.seller?.moderation_note ? (
+          <p className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-sm">
+            <span className="font-semibold">Message from PartHub:</span> {readiness.seller.moderation_note}
+          </p>
+        ) : null}
       </div>
       {copy.cta ? (
         <Link
