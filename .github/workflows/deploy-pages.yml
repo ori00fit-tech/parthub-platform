@@ -36,14 +36,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # `project` is only a fallback: the real project is the one that
+          # serves `domain` (see .github/scripts/find-pages-project.mjs).
           - app: storefront
             package: "@parthub/storefront"
+            domain: parthub.site
             project: parthub-storefront
           - app: seller-portal
             package: "@parthub/seller-portal"
+            domain: seller.parthub.site
             project: parthub-seller
           - app: admin
             package: "@parthub/admin"
+            domain: admin.parthub.site
             project: parthub-admin
 
     steps:
@@ -95,17 +100,30 @@ jobs:
           find dist -name "*.map" -delete
           ls -la dist
 
-      - name: Deploy to Cloudflare Pages (${{ matrix.project }})
+      - name: Find the Pages project for ${{ matrix.domain }}
+        id: project
+        if: steps.pick.outputs.run == 'true'
+        env:
+          CLOUDFLARE_EMAIL: ${{ secrets.CF_EMAIL }}
+          CLOUDFLARE_API_KEY: ${{ secrets.CF_GLOBAL_API_KEY }}
+        run: |
+          name=$(node .github/scripts/find-pages-project.mjs "${{ matrix.domain }}" "${{ matrix.project }}")
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Cloudflare Pages (${{ steps.project.outputs.name }})
         if: steps.pick.outputs.run == 'true'
         working-directory: apps/${{ matrix.app }}
         env:
           CLOUDFLARE_EMAIL: ${{ secrets.CF_EMAIL }}
           CLOUDFLARE_API_KEY: ${{ secrets.CF_GLOBAL_API_KEY }}
           CI: "true"
+          # Passed through env so quotes in commit messages can't break the command.
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message || 'Manual deploy' }}
+          PROJECT_NAME: ${{ steps.project.outputs.name }}
         run: |
           npx --yes wrangler@4 pages deploy dist \
-            --project-name="${{ matrix.project }}" \
+            --project-name="$PROJECT_NAME" \
             --branch=main \
             --commit-hash="${{ github.sha }}" \
-            --commit-message="${{ github.event.head_commit.message || 'Manual deploy' }}" \
+            --commit-message="$(printf '%s' "$COMMIT_MESSAGE" | head -n 1 | cut -c1-200)" \
             --commit-dirty=true
