@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS sellers (
   phone       TEXT,
   whatsapp    TEXT,
   location    TEXT,
+  seller_type TEXT DEFAULT 'shop',          -- shop | breaker | importer (see migrations/0007)
   status      TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','active','suspended','rejected')),
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
@@ -95,6 +96,7 @@ CREATE TABLE IF NOT EXISTS parts (
   condition      TEXT NOT NULL DEFAULT 'new' CHECK (condition IN ('new','used','refurbished')),
   quantity       INTEGER NOT NULL DEFAULT 1,
   weight_kg      REAL,
+  part_origin    TEXT DEFAULT 'aftermarket',  -- oem | aftermarket | used (see migrations/0008)
   status         TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('draft','pending','active','rejected','archived')),
   featured       INTEGER NOT NULL DEFAULT 0,
   view_count     INTEGER NOT NULL DEFAULT 0,
@@ -311,3 +313,7 @@ CREATE INDEX IF NOT EXISTS idx_part_images_part ON part_images(part_id, is_featu
 CREATE INDEX IF NOT EXISTS idx_part_specs_part ON part_specs(part_id);
 CREATE INDEX IF NOT EXISTS idx_order_addresses_order ON order_addresses(order_id);
 CREATE INDEX IF NOT EXISTS idx_vehicle_makes_slug ON vehicle_makes(slug);
+
+-- ── Morocco layer indexes (see migrations/0009_morocco_layer_backfill.sql) ──
+CREATE INDEX IF NOT EXISTS idx_parts_part_origin ON parts(part_origin);
+CREATE INDEX IF NOT EXISTS idx_sellers_seller_type ON sellers(seller_type);

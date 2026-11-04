@@ -1,3 +1,7 @@
+-- SUPERSEDED by 0007_seller_type.sql, 0008_part_origin.sql and
+-- 0009_morocco_layer_backfill.sql (run by the "D1 migrations" workflow).
+-- Kept for history; do not run on a database that already has these columns.
+
 -- Add seller type
 ALTER TABLE sellers ADD COLUMN seller_type TEXT DEFAULT 'shop';
 
