@@ -36,20 +36,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # `project` is only a fallback: the real project is the one that
-          # serves `domain` (see .github/scripts/find-pages-project.mjs).
+          # Pages project names in the Cloudflare account. Once a custom domain
+          # is added to a project, it is also found by `domain`
+          # (see .github/scripts/find-pages-project.mjs).
           - app: storefront
             package: "@parthub/storefront"
             domain: parthub.site
-            project: parthub-storefront
+            project: parthub-platform
           - app: seller-portal
             package: "@parthub/seller-portal"
             domain: seller.parthub.site
-            project: parthub-seller
+            project: parthub-platform-seller
           - app: admin
             package: "@parthub/admin"
             domain: admin.parthub.site
-            project: parthub-admin
+            project: parthub-platform-admin
 
     steps:
       - name: Skip apps not selected
@@ -107,11 +108,16 @@ jobs:
           CLOUDFLARE_EMAIL: ${{ secrets.CF_EMAIL }}
           CLOUDFLARE_API_KEY: ${{ secrets.CF_GLOBAL_API_KEY }}
         run: |
-          name=$(node .github/scripts/find-pages-project.mjs "${{ matrix.domain }}" "${{ matrix.project }}")
+          read -r name source < <(node .github/scripts/find-pages-project.mjs "${{ matrix.domain }}" "${{ matrix.project }}")
+          test -n "$name" || exit 1
           echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "source=$source" >> "$GITHUB_OUTPUT"
+          if [ "$source" != "upload" ]; then
+            echo "::notice title=${{ matrix.app }}::$name is connected to $source, so Cloudflare builds and deploys it on every push by itself. Skipping the upload."
+          fi
 
       - name: Deploy to Cloudflare Pages (${{ steps.project.outputs.name }})
-        if: steps.pick.outputs.run == 'true'
+        if: steps.pick.outputs.run == 'true' && steps.project.outputs.source == 'upload'
         working-directory: apps/${{ matrix.app }}
         env:
           CLOUDFLARE_EMAIL: ${{ secrets.CF_EMAIL }}
