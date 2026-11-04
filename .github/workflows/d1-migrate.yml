@@ -39,30 +39,34 @@ jobs:
           npx --yes wrangler@4 d1 execute "$DB_NAME" --remote \
             --command "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
 
+      # File imports keep working even when D1's daily read limit is hit,
+      # so no migration step depends on a read query. Steps that create
+      # tables/indexes use IF NOT EXISTS; steps that add a column go through
+      # d1-apply-add-column.sh, which treats "duplicate column" as done.
+
+      - name: 0002 search logs table (create if missing)
+        run: npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0002_search_engine.sql"
+
       - name: 0003 part requests (create tables if missing)
         run: npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0003_part_requests.sql"
 
       - name: 0004 WhatsApp notification log (create table if missing)
         run: npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0004_whatsapp_notifications.sql"
 
-      # File imports keep working even when D1's daily read limit is hit,
-      # so no step below depends on a read query.
       - name: 0005 request photos (add column if missing)
-        run: |
-          set +e
-          out=$(npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0005_part_request_images.sql" 2>&1)
-          code=$?
-          echo "$out"
-          if [ $code -ne 0 ]; then
-            if echo "$out" | grep -qi "duplicate column"; then
-              echo "part_requests.images already exists — nothing to do"
-            else
-              exit $code
-            fi
-          fi
+        run: ../../.github/scripts/d1-apply-add-column.sh "$MIGRATIONS/0005_part_request_images.sql"
 
       - name: 0006 core indexes (create if missing)
         run: npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0006_core_indexes.sql"
+
+      - name: 0007 sellers.seller_type (add column if missing)
+        run: ../../.github/scripts/d1-apply-add-column.sh "$MIGRATIONS/0007_seller_type.sql"
+
+      - name: 0008 parts.part_origin (add column if missing)
+        run: ../../.github/scripts/d1-apply-add-column.sh "$MIGRATIONS/0008_part_origin.sql"
+
+      - name: 0009 Morocco layer defaults and indexes
+        run: npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0009_morocco_layer_backfill.sql"
 
       # Read query: fails while the daily read limit is exceeded, which
       # doesn't mean the migrations failed.
@@ -71,6 +75,8 @@ jobs:
         run: |
           npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --command \
             "SELECT
-               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('part_requests','request_offers','whatsapp_notifications')) AS new_tables_of_3,
+               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('part_requests','request_offers','whatsapp_notifications','part_search_logs')) AS tables_of_4,
                (SELECT CASE WHEN instr(sql, 'images') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='part_requests') AS images_column,
+               (SELECT CASE WHEN instr(sql, 'seller_type') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='sellers') AS seller_type_column,
+               (SELECT CASE WHEN instr(sql, 'part_origin') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='parts') AS part_origin_column,
                (SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name IN ('idx_part_images_part','idx_compat_part_id','idx_parts_seller_id','idx_parts_status')) AS key_indexes_of_4"
