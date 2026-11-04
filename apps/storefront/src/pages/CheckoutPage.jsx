@@ -190,7 +190,7 @@ export default function CheckoutPage() {
           <span className="ml-2 font-semibold">{vehicleLabel}</span>
         </div>
       ) : (
-        <div className="rounded-3xl border border-navy/70 bg-navy/20 px-4 py-4 text-sm text-link shadow-sm">
+        <div className="rounded-3xl border border-navy/20 bg-navy/[0.06] px-4 py-4 text-sm text-link shadow-sm">
           No vehicle selected. You can still place the order, but fitment confidence is stronger when a vehicle is selected.
         </div>
       )}

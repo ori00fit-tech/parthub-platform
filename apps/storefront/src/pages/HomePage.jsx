@@ -20,7 +20,7 @@ function getVehicleLabel(vehicle) {
 function HeroStat({ value, label, icon }) {
   return (
     <div className="flex items-center gap-3 border-b border-line px-5 py-4 sm:border-b-0 sm:border-r last:border-r-0">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy/20 text-lg">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy/[0.06] text-lg">
         {icon}
       </div>
       <div>
@@ -96,7 +96,7 @@ function SellerCard({ initials, name, location, rating, sales, to, color }) {
       <div>
         <div className="flex items-center gap-2">
           <p className="font-bold text-ink">{name}</p>
-          <span className="rounded-full bg-navy/20 px-2 py-0.5 text-[10px] font-bold text-link">
+          <span className="rounded-full bg-navy/[0.06] px-2 py-0.5 text-[10px] font-bold text-link">
             Verified
           </span>
         </div>
@@ -188,7 +188,7 @@ export default function HomePage() {
     <section className="space-y-10">
       <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-b from-surface to-canvas px-4 py-10 text-center sm:px-6">
         <div className="mx-auto max-w-4xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-navy/70 bg-navy/20 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-link">
+          <div className="inline-flex items-center gap-2 rounded-full border border-navy/20 bg-navy/[0.06] px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-link">
             ✓ 2.4M+ Parts · 1,200+ Verified Sellers
           </div>
 
@@ -325,7 +325,7 @@ export default function HomePage() {
                   <Link
                     key={item}
                     to={`/parts?q=${encodeURIComponent(item)}`}
-                    className="rounded-full border border-line bg-canvas px-3 py-1.5 font-semibold text-ink-2 transition hover:border-navy hover:bg-navy/30 hover:text-blue-800"
+                    className="rounded-full border border-line bg-canvas px-3 py-1.5 font-semibold text-ink-2 transition hover:border-navy hover:bg-navy/[0.12] hover:text-blue-800"
                   >
                     {item}
                   </Link>

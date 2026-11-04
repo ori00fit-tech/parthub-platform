@@ -145,12 +145,12 @@ function getRankingBadges(part, hasVehicle) {
   if (Number(part?.compatibility_count || 0) >= 3) {
     badges.push({
       label: "Strong compatibility",
-      className: "bg-navy/20 text-link",
+      className: "bg-navy/[0.06] text-link",
     });
   } else if (Number(part?.compatibility_count || 0) > 0) {
     badges.push({
       label: "Compatibility added",
-      className: "bg-navy/20 text-link",
+      className: "bg-navy/[0.06] text-link",
     });
   }
 
@@ -178,7 +178,7 @@ function getSellerBadges(part) {
   if (Number(part?.compatibility_count || 0) > 0) {
     badges.push({
       label: "Fitment-ready seller",
-      className: "bg-navy/20 text-link",
+      className: "bg-navy/[0.06] text-link",
     });
   }
 
@@ -648,7 +648,7 @@ export default function PartsPage() {
             <button
               type="button"
               onClick={() => setMobileFiltersOpen(true)}
-              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/30 xl:hidden"
+              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/[0.12] xl:hidden"
             >
               Filters
             </button>
@@ -656,7 +656,7 @@ export default function PartsPage() {
             <button
               type="button"
               onClick={handleSaveSearch}
-              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/30"
+              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/[0.12]"
             >
               Save search
             </button>
@@ -711,7 +711,7 @@ export default function PartsPage() {
                 <button
                   type="button"
                   onClick={handleSaveSearch}
-                  className="rounded-full bg-navy/20 px-3 py-1 text-xs font-semibold text-link transition hover:bg-navy/30"
+                  className="rounded-full bg-navy/[0.06] px-3 py-1 text-xs font-semibold text-link transition hover:bg-navy/[0.12]"
                 >
                   Save this search
                 </button>
@@ -750,7 +750,7 @@ export default function PartsPage() {
                   <p className="mt-1 text-2xl font-bold text-emerald-800">{exactMatchesCount}</p>
                 </div>
 
-                <div className="rounded-2xl border border-navy/70 bg-navy/20 px-4 py-3">
+                <div className="rounded-2xl border border-navy/20 bg-navy/[0.06] px-4 py-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-link">
                     Broader fitment candidates
                   </p>
@@ -761,7 +761,7 @@ export default function PartsPage() {
           </div>
 
           {!hasVehicle ? (
-            <div className="rounded-3xl border border-navy/70 bg-navy/20 px-4 py-3 text-sm text-link shadow-sm">
+            <div className="rounded-3xl border border-navy/20 bg-navy/[0.06] px-4 py-3 text-sm text-link shadow-sm">
               Select your vehicle to unlock exact fitment ranking and stronger part matching.
             </div>
           ) : null}
@@ -879,7 +879,7 @@ export default function PartsPage() {
 
                   <Link
                     to={`/request-part${searchParams.get("q") ? `?part=${encodeURIComponent(searchParams.get("q"))}` : ""}`}
-                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-navy/70 bg-navy/20 px-5 text-sm font-semibold text-link transition hover:bg-navy/30"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-navy/20 bg-navy/[0.06] px-5 text-sm font-semibold text-link transition hover:bg-navy/[0.12]"
                   >
                     Can't find it? Request this part
                   </Link>
@@ -1040,7 +1040,7 @@ export default function PartsPage() {
                               className={[
                                 "flex h-[42px] w-[42px] items-center justify-center rounded-xl border transition",
                                 shortlistIds.includes(part.id)
-                                  ? "border-navy bg-navy/30 text-white"
+                                  ? "border-navy bg-navy text-white"
                                   : "border-line-strong text-muted hover:border-muted hover:text-ink",
                               ].join(" ")}
                             >

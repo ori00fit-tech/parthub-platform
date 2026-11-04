@@ -26,7 +26,7 @@ export default function AccountPage() {
         <div className="grid gap-4 lg:grid-cols-3">
           <Link
             to="/auth?redirect=/account"
-            className="rounded-3xl border border-navy/70 bg-navy/20 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="rounded-3xl border border-navy/20 bg-navy/[0.06] p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
             <p className="text-sm font-medium text-link">Recommended</p>
             <p className="mt-1 text-xl font-bold text-ink">Buyer sign in</p>
@@ -78,7 +78,7 @@ export default function AccountPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               to="/orders"
-              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/30"
+              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/[0.12]"
             >
               View orders
             </Link>
@@ -121,7 +121,7 @@ export default function AccountPage() {
 
             {hasVehicle && selectedVehicle ? (
               <div className="mt-5 space-y-4">
-                <div className="rounded-2xl bg-navy/20 p-4">
+                <div className="rounded-2xl bg-navy/[0.06] p-4">
                   <p className="text-xs uppercase tracking-wide text-link">Active vehicle</p>
                   <p className="mt-1 text-lg font-semibold text-ink">{selectedVehicle.label}</p>
                 </div>

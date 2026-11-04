@@ -9,7 +9,7 @@ function getSellerBadges(seller) {
   if (Number(seller?.fitment_ready_parts_count || 0) > 0) {
     badges.push({
       label: "Fitment-ready seller",
-      className: "bg-navy/20 text-link",
+      className: "bg-navy/[0.06] text-link",
     });
   }
 
@@ -34,12 +34,12 @@ function getPartBadges(part) {
   if (Number(part?.compatibility_count || 0) >= 3) {
     badges.push({
       label: "Strong compatibility",
-      className: "bg-navy/20 text-link",
+      className: "bg-navy/[0.06] text-link",
     });
   } else if (Number(part?.compatibility_count || 0) > 0) {
     badges.push({
       label: "Compatibility added",
-      className: "bg-navy/20 text-link",
+      className: "bg-navy/[0.06] text-link",
     });
   }
 
@@ -270,7 +270,7 @@ export default function SellerProfilePage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full bg-navy/20 px-3 py-1 text-[11px] font-semibold text-link">
+                      <span className="rounded-full bg-navy/[0.06] px-3 py-1 text-[11px] font-semibold text-link">
                         {getPartOriginLabel(part.part_origin)}
                       </span>
 

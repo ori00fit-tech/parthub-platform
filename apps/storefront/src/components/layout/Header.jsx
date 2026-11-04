@@ -5,7 +5,7 @@ import { useSelectedVehicle } from "../../features/vehicles/SelectedVehicleConte
 function navClass({ isActive }) {
   return [
     "px-4 py-2 rounded-xl text-sm font-semibold transition",
-    isActive ? "bg-navy/20 text-link" : "text-ink-2 hover:bg-surface-3",
+    isActive ? "bg-navy/[0.06] text-link" : "text-ink-2 hover:bg-surface-3",
   ].join(" ");
 }
 

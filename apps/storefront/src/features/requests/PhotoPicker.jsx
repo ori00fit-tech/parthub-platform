@@ -98,7 +98,7 @@ export default function PhotoPicker({ onChange, onUploadingChange }) {
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="flex aspect-square flex-col items-center justify-center rounded-xl border-2 border-dashed border-line-strong text-muted transition hover:border-sky-400 hover:bg-navy/30 hover:text-blue-800"
+            className="flex aspect-square flex-col items-center justify-center rounded-xl border-2 border-dashed border-line-strong text-muted transition hover:border-sky-400 hover:bg-navy/[0.12] hover:text-blue-800"
           >
             <span className="text-2xl">📷</span>
             <span className="mt-1 text-xs font-semibold">Add photo</span>

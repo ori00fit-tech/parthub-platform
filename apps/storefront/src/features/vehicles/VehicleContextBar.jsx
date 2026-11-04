@@ -11,7 +11,7 @@ export default function VehicleContextBar() {
 
   if (!selectedVehicle && (!savedVehicles || savedVehicles.length === 0)) {
     return (
-      <div className="rounded-3xl border border-navy/70 bg-navy/20 px-4 py-4 text-sm text-link shadow-sm">
+      <div className="rounded-3xl border border-navy/20 bg-navy/[0.06] px-4 py-4 text-sm text-link shadow-sm">
         Select and save a vehicle to unlock faster fitment-aware shopping.
       </div>
     );
@@ -35,7 +35,7 @@ export default function VehicleContextBar() {
               <button
                 type="button"
                 onClick={() => saveVehicle(selectedVehicle)}
-                className="inline-flex h-10 items-center justify-center rounded-2xl border border-navy/70 bg-navy/20 px-4 text-sm font-semibold text-link transition hover:bg-navy/30"
+                className="inline-flex h-10 items-center justify-center rounded-2xl border border-navy/20 bg-navy/[0.06] px-4 text-sm font-semibold text-link transition hover:bg-navy/[0.12]"
               >
                 Save vehicle
               </button>

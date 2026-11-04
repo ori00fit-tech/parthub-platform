@@ -158,7 +158,7 @@ function toneClasses(tone) {
     case "warning":
       return "border-amber-400/30 bg-amber-400/10 text-amber-800";
     default:
-      return "border-navy/70 bg-navy/20 text-link";
+      return "border-navy/20 bg-navy/[0.06] text-link";
   }
 }
 
@@ -379,7 +379,7 @@ export default function PartDetailsPage() {
                 </span>
               ) : null}
 
-              <span className="rounded-full bg-navy/20 px-3 py-1 text-xs font-semibold text-link">
+              <span className="rounded-full bg-navy/[0.06] px-3 py-1 text-xs font-semibold text-link">
                 {part.condition}
               </span>
 

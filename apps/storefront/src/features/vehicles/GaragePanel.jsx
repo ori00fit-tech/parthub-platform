@@ -39,7 +39,7 @@ export default function GaragePanel() {
           <button
             type="button"
             onClick={() => saveVehicle(selectedVehicle)}
-            className="inline-flex h-10 items-center justify-center rounded-2xl border border-navy/70 bg-navy/20 px-4 text-sm font-semibold text-link transition hover:bg-navy/30"
+            className="inline-flex h-10 items-center justify-center rounded-2xl border border-navy/20 bg-navy/[0.06] px-4 text-sm font-semibold text-link transition hover:bg-navy/[0.12]"
           >
             Save current
           </button>
