@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { formatMoney } from "@parthub/shared";
+import { statusLabel, useT } from "../i18n";
 
 function normalizeItems(payload) {
   const list =
@@ -36,6 +37,7 @@ function stockTone(quantity) {
 }
 
 export default function PartsPage() {
+  const t = useT();
   const [parts, setParts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -57,7 +59,7 @@ export default function PartsPage() {
       } catch (err) {
         if (!active) return;
         setParts([]);
-        setError(err?.message || "Failed to load seller inventory");
+        setError(err?.message || t("Failed to load seller inventory"));
       } finally {
         if (active) setLoading(false);
       }
@@ -123,7 +125,7 @@ export default function PartsPage() {
     return (
       <section className="space-y-6">
         <div className="rounded-3xl border border-gray-200 bg-white p-6 text-sm text-gray-500 shadow-sm">
-          Loading seller inventory...
+          {t("Loading seller inventory...")}
         </div>
       </section>
     );
@@ -135,11 +137,11 @@ export default function PartsPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Inventory management
+              {t("Inventory management")}
             </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">Your parts inventory</h1>
+            <h1 className="text-3xl font-bold sm:text-5xl">{t("Your parts inventory")}</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Search, review, and manage your part listings from one place.
+              {t("Search, review, and manage your part listings from one place.")}
             </p>
           </div>
 
@@ -148,13 +150,13 @@ export default function PartsPage() {
               to="/parts/create"
               className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
             >
-              + Create part
+              {t("+ Create part")}
             </Link>
             <Link
               to="/media-upload"
               className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
             >
-              Upload media
+              {t("Upload media")}
             </Link>
           </div>
         </div>
@@ -168,22 +170,22 @@ export default function PartsPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Total parts</p>
+          <p className="text-sm text-gray-500">{t("Total parts")}</p>
           <p className="mt-2 text-3xl font-bold text-gray-900">{counts.total}</p>
         </div>
 
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Active</p>
+          <p className="text-sm text-gray-500">{t("Active")}</p>
           <p className="mt-2 text-3xl font-bold text-gray-900">{counts.active}</p>
         </div>
 
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Drafts</p>
+          <p className="text-sm text-gray-500">{t("Drafts")}</p>
           <p className="mt-2 text-3xl font-bold text-gray-900">{counts.draft}</p>
         </div>
 
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Low stock</p>
+          <p className="text-sm text-gray-500">{t("Low stock")}</p>
           <p className="mt-2 text-3xl font-bold text-gray-900">{counts.lowStock}</p>
         </div>
       </div>
@@ -193,7 +195,7 @@ export default function PartsPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search title, SKU, brand, category..."
+            placeholder={t("Search title, SKU, brand, category...")}
             className="h-12 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
           />
 
@@ -202,10 +204,10 @@ export default function PartsPage() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="h-12 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
           >
-            <option value="">All statuses</option>
-            <option value="active">Active</option>
-            <option value="draft">Draft</option>
-            <option value="archived">Archived</option>
+            <option value="">{t("All statuses")}</option>
+            <option value="active">{t("Active")}</option>
+            <option value="draft">{t("Draft")}</option>
+            <option value="archived">{t("Archived")}</option>
           </select>
 
           <select
@@ -213,10 +215,10 @@ export default function PartsPage() {
             onChange={(e) => setStockFilter(e.target.value)}
             className="h-12 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
           >
-            <option value="">All stock states</option>
-            <option value="in_stock">In stock</option>
-            <option value="low_stock">Low stock</option>
-            <option value="out_of_stock">Out of stock</option>
+            <option value="">{t("All stock states")}</option>
+            <option value="in_stock">{t("In stock")}</option>
+            <option value="low_stock">{t("Low stock")}</option>
+            <option value="out_of_stock">{t("Out of stock")}</option>
           </select>
 
           <button
@@ -224,21 +226,21 @@ export default function PartsPage() {
             onClick={clearFilters}
             className="h-12 rounded-2xl border border-gray-200 px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
           >
-            Reset
+            {t("Reset")}
           </button>
         </div>
 
         <div className="mt-4 text-sm text-gray-500">
-          <span className="font-semibold text-gray-900">{filteredParts.length}</span> parts found
+          {t("{n} parts found", { n: filteredParts.length })}
         </div>
       </div>
 
       {filteredParts.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
           <div className="text-5xl">📦</div>
-          <h2 className="mt-4 text-2xl font-bold text-gray-900">No parts yet</h2>
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">{t("No parts yet")}</h2>
           <p className="mt-2 text-sm text-gray-500">
-            Create your first listing to start building your seller inventory.
+            {t("Create your first listing to start building your seller inventory.")}
           </p>
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -246,13 +248,13 @@ export default function PartsPage() {
               to="/parts/create"
               className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
-              Create part
+              {t("Create part")}
             </Link>
             <Link
               to="/media-upload"
               className="rounded-2xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
             >
-              Upload media
+              {t("Upload media")}
             </Link>
           </div>
         </div>
@@ -276,7 +278,7 @@ export default function PartsPage() {
                       />
                     ) : (
                       <div className="flex h-full min-h-[160px] items-center justify-center text-sm text-gray-400">
-                        No image
+                        {t("No image")}
                       </div>
                     )}
                   </div>
@@ -288,7 +290,7 @@ export default function PartsPage() {
                           {part.title}
                         </h3>
                         <p className="mt-1 text-sm text-gray-500">
-                          {part.brand_name || "Unknown brand"} • {part.category_name || "Uncategorized"}
+                          {part.brand_name || t("Unknown brand")} • {part.category_name ? t(part.category_name) : t("Uncategorized")}
                         </p>
                       </div>
 
@@ -298,24 +300,24 @@ export default function PartsPage() {
                           statusBadgeClasses(part.status),
                         ].join(" ")}
                       >
-                        {part.status || "unknown"}
+                        {statusLabel(part.status || "unknown")}
                       </span>
                     </div>
 
                     {(part.status === "rejected" || part.status === "archived") && part.moderation_note ? (
                       <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
                         <p>
-                          <span className="font-semibold">{part.status === "rejected" ? "Not approved:" : "Archived:"}</span>{" "}
+                          <span className="font-semibold">{part.status === "rejected" ? t("Not approved:") : t("Archived:")}</span>{" "}
                           {part.moderation_note}
                         </p>
                         {part.status === "rejected" ? (
-                          <p className="mt-1 text-xs text-red-700">Edit the listing and save it to send it for review again.</p>
+                          <p className="mt-1 text-xs text-red-700">{t("Edit the listing and save it to send it for review again.")}</p>
                         ) : null}
                       </div>
                     ) : null}
 
                     <p className="mt-3 line-clamp-3 text-sm text-gray-600">
-                      {part.description || "No description available."}
+                      {part.description || t("No description available.")}
                     </p>
 
                     <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-gray-600">
@@ -330,14 +332,14 @@ export default function PartsPage() {
                         to={`/parts/${part.id}/edit`}
                         className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
                       >
-                        Edit part
+                        {t("Edit part")}
                       </Link>
 
                       <Link
                         to="/media-upload"
                         className="rounded-2xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
                       >
-                        Upload media
+                        {t("Upload media")}
                       </Link>
                     </div>
                   </div>

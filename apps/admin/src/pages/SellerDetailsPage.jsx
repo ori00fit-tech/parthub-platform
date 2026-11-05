@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { reasonPromptFor, useReasonDialog } from "../components/ReasonDialog";
 import { formatMoney } from "@parthub/shared";
+import { statusLabel, useT } from "../i18n";
 
 function statusClasses(status) {
   switch (status) {
@@ -20,6 +21,7 @@ function statusClasses(status) {
 }
 
 export default function SellerDetailsPage() {
+  const t = useT();
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -38,7 +40,7 @@ export default function SellerDetailsPage() {
       setSeller(response?.data || null);
       setParts(Array.isArray(response?.data?.parts) ? response.data.parts : []);
     } catch (err) {
-      setError(err?.message || "Failed to load seller details");
+      setError(err?.message || t("Failed to load seller details"));
     } finally {
       setLoading(false);
     }
@@ -63,7 +65,7 @@ export default function SellerDetailsPage() {
       await api.patch(`/api/v1/admin/sellers/${id}/status`, { status, reason });
       await loadSeller();
     } catch (err) {
-      setError(err?.message || "Failed to update seller status");
+      setError(err?.message || t("Failed to update seller status"));
     } finally {
       setWorking(false);
     }
@@ -72,7 +74,7 @@ export default function SellerDetailsPage() {
   if (loading) {
     return (
       <div className="rounded-3xl border border-gray-200 bg-white p-6 text-sm text-gray-500 shadow-sm">
-        Loading seller details...
+        {t("Loading seller details...")}
       </div>
     );
   }
@@ -80,7 +82,7 @@ export default function SellerDetailsPage() {
   if (error || !seller) {
     return (
       <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
-        {error || "Seller not found"}
+        {error || t("Seller not found")}
       </div>
     );
   }
@@ -91,11 +93,11 @@ export default function SellerDetailsPage() {
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Seller details
+              {t("Seller details")}
             </div>
             <h1 className="text-3xl font-bold sm:text-5xl">{seller.name}</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Review seller trust, listing quality, and onboarding status.
+              {t("Review seller trust, listing quality, and onboarding status.")}
             </p>
           </div>
 
@@ -105,7 +107,7 @@ export default function SellerDetailsPage() {
               onClick={() => navigate("/sellers")}
               className="inline-flex h-11 items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 text-sm font-semibold text-white transition hover:bg-white/15"
             >
-              Back to sellers
+              {t("Back to sellers")}
             </button>
             <button
               type="button"
@@ -113,7 +115,7 @@ export default function SellerDetailsPage() {
               onClick={() => updateStatus("active")}
               className="inline-flex h-11 items-center justify-center rounded-2xl bg-green-600 px-5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:opacity-60"
             >
-              Approve
+              {t("Approve")}
             </button>
             <button
               type="button"
@@ -121,7 +123,7 @@ export default function SellerDetailsPage() {
               onClick={() => updateStatus("suspended")}
               className="inline-flex h-11 items-center justify-center rounded-2xl bg-amber-500 px-5 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60"
             >
-              Suspend
+              {t("Suspend")}
             </button>
             <button
               type="button"
@@ -129,7 +131,7 @@ export default function SellerDetailsPage() {
               onClick={() => updateStatus("rejected")}
               className="inline-flex h-11 items-center justify-center rounded-2xl bg-red-600 px-5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
             >
-              Reject
+              {t("Reject")}
             </button>
           </div>
         </div>
@@ -151,11 +153,11 @@ export default function SellerDetailsPage() {
                   statusClasses(seller.status),
                 ].join(" ")}
               >
-                {seller.status}
+                {statusLabel(seller.status)}
               </span>
               {seller.moderation_note ? (
                 <p className="basis-full rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  <span className="font-semibold">Message to seller:</span> {seller.moderation_note}
+                  <span className="font-semibold">{t("Message to seller:")}</span> {seller.moderation_note}
                 </p>
               ) : null}
               <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
@@ -164,30 +166,30 @@ export default function SellerDetailsPage() {
             </div>
 
             <div className="mt-5 space-y-4 text-sm text-gray-600">
-              <p><span className="font-semibold text-gray-900">Email:</span> {seller.user_email || "Unknown"}</p>
-              <p><span className="font-semibold text-gray-900">Phone:</span> {seller.phone || seller.user_phone || "Not provided"}</p>
-              <p><span className="font-semibold text-gray-900">WhatsApp:</span> {seller.whatsapp || "Not provided"}</p>
-              <p><span className="font-semibold text-gray-900">Location:</span> {seller.location || "Not provided"}</p>
-              <p><span className="font-semibold text-gray-900">Created at:</span> {seller.created_at || "Unknown"}</p>
+              <p><span className="font-semibold text-gray-900">{t("Email:")}</span> {seller.user_email || t("Unknown")}</p>
+              <p><span className="font-semibold text-gray-900">{t("Phone:")}</span> {seller.phone || seller.user_phone || t("Not provided")}</p>
+              <p><span className="font-semibold text-gray-900">{t("WhatsApp:")}</span> {seller.whatsapp || t("Not provided")}</p>
+              <p><span className="font-semibold text-gray-900">{t("Location:")}</span> {seller.location || t("Not provided")}</p>
+              <p><span className="font-semibold text-gray-900">{t("Created at:")}</span> {seller.created_at || t("Unknown")}</p>
             </div>
 
             <div className="mt-5 rounded-2xl bg-gray-50 p-4">
-              <p className="text-sm font-semibold text-gray-900">Description</p>
+              <p className="text-sm font-semibold text-gray-900">{t("Description")}</p>
               <p className="mt-2 text-sm leading-6 text-gray-600">
-                {seller.description || "No seller description available."}
+                {seller.description || t("No seller description available.")}
               </p>
             </div>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900">Seller parts</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t("Seller parts")}</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Review listings associated with this seller account.
+              {t("Review listings associated with this seller account.")}
             </p>
 
             {parts.length === 0 ? (
               <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500">
-                No parts found for this seller.
+                {t("No parts found for this seller.")}
               </div>
             ) : (
               <div className="mt-5 space-y-3">
@@ -200,11 +202,11 @@ export default function SellerDetailsPage() {
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-semibold text-gray-900">{part.title}</p>
                       <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
-                        {part.status}
+                        {statusLabel(part.status)}
                       </span>
                     </div>
                     <p className="text-sm text-gray-500">
-                      slug: {part.slug} • price: {formatMoney(part.price)}
+                      slug: {part.slug} • {t("price: {price}", { price: formatMoney(part.price) })}
                     </p>
                   </Link>
                 ))}
@@ -215,16 +217,16 @@ export default function SellerDetailsPage() {
 
         <aside className="space-y-6">
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Moderation guidance</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("Moderation guidance")}</h2>
             <div className="mt-4 space-y-3 text-sm text-gray-600">
-              <p>• Approve sellers with complete identity and trustworthy listing quality.</p>
-              <p>• Suspend sellers when quality or response confidence is unclear.</p>
-              <p>• Reject weak onboarding when trust signals are too low.</p>
+              <p>{t("• Approve sellers with complete identity and trustworthy listing quality.")}</p>
+              <p>{t("• Suspend sellers when quality or response confidence is unclear.")}</p>
+              <p>{t("• Reject weak onboarding when trust signals are too low.")}</p>
             </div>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Quick actions</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("Quick actions")}</h2>
             <div className="mt-4 grid gap-3">
               <button
                 type="button"
@@ -232,7 +234,7 @@ export default function SellerDetailsPage() {
                 onClick={() => updateStatus("active")}
                 className="inline-flex h-11 items-center justify-center rounded-2xl bg-green-600 px-5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:opacity-60"
               >
-                Approve seller
+                {t("Approve seller")}
               </button>
               <button
                 type="button"
@@ -240,7 +242,7 @@ export default function SellerDetailsPage() {
                 onClick={() => updateStatus("suspended")}
                 className="inline-flex h-11 items-center justify-center rounded-2xl bg-amber-500 px-5 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60"
               >
-                Suspend seller
+                {t("Suspend seller")}
               </button>
               <button
                 type="button"
@@ -248,7 +250,7 @@ export default function SellerDetailsPage() {
                 onClick={() => updateStatus("rejected")}
                 className="inline-flex h-11 items-center justify-center rounded-2xl bg-red-600 px-5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
               >
-                Reject seller
+                {t("Reject seller")}
               </button>
             </div>
           </div>

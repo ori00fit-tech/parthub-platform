@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
+import { useT } from "../i18n";
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -16,6 +17,7 @@ function SectionCard({ title, subtitle, children }) {
 }
 
 export default function AnalyticsPage() {
+  const t = useT();
   const [data, setData] = useState({
     top_queries: [],
     zero_result_queries: [],
@@ -44,7 +46,7 @@ export default function AnalyticsPage() {
         });
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load analytics");
+        setError(err?.message || t("Failed to load analytics"));
       } finally {
         if (active) setLoading(false);
       }
@@ -60,9 +62,9 @@ export default function AnalyticsPage() {
   return (
     <section className="space-y-6">
       <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-700 p-6 text-white shadow-lg sm:p-8">
-        <h1 className="text-3xl font-bold sm:text-5xl">Search demand analytics</h1>
+        <h1 className="text-3xl font-bold sm:text-5xl">{t("Search demand analytics")}</h1>
         <p className="mt-3 text-sm text-cyan-100 sm:text-base">
-          Understand what buyers search for, what they fail to find, and which vehicle demand is strongest.
+          {t("Understand what buyers search for, what they fail to find, and which vehicle demand is strongest.")}
         </p>
       </div>
 
@@ -84,18 +86,18 @@ export default function AnalyticsPage() {
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
           <SectionCard
-            title="Top buyer queries"
-            subtitle="The most common search keywords currently used across the marketplace."
+            title={t("Top buyer queries")}
+            subtitle={t("The most common search keywords currently used across the marketplace.")}
           >
             {data.top_queries.length === 0 ? (
-              <p className="text-sm text-gray-500">No query analytics available yet.</p>
+              <p className="text-sm text-gray-500">{t("No query analytics available yet.")}</p>
             ) : (
               <div className="space-y-3">
                 {data.top_queries.map((item, index) => (
                   <div key={`${item.query}-${index}`} className="rounded-2xl bg-gray-50 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-semibold text-gray-900">{item.query}</p>
-                      <span className="text-sm font-semibold text-gray-700">{item.searches} searches</span>
+                      <span className="text-sm font-semibold text-gray-700">{t("{n} searches", { n: item.searches })}</span>
                     </div>
                     <p className="mt-1 text-sm text-gray-500">
                       Avg. results: {Number(item.avg_results || 0).toFixed(1)}
@@ -107,21 +109,21 @@ export default function AnalyticsPage() {
           </SectionCard>
 
           <SectionCard
-            title="Zero-result demand"
-            subtitle="Queries that buyers search for but fail to find. This is direct supply opportunity."
+            title={t("Zero-result demand")}
+            subtitle={t("Queries that buyers search for but fail to find. This is direct supply opportunity.")}
           >
             {data.zero_result_queries.length === 0 ? (
-              <p className="text-sm text-gray-500">No zero-result searches found yet.</p>
+              <p className="text-sm text-gray-500">{t("No zero-result searches found yet.")}</p>
             ) : (
               <div className="space-y-3">
                 {data.zero_result_queries.map((item, index) => (
                   <div key={`${item.query}-${index}`} className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="font-semibold text-gray-900">{item.query || "No keyword"}</p>
-                      <span className="text-sm font-semibold text-amber-700">{item.searches} misses</span>
+                      <p className="font-semibold text-gray-900">{item.query || t("No keyword")}</p>
+                      <span className="text-sm font-semibold text-amber-700">{t("{n} misses", { n: item.searches })}</span>
                     </div>
                     <p className="mt-1 text-sm text-gray-600">
-                      {item.make_slug || "any make"} • {item.model_slug || "any model"} • {item.year || "any year"}
+                      {item.make_slug || t("any make")} • {item.model_slug || t("any model")} • {item.year || t("any year")}
                     </p>
                   </div>
                 ))}
@@ -130,11 +132,11 @@ export default function AnalyticsPage() {
           </SectionCard>
 
           <SectionCard
-            title="Top vehicle demand"
-            subtitle="Most searched make/model/year combinations."
+            title={t("Top vehicle demand")}
+            subtitle={t("Most searched make/model/year combinations.")}
           >
             {data.top_vehicle_searches.length === 0 ? (
-              <p className="text-sm text-gray-500">No vehicle search analytics yet.</p>
+              <p className="text-sm text-gray-500">{t("No vehicle search analytics yet.")}</p>
             ) : (
               <div className="space-y-3">
                 {data.top_vehicle_searches.map((item, index) => (
@@ -143,7 +145,7 @@ export default function AnalyticsPage() {
                       <p className="font-semibold text-gray-900">
                         {item.make_slug} • {item.model_slug} • {item.year || "year unspecified"}
                       </p>
-                      <span className="text-sm font-semibold text-gray-700">{item.searches} searches</span>
+                      <span className="text-sm font-semibold text-gray-700">{t("{n} searches", { n: item.searches })}</span>
                     </div>
                   </div>
                 ))}
@@ -152,21 +154,21 @@ export default function AnalyticsPage() {
           </SectionCard>
 
           <SectionCard
-            title="Recent search activity"
-            subtitle="Latest buyer search events flowing through the system."
+            title={t("Recent search activity")}
+            subtitle={t("Latest buyer search events flowing through the system.")}
           >
             {data.recent_searches.length === 0 ? (
-              <p className="text-sm text-gray-500">No recent search events yet.</p>
+              <p className="text-sm text-gray-500">{t("No recent search events yet.")}</p>
             ) : (
               <div className="space-y-3">
                 {data.recent_searches.map((item, index) => (
                   <div key={`${item.created_at}-${index}`} className="rounded-2xl bg-gray-50 p-4">
-                    <p className="font-semibold text-gray-900">{item.query || "No keyword"}</p>
+                    <p className="font-semibold text-gray-900">{item.query || t("No keyword")}</p>
                     <p className="mt-1 text-sm text-gray-500">
-                      {item.make_slug || "any make"} • {item.model_slug || "any model"} • {item.year || "any year"}
+                      {item.make_slug || t("any make")} • {item.model_slug || t("any model")} • {item.year || t("any year")}
                     </p>
                     <p className="mt-1 text-xs text-gray-400">
-                      results: {item.results_count ?? 0} • {item.created_at || "unknown time"}
+                      {t("results: {n}", { n: item.results_count ?? 0 })} • {item.created_at || t("unknown time")}
                     </p>
                   </div>
                 ))}

@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useT } from "../i18n";
+import LanguageSwitcher from "../components/common/LanguageSwitcher";
 
 function getRedirectPath(location) {
   const params = new URLSearchParams(location.search);
@@ -8,6 +10,7 @@ function getRedirectPath(location) {
 }
 
 export default function AuthPage() {
+  const t = useT();
   const location = useLocation();
   const navigate = useNavigate();
   const redirectTo = useMemo(() => getRedirectPath(location), [location]);
@@ -24,14 +27,14 @@ export default function AuthPage() {
 
     try {
       if (!email.trim() || !password.trim()) {
-        setError("Please enter your admin email and password.");
+        setError(t("Please enter your admin email and password."));
         return;
       }
 
       await login(email.trim(), password);
       navigate(redirectTo);
     } catch (e) {
-      setError(e?.message || "Admin sign-in failed.");
+      setError(e?.message || t("Admin sign-in failed."));
     } finally {
       setLoading(false);
     }
@@ -42,26 +45,27 @@ export default function AuthPage() {
 
   if (isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-950 px-4 py-10 text-gray-100">
+      <div className="relative min-h-screen bg-gray-950 px-4 py-10 text-gray-100">
+        <LanguageSwitcher className="absolute end-4 top-4" />
         <div className="mx-auto max-w-3xl space-y-6">
           <div className="overflow-hidden rounded-[28px] border border-gray-800 bg-gradient-to-br from-gray-900 via-slate-950 to-blue-950 p-8 shadow-xl">
             <div className="mb-3 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/80">
-              Admin session
+              {t("Admin session")}
             </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">You are already signed in</h1>
+            <h1 className="text-3xl font-bold sm:text-5xl">{t("You are already signed in")}</h1>
             <p className="mt-3 text-sm text-gray-300 sm:text-base">
-              Continue to the admin dashboard, moderation queues, or system overview.
+              {t("Continue to the admin dashboard, moderation queues, or system overview.")}
             </p>
           </div>
 
           <div className="rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-sm">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl bg-gray-950 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Email</p>
-                <p className="mt-1 font-semibold text-gray-100">{user?.email || "Admin"}</p>
+                <p className="text-xs uppercase tracking-wide text-gray-500">{t("Email")}</p>
+                <p className="mt-1 font-semibold text-gray-100">{user?.email || t("Admin")}</p>
               </div>
               <div className="rounded-2xl bg-gray-950 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Role</p>
+                <p className="text-xs uppercase tracking-wide text-gray-500">{t("Role")}</p>
                 <p className="mt-1 font-semibold text-gray-100">{user?.role || "admin"}</p>
               </div>
             </div>
@@ -71,19 +75,19 @@ export default function AuthPage() {
                 to={redirectTo}
                 className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500"
               >
-                Continue
+                {t("Continue")}
               </Link>
               <Link
                 to="/sellers"
                 className="rounded-2xl border border-gray-700 bg-gray-950 px-5 py-3 text-sm font-semibold text-gray-200 transition hover:bg-gray-800"
               >
-                Sellers
+                {t("Sellers")}
               </Link>
               <Link
                 to="/parts"
                 className="rounded-2xl border border-gray-700 bg-gray-950 px-5 py-3 text-sm font-semibold text-gray-200 transition hover:bg-gray-800"
               >
-                Parts
+                {t("Parts")}
               </Link>
             </div>
           </div>
@@ -93,38 +97,39 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-10">
+    <div className="relative min-h-screen bg-gray-950 flex items-center justify-center px-4 py-10">
+      <LanguageSwitcher className="absolute end-4 top-4" />
       <div className="w-full max-w-5xl grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-4">
           <div className="overflow-hidden rounded-[28px] border border-gray-800 bg-gradient-to-br from-gray-900 via-slate-950 to-blue-950 p-8 shadow-xl">
             <div className="mb-3 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/80">
-              Admin auth foundation
+              {t("Admin auth foundation")}
             </div>
-            <h1 className="text-3xl font-bold text-white sm:text-5xl">Sign in to admin panel</h1>
+            <h1 className="text-3xl font-bold text-white sm:text-5xl">{t("Sign in to admin panel")}</h1>
             <p className="mt-3 text-sm text-gray-300 sm:text-base">
-              Access sellers moderation, parts review, order oversight, reviews moderation, and categories management.
+              {t("Access sellers moderation, parts review, order oversight, reviews moderation, and categories management.")}
             </p>
           </div>
 
           <div className="rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-100">Admin scope</h2>
+            <h2 className="text-xl font-bold text-gray-100">{t("Admin scope")}</h2>
             <div className="mt-4 space-y-3 text-sm text-gray-400">
-              <div className="rounded-2xl bg-gray-950 p-4">Review sellers and marketplace activity.</div>
-              <div className="rounded-2xl bg-gray-950 p-4">Moderate parts, reviews, and operational flows.</div>
-              <div className="rounded-2xl bg-gray-950 p-4">Monitor categories, vehicles, and platform health.</div>
+              <div className="rounded-2xl bg-gray-950 p-4">{t("Review sellers and marketplace activity.")}</div>
+              <div className="rounded-2xl bg-gray-950 p-4">{t("Moderate parts, reviews, and operational flows.")}</div>
+              <div className="rounded-2xl bg-gray-950 p-4">{t("Monitor categories, vehicles, and platform health.")}</div>
             </div>
           </div>
         </div>
 
         <div className="rounded-3xl border border-gray-800 bg-gray-900 p-8 shadow-sm">
           <div className="text-center mb-8">
-            <p className="text-blue-400 font-black text-2xl mb-1">PartHub</p>
-            <p className="text-gray-500 text-sm">Admin Panel</p>
+            <p className="text-blue-400 font-black text-2xl mb-1">{t("PartHub")}</p>
+            <p className="text-gray-500 text-sm">{t("Admin Panel")}</p>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-1.5">Email</label>
+              <label className="block text-sm text-gray-400 mb-1.5">{t("Email")}</label>
               <input
                 type="email"
                 value={email}
@@ -135,7 +140,7 @@ export default function AuthPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1.5">Password</label>
+              <label className="block text-sm text-gray-400 mb-1.5">{t("Password")}</label>
               <input
                 type="password"
                 value={password}
@@ -157,11 +162,11 @@ export default function AuthPage() {
               disabled={loading}
               className="w-full rounded-xl bg-blue-600 text-white font-semibold py-3 transition hover:bg-blue-500 disabled:opacity-50"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? t("Signing in...") : t("Sign In")}
             </button>
 
             <div className="rounded-2xl bg-gray-950 p-4 text-xs text-gray-500">
-              Admin-only access. Non-admin accounts will be rejected during authentication.
+              {t("Admin-only access. Non-admin accounts will be rejected during authentication.")}
             </div>
           </div>
         </div>

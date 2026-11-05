@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { reasonPromptFor, useReasonDialog } from "../components/ReasonDialog";
+import { statusLabel, useT } from "../i18n";
 
 function normalizeRows(payload) {
   if (Array.isArray(payload?.data)) return payload.data;
@@ -34,6 +35,7 @@ function statusClasses(status) {
 }
 
 export default function SellersPage() {
+  const t = useT();
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
@@ -54,7 +56,7 @@ export default function SellersPage() {
       setRows(normalizeRows(res));
       setMeta(normalizePagination(res));
     } catch (err) {
-      setError(err?.message || "Failed to load sellers");
+      setError(err?.message || t("Failed to load sellers"));
     } finally {
       setLoading(false);
     }
@@ -78,7 +80,7 @@ export default function SellersPage() {
       await api.patch(`/api/v1/admin/sellers/${id}/status`, { status: nextStatus, reason });
       await loadRows();
     } catch (err) {
-      setError(err?.message || "Failed to update seller status");
+      setError(err?.message || t("Failed to update seller status"));
     }
   }
 
@@ -92,9 +94,9 @@ export default function SellersPage() {
   return (
     <section className="space-y-6">
       <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-700 p-6 text-white shadow-lg sm:p-8">
-        <h1 className="text-3xl font-bold sm:text-5xl">Seller moderation</h1>
+        <h1 className="text-3xl font-bold sm:text-5xl">{t("Seller moderation")}</h1>
         <p className="mt-3 text-sm text-blue-100 sm:text-base">
-          Review seller onboarding status, approve trusted suppliers, and suspend problematic accounts.
+          {t("Review seller onboarding status, approve trusted suppliers, and suspend problematic accounts.")}
         </p>
       </div>
 
@@ -112,13 +114,13 @@ export default function SellersPage() {
                   : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50",
               ].join(" ")}
             >
-              {item || "All sellers"}
+              {item || t("All sellers")}
             </button>
           ))}
         </div>
 
         <div className="mt-4 text-sm text-gray-500">
-          {loading ? "Loading sellers..." : `${meta.total} seller record${meta.total === 1 ? "" : "s"}`}
+          {loading ? t("Loading sellers...") : (meta.total === 1 ? t("1 seller") : t("{n} sellers", { n: meta.total }))}
         </div>
       </div>
 
@@ -130,9 +132,9 @@ export default function SellersPage() {
 
       <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
         {loading ? (
-          <div className="p-6 text-sm text-gray-500">Loading seller moderation queue...</div>
+          <div className="p-6 text-sm text-gray-500">{t("Loading seller moderation queue...")}</div>
         ) : rows.length === 0 ? (
-          <div className="p-6 text-sm text-gray-500">No sellers found for this filter.</div>
+          <div className="p-6 text-sm text-gray-500">{t("No sellers found for this filter.")}</div>
         ) : (
           <div className="divide-y divide-gray-100">
             {rows.map((seller) => (
@@ -147,16 +149,16 @@ export default function SellersPage() {
                           statusClasses(seller.status),
                         ].join(" ")}
                       >
-                        {seller.status}
+                        {statusLabel(seller.status)}
                       </span>
                     </div>
 
                     <p className="mt-1 text-sm text-gray-500">
-                      slug: {seller.slug} • email: {seller.email || "unknown"} • phone: {seller.user_phone || "n/a"}
+                      slug: {seller.slug} • {t("email: {email}", { email: seller.email || t("unknown") })} • {t("phone: {phone}", { phone: seller.user_phone || t("n/a") })}
                     </p>
 
                     <p className="mt-2 text-sm text-gray-600">
-                      {seller.description || "No seller description provided yet."}
+                      {seller.description || t("No seller description provided yet.")}
                     </p>
                   </div>
 
@@ -165,7 +167,7 @@ export default function SellersPage() {
                       to={`/sellers/${seller.id}`}
                       className="inline-flex h-10 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
                     >
-                      View details
+                      {t("View details")}
                     </Link>
 
                     <button
@@ -173,7 +175,7 @@ export default function SellersPage() {
                       onClick={() => updateStatus(seller.id, "active", seller.name)}
                       className="inline-flex h-10 items-center justify-center rounded-2xl bg-green-600 px-4 text-sm font-semibold text-white transition hover:bg-green-700"
                     >
-                      Approve
+                      {t("Approve")}
                     </button>
 
                     <button
@@ -181,7 +183,7 @@ export default function SellersPage() {
                       onClick={() => updateStatus(seller.id, "suspended", seller.name)}
                       className="inline-flex h-10 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 px-4 text-sm font-semibold text-amber-700 transition hover:bg-amber-100"
                     >
-                      Suspend
+                      {t("Suspend")}
                     </button>
 
                     <button
@@ -189,7 +191,7 @@ export default function SellersPage() {
                       onClick={() => updateStatus(seller.id, "rejected", seller.name)}
                       className="inline-flex h-10 items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
                     >
-                      Reject
+                      {t("Reject")}
                     </button>
                   </div>
                 </div>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { SELLER_TOKEN_KEY, formatMoney, parseMoneyInput } from "@parthub/shared";
+import { useT } from "../i18n";
 
 const API_BASE = "https://parthub-api.ori00fit-c96.workers.dev";
 
@@ -17,6 +18,7 @@ function slugify(value) {
 }
 
 export default function PartCreateWithUploadPage() {
+  const t = useT();
   const [form, setForm] = useState({
     seller_id: 1,
     category_id: 2,
@@ -53,7 +55,7 @@ export default function PartCreateWithUploadPage() {
   async function handleUpload() {
     setError("");
     if (!file) {
-      setError("Choose an image first.");
+      setError(t("Choose an image first."));
       return;
     }
 
@@ -72,13 +74,13 @@ export default function PartCreateWithUploadPage() {
       const data = await res.json();
 
       if (!res.ok || !data?.ok) {
-        throw new Error(data?.error?.message || "Upload failed");
+        throw new Error(data?.error?.message || t("Upload failed"));
       }
 
       setImageUrl(data.data.url);
       setPreviewUrl(`${API_BASE}${data.data.url}`);
     } catch (err) {
-      setError(err.message || "Upload failed");
+      setError(err.message || t("Upload failed"));
     } finally {
       setUploading(false);
     }
@@ -123,7 +125,7 @@ export default function PartCreateWithUploadPage() {
       const data = await res.json();
 
       if (!res.ok || !data?.ok) {
-        throw new Error(data?.error?.message || "Create part failed");
+        throw new Error(data?.error?.message || t("Create part failed"));
       }
 
       setSuccess(data.data);
@@ -147,7 +149,7 @@ export default function PartCreateWithUploadPage() {
       setImageUrl("");
       setPreviewUrl("");
     } catch (err) {
-      setError(err.message || "Create part failed");
+      setError(err.message || t("Create part failed"));
     } finally {
       setSaving(false);
     }
@@ -156,9 +158,9 @@ export default function PartCreateWithUploadPage() {
   return (
     <section className="space-y-6 p-4">
       <div>
-        <h1 className="text-2xl font-bold">Create part + upload image</h1>
+        <h1 className="text-2xl font-bold">{t("Create part + upload image")}</h1>
         <p className="text-sm text-gray-500">
-          Upload product media to R2, then save the part in D1 in one flow.
+          {t("Upload product media to R2, then save the part in D1 in one flow.")}
         </p>
       </div>
 
@@ -168,18 +170,18 @@ export default function PartCreateWithUploadPage() {
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="space-y-2">
-            <span className="text-sm font-medium">Title</span>
+            <span className="text-sm font-medium">{t("Title")}</span>
             <input
               value={form.title}
               onChange={(e) => updateField("title", e.target.value)}
               className="w-full rounded-xl border border-gray-200 px-4 py-3"
-              placeholder="Front Brake Pads Kit"
+              placeholder={t("Front Brake Pads Kit")}
               required
             />
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium">Slug</span>
+            <span className="text-sm font-medium">{t("Slug")}</span>
             <input
               value={form.slug}
               onChange={(e) => updateField("slug", e.target.value)}
@@ -189,7 +191,7 @@ export default function PartCreateWithUploadPage() {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium">Seller ID</span>
+            <span className="text-sm font-medium">{t("Seller ID")}</span>
             <input
               type="number"
               value={form.seller_id}
@@ -200,7 +202,7 @@ export default function PartCreateWithUploadPage() {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium">Category ID</span>
+            <span className="text-sm font-medium">{t("Category ID")}</span>
             <input
               type="number"
               value={form.category_id}
@@ -211,7 +213,7 @@ export default function PartCreateWithUploadPage() {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium">Brand ID</span>
+            <span className="text-sm font-medium">{t("Brand ID")}</span>
             <input
               type="number"
               value={form.brand_id}
@@ -221,17 +223,17 @@ export default function PartCreateWithUploadPage() {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium">SKU</span>
+            <span className="text-sm font-medium">{t("SKU")}</span>
             <input
               value={form.sku}
               onChange={(e) => updateField("sku", e.target.value)}
               className="w-full rounded-xl border border-gray-200 px-4 py-3"
-              placeholder="BRK-1001"
+              placeholder={t("BRK-1001")}
             />
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium">Price (MAD)</span>
+            <span className="text-sm font-medium">{t("Price (MAD)")}</span>
             <input
               type="number"
               value={form.price}
@@ -243,7 +245,7 @@ export default function PartCreateWithUploadPage() {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium">Compare-at price (MAD)</span>
+            <span className="text-sm font-medium">{t("Compare-at price (MAD)")}</span>
             <input
               type="number"
               value={form.compare_price}
@@ -254,7 +256,7 @@ export default function PartCreateWithUploadPage() {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium">Condition</span>
+            <span className="text-sm font-medium">{t("Condition")}</span>
             <select
               value={form.condition}
               onChange={(e) => updateField("condition", e.target.value)}
@@ -267,7 +269,7 @@ export default function PartCreateWithUploadPage() {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium">Quantity</span>
+            <span className="text-sm font-medium">{t("Quantity")}</span>
             <input
               type="number"
               value={form.quantity}
@@ -277,7 +279,7 @@ export default function PartCreateWithUploadPage() {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium">Weight (kg)</span>
+            <span className="text-sm font-medium">{t("Weight (kg)")}</span>
             <input
               type="number"
               step="0.1"
@@ -288,7 +290,7 @@ export default function PartCreateWithUploadPage() {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium">Status</span>
+            <span className="text-sm font-medium">{t("Status")}</span>
             <select
               value={form.status}
               onChange={(e) => updateField("status", e.target.value)}
@@ -302,20 +304,20 @@ export default function PartCreateWithUploadPage() {
         </div>
 
         <label className="space-y-2 block">
-          <span className="text-sm font-medium">Description</span>
+          <span className="text-sm font-medium">{t("Description")}</span>
           <textarea
             value={form.description}
             onChange={(e) => updateField("description", e.target.value)}
             className="min-h-[120px] w-full rounded-xl border border-gray-200 px-4 py-3"
-            placeholder="Describe the part..."
+            placeholder={t("Describe the part...")}
           />
         </label>
 
         <div className="rounded-2xl border border-dashed border-gray-300 p-4 space-y-4">
           <div>
-            <h2 className="text-lg font-bold">Product image</h2>
+            <h2 className="text-lg font-bold">{t("Product image")}</h2>
             <p className="text-sm text-gray-500">
-              Upload first, then the image URL will be attached automatically.
+              {t("Upload first, then the image URL will be attached automatically.")}
             </p>
           </div>
 
@@ -332,7 +334,7 @@ export default function PartCreateWithUploadPage() {
             disabled={uploading}
             className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
           >
-            {uploading ? "Uploading..." : "Upload image"}
+            {uploading ? t("Uploading...") : t("Upload image")}
           </button>
 
           {imageUrl ? (
@@ -341,7 +343,7 @@ export default function PartCreateWithUploadPage() {
                 {imageUrl}
               </div>
               <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
-                <img src={previewUrl} alt="Preview" className="w-full object-cover" />
+                <img src={previewUrl} alt={t("Preview")} className="w-full object-cover" />
               </div>
             </div>
           ) : null}
@@ -358,19 +360,19 @@ export default function PartCreateWithUploadPage() {
           disabled={saving}
           className="w-full rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white hover:bg-black disabled:opacity-60"
         >
-          {saving ? "Saving part..." : "Create part"}
+          {saving ? t("Saving part...") : t("Create part")}
         </button>
       </form>
 
       {success ? (
         <div className="rounded-2xl border border-green-200 bg-green-50 p-5 text-green-800">
-          <h2 className="text-lg font-bold">Part created successfully</h2>
+          <h2 className="text-lg font-bold">{t("Part created successfully")}</h2>
           <div className="mt-3 space-y-1 text-sm">
-            <p><span className="font-semibold">ID:</span> {success.id}</p>
-            <p><span className="font-semibold">Title:</span> {success.title}</p>
-            <p><span className="font-semibold">Slug:</span> {success.slug}</p>
-            <p><span className="font-semibold">Price:</span> {formatMoney(success.price)}</p>
-            <p><span className="font-semibold">Image:</span> {success.image_url || "No image"}</p>
+            <p><span className="font-semibold">{t("ID:")}</span> {success.id}</p>
+            <p><span className="font-semibold">{t("Title:")}</span> {success.title}</p>
+            <p><span className="font-semibold">{t("Slug:")}</span> {success.slug}</p>
+            <p><span className="font-semibold">{t("Price:")}</span> {formatMoney(success.price)}</p>
+            <p><span className="font-semibold">{t("Image:")}</span> {success.image_url || t("No image")}</p>
           </div>
         </div>
       ) : null}

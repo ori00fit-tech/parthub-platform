@@ -131,6 +131,15 @@ export default function App() {
       />
 
       <Route
+        path="/insights"
+        element={
+          <ProtectedShell>
+            <InsightsPage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
         path="/store-settings"
         element={
           <ProtectedShell>

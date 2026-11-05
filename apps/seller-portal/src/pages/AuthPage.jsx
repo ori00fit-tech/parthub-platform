@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useT } from "../i18n";
+import LanguageSwitcher from "../components/common/LanguageSwitcher";
 
 function getRedirectPath(location) {
   const params = new URLSearchParams(location.search);
@@ -8,6 +10,7 @@ function getRedirectPath(location) {
 }
 
 export default function AuthPage() {
+  const t = useT();
   const location = useLocation();
   const navigate = useNavigate();
   const redirectTo = useMemo(() => getRedirectPath(location), [location]);
@@ -38,15 +41,15 @@ export default function AuthPage() {
     setError("");
 
     if (!form.email.trim() || !form.password.trim()) {
-      setError("Please enter your email and password.");
+      setError(t("Please enter your email and password."));
       return;
     }
     if (isSignup && !form.name.trim()) {
-      setError("Please enter your name.");
+      setError(t("Please enter your name."));
       return;
     }
     if (isSignup && form.password.length < 8) {
-      setError("Use at least 8 characters for your password.");
+      setError(t("Use at least 8 characters for your password."));
       return;
     }
 
@@ -66,7 +69,7 @@ export default function AuthPage() {
         navigate(redirectTo);
       }
     } catch (err) {
-      setError(err?.message || (isSignup ? "Could not create your account." : "Seller sign-in failed."));
+      setError(err?.message || (isSignup ? t("Could not create your account.") : t("Seller sign-in failed.")));
     } finally {
       setSubmitting(false);
     }
@@ -75,14 +78,17 @@ export default function AuthPage() {
   if (isAuthenticated) {
     return (
       <section className="space-y-6">
+        <div className="flex justify-end">
+          <LanguageSwitcher />
+        </div>
         <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Seller auth
+              {t("Seller auth")}
             </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">You are already signed in</h1>
+            <h1 className="text-3xl font-bold sm:text-5xl">{t("You are already signed in")}</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Continue to your dashboard, inventory, or orders.
+              {t("Continue to your dashboard, inventory, or orders.")}
             </p>
           </div>
         </div>
@@ -90,11 +96,11 @@ export default function AuthPage() {
         <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-2xl bg-gray-50 p-4">
-              <p className="text-xs uppercase tracking-wide text-gray-400">Email</p>
-              <p className="mt-1 font-semibold text-gray-900">{user?.email || "Seller account"}</p>
+              <p className="text-xs uppercase tracking-wide text-gray-400">{t("Email")}</p>
+              <p className="mt-1 font-semibold text-gray-900">{user?.email || t("Seller account")}</p>
             </div>
             <div className="rounded-2xl bg-gray-50 p-4">
-              <p className="text-xs uppercase tracking-wide text-gray-400">Role</p>
+              <p className="text-xs uppercase tracking-wide text-gray-400">{t("Role")}</p>
               <p className="mt-1 font-semibold text-gray-900">{user?.role || "seller"}</p>
             </div>
           </div>
@@ -104,19 +110,19 @@ export default function AuthPage() {
               to={redirectTo}
               className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
-              Continue
+              {t("Continue")}
             </Link>
             <Link
               to="/parts"
               className="rounded-2xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
             >
-              Inventory
+              {t("Inventory")}
             </Link>
             <Link
               to="/orders"
               className="rounded-2xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
             >
-              Orders
+              {t("Orders")}
             </Link>
           </div>
         </div>
@@ -126,16 +132,19 @@ export default function AuthPage() {
 
   return (
     <section className="space-y-6">
+      <div className="flex justify-end">
+        <LanguageSwitcher />
+      </div>
       <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
         <div className="max-w-3xl">
           <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-            Seller auth foundation
+            {t("Seller auth foundation")}
           </div>
-          <h1 className="text-3xl font-bold sm:text-5xl">{isSignup ? "Sell your parts on PartHub" : "Sign in to seller portal"}</h1>
+          <h1 className="text-3xl font-bold sm:text-5xl">{isSignup ? t("Sell your parts on PartHub") : t("Sign in to seller portal")}</h1>
           <p className="mt-3 text-sm text-blue-100 sm:text-base">
             {isSignup
-              ? "Create a free seller account, set up your store in a few minutes, and start answering buyer requests."
-              : "Access your dashboard, inventory, orders, media tools, and store settings."}
+              ? t("Create a free seller account, set up your store in a few minutes, and start answering buyer requests.")
+              : t("Access your dashboard, inventory, orders, media tools, and store settings.")}
           </p>
         </div>
       </div>
@@ -143,11 +152,11 @@ export default function AuthPage() {
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-4">
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Seller workflow</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("Seller workflow")}</h2>
             <div className="mt-4 space-y-3 text-sm text-gray-600">
-              <div className="rounded-2xl bg-gray-50 p-4">Manage your inventory from one place.</div>
-              <div className="rounded-2xl bg-gray-50 p-4">Upload media and attach images to parts.</div>
-              <div className="rounded-2xl bg-gray-50 p-4">Review orders and store settings.</div>
+              <div className="rounded-2xl bg-gray-50 p-4">{t("Manage your inventory from one place.")}</div>
+              <div className="rounded-2xl bg-gray-50 p-4">{t("Upload media and attach images to parts.")}</div>
+              <div className="rounded-2xl bg-gray-50 p-4">{t("Review orders and store settings.")}</div>
             </div>
           </div>
         </div>
@@ -155,8 +164,8 @@ export default function AuthPage() {
         <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="grid grid-cols-2 gap-1 rounded-2xl bg-gray-100 p-1" role="tablist">
             {[
-              ["signin", "Sign in"],
-              ["signup", "Create seller account"],
+              ["signin", t("Sign in")],
+              ["signup", t("Create seller account")],
             ].map(([value, label]) => (
               <button
                 key={value}
@@ -176,11 +185,11 @@ export default function AuthPage() {
               </button>
             ))}
           </div>
-          <h2 className="mt-6 text-2xl font-bold text-gray-900">{isSignup ? "Create your seller account" : "Seller sign in"}</h2>
+          <h2 className="mt-6 text-2xl font-bold text-gray-900">{isSignup ? t("Create your seller account") : t("Seller sign in")}</h2>
           <p className="mt-2 text-sm text-gray-500">
             {isSignup
-              ? "Next you'll set up your store. PartHub reviews new stores before their parts go live."
-              : "Use your seller account credentials to continue."}
+              ? t("Next you'll set up your store. PartHub reviews new stores before their parts go live.")
+              : t("Use your seller account credentials to continue.")}
           </p>
 
           {error ? (
@@ -194,20 +203,20 @@ export default function AuthPage() {
               <>
                 <div>
                   <label htmlFor="signup-name" className="mb-1.5 block text-sm font-medium text-gray-700">
-                    Your name
+                    {t("Your name")}
                   </label>
                   <input
                     id="signup-name"
                     value={form.name}
                     onChange={setField("name")}
                     autoComplete="name"
-                    placeholder="Youssef Benali"
+                    placeholder={t("Youssef Benali")}
                     className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
                   />
                 </div>
                 <div>
                   <label htmlFor="signup-phone" className="mb-1.5 block text-sm font-medium text-gray-700">
-                    Phone (optional)
+                    {t("Phone (optional)")}
                   </label>
                   <input
                     id="signup-phone"
@@ -223,7 +232,7 @@ export default function AuthPage() {
             ) : null}
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Email
+                {t("Email")}
               </label>
               <input
                 type="email"
@@ -236,7 +245,7 @@ export default function AuthPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Password
+                {t("Password")}
               </label>
               <input
                 type="password"
@@ -252,7 +261,7 @@ export default function AuthPage() {
               disabled={loading || submitting}
               className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
             >
-              {submitting ? (isSignup ? "Creating account…" : "Signing in…") : isSignup ? "Create account" : "Sign in"}
+              {submitting ? (isSignup ? t("Creating account…") : t("Signing in…")) : isSignup ? t("Create account") : t("Sign in")}
             </button>
           </form>
         </div>

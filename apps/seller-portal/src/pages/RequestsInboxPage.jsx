@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { formatMAD, mediaUrl, offerBadge } from "../lib/requests";
+import { useT } from "../i18n";
 
 export default function RequestsInboxPage() {
+  const t = useT();
   const [scope, setScope] = useState("matched");
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("");
@@ -28,7 +30,7 @@ export default function RequestsInboxPage() {
       } catch (err) {
         if (!active) return;
         setRequests([]);
-        setError(err?.message || "Failed to load requests");
+        setError(err?.message || t("Failed to load requests"));
       } finally {
         if (active) setLoading(false);
       }
@@ -45,17 +47,17 @@ export default function RequestsInboxPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black tracking-tight text-slate-950">Part requests</h1>
+        <h1 className="text-2xl font-black tracking-tight text-slate-950">{t("Part requests")}</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Buyers looking for parts they couldn't find. Send an offer — if they accept, you get their contact.
+          {t("Buyers looking for parts they couldn't find. Send an offer — if they accept, you get their contact.")}
         </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
         <div className="flex rounded-xl bg-gray-100 p-1">
           {[
-            ["matched", "For my stock"],
-            ["all", "All requests"],
+            ["matched", t("For my stock")],
+            ["all", t("All requests")],
           ].map(([value, label]) => (
             <button
               key={value}
@@ -73,21 +75,21 @@ export default function RequestsInboxPage() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search part, make, OEM…"
+          placeholder={t("Search part, make, OEM…")}
           className="h-10 min-w-0 flex-1 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-blue-500"
         />
         <input
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          placeholder="City"
+          placeholder={t("City")}
           className="h-10 w-36 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-blue-500"
         />
       </div>
 
       {scope === "matched" ? (
         <p className="text-xs text-gray-500">
-          Showing requests for makes you have compatibility data for, or categories you sell in.
-          {openCount ? ` ${openCount} waiting for your offer.` : ""}
+          {t("Showing requests for makes you have compatibility data for, or categories you sell in.")}
+          {openCount ? ` ${t("{n} waiting for your offer.", { n: openCount })}` : ""}
         </p>
       ) : null}
 
@@ -105,11 +107,11 @@ export default function RequestsInboxPage() {
       ) : requests.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center">
           <div className="text-4xl">📭</div>
-          <p className="mt-3 text-base font-bold text-gray-900">No requests right now</p>
+          <p className="mt-3 text-base font-bold text-gray-900">{t("No requests right now")}</p>
           <p className="mt-1 text-sm text-gray-500">
             {scope === "matched"
-              ? "Add vehicle compatibility to your parts to get matched with more buyers, or browse all requests."
-              : "New buyer requests will show up here."}
+              ? t("Add vehicle compatibility to your parts to get matched with more buyers, or browse all requests.")
+              : t("New buyer requests will show up here.")}
           </p>
         </div>
       ) : (
@@ -127,7 +129,7 @@ export default function RequestsInboxPage() {
                     <>
                       <img src={mediaUrl(r.images[0])} alt="" loading="lazy" className="h-full w-full object-cover" />
                       {r.images.length > 1 ? (
-                        <span className="absolute bottom-0.5 right-0.5 rounded bg-slate-950/70 px-1 text-[10px] font-bold text-white">
+                        <span className="absolute bottom-0.5 end-0.5 rounded bg-slate-950/70 px-1 text-[10px] font-bold text-white">
                           +{r.images.length - 1}
                         </span>
                       ) : null}
@@ -141,10 +143,10 @@ export default function RequestsInboxPage() {
                     {badge ? (
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${badge.className}`}>{badge.label}</span>
                     ) : (
-                      <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700">New</span>
+                      <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700">{t("New")}</span>
                     )}
                     {Number(r.is_match) ? (
-                      <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-bold text-violet-700">Matches your stock</span>
+                      <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-bold text-violet-700">{t("Matches your stock")}</span>
                     ) : null}
                     <span className="text-xs text-gray-400">{r.reference}</span>
                   </div>
@@ -153,12 +155,12 @@ export default function RequestsInboxPage() {
                     {[r.make, r.model, r.year, r.engine].filter(Boolean).join(" ")} · {r.city}
                   </p>
                 </div>
-                <div className="text-right text-sm">
+                <div className="text-end text-sm">
                   {r.my_offer_price != null ? (
-                    <p className="font-bold text-slate-950">Your offer: {formatMAD(r.my_offer_price)}</p>
+                    <p className="font-bold text-slate-950">{t("Your offer: {price}", { price: formatMAD(r.my_offer_price) })}</p>
                   ) : null}
                   <p className="text-xs text-gray-500">
-                    {r.offer_count} {Number(r.offer_count) === 1 ? "offer" : "offers"} so far
+                    {Number(r.offer_count) === 1 ? t("1 offer so far") : t("{n} offers so far", { n: r.offer_count })}
                   </p>
                 </div>
               </Link>

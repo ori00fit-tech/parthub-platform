@@ -1,4 +1,5 @@
 import { BASE_URL } from "./api";
+import { t } from "../i18n";
 
 // Uploaded media is served by the API (/api/v1/media/...).
 export function mediaUrl(path) {
@@ -11,13 +12,13 @@ export { formatMoney as formatMAD } from "@parthub/shared";
 export function offerBadge(status) {
   switch (status) {
     case "pending":
-      return { label: "Offer sent", className: "bg-amber-50 text-amber-700" };
+      return { label: t("Offer sent"), className: "bg-amber-50 text-amber-700" };
     case "accepted":
-      return { label: "Accepted 🎉", className: "bg-emerald-50 text-emerald-700" };
+      return { label: t("Accepted 🎉"), className: "bg-emerald-50 text-emerald-700" };
     case "rejected":
-      return { label: "Not selected", className: "bg-gray-100 text-gray-600" };
+      return { label: t("Not selected"), className: "bg-gray-100 text-gray-600" };
     case "withdrawn":
-      return { label: "Withdrawn", className: "bg-gray-100 text-gray-600" };
+      return { label: t("Withdrawn"), className: "bg-gray-100 text-gray-600" };
     default:
       return null;
   }

@@ -5,3 +5,13 @@
 @layer base {
   body { @apply bg-gray-950 text-gray-100 antialiased; font-family: "Inter", system-ui, sans-serif; }
 }
+
+/* Arabic: a font with Arabic glyphs, and no letter-spacing (it breaks joined letters). */
+[dir="rtl"] body {
+  font-family: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+[dir="rtl"] body,
+[dir="rtl"] body * {
+  letter-spacing: 0 !important;
+}

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { STATUS_COPY } from "../../lib/readiness";
+import { useT } from "../../i18n";
 
 const TONES = {
   info: "border-blue-200 bg-blue-50 text-blue-900",
@@ -16,17 +17,18 @@ const DOT = {
 };
 
 export function StoreStatusBanner({ readiness }) {
+  const t = useT();
   if (!readiness) return null;
   const copy = STATUS_COPY[readiness.status] || STATUS_COPY.setup;
   return (
     <div className={["flex flex-wrap items-center gap-4 rounded-3xl border px-5 py-4", TONES[copy.tone]].join(" ")} role="status">
       <span className={["h-2.5 w-2.5 flex-none rounded-full", DOT[copy.tone]].join(" ")} aria-hidden="true" />
       <div className="min-w-0 flex-1">
-        <p className="font-semibold">{copy.title}</p>
-        <p className="mt-0.5 text-sm opacity-90">{copy.text}</p>
+        <p className="font-semibold">{t(copy.title)}</p>
+        <p className="mt-0.5 text-sm opacity-90">{t(copy.text)}</p>
         {readiness.seller?.moderation_note ? (
           <p className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-sm">
-            <span className="font-semibold">Message from PartHub:</span> {readiness.seller.moderation_note}
+            <span className="font-semibold">{t("Message from PartHub:")}</span> {readiness.seller.moderation_note}
           </p>
         ) : null}
       </div>
@@ -35,7 +37,7 @@ export function StoreStatusBanner({ readiness }) {
           to={copy.cta.to}
           className="inline-flex h-10 items-center rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700"
         >
-          {copy.cta.label}
+          {t(copy.cta.label)}
         </Link>
       ) : null}
     </div>
@@ -55,6 +57,7 @@ function CheckIcon({ done }) {
 }
 
 export default function StoreChecklist({ readiness, loading, error, onRetry }) {
+  const t = useT();
   if (loading) {
     return (
       <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -72,10 +75,10 @@ export default function StoreChecklist({ readiness, loading, error, onRetry }) {
   if (error || !readiness) {
     return (
       <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-800">
-        {error || "Could not load your store status."}{" "}
+        {error || t("Could not load your store status.")}{" "}
         {onRetry ? (
           <button type="button" onClick={onRetry} className="font-semibold underline">
-            Try again
+            {t("Try again")}
           </button>
         ) : null}
       </div>
@@ -91,16 +94,16 @@ export default function StoreChecklist({ readiness, loading, error, onRetry }) {
       <CheckIcon done={item.done} />
       <div className="min-w-0 flex-1">
         <p className={["text-sm font-semibold", item.done ? "text-gray-500 line-through decoration-gray-300" : "text-gray-900"].join(" ")}>
-          {item.label}
+          {t(item.label)}
         </p>
-        {!item.done ? <p className="mt-0.5 text-xs text-gray-500">{item.hint}</p> : null}
+        {!item.done ? <p className="mt-0.5 text-xs text-gray-500">{t(item.hint)}</p> : null}
       </div>
       {!item.done && item.action ? (
         <Link
           to={item.action.to}
           className="flex-none rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50"
         >
-          {item.action.label}
+          {t(item.action.label)}
         </Link>
       ) : null}
     </li>
@@ -110,11 +113,13 @@ export default function StoreChecklist({ readiness, loading, error, onRetry }) {
     <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Store setup</h2>
+          <h2 className="text-xl font-bold text-gray-900">{t("Store setup")}</h2>
           <p className="mt-1 text-sm text-gray-500">
             {requiredLeft === 0
-              ? "All required steps are done."
-              : `${requiredLeft} required step${requiredLeft === 1 ? "" : "s"} left.`}
+              ? t("All required steps are done.")
+              : requiredLeft === 1
+                ? t("1 required step left.")
+                : t("{n} required steps left.", { n: requiredLeft })}
           </p>
         </div>
         <p className="text-3xl font-bold text-gray-900">
@@ -129,19 +134,19 @@ export default function StoreChecklist({ readiness, loading, error, onRetry }) {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={readiness.percent}
-        aria-label="Store setup progress"
+        aria-label={t("Store setup progress")}
       >
         <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${readiness.percent}%` }} />
       </div>
 
-      <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-400">Required</p>
+      <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-400">{t("Required")}</p>
       <ul className="mt-2 space-y-2">
         {required.map((item) => (
           <Row key={item.id} item={item} />
         ))}
       </ul>
 
-      <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-400">Recommended</p>
+      <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-400">{t("Recommended")}</p>
       <ul className="mt-2 space-y-2">
         {optional.map((item) => (
           <Row key={item.id} item={item} />

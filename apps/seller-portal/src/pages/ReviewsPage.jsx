@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
+import { useT } from "../i18n";
 
 function normalizeReviews(payload) {
   const list =
@@ -26,6 +27,7 @@ function renderStars(value) {
 }
 
 export default function ReviewsPage() {
+  const t = useT();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -46,7 +48,7 @@ export default function ReviewsPage() {
       } catch (err) {
         if (!active) return;
         setReviews([]);
-        setError(err?.message || "Failed to load seller reviews");
+        setError(err?.message || t("Failed to load seller reviews"));
       } finally {
         if (active) setLoading(false);
       }
@@ -106,7 +108,7 @@ export default function ReviewsPage() {
     return (
       <section className="space-y-6">
         <div className="rounded-3xl border border-gray-200 bg-white p-6 text-sm text-gray-500 shadow-sm">
-          Loading seller reviews...
+          {t("Loading seller reviews...")}
         </div>
       </section>
     );
@@ -118,11 +120,11 @@ export default function ReviewsPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Reviews foundation
+              {t("Reviews foundation")}
             </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">Seller reviews</h1>
+            <h1 className="text-3xl font-bold sm:text-5xl">{t("Seller reviews")}</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Monitor buyer feedback, track rating quality, and review comments tied to your listings.
+              {t("Monitor buyer feedback, track rating quality, and review comments tied to your listings.")}
             </p>
           </div>
 
@@ -131,13 +133,13 @@ export default function ReviewsPage() {
               to="/parts"
               className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
             >
-              Inventory
+              {t("Inventory")}
             </Link>
             <Link
               to="/store-settings"
               className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
             >
-              Store settings
+              {t("Store settings")}
             </Link>
           </div>
         </div>
@@ -151,22 +153,22 @@ export default function ReviewsPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Total reviews</p>
+          <p className="text-sm text-gray-500">{t("Total reviews")}</p>
           <p className="mt-2 text-3xl font-bold text-gray-900">{stats.total}</p>
         </div>
 
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Average rating</p>
+          <p className="text-sm text-gray-500">{t("Average rating")}</p>
           <p className="mt-2 text-3xl font-bold text-gray-900">{stats.avg}</p>
         </div>
 
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">5-star reviews</p>
+          <p className="text-sm text-gray-500">{t("5-star reviews")}</p>
           <p className="mt-2 text-3xl font-bold text-gray-900">{stats.fiveStar}</p>
         </div>
 
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Low ratings (≤2)</p>
+          <p className="text-sm text-gray-500">{t("Low ratings (≤2)")}</p>
           <p className="mt-2 text-3xl font-bold text-gray-900">{stats.lowReviews}</p>
         </div>
       </div>
@@ -176,7 +178,7 @@ export default function ReviewsPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search buyer, part, or review text..."
+            placeholder={t("Search buyer, part, or review text...")}
             className="h-12 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
           />
 
@@ -185,12 +187,12 @@ export default function ReviewsPage() {
             onChange={(e) => setRatingFilter(e.target.value)}
             className="h-12 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
           >
-            <option value="">All ratings</option>
-            <option value="5">5 stars</option>
-            <option value="4">4 stars</option>
-            <option value="3">3 stars</option>
-            <option value="2">2 stars</option>
-            <option value="1">1 star</option>
+            <option value="">{t("All ratings")}</option>
+            <option value="5">{t("5 stars")}</option>
+            <option value="4">{t("4 stars")}</option>
+            <option value="3">{t("3 stars")}</option>
+            <option value="2">{t("2 stars")}</option>
+            <option value="1">{t("1 star")}</option>
           </select>
 
           <button
@@ -198,21 +200,21 @@ export default function ReviewsPage() {
             onClick={clearFilters}
             className="h-12 rounded-2xl border border-gray-200 px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
           >
-            Reset
+            {t("Reset")}
           </button>
         </div>
 
         <div className="mt-4 text-sm text-gray-500">
-          <span className="font-semibold text-gray-900">{filteredReviews.length}</span> reviews found
+          {t("{n} reviews found", { n: filteredReviews.length })}
         </div>
       </div>
 
       {filteredReviews.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
           <div className="text-5xl">⭐</div>
-          <h2 className="mt-4 text-2xl font-bold text-gray-900">No reviews yet</h2>
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">{t("No reviews yet")}</h2>
           <p className="mt-2 text-sm text-gray-500">
-            Reviews will appear here once buyers start rating your listings.
+            {t("Reviews will appear here once buyers start rating your listings.")}
           </p>
         </div>
       ) : (
@@ -226,7 +228,7 @@ export default function ReviewsPage() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-3">
                     <h3 className="text-xl font-bold text-gray-900">
-                      {review.part_title || "Part review"}
+                      {review.part_title || t("Part review")}
                     </h3>
 
                     <div className="flex items-center gap-1 text-lg">
@@ -245,7 +247,7 @@ export default function ReviewsPage() {
                   </div>
 
                   <p className="mt-4 text-sm leading-6 text-gray-600">
-                    {review.comment || review.content || "No written review content."}
+                    {review.comment || review.content || t("No written review content.")}
                   </p>
                 </div>
               </div>

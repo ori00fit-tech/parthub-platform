@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { formatMoney } from "@parthub/shared";
+import { useT } from "../i18n";
 
 // Revenue in whole dirhams; amounts arrive in centimes.
 const formatRevenue = (value) => formatMoney(value || 0, { whole: true });
@@ -55,6 +56,7 @@ function ActionCard({ title, description, to, cta }) {
 }
 
 export default function DashboardPage() {
+  const t = useT();
   const [stats, setStats] = useState({
     total_sellers: 0,
     total_parts: 0,
@@ -81,7 +83,7 @@ export default function DashboardPage() {
         setStats(safeStats(response));
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load dashboard");
+        setError(err?.message || t("Failed to load dashboard"));
       } finally {
         if (active) setLoading(false);
       }
@@ -97,26 +99,26 @@ export default function DashboardPage() {
   const operationalHealth = useMemo(() => {
     if (stats.pending_sellers === 0 && stats.pending_parts === 0) {
       return {
-        label: "Queue healthy",
+        label: t("Queue healthy"),
         tone: "success",
-        note: "No moderation backlog detected right now.",
+        note: t("No moderation backlog detected right now."),
       };
     }
 
     if (stats.pending_sellers > 0 || stats.pending_parts > 0) {
       return {
-        label: "Needs attention",
+        label: t("Needs attention"),
         tone: "warning",
-        note: "Pending moderation items should be reviewed soon.",
+        note: t("Pending moderation items should be reviewed soon."),
       };
     }
 
     return {
-      label: "Monitoring",
+      label: t("Monitoring"),
       tone: "default",
-      note: "Admin operations are being monitored.",
+      note: t("Admin operations are being monitored."),
     };
-  }, [stats.pending_sellers, stats.pending_parts]);
+  }, [stats.pending_sellers, stats.pending_parts, t]);
 
   return (
     <section className="space-y-6">
@@ -124,16 +126,16 @@ export default function DashboardPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Admin command center
+              {t("Admin command center")}
             </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">Marketplace dashboard</h1>
+            <h1 className="text-3xl font-bold sm:text-5xl">{t("Marketplace dashboard")}</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Track moderation, supply growth, order activity, and marketplace health from one place.
+              {t("Track moderation, supply growth, order activity, and marketplace health from one place.")}
             </p>
           </div>
 
           <div className="rounded-3xl border border-white/15 bg-white/10 px-5 py-4">
-            <p className="text-xs uppercase tracking-wide text-blue-100">Operational status</p>
+            <p className="text-xs uppercase tracking-wide text-blue-100">{t("Operational status")}</p>
             <p className="mt-2 text-2xl font-bold">{operationalHealth.label}</p>
             <p className="mt-1 text-sm text-blue-100">{operationalHealth.note}</p>
           </div>
@@ -159,27 +161,27 @@ export default function DashboardPage() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
-              title="Total sellers"
+              title={t("Total sellers")}
               value={stats.total_sellers}
-              subtitle="All marketplace seller accounts"
+              subtitle={t("All marketplace seller accounts")}
               to="/sellers"
             />
             <StatCard
-              title="Active parts"
+              title={t("Active parts")}
               value={stats.total_parts}
-              subtitle="Currently active catalog listings"
+              subtitle={t("Currently active catalog listings")}
               to="/parts?status=active"
             />
             <StatCard
-              title="Total orders"
+              title={t("Total orders")}
               value={stats.total_orders}
-              subtitle="Marketplace order records"
+              subtitle={t("Marketplace order records")}
               to="/orders"
             />
             <StatCard
-              title="Paid revenue"
+              title={t("Paid revenue")}
               value={formatRevenue(stats.total_revenue)}
-              subtitle="Total revenue from paid orders"
+              subtitle={t("Total revenue from paid orders")}
               to="/orders"
               tone="success"
             />
@@ -187,16 +189,16 @@ export default function DashboardPage() {
 
           <div className="grid gap-4 lg:grid-cols-2">
             <StatCard
-              title="Pending seller approvals"
+              title={t("Pending seller approvals")}
               value={stats.pending_sellers}
-              subtitle="New or unresolved seller onboarding reviews"
+              subtitle={t("New or unresolved seller onboarding reviews")}
               to="/sellers?status=pending"
               tone={stats.pending_sellers > 0 ? "warning" : "success"}
             />
             <StatCard
-              title="Pending part reviews"
+              title={t("Pending part reviews")}
               value={stats.pending_parts}
-              subtitle="Listings waiting for marketplace approval"
+              subtitle={t("Listings waiting for marketplace approval")}
               to="/parts?status=pending"
               tone={stats.pending_parts > 0 ? "warning" : "success"}
             />
@@ -204,87 +206,87 @@ export default function DashboardPage() {
 
           <div className="grid gap-4 xl:grid-cols-3">
             <ActionCard
-              title="Review seller queue"
-              description="Approve trustworthy suppliers, reject weak submissions, and keep onboarding standards high."
+              title={t("Review seller queue")}
+              description={t("Approve trustworthy suppliers, reject weak submissions, and keep onboarding standards high.")}
               to="/sellers?status=pending"
-              cta="Open seller moderation"
+              cta={t("Open seller moderation")}
             />
 
             <ActionCard
-              title="Review listing queue"
-              description="Check parts waiting for approval and maintain data quality across the marketplace."
+              title={t("Review listing queue")}
+              description={t("Check parts waiting for approval and maintain data quality across the marketplace.")}
               to="/parts?status=pending"
-              cta="Open part moderation"
+              cta={t("Open part moderation")}
             />
 
             <ActionCard
-              title="Moderate buyer reviews"
-              description="Keep review quality high and remove low-value or harmful feedback before it goes live."
+              title={t("Moderate buyer reviews")}
+              description={t("Keep review quality high and remove low-value or harmful feedback before it goes live.")}
               to="/reviews"
-              cta="Open review moderation"
+              cta={t("Open review moderation")}
             />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="text-2xl font-bold text-gray-900">Admin priorities</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t("Admin priorities")}</h2>
               <div className="mt-5 space-y-4">
                 <div className="rounded-2xl bg-gray-50 p-4">
-                  <p className="text-sm font-semibold text-gray-900">1. Clear pending sellers</p>
+                  <p className="text-sm font-semibold text-gray-900">{t("1. Clear pending sellers")}</p>
                   <p className="mt-1 text-sm text-gray-600">
-                    Seller verification is the first trust gate of the marketplace.
+                    {t("Seller verification is the first trust gate of the marketplace.")}
                   </p>
                 </div>
 
                 <div className="rounded-2xl bg-gray-50 p-4">
-                  <p className="text-sm font-semibold text-gray-900">2. Approve high-quality parts</p>
+                  <p className="text-sm font-semibold text-gray-900">{t("2. Approve high-quality parts")}</p>
                   <p className="mt-1 text-sm text-gray-600">
-                    Better listing quality improves search trust and conversion quality.
+                    {t("Better listing quality improves search trust and conversion quality.")}
                   </p>
                 </div>
 
                 <div className="rounded-2xl bg-gray-50 p-4">
-                  <p className="text-sm font-semibold text-gray-900">3. Monitor order flow</p>
+                  <p className="text-sm font-semibold text-gray-900">{t("3. Monitor order flow")}</p>
                   <p className="mt-1 text-sm text-gray-600">
-                    Keep an eye on payment, shipping, and any order pipeline friction.
+                    {t("Keep an eye on payment, shipping, and any order pipeline friction.")}
                   </p>
                 </div>
               </div>
             </div>
 
             <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="text-2xl font-bold text-gray-900">Snapshot</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t("Snapshot")}</h2>
               <div className="mt-5 space-y-4">
                 <div className="flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3">
-                  <span className="text-sm text-gray-600">Moderation load</span>
+                  <span className="text-sm text-gray-600">{t("Moderation load")}</span>
                   <span className="text-sm font-semibold text-gray-900">
                     {stats.pending_sellers + stats.pending_parts} items
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3">
-                  <span className="text-sm text-gray-600">Supply base</span>
+                  <span className="text-sm text-gray-600">{t("Supply base")}</span>
                   <span className="text-sm font-semibold text-gray-900">
                     {stats.total_sellers} sellers
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3">
-                  <span className="text-sm text-gray-600">Live catalog</span>
+                  <span className="text-sm text-gray-600">{t("Live catalog")}</span>
                   <span className="text-sm font-semibold text-gray-900">
                     {stats.total_parts} parts
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3">
-                  <span className="text-sm text-gray-600">Commercial activity</span>
+                  <span className="text-sm text-gray-600">{t("Commercial activity")}</span>
                   <span className="text-sm font-semibold text-gray-900">
                     {stats.total_orders} orders
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3">
-                  <span className="text-sm text-gray-600">Revenue tracked</span>
+                  <span className="text-sm text-gray-600">{t("Revenue tracked")}</span>
                   <span className="text-sm font-semibold text-gray-900">
                     {formatRevenue(stats.total_revenue)}
                   </span>
