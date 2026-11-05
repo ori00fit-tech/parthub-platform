@@ -323,4 +323,18 @@ export default {
   "Not shipped": "لم يُشحن",
   "In transit": "في الطريق",
   "This page does not exist.": "هذه الصفحة غير موجودة.",
+
+  // Category names used in production
+  "Body & Exterior": "الهيكل والخارج",
+  "Brakes & Rotors": "الفرامل والأقراص",
+  "Cooling System": "نظام التبريد",
+  "Electrical & Lighting": "الكهرباء والإنارة",
+  "Engine Parts": "قطع المحرك",
+  "Exhaust & Emissions": "العادم والانبعاثات",
+  "Filters & Fluids": "الفلاتر والسوائل",
+  "Interior & Accessories": "الداخلية والإكسسوارات",
+  "Suspension & Steering": "التعليق والمقود",
+  "Tires & Wheels": "الإطارات والعجلات",
+  "Tools & Equipment": "الأدوات والمعدات",
+  "Transmission & Drivetrain": "ناقل الحركة",
 };

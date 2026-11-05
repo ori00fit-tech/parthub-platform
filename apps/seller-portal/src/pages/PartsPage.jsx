@@ -148,16 +148,10 @@ export default function PartsPage() {
 
           <div className="flex flex-wrap gap-3">
             <Link
-              to="/parts/create"
+              to="/parts/new"
               className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
             >
               {t("+ Create part")}
-            </Link>
-            <Link
-              to="/media-upload"
-              className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
-            >
-              {t("Upload media")}
             </Link>
           </div>
         </div>
@@ -247,16 +241,10 @@ export default function PartsPage() {
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
-              to="/parts/create"
+              to="/parts/new"
               className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
               {t("Create part")}
-            </Link>
-            <Link
-              to="/media-upload"
-              className="rounded-2xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-            >
-              {t("Upload media")}
             </Link>
           </div>
         </div>
@@ -344,13 +332,6 @@ export default function PartsPage() {
                         className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
                       >
                         {t("Edit part")}
-                      </Link>
-
-                      <Link
-                        to="/media-upload"
-                        className="rounded-2xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-                      >
-                        {t("Upload media")}
                       </Link>
                     </div>
                   </div>

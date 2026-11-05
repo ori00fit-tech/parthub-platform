@@ -93,7 +93,7 @@ export default function DashboardPage() {
 
           <div className="flex flex-wrap gap-3">
             <Link
-              to="/parts/create"
+              to="/parts/new"
               className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
             >
               {t("+ Add new part")}
@@ -174,17 +174,10 @@ export default function DashboardPage() {
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <Link
-                to="/parts/create"
+                to="/parts/new"
                 className="rounded-2xl bg-blue-600 px-5 py-4 text-sm font-semibold text-white transition hover:bg-blue-700"
               >
                 {t("+ Create new part")}
-              </Link>
-
-              <Link
-                to="/media-upload"
-                className="rounded-2xl border border-gray-300 bg-white px-5 py-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-              >
-                {t("Upload media")}
               </Link>
 
               <Link

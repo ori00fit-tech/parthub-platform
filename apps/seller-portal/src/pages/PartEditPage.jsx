@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { centimesToInput, parseMoneyInput } from "@parthub/shared";
 import { t, useT } from "../i18n";
+import PartPhotos from "../components/parts/PartPhotos";
+import CompatibilityEditor from "../components/parts/CompatibilityEditor";
 
 function slugify(value) {
   return String(value || "")
@@ -179,6 +181,7 @@ export default function PartEditPage() {
     compare_price: "",
     quantity: "0",
     condition: "new",
+    part_origin: "aftermarket",
     status: "active",
     image_url: "",
     fitment_notes: "",
@@ -247,6 +250,7 @@ export default function PartEditPage() {
           compare_price: centimesToInput(part.compare_price),
           quantity: part.quantity ?? "0",
           condition: part.condition || "new",
+          part_origin: part.part_origin || "aftermarket",
           status: part.status || "active",
           image_url: part.image_url || "",
           fitment_notes:
@@ -411,8 +415,9 @@ export default function PartEditPage() {
         compare_price: compareCentimes,
         quantity: Number(form.quantity),
         condition: form.condition,
+        part_origin: form.part_origin,
         status: form.status,
-        image_url: form.image_url.trim() || null,
+        image_url: null, // photos are managed in the Photos section below
         fitment_notes: form.fitment_notes.trim() || null,
         weight_kg: form.weight_kg ? Number(form.weight_kg) : null,
         featured: Boolean(form.featured),
@@ -457,12 +462,6 @@ export default function PartEditPage() {
               className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
             >
               {t("Back to inventory")}
-            </Link>
-            <Link
-              to="/media-upload"
-              className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
-            >
-              {t("Upload media")}
             </Link>
           </div>
         </div>
@@ -675,6 +674,21 @@ export default function PartEditPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                {t("Origin")}
+              </label>
+              <select
+                value={form.part_origin}
+                onChange={setField("part_origin")}
+                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
+              >
+                <option value="oem">{t("OEM")}</option>
+                <option value="aftermarket">{t("Aftermarket")}</option>
+                <option value="used">{t("Used Part")}</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 {t("Status")}
               </label>
               <select
@@ -687,18 +701,6 @@ export default function PartEditPage() {
                 <option value="pending">{t("Pending")}</option>
                 <option value="archived">{t("Archived")}</option>
               </select>
-            </div>
-
-            <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                {t("Image URL")}
-              </label>
-              <input
-                value={form.image_url}
-                onChange={setField("image_url")}
-                placeholder="https://..."
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
-              />
             </div>
 
             <div className="sm:col-span-2">
@@ -878,6 +880,14 @@ export default function PartEditPage() {
           </div>
         </div>
       </div>
+      {id ? (
+        <div className="grid gap-6 xl:grid-cols-2">
+          <PartPhotos partId={id} />
+          <div id="fitment">
+            <CompatibilityEditor partId={id} />
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

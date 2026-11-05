@@ -1,12 +1,11 @@
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Routes, Route } from "react-router-dom";
 import SellerLayout from "./components/layout/SellerLayout";
 import ProtectedRoute from "./components/routing/ProtectedRoute";
 
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import PartsPage from "./pages/PartsPage";
-import PartCreatePage from "./pages/PartCreatePage";
-import PartCreateWithUploadPage from "./pages/PartCreateWithUploadPage";
+import PartWizardPage from "./pages/PartWizardPage";
 import PartEditPage from "./pages/PartEditPage";
 import MediaUploadPage from "./pages/MediaUploadPage";
 import OrdersPage from "./pages/OrdersPage";
@@ -53,7 +52,7 @@ export default function App() {
         path="/parts/new"
         element={
           <ProtectedShell>
-            <PartCreatePage />
+            <PartWizardPage />
           </ProtectedShell>
         }
       />
@@ -61,9 +60,7 @@ export default function App() {
       <Route
         path="/parts/create"
         element={
-          <ProtectedShell>
-            <PartCreateWithUploadPage />
-          </ProtectedShell>
+          <Navigate to="/parts/new" replace />
         }
       />
 

@@ -860,4 +860,17 @@ export default {
   "Only {n} left": "Plus que {n} en stock",
   "Cart ({n})": "Panier ({n})",
   "Notify me": "Me prévenir",
+
+  // Category names used in production
+  "Body & Exterior": "Carrosserie & extérieur",
+  "Brakes & Rotors": "Freins & disques",
+  "Cooling System": "Refroidissement",
+  "Engine Parts": "Pièces moteur",
+  "Exhaust & Emissions": "Échappement",
+  "Filters & Fluids": "Filtres & liquides",
+  "Interior & Accessories": "Intérieur & accessoires",
+  "Suspension & Steering": "Suspension & direction",
+  "Tires & Wheels": "Pneus & jantes",
+  "Tools & Equipment": "Outils & équipement",
+  "Transmission & Drivetrain": "Transmission",
 };

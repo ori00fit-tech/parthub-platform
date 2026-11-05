@@ -28,7 +28,7 @@ export default function SellerLayout({ children }) {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
-              to="/parts/create"
+              to="/parts/new"
               className="hidden whitespace-nowrap rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 sm:inline-flex"
             >
               {t("+ Add part")}
