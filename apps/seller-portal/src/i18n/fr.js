@@ -552,4 +552,19 @@ export default {
   "1 offer so far · posted {date}": "1 offre pour l'instant · publiée le {date}",
   "{n} offers so far · posted {date}": "{n} offres pour l'instant · publiée le {date}",
   "This page does not exist.": "Cette page n'existe pas.",
+
+  // Buyers waiting for out-of-stock parts
+  "1 buyer is waiting for your parts": "1 acheteur attend vos pièces",
+  "{n} buyers are waiting for your parts": "{n} acheteurs attendent vos pièces",
+  "They asked to be told when these parts are back in stock. Restock them and PartHub notifies them right away.": "Ils ont demandé à être prévenus du retour en stock. Réapprovisionnez et PartHub les prévient aussitôt.",
+  "1 buyer waiting": "1 acheteur en attente",
+  "{n} buyers waiting": "{n} acheteurs en attente",
+  "Stock: {n}": "Stock : {n}",
+  "Update stock": "Mettre à jour le stock",
+  "Buyers waiting": "Acheteurs en attente",
+  "1 buyer waiting for this part": "1 acheteur attend cette pièce",
+  "{n} buyers waiting for this part": "{n} acheteurs attendent cette pièce",
+  "1 buyer is waiting for this part": "1 acheteur attend cette pièce",
+  "{n} buyers are waiting for this part": "{n} acheteurs attendent cette pièce",
+  "Set the quantity above 0 and save: they are notified right away.": "Indiquez une quantité supérieure à 0 et enregistrez : ils seront prévenus aussitôt.",
 };

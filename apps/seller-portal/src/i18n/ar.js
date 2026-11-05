@@ -552,4 +552,19 @@ export default {
   "1 offer so far · posted {date}": "عرض واحد حتى الآن · نُشر في {date}",
   "{n} offers so far · posted {date}": "{n} عروض حتى الآن · نُشر في {date}",
   "This page does not exist.": "هذه الصفحة غير موجودة.",
+
+  // Buyers waiting for out-of-stock parts
+  "1 buyer is waiting for your parts": "مشترٍ واحد ينتظر قطعك",
+  "{n} buyers are waiting for your parts": "{n} مشترين ينتظرون قطعك",
+  "They asked to be told when these parts are back in stock. Restock them and PartHub notifies them right away.": "طلبوا إعلامهم عند عودة هذه القطع. أعد توفيرها وسيُعلمهم PartHub فوراً.",
+  "1 buyer waiting": "مشترٍ واحد ينتظر",
+  "{n} buyers waiting": "{n} مشترين ينتظرون",
+  "Stock: {n}": "المخزون: {n}",
+  "Update stock": "حدّث المخزون",
+  "Buyers waiting": "مشترون ينتظرون",
+  "1 buyer waiting for this part": "مشترٍ واحد ينتظر هذه القطعة",
+  "{n} buyers waiting for this part": "{n} مشترين ينتظرون هذه القطعة",
+  "1 buyer is waiting for this part": "مشترٍ واحد ينتظر هذه القطعة",
+  "{n} buyers are waiting for this part": "{n} مشترين ينتظرون هذه القطعة",
+  "Set the quantity above 0 and save: they are notified right away.": "ضع كمية أكبر من 0 واحفظ، وسيُعلَمون فوراً.",
 };

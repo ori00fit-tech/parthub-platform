@@ -621,12 +621,40 @@ marketplaceRoutes.get("/dashboard", authMiddleware, async (c) => {
     `).bind(sellerId).first<{ n: number }>(),
   ]);
 
+  // Demand the seller can serve by restocking: parts with buyers waiting
+  // (counts only, buyers stay anonymous). Best-effort: the dashboard still
+  // loads if the stock_alerts table is missing (migration 0012 not run yet).
+  let waitingParts: Array<{ id: number; title: string; slug: string; quantity: number; status: string; waiting_count: number }> = [];
+  try {
+    const res = await c.env.DB.prepare(`
+      select p.id, p.title, p.slug, p.quantity, p.status, count(sa.id) as waiting_count
+      from stock_alerts sa
+      join parts p on p.id = sa.part_id
+      where p.seller_id = ?1 and sa.status = 'active'
+      group by p.id
+      order by waiting_count desc, p.title asc
+      limit 5
+    `).bind(sellerId).all<{ id: number; title: string; slug: string; quantity: number; status: string; waiting_count: number }>();
+    waitingParts = res.results || [];
+  } catch {
+    waitingParts = [];
+  }
+  const waitingTotal = await c.env.DB.prepare(`
+      select count(distinct sa.user_id) as n from stock_alerts sa join parts p on p.id = sa.part_id
+      where p.seller_id = ?1 and sa.status = 'active'
+    `)
+    .bind(sellerId)
+    .first<{ n: number }>()
+    .catch(() => ({ n: 0 }));
+
   return c.json(
     success({
       active_parts: activeParts?.n ?? 0,
       total_orders: totalOrders?.n ?? 0,
       pending_orders: pendingOrders?.n ?? 0,
       avg_rating: avgRating?.n ?? 0,
+      waiting_buyers: waitingTotal?.n ?? 0,
+      waiting_parts: waitingParts,
     })
   );
 });
@@ -988,7 +1016,11 @@ marketplaceRoutes.get("/me/parts/:id", authMiddleware, async (c) => {
           where pi.part_id = p.id
           order by pi.is_featured desc, pi.sort_order asc, pi.id asc
           limit 1
-        ) as image_url
+        ) as image_url,
+        (
+          select count(*) from stock_alerts sa
+          where sa.part_id = p.id and sa.status = 'active'
+        ) as waiting_count
       from parts p
       where p.id = ?1 and p.seller_id = ?2
       limit 1
@@ -1179,7 +1211,12 @@ marketplaceRoutes.get("/me/parts", authMiddleware, async (c) => {
         where pi.part_id = p.id
         order by pi.is_featured desc, pi.sort_order asc, pi.id asc
         limit 1
-      ) as image_url
+      ) as image_url,
+      -- Buyers who asked to be told when this part is back in stock.
+      (
+        select count(*) from stock_alerts sa
+        where sa.part_id = p.id and sa.status = 'active'
+      ) as waiting_count
     from parts p
     left join brands b on b.id = p.brand_id
     left join categories c on c.id = p.category_id

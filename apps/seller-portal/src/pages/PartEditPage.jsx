@@ -162,6 +162,7 @@ export default function PartEditPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [moderation, setModeration] = useState({ status: "", note: "" });
+  const [waiting, setWaiting] = useState(0);
   const [success, setSuccess] = useState("");
 
   const [categories, setCategories] = useState([]);
@@ -233,6 +234,7 @@ export default function PartEditPage() {
           throw new Error(t("Part not found"));
         }
         setModeration({ status: part.status || "", note: part.moderation_note || "" });
+        setWaiting(Number(part.waiting_count || 0));
 
         setForm({
           title: part.title || "",
@@ -474,6 +476,17 @@ export default function PartEditPage() {
               {t("Edit your product data and keep the listing accurate.")}
             </p>
           </div>
+
+          {waiting > 0 ? (
+            <div id="stock" className="mt-5 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+              <p className="font-semibold">
+                {waiting === 1 ? t("1 buyer is waiting for this part") : t("{n} buyers are waiting for this part", { n: waiting })}
+              </p>
+              <p className="mt-1">
+                {t("Set the quantity above 0 and save: they are notified right away.")}
+              </p>
+            </div>
+          ) : null}
 
           {(moderation.status === "rejected" || moderation.status === "archived") && moderation.note ? (
             <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="status">
