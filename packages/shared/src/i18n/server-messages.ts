@@ -122,6 +122,7 @@ export const SERVER_MESSAGES: Record<"ar" | "fr", Record<string, string>> = {
     "Load failed": "Connexion impossible. Vérifiez votre connexion internet.",
     "NetworkError when attempting to fetch resource.": "Connexion impossible. Vérifiez votre connexion internet.",
     "Upload failed": "Échec de l'envoi",
+    "You can rate a part once your order is delivered": "Vous pourrez noter une pièce une fois votre commande livrée",
   },
   ar: {
     "Select between 1 and {MAX} items": "حدّد بين 1 و{MAX} عنصراً",
@@ -243,6 +244,7 @@ export const SERVER_MESSAGES: Record<"ar" | "fr", Record<string, string>> = {
     "Load failed": "تعذّر الاتصال. تحقق من اتصالك بالإنترنت.",
     "NetworkError when attempting to fetch resource.": "تعذّر الاتصال. تحقق من اتصالك بالإنترنت.",
     "Upload failed": "فشل الرفع",
+    "You can rate a part once your order is delivered": "يمكنك تقييم القطعة بعد تسليم طلبك",
   },
 };
 
