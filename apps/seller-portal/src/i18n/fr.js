@@ -660,4 +660,19 @@ export default {
   "Electrical": "Électricité",
   "Filters": "Filtres",
   "Fluids & Oils": "Liquides & huiles",
+
+  // Seller onboarding tour
+  "Skip tour": "Passer la visite",
+  "Got it": "C'est compris",
+  "Take the tour": "Faire la visite",
+  "Your store status": "L'état de votre boutique",
+  "This tells you whether buyers can see your store. New stores are reviewed by PartHub before going live.": "Indique si les acheteurs voient votre boutique. Les nouvelles boutiques sont vérifiées par PartHub avant la mise en ligne.",
+  "Finish these steps": "Terminez ces étapes",
+  "The required steps make your store ready for review. The recommended ones bring you more buyers.": "Les étapes obligatoires préparent votre boutique à la vérification. Les recommandées vous amènent plus d'acheteurs.",
+  "Add your parts": "Ajoutez vos pièces",
+  "Five short steps: the part, photos, price, the vehicles it fits, then publish. You can do it from your phone.": "Cinq étapes courtes : la pièce, les photos, le prix, les véhicules compatibles, puis publier. Faisable depuis votre téléphone.",
+  "Buyers looking for parts": "Des acheteurs cherchent des pièces",
+  "Buyers post the parts they can't find. Send an offer; if they accept, you get their contact.": "Les acheteurs publient les pièces qu'ils ne trouvent pas. Envoyez une offre : s'ils acceptent, vous recevez leur contact.",
+  "Your language": "Votre langue",
+  "Switch between Arabic, French and English at any time.": "Passez de l'arabe au français ou à l'anglais à tout moment.",
 };

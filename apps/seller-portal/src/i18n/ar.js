@@ -660,4 +660,19 @@ export default {
   "Electrical": "الكهرباء",
   "Filters": "الفلاتر",
   "Fluids & Oils": "السوائل والزيوت",
+
+  // Seller onboarding tour
+  "Skip tour": "تخطَّ الجولة",
+  "Got it": "فهمت",
+  "Take the tour": "جولة تعريفية",
+  "Your store status": "حالة متجرك",
+  "This tells you whether buyers can see your store. New stores are reviewed by PartHub before going live.": "يوضّح إن كان المشترون يرون متجرك. يراجع PartHub المتاجر الجديدة قبل نشرها.",
+  "Finish these steps": "أكمل هذه الخطوات",
+  "The required steps make your store ready for review. The recommended ones bring you more buyers.": "الخطوات المطلوبة تجهّز متجرك للمراجعة، والمقترحة تجلب لك مشترين أكثر.",
+  "Add your parts": "أضف قطعك",
+  "Five short steps: the part, photos, price, the vehicles it fits, then publish. You can do it from your phone.": "خمس خطوات قصيرة: القطعة، الصور، السعر، السيارات المتوافقة، ثم النشر. يمكنك فعلها من هاتفك.",
+  "Buyers looking for parts": "مشترون يبحثون عن قطع",
+  "Buyers post the parts they can't find. Send an offer; if they accept, you get their contact.": "ينشر المشترون القطع التي لم يجدوها. أرسل عرضاً، وإذا قبلوا تحصل على رقمهم.",
+  "Your language": "لغتك",
+  "Switch between Arabic, French and English at any time.": "بدّل بين العربية والفرنسية والإنجليزية متى شئت.",
 };

@@ -4,6 +4,7 @@ import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useReadiness } from "../lib/readiness";
 import StoreChecklist, { StoreStatusBanner } from "../components/store/StoreChecklist";
+import SellerTour, { hasSeenTour } from "../components/onboarding/SellerTour";
 import { statusLabel, t, useT } from "../i18n";
 
 function statCards(stats) {
@@ -28,6 +29,14 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const { readiness, loading: readinessLoading, error: readinessError, reload: reloadReadiness } = useReadiness();
+
+  // First visit: show the short tour once the page content is there.
+  const [tourOpen, setTourOpen] = useState(false);
+  useEffect(() => {
+    if (readinessLoading || !user?.id || hasSeenTour(user.id)) return undefined;
+    const timer = setTimeout(() => setTourOpen(true), 700);
+    return () => clearTimeout(timer);
+  }, [readinessLoading, user?.id]);
   const sellerId = readiness?.seller?.id ?? null;
 
   // Stats need a store; load them once readiness has confirmed (and, if
@@ -94,10 +103,18 @@ export default function DashboardPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               to="/parts/new"
+              data-tour="add-part-hero"
               className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
             >
               {t("+ Add new part")}
             </Link>
+            <button
+              type="button"
+              onClick={() => setTourOpen(true)}
+              className="inline-flex items-center justify-center rounded-2xl border border-white/30 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            >
+              {t("Take the tour")}
+            </button>
             <Link
               to="/orders"
               className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
@@ -108,7 +125,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <StoreStatusBanner readiness={readiness} />
+      <div data-tour="status">
+        <StoreStatusBanner readiness={readiness} />
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
@@ -246,12 +265,14 @@ export default function DashboardPage() {
         </div>
 
         <div className="space-y-4">
+          <div data-tour="checklist">
           <StoreChecklist
             readiness={readiness}
             loading={readinessLoading}
             error={readinessError}
             onRetry={reloadReadiness}
           />
+          </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
             <p className="text-xs uppercase tracking-wide text-gray-400">{t("Low stock parts")}</p>
@@ -275,6 +296,7 @@ export default function DashboardPage() {
 
         </div>
       </div>
+      <SellerTour open={tourOpen} userId={user?.id} onClose={() => setTourOpen(false)} />
     </section>
   );
 }
