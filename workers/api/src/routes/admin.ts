@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import type { Context } from "hono";
 import type { Env, HonoVariables } from "../types";
 import { authMiddleware } from "../middlewares/auth";
 import { adminGuard } from "../middlewares/admin";
@@ -34,15 +35,36 @@ adminRoutes.get("/dashboard", async (c) => {
   });
 });
 
+// GET /api/v1/admin/pending-counts — what is waiting for moderation (sidebar badges).
+adminRoutes.get("/pending-counts", async (c) => {
+  const [sellers, parts, reviews] = await Promise.all([
+    dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM sellers WHERE status = 'pending'"),
+    dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM parts WHERE status = 'pending'"),
+    dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM reviews WHERE status = 'pending'"),
+  ]);
+  return ok(c, { sellers: sellers?.n ?? 0, parts: parts?.n ?? 0, reviews: reviews?.n ?? 0 });
+});
+
 // GET /api/v1/admin/sellers
 adminRoutes.get("/sellers", async (c) => {
   const q = c.req.query();
   const { page, limit, offset } = parsePagination(q);
   const status = q["status"];
-  const where = status ? "WHERE s.status = ?" : "";
-  const params = status ? [status] : [];
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  if (status) {
+    conditions.push("s.status = ?");
+    params.push(status);
+  }
+  const search = (q["q"] || "").trim().slice(0, 100);
+  if (search) {
+    conditions.push("(s.name LIKE ? OR s.slug LIKE ? OR s.location LIKE ? OR u.email LIKE ?)");
+    const like = `%${search}%`;
+    params.push(like, like, like, like);
+  }
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
-  const total = await dbCount(c.env.DB, `SELECT COUNT(*) as total FROM sellers s ${where}`, params);
+  const total = await dbCount(c.env.DB, `SELECT COUNT(*) as total FROM sellers s JOIN users u ON u.id = s.user_id ${where}`, params);
   const sellers = await dbAll(
     c.env.DB,
     `SELECT s.*, u.email, u.phone as user_phone FROM sellers s
@@ -104,44 +126,129 @@ function readReason(body: { reason?: unknown }): string {
   return typeof body.reason === "string" ? body.reason.trim().slice(0, MAX_REASON) : "";
 }
 
+type ModerationResult = { ok: true; status: string; note: string | null } | { ok: false; error: string; code: number };
+
+const SELLER_STATUSES = ["active", "suspended", "rejected"];
+function checkSellerDecision(status: string, reason: string): ModerationResult | null {
+  if (!SELLER_STATUSES.includes(status)) return { ok: false, error: "Invalid status", code: 400 };
+  if ((status === "rejected" || status === "suspended") && reason.length < MIN_REASON) {
+    return { ok: false, error: `Explain the decision to the seller (at least ${MIN_REASON} characters)`, code: 400 };
+  }
+  return null;
+}
+async function applySellerStatus(env: Env, id: number, status: string, reason: string): Promise<boolean> {
+  const seller = await dbFirst(env.DB, "SELECT id FROM sellers WHERE id = ?", [id]);
+  if (!seller) return false;
+  await dbRun(
+    env.DB,
+    "UPDATE sellers SET status = ?, moderation_note = ?, updated_at = datetime('now') WHERE id = ?",
+    [status, status === "active" ? null : reason, id]
+  );
+  return true;
+}
+
+const PART_STATUSES = ["active", "rejected", "archived"];
+function checkPartDecision(status: string, reason: string): ModerationResult | null {
+  if (!PART_STATUSES.includes(status)) return { ok: false, error: "Invalid status", code: 400 };
+  if (status === "rejected" && reason.length < MIN_REASON) {
+    return { ok: false, error: `Explain what the seller should fix (at least ${MIN_REASON} characters)`, code: 400 };
+  }
+  return null;
+}
+async function applyPartStatus(c: Context<{ Bindings: Env; Variables: HonoVariables }>, id: number, status: string, reason: string): Promise<boolean> {
+  const part = await dbFirst(c.env.DB, "SELECT id FROM parts WHERE id = ?", [id]);
+  if (!part) return false;
+  const note = status === "active" ? null : reason || null;
+  await dbRun(
+    c.env.DB,
+    "UPDATE parts SET status = ?, moderation_note = ?, updated_at = datetime('now') WHERE id = ?",
+    [status, note, id]
+  );
+  if (status === "active") runInBackground(c, notifyBackInStock(c.env, id));
+  return true;
+}
+
+const MAX_BULK = 100;
+function readIds(body: { ids?: unknown }): number[] | null {
+  if (!Array.isArray(body.ids)) return null;
+  const ids = [...new Set(body.ids.map(Number).filter((n) => Number.isInteger(n) && n > 0))];
+  return ids.length && ids.length <= MAX_BULK ? ids : null;
+}
+
 // PATCH /api/v1/admin/sellers/:id/status  { status, reason? }
 // reason is required for "rejected" and "suspended"; approving clears it.
 adminRoutes.patch("/sellers/:id/status", async (c) => {
   const id = Number(c.req.param("id"));
   const body = await c.req.json<{ status: string; reason?: string }>().catch(() => ({ status: "", reason: "" }));
-  const { status } = body;
-  const allowed = ["active", "suspended", "rejected"];
-  if (!allowed.includes(status)) return fail(c, "Invalid status");
-
+  const status = String(body.status || "");
   const reason = readReason(body);
-  if ((status === "rejected" || status === "suspended") && reason.length < MIN_REASON) {
-    return fail(c, `Explain the decision to the seller (at least ${MIN_REASON} characters)`);
-  }
-
-  const seller = await dbFirst(c.env.DB, "SELECT id FROM sellers WHERE id = ?", [id]);
-  if (!seller) return fail(c, "Seller not found", 404);
-
-  await dbRun(
-    c.env.DB,
-    "UPDATE sellers SET status = ?, moderation_note = ?, updated_at = datetime('now') WHERE id = ?",
-    [status, status === "active" ? null : reason, id]
-  );
+  const bad = checkSellerDecision(status, reason);
+  if (bad && !bad.ok) return fail(c, bad.error, bad.code);
+  if (!(await applySellerStatus(c.env, id, status, reason))) return fail(c, "Seller not found", 404);
   return ok(c, { message: `Seller ${status}`, status, moderation_note: status === "active" ? null : reason });
 });
 
-// GET /api/v1/admin/parts
+// POST /api/v1/admin/sellers/bulk-status  { ids: number[], status, reason? }
+// Same rules as one by one; the reason (when needed) is sent to every seller.
+adminRoutes.post("/sellers/bulk-status", async (c) => {
+  const body = await c.req.json<{ ids?: unknown; status?: string; reason?: string }>().catch(() => ({}) as { ids?: unknown; status?: string; reason?: string });
+  const ids = readIds(body);
+  if (!ids) return fail(c, `Select between 1 and ${MAX_BULK} items`);
+  const status = String(body.status || "");
+  const reason = readReason(body);
+  const bad = checkSellerDecision(status, reason);
+  if (bad && !bad.ok) return fail(c, bad.error, bad.code);
+  const updated: number[] = [];
+  const missing: number[] = [];
+  for (const id of ids) ((await applySellerStatus(c.env, id, status, reason)) ? updated : missing).push(id);
+  return ok(c, { status, updated, missing });
+});
+
+// GET /api/v1/admin/parts?status=pending|active|rejected|archived|all&seller_id=&category_id=&q=
 adminRoutes.get("/parts", async (c) => {
   const q = c.req.query();
   const { page, limit, offset } = parsePagination(q);
   const status = q["status"] ?? "pending";
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  if (status !== "all") {
+    conditions.push("p.status = ?");
+    params.push(status);
+  }
+  const sellerId = Number(q["seller_id"] || 0);
+  if (sellerId > 0) {
+    conditions.push("p.seller_id = ?");
+    params.push(sellerId);
+  }
+  const categoryId = Number(q["category_id"] || 0);
+  if (categoryId > 0) {
+    conditions.push("p.category_id = ?");
+    params.push(categoryId);
+  }
+  const search = (q["q"] || "").trim().slice(0, 100);
+  if (search) {
+    conditions.push("(p.title LIKE ? OR p.sku LIKE ? OR s.name LIKE ?)");
+    const like = `%${search}%`;
+    params.push(like, like, like);
+  }
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
-  const total = await dbCount(c.env.DB, "SELECT COUNT(*) as total FROM parts WHERE status = ?", [status]);
+  const total = await dbCount(
+    c.env.DB,
+    `SELECT COUNT(*) as total FROM parts p JOIN sellers s ON s.id = p.seller_id ${where}`,
+    params
+  );
   const parts = await dbAll(
     c.env.DB,
-    `SELECT p.*, s.name as seller_name FROM parts p
+    `SELECT p.*, s.name as seller_name, cat.name as category_name,
+       (SELECT pi.url FROM part_images pi WHERE pi.part_id = p.id
+         ORDER BY pi.is_featured DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) as image_url
+     FROM parts p
      JOIN sellers s ON s.id = p.seller_id
-     WHERE p.status = ? ORDER BY p.created_at DESC LIMIT ? OFFSET ?`,
-    [status, limit, offset]
+     LEFT JOIN categories cat ON cat.id = p.category_id
+     ${where}
+     ORDER BY p.created_at DESC LIMIT ? OFFSET ?`,
+    [...params, limit, offset]
   );
   return paginated(c, parts, { page, limit, total });
 });
@@ -151,26 +258,27 @@ adminRoutes.get("/parts", async (c) => {
 adminRoutes.patch("/parts/:id/status", async (c) => {
   const id = Number(c.req.param("id"));
   const body = await c.req.json<{ status: string; reason?: string }>().catch(() => ({ status: "", reason: "" }));
-  const { status } = body;
-  const allowed = ["active", "rejected", "archived"];
-  if (!allowed.includes(status)) return fail(c, "Invalid status");
-
+  const status = String(body.status || "");
   const reason = readReason(body);
-  if (status === "rejected" && reason.length < MIN_REASON) {
-    return fail(c, `Explain what the seller should fix (at least ${MIN_REASON} characters)`);
-  }
+  const bad = checkPartDecision(status, reason);
+  if (bad && !bad.ok) return fail(c, bad.error, bad.code);
+  if (!(await applyPartStatus(c, id, status, reason))) return fail(c, "Part not found", 404);
+  return ok(c, { message: `Part ${status}`, status, moderation_note: status === "active" ? null : reason || null });
+});
 
-  const part = await dbFirst(c.env.DB, "SELECT id FROM parts WHERE id = ?", [id]);
-  if (!part) return fail(c, "Part not found", 404);
-
-  const note = status === "active" ? null : reason || null;
-  await dbRun(
-    c.env.DB,
-    "UPDATE parts SET status = ?, moderation_note = ?, updated_at = datetime('now') WHERE id = ?",
-    [status, note, id]
-  );
-  if (status === "active") runInBackground(c, notifyBackInStock(c.env, Number(id)));
-  return ok(c, { message: `Part ${status}`, status, moderation_note: note });
+// POST /api/v1/admin/parts/bulk-status  { ids: number[], status, reason? }
+adminRoutes.post("/parts/bulk-status", async (c) => {
+  const body = await c.req.json<{ ids?: unknown; status?: string; reason?: string }>().catch(() => ({}) as { ids?: unknown; status?: string; reason?: string });
+  const ids = readIds(body);
+  if (!ids) return fail(c, `Select between 1 and ${MAX_BULK} items`);
+  const status = String(body.status || "");
+  const reason = readReason(body);
+  const bad = checkPartDecision(status, reason);
+  if (bad && !bad.ok) return fail(c, bad.error, bad.code);
+  const updated: number[] = [];
+  const missing: number[] = [];
+  for (const id of ids) ((await applyPartStatus(c, id, status, reason)) ? updated : missing).push(id);
+  return ok(c, { status, updated, missing });
 });
 
 // GET /api/v1/admin/orders

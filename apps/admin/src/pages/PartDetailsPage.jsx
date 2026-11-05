@@ -4,6 +4,7 @@ import { api } from "../lib/api";
 import { reasonPromptFor, useReasonDialog } from "../components/ReasonDialog";
 import { formatMoney } from "@parthub/shared";
 import { statusLabel, useT } from "../i18n";
+import { notifyPendingChanged } from "../lib/pending";
 
 function statusClasses(status) {
   switch (status) {
@@ -60,6 +61,7 @@ export default function PartDetailsPage() {
       setWorking(true);
       setError("");
       await api.patch(`/api/v1/admin/parts/${id}/status`, { status, reason });
+      notifyPendingChanged();
       await loadPart();
     } catch (err) {
       setError(err?.message || t("Failed to update part status"));
