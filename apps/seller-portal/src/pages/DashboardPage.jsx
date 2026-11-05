@@ -93,7 +93,7 @@ export default function DashboardPage() {
 
           <div className="flex flex-wrap gap-3">
             <Link
-              to="/parts/create"
+              to="/parts/new"
               className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
             >
               {t("+ Add new part")}
@@ -123,6 +123,43 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      {stats?.waiting_parts?.length ? (
+        <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm" aria-labelledby="waiting-title">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 id="waiting-title" className="text-lg font-bold text-amber-950">
+                {Number(stats.waiting_buyers) === 1
+                  ? t("1 buyer is waiting for your parts")
+                  : t("{n} buyers are waiting for your parts", { n: stats.waiting_buyers })}
+              </h2>
+              <p className="mt-1 text-sm text-amber-900">
+                {t("They asked to be told when these parts are back in stock. Restock them and PartHub notifies them right away.")}
+              </p>
+            </div>
+          </div>
+          <ul className="mt-4 divide-y divide-amber-200 rounded-2xl border border-amber-200 bg-white">
+            {stats.waiting_parts.map((p) => (
+              <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-gray-900">{p.title}</p>
+                  <p className="text-xs text-gray-500">
+                    {Number(p.waiting_count) === 1 ? t("1 buyer waiting") : t("{n} buyers waiting", { n: p.waiting_count })}
+                    {" · "}
+                    {t("Stock: {n}", { n: p.quantity })}
+                  </p>
+                </div>
+                <Link
+                  to={`/parts/${p.id}/edit#stock`}
+                  className="inline-flex h-9 items-center rounded-xl bg-amber-600 px-4 text-sm font-semibold text-white transition hover:bg-amber-700"
+                >
+                  {t("Update stock")}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="space-y-4">
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -137,17 +174,10 @@ export default function DashboardPage() {
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <Link
-                to="/parts/create"
+                to="/parts/new"
                 className="rounded-2xl bg-blue-600 px-5 py-4 text-sm font-semibold text-white transition hover:bg-blue-700"
               >
                 {t("+ Create new part")}
-              </Link>
-
-              <Link
-                to="/media-upload"
-                className="rounded-2xl border border-gray-300 bg-white px-5 py-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-              >
-                {t("Upload media")}
               </Link>
 
               <Link

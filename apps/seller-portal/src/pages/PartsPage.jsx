@@ -97,7 +97,8 @@ export default function PartsPage() {
         !stockFilter ||
         (stockFilter === "in_stock" && qty > 0) ||
         (stockFilter === "low_stock" && qty > 0 && qty <= 5) ||
-        (stockFilter === "out_of_stock" && qty <= 0);
+        (stockFilter === "out_of_stock" && qty <= 0) ||
+        (stockFilter === "waiting" && Number(part.waiting_count || 0) > 0);
 
       return matchesQuery && matchesStatus && matchesStock;
     });
@@ -147,16 +148,10 @@ export default function PartsPage() {
 
           <div className="flex flex-wrap gap-3">
             <Link
-              to="/parts/create"
+              to="/parts/new"
               className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
             >
               {t("+ Create part")}
-            </Link>
-            <Link
-              to="/media-upload"
-              className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
-            >
-              {t("Upload media")}
             </Link>
           </div>
         </div>
@@ -219,6 +214,7 @@ export default function PartsPage() {
             <option value="in_stock">{t("In stock")}</option>
             <option value="low_stock">{t("Low stock")}</option>
             <option value="out_of_stock">{t("Out of stock")}</option>
+            <option value="waiting">{t("Buyers waiting")}</option>
           </select>
 
           <button
@@ -245,16 +241,10 @@ export default function PartsPage() {
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
-              to="/parts/create"
+              to="/parts/new"
               className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
               {t("Create part")}
-            </Link>
-            <Link
-              to="/media-upload"
-              className="rounded-2xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-            >
-              {t("Upload media")}
             </Link>
           </div>
         </div>
@@ -304,6 +294,15 @@ export default function PartsPage() {
                       </span>
                     </div>
 
+                    {Number(part.waiting_count || 0) > 0 ? (
+                      <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">
+                        <span aria-hidden="true">🔔</span>
+                        {Number(part.waiting_count) === 1
+                          ? t("1 buyer waiting for this part")
+                          : t("{n} buyers waiting for this part", { n: part.waiting_count })}
+                      </p>
+                    ) : null}
+
                     {(part.status === "rejected" || part.status === "archived") && part.moderation_note ? (
                       <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
                         <p>
@@ -333,13 +332,6 @@ export default function PartsPage() {
                         className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
                       >
                         {t("Edit part")}
-                      </Link>
-
-                      <Link
-                        to="/media-upload"
-                        className="rounded-2xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-                      >
-                        {t("Upload media")}
                       </Link>
                     </div>
                   </div>

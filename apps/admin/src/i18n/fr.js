@@ -323,4 +323,18 @@ export default {
   "Not shipped": "Non expédiée",
   "In transit": "En transit",
   "This page does not exist.": "Cette page n'existe pas.",
+
+  // Category names used in production
+  "Body & Exterior": "Carrosserie & extérieur",
+  "Brakes & Rotors": "Freins & disques",
+  "Cooling System": "Refroidissement",
+  "Electrical & Lighting": "Électricité & éclairage",
+  "Engine Parts": "Pièces moteur",
+  "Exhaust & Emissions": "Échappement",
+  "Filters & Fluids": "Filtres & liquides",
+  "Interior & Accessories": "Intérieur & accessoires",
+  "Suspension & Steering": "Suspension & direction",
+  "Tires & Wheels": "Pneus & jantes",
+  "Tools & Equipment": "Outils & équipement",
+  "Transmission & Drivetrain": "Transmission",
 };

@@ -34,6 +34,13 @@ const PART_STATUSES = ["draft", "pending", "active", "rejected", "archived"] as 
 // Admins may set any valid status. Sellers cannot self-publish: asking for
 // "active" keeps an already-approved part active, otherwise it goes to the
 // moderation queue ("pending"). Sellers may still save drafts or archive.
+// oem | aftermarket | used (migration 0008). Anything else falls back.
+const PART_ORIGINS = ["oem", "aftermarket", "used"] as const;
+function resolvePartOrigin(value: unknown): string | null {
+  const v = typeof value === "string" ? value.trim().toLowerCase() : "";
+  return (PART_ORIGINS as readonly string[]).includes(v) ? v : null;
+}
+
 function resolvePartStatus(
   requested: unknown,
   current: string | null,
@@ -389,6 +396,27 @@ marketplaceRoutes.put("/parts/:id", authMiddleware, sellerGuard, async (c) => {
   }
 });
 
+// GET /api/v1/marketplace/parts/:id/images — the part's photos, main first.
+marketplaceRoutes.get("/parts/:id/images", authMiddleware, sellerGuard, async (c) => {
+  const actor = await resolveActor(c);
+  if (!actor.ok) return c.json(failure(actor.code, actor.message), actor.status);
+
+  const partId = Number(c.req.param("id"));
+  if (Number.isNaN(partId)) return c.json(failure("INVALID_ID", "Invalid part id"), 400);
+  if (!(await findOwnedPart(c.env.DB, partId, actor))) {
+    return c.json(failure("NOT_FOUND", "Part not found"), 404);
+  }
+
+  const gallery = await c.env.DB.prepare(
+    `select id, part_id, url, alt_text, sort_order, is_featured, created_at
+     from part_images where part_id = ?1
+     order by is_featured desc, sort_order asc, id asc`
+  )
+    .bind(partId)
+    .all();
+  return c.json(success(gallery.results || []));
+});
+
 marketplaceRoutes.post("/parts/:id/images", authMiddleware, sellerGuard, async (c) => {
   try {
     const actor = await resolveActor(c);
@@ -621,12 +649,40 @@ marketplaceRoutes.get("/dashboard", authMiddleware, async (c) => {
     `).bind(sellerId).first<{ n: number }>(),
   ]);
 
+  // Demand the seller can serve by restocking: parts with buyers waiting
+  // (counts only, buyers stay anonymous). Best-effort: the dashboard still
+  // loads if the stock_alerts table is missing (migration 0012 not run yet).
+  let waitingParts: Array<{ id: number; title: string; slug: string; quantity: number; status: string; waiting_count: number }> = [];
+  try {
+    const res = await c.env.DB.prepare(`
+      select p.id, p.title, p.slug, p.quantity, p.status, count(sa.id) as waiting_count
+      from stock_alerts sa
+      join parts p on p.id = sa.part_id
+      where p.seller_id = ?1 and sa.status = 'active'
+      group by p.id
+      order by waiting_count desc, p.title asc
+      limit 5
+    `).bind(sellerId).all<{ id: number; title: string; slug: string; quantity: number; status: string; waiting_count: number }>();
+    waitingParts = res.results || [];
+  } catch {
+    waitingParts = [];
+  }
+  const waitingTotal = await c.env.DB.prepare(`
+      select count(distinct sa.user_id) as n from stock_alerts sa join parts p on p.id = sa.part_id
+      where p.seller_id = ?1 and sa.status = 'active'
+    `)
+    .bind(sellerId)
+    .first<{ n: number }>()
+    .catch(() => ({ n: 0 }));
+
   return c.json(
     success({
       active_parts: activeParts?.n ?? 0,
       total_orders: totalOrders?.n ?? 0,
       pending_orders: pendingOrders?.n ?? 0,
       avg_rating: avgRating?.n ?? 0,
+      waiting_buyers: waitingTotal?.n ?? 0,
+      waiting_parts: waitingParts,
     })
   );
 });
@@ -876,6 +932,7 @@ marketplaceRoutes.post("/me/parts", authMiddleware, async (c) => {
       status,
       featured,
       image_url,
+      part_origin,
     } = body ?? {};
 
     if (!category_id) return c.json(failure("CATEGORY_ID_REQUIRED", "category_id is required"), 400);
@@ -899,8 +956,8 @@ marketplaceRoutes.post("/me/parts", authMiddleware, async (c) => {
       `
       insert into parts (
         seller_id, category_id, brand_id, slug, title, description, sku,
-        price, compare_price, condition, quantity, weight_kg, status, featured
-      ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
+        price, compare_price, condition, quantity, weight_kg, status, featured, part_origin
+      ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
       `
     )
       .bind(
@@ -917,7 +974,8 @@ marketplaceRoutes.post("/me/parts", authMiddleware, async (c) => {
         quantity != null && quantity !== "" ? Number(quantity) : 1,
         weight_kg != null && weight_kg !== "" ? Number(weight_kg) : null,
         resolvePartStatus(status, null, false),
-        featured ? 1 : 0
+        featured ? 1 : 0,
+        resolvePartOrigin(part_origin) || "aftermarket"
       )
       .run();
 
@@ -980,6 +1038,7 @@ marketplaceRoutes.get("/me/parts/:id", authMiddleware, async (c) => {
         p.status,
         p.moderation_note,
         p.featured,
+        p.part_origin,
         p.created_at,
         p.updated_at,
         (
@@ -988,7 +1047,11 @@ marketplaceRoutes.get("/me/parts/:id", authMiddleware, async (c) => {
           where pi.part_id = p.id
           order by pi.is_featured desc, pi.sort_order asc, pi.id asc
           limit 1
-        ) as image_url
+        ) as image_url,
+        (
+          select count(*) from stock_alerts sa
+          where sa.part_id = p.id and sa.status = 'active'
+        ) as waiting_count
       from parts p
       where p.id = ?1 and p.seller_id = ?2
       limit 1
@@ -1042,6 +1105,7 @@ marketplaceRoutes.put("/me/parts/:id", authMiddleware, async (c) => {
       status,
       featured,
       image_url,
+      part_origin,
     } = body ?? {};
 
     const existing = await c.env.DB.prepare(
@@ -1088,6 +1152,7 @@ marketplaceRoutes.put("/me/parts/:id", authMiddleware, async (c) => {
         weight_kg = ?11,
         status = ?12,
         featured = ?13,
+        part_origin = coalesce(?16, part_origin),
         updated_at = datetime('now')
       where id = ?14 and seller_id = ?15
       `
@@ -1107,7 +1172,8 @@ marketplaceRoutes.put("/me/parts/:id", authMiddleware, async (c) => {
         resolvePartStatus(status, existing.status, false),
         featured ? 1 : 0,
         partId,
-        Number(sellerId)
+        Number(sellerId),
+        resolvePartOrigin(part_origin)
       )
       .run();
 
@@ -1179,7 +1245,12 @@ marketplaceRoutes.get("/me/parts", authMiddleware, async (c) => {
         where pi.part_id = p.id
         order by pi.is_featured desc, pi.sort_order asc, pi.id asc
         limit 1
-      ) as image_url
+      ) as image_url,
+      -- Buyers who asked to be told when this part is back in stock.
+      (
+        select count(*) from stock_alerts sa
+        where sa.part_id = p.id and sa.status = 'active'
+      ) as waiting_count
     from parts p
     left join brands b on b.id = p.brand_id
     left join categories c on c.id = p.category_id
