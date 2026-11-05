@@ -1,3 +1,4 @@
+import { Icon } from "@parthub/shared/icons";
 import { useT } from "../../i18n";
 
 // One stock indicator for every place a part is shown.
@@ -9,6 +10,8 @@ export function stockLevel(quantity) {
   if (qty <= LOW_STOCK_THRESHOLD) return "low";
   return "in";
 }
+
+const ICON = { in: "in-stock", low: "low-stock", out: "out-of-stock" };
 
 const TONES = {
   in: "border-emerald-400/30 bg-emerald-400/10 text-emerald-800",
@@ -31,12 +34,13 @@ export default function StockBadge({ quantity, size = "sm", className = "" }) {
   return (
     <span
       className={[
-        "inline-flex w-fit items-center gap-1.5 rounded-full border font-semibold before:h-1.5 before:w-1.5 before:flex-none before:rounded-full before:bg-current",
+        "inline-flex w-fit items-center gap-1 rounded-full border font-semibold",
         size === "lg" ? "h-8 px-3 text-sm" : "h-6 px-2.5 text-xs",
         TONES[level],
         className,
       ].join(" ")}
     >
+      <Icon name={ICON[level]} className={size === "lg" ? "h-4 w-4" : "h-3.5 w-3.5"} strokeWidth={2.25} />
       {label}
     </span>
   );

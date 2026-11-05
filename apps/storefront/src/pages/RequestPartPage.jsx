@@ -6,6 +6,7 @@ import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext"
 import { requestsApi } from "../features/requests/api";
 import PhotoPicker from "../features/requests/PhotoPicker";
 import { t, useT } from "../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 const inputClass =
   "h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20";
@@ -24,9 +25,9 @@ function Field({ label, hint, required, children }) {
 
 // Built at render time so labels follow the current language.
 const getSteps = () => [
-  { icon: "📝", title: t("Describe the part"), text: t("Your vehicle and the part you need. It's free.") },
-  { icon: "📨", title: t("Sellers reply"), text: t("Matching shops and casses send you their best offer.") },
-  { icon: "✅", title: t("Pick the best offer"), text: t("Compare price, condition and warranty, then contact the seller.") },
+  { icon: "request-part", title: t("Describe the part"), text: t("Your vehicle and the part you need. It's free.") },
+  { icon: "send", title: t("Sellers reply"), text: t("Matching shops and casses send you their best offer.") },
+  { icon: "in-stock", title: t("Pick the best offer"), text: t("Compare price, condition and warranty, then contact the seller.") },
 ];
 
 export default function RequestPartPage() {
@@ -138,7 +139,7 @@ export default function RequestPartPage() {
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           {getSteps().map((step, i) => (
             <div key={step.title} className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
-              <div className="text-xl">{step.icon}</div>
+              <Icon name={step.icon} className="h-6 w-6 text-navy-ink" />
               <p className="mt-2 text-sm font-bold">
                 {i + 1}. {step.title}
               </p>
@@ -165,7 +166,7 @@ export default function RequestPartPage() {
         <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[1fr_340px]">
           <div className="space-y-6">
             <section className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-              <h2 className="text-lg font-bold text-ink">{t("🚗 Your vehicle")}</h2>
+              <h2 className="flex items-center gap-2 text-lg font-bold text-ink"><Icon name="vehicle" className="h-5 w-5 text-navy" />{t("Your vehicle")}</h2>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <Field label={t("Make")} required>
                   <input
@@ -229,7 +230,7 @@ export default function RequestPartPage() {
             </section>
 
             <section className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-              <h2 className="text-lg font-bold text-ink">{t("⚙️ The part you need")}</h2>
+              <h2 className="flex items-center gap-2 text-lg font-bold text-ink"><Icon name="part" className="h-5 w-5 text-navy" />{t("The part you need")}</h2>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <Field label={t("Part")} required>
@@ -304,7 +305,7 @@ export default function RequestPartPage() {
 
           <aside className="space-y-4 lg:sticky lg:top-40 lg:self-start">
             <section className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-              <h2 className="text-lg font-bold text-ink">{t("📍 Contact")}</h2>
+              <h2 className="flex items-center gap-2 text-lg font-bold text-ink"><Icon name="location" className="h-5 w-5 text-navy" />{t("Contact")}</h2>
               <div className="mt-4 space-y-4">
                 <Field label={t("City")} required>
                   <input

@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
 import { useT } from "../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 export default function NotFoundPage() {
   const t = useT();
   return (
     <section className="space-y-6">
       <div className="rounded-3xl border border-gray-800 bg-gray-900 p-10 text-center shadow-sm">
-        <div className="text-5xl mb-4">🧭</div>
+        <Icon name="compass" className="mx-auto mb-4 h-14 w-14 text-gray-500" />
         <h1 className="text-3xl font-bold text-gray-100">{t("Page not found")}</h1>
         <p className="mt-2 text-sm text-gray-400">
           {t("This page does not exist.")}

@@ -5,6 +5,7 @@ import { api } from "../lib/api";
 import { mediaUrl } from "../lib/requests";
 import { uploadPartPhoto } from "../lib/photos";
 import { useT } from "../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 // Add a part in five short steps instead of one long form. The draft is kept
 // on this device, so a seller on a phone can stop and come back.
@@ -354,7 +355,7 @@ export default function PartWizardPage() {
   if (done) {
     return (
       <section ref={topRef} className="mx-auto max-w-2xl rounded-3xl border border-emerald-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="text-4xl" aria-hidden="true">✅</div>
+        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"><Icon name="in-stock" className="h-8 w-8" /></span>
         <h1 className="mt-3 text-2xl font-bold text-gray-900">{t("Part saved")}</h1>
         <p className="mt-1 text-gray-700">{done.title}</p>
         <p className="mt-3 rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-700">
@@ -451,7 +452,7 @@ export default function PartWizardPage() {
                   onClick={() => set("category_id")(String(suggestedCategory.id))}
                   className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700"
                 >
-                  ✨ {t("Suggested: {name}", { name: t(suggestedCategory.name) })}
+                  <Icon name="suggestion" className="h-3.5 w-3.5" /> {t("Suggested: {name}", { name: t(suggestedCategory.name) })}
                 </button>
               ) : null}
             </Field>
@@ -471,7 +472,7 @@ export default function PartWizardPage() {
                   onClick={() => set("brand_id")(String(suggestedBrand.id))}
                   className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700"
                 >
-                  ✨ {t("Suggested: {name}", { name: suggestedBrand.name })}
+                  <Icon name="suggestion" className="h-3.5 w-3.5" /> {t("Suggested: {name}", { name: suggestedBrand.name })}
                 </button>
               ) : null}
             </Field>
@@ -549,7 +550,7 @@ export default function PartWizardPage() {
                   onClick={() => fileRef.current?.click()}
                   className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-blue-300 bg-blue-50 text-sm font-semibold text-blue-700 hover:bg-blue-100"
                 >
-                  <span className="text-2xl" aria-hidden="true">📷</span>
+                  <Icon name="add-photo" className="h-7 w-7" />
                   {t("Add photos")}
                 </button>
               ) : null}
@@ -661,7 +662,7 @@ export default function PartWizardPage() {
             <h2 className="text-lg font-bold text-gray-900">{t("Check and publish")}</h2>
             <div className="flex gap-4">
               <div className="h-24 w-24 flex-none overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
-                {form.photos[0] ? <img src={mediaUrl(form.photos[0].url)} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-3xl">⚙️</div>}
+                {form.photos[0] ? <img src={mediaUrl(form.photos[0].url)} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-gray-400"><Icon name="part" className="h-9 w-9" /></div>}
               </div>
               <div className="min-w-0">
                 <p className="font-semibold text-gray-900">{form.title}</p>

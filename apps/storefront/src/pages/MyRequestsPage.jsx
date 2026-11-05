@@ -4,6 +4,7 @@ import { useAuth } from "../features/auth/AuthContext";
 import { formatMAD, requestStatus, requestsApi } from "../features/requests/api";
 import { mediaUrl } from "../lib/media";
 import { useT } from "../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 export default function MyRequestsPage() {
   const t = useT();
@@ -64,7 +65,7 @@ export default function MyRequestsPage() {
         <p className="rounded-2xl bg-red-400/10 px-4 py-3 text-sm text-red-700">{error}</p>
       ) : requests.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-line-strong bg-surface p-10 text-center">
-          <div className="text-4xl">🔎</div>
+          <Icon name="part-search" className="mx-auto h-10 w-10 text-faint" />
           <h2 className="mt-3 text-lg font-bold text-ink">{t("No requests yet")}</h2>
           <p className="mt-1 text-sm text-muted">
             {t("Looking for a part that isn't listed? Describe it once and sellers will reply with offers.")}
@@ -87,7 +88,7 @@ export default function MyRequestsPage() {
                   {r.images?.[0] ? (
                     <img src={mediaUrl(r.images[0])} alt="" loading="lazy" className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-xl">⚙️</div>
+                    <div className="flex h-full w-full items-center justify-center"><Icon name="part" className="h-6 w-6 text-faint" /></div>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">

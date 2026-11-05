@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { uploadRequestImage } from "../../lib/media";
 import { useT } from "../../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 export const MAX_REQUEST_PHOTOS = 3;
 
@@ -71,7 +72,7 @@ export default function PhotoPicker({ onChange, onUploadingChange }) {
             ].join(" ")}
           >
             {item.status === "error" ? (
-              <div className="flex h-full w-full items-start justify-center bg-red-400/10 pt-[22%] text-3xl">⚠️</div>
+              <div className="flex h-full w-full items-start justify-center bg-red-400/10 pt-[22%] text-red-700"><Icon name="warning" className="h-8 w-8" /></div>
             ) : (
               <img src={item.preview} alt="" className="h-full w-full object-cover" />
             )}
@@ -102,7 +103,7 @@ export default function PhotoPicker({ onChange, onUploadingChange }) {
             onClick={() => inputRef.current?.click()}
             className="flex aspect-square flex-col items-center justify-center rounded-xl border-2 border-dashed border-line-strong text-muted transition hover:border-sky-400 hover:bg-navy/[0.12] hover:text-blue-800"
           >
-            <span className="text-2xl">📷</span>
+            <Icon name="camera" className="h-7 w-7" />
             <span className="mt-1 text-xs font-semibold">{t("Add photo")}</span>
           </button>
         ) : null}

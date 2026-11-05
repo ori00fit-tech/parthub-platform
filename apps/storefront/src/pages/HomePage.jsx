@@ -7,6 +7,7 @@ import { formatPrice } from "../lib/formatters";
 import { mediaUrl } from "../lib/media";
 import StockBadge from "../features/stock/StockBadge";
 import { t, useT } from "../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 function getVehicleLabel(vehicle) {
   if (!vehicle) return t("No vehicle selected");
@@ -26,8 +27,8 @@ function getVehicleLabel(vehicle) {
 function HeroStat({ value, label, icon }) {
   return (
     <div className="flex items-center gap-3 border-b border-line px-5 py-4 sm:border-b-0 sm:border-e last:border-e-0">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy/[0.06] text-lg">
-        {icon}
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy/[0.06] text-navy">
+        <Icon name={icon} className="h-5 w-5" />
       </div>
       <div>
         <div className="text-lg font-black tracking-tight text-ink">{value}</div>
@@ -43,7 +44,9 @@ function CategoryCard({ icon, title, to }) {
       to={to}
       className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface px-3 py-5 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-navy hover:shadow-md"
     >
-      <div className="text-2xl">{icon}</div>
+      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-navy/[0.07] text-navy">
+        <Icon name={icon} className="h-6 w-6" />
+      </span>
       <div className="text-sm font-bold text-ink">{title}</div>
     </Link>
   );
@@ -117,14 +120,14 @@ export default function HomePage() {
   }
 
   const quickCategories = [
-    { icon: "⚙️", title: t("Engine"), to: "/parts?q=engine" },
-    { icon: "🛑", title: t("Brakes"), to: "/parts?q=brake" },
-    { icon: "🪫", title: t("Electrical"), to: "/parts?q=battery" },
-    { icon: "🧴", title: t("Filters"), to: "/parts?q=filter" },
-    { icon: "🚘", title: t("Suspension"), to: "/parts?q=suspension" },
-    { icon: "💡", title: t("Lighting"), to: "/parts?q=light" },
-    { icon: "🔥", title: t("Exhaust"), to: "/parts?q=exhaust" },
-    { icon: "🏷️", title: t("Lowest prices"), to: "/parts?sort=price_asc" },
+    { icon: "engine", title: t("Engine"), to: "/parts?q=engine" },
+    { icon: "brakes", title: t("Brakes"), to: "/parts?q=brake" },
+    { icon: "electrical", title: t("Electrical"), to: "/parts?q=battery" },
+    { icon: "filters", title: t("Filters"), to: "/parts?q=filter" },
+    { icon: "suspension", title: t("Suspension"), to: "/parts?q=suspension" },
+    { icon: "lighting", title: t("Lighting"), to: "/parts?q=light" },
+    { icon: "exhaust", title: t("Exhaust"), to: "/parts?q=exhaust" },
+    { icon: "lowest-prices", title: t("Lowest prices"), to: "/parts?sort=price_asc" },
   ];
 
   return (
@@ -132,7 +135,8 @@ export default function HomePage() {
       <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-b from-surface to-canvas px-4 py-10 text-center sm:px-6">
         <div className="mx-auto max-w-4xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-navy/20 bg-navy/[0.06] px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-link">
-            {t("✓ Auto parts from Moroccan sellers · Prices in MAD")}
+            <Icon name="verified" className="h-4 w-4" />
+            {t("Auto parts from Moroccan sellers · Prices in MAD")}
           </div>
 
           <h1 className="mt-6 text-4xl font-black tracking-tight text-ink sm:text-5xl">
@@ -280,10 +284,10 @@ export default function HomePage() {
             <HeroStat
               value={catalog.loading ? "…" : partCount >= 60 ? "60+" : String(partCount)}
               label={t("Parts listed now")}
-              icon="📦"
+              icon="inventory"
             />
-            <HeroStat value={t("Reviewed")} label={t("Every store is checked by PartHub")} icon="✅" />
-            <HeroStat value={t("WhatsApp")} label={t("Ask the seller before you buy")} icon="💬" />
+            <HeroStat value={t("Reviewed")} label={t("Every store is checked by PartHub")} icon="verified" />
+            <HeroStat value={t("WhatsApp")} label={t("Ask the seller before you buy")} icon="whatsapp" />
           </div>
         </div>
       </section>
@@ -331,7 +335,7 @@ export default function HomePage() {
                   {part.image_url ? (
                     <img src={mediaUrl(part.image_url)} alt="" loading="lazy" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
                   ) : (
-                    <span className="text-3xl" aria-hidden="true">⚙️</span>
+                    <Icon name="part" className="h-10 w-10 text-faint" />
                   )}
                 </div>
                 <div className="flex flex-1 flex-col gap-1.5 p-3.5">
@@ -367,7 +371,7 @@ export default function HomePage() {
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
-              <div className="text-2xl">🔍</div>
+              <Icon name="vehicle" className="h-7 w-7 text-blue-100" />
               <h3 className="mt-3 font-bold">{t("Vehicle Compatibility Check")}</h3>
               <p className="mt-2 text-sm text-blue-100">
                 {t("Filter by your year, make and model to see the parts that fit.")}
@@ -375,7 +379,7 @@ export default function HomePage() {
             </div>
 
             <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
-              <div className="text-2xl">✅</div>
+              <Icon name="verified" className="h-7 w-7 text-blue-100" />
               <h3 className="mt-3 font-bold">{t("Verified Sellers")}</h3>
               <p className="mt-2 text-sm text-blue-100">
                 {t("PartHub reviews every store before its parts go live.")}
@@ -383,7 +387,7 @@ export default function HomePage() {
             </div>
 
             <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
-              <div className="text-2xl">📨</div>
+              <Icon name="request-part" className="h-7 w-7 text-blue-100" />
               <h3 className="mt-3 font-bold">{t("Can't find a part?")}</h3>
               <p className="mt-2 text-sm text-blue-100">
                 {t("Send one request and sellers reply with offers.")}{" "}
@@ -394,7 +398,7 @@ export default function HomePage() {
             </div>
 
             <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
-              <div className="text-2xl">🔄</div>
+              <Icon name="compare" className="h-7 w-7 text-blue-100" />
               <h3 className="mt-3 font-bold">{t("Compare Before You Buy")}</h3>
               <p className="mt-2 text-sm text-blue-100">
                 {t("Shortlist parts and compare price, condition and fitment side by side.")}

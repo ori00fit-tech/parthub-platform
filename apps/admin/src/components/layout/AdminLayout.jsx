@@ -4,19 +4,20 @@ import { useAuth } from "../../context/AuthContext";
 import { useT } from "../../i18n";
 import LanguageSwitcher from "../common/LanguageSwitcher";
 import { usePendingCounts } from "../../lib/pending";
+import { Icon } from "@parthub/shared/icons";
 
 // Nav items whose badge shows how many items wait for moderation.
 const PENDING_KEY = { "/sellers": "sellers", "/parts": "parts", "/reviews": "reviews" };
 
 const navItems = [
-  { to: "/", label: "Dashboard", icon: "📊" },
-  { to: "/sellers", label: "Sellers", icon: "🏪" },
-  { to: "/parts", label: "Parts", icon: "🔩" },
-  { to: "/categories", label: "Categories", icon: "📂" },
-  { to: "/vehicles", label: "Vehicles", icon: "🚗" },
-  { to: "/orders", label: "Orders", icon: "📦" },
-  { to: "/reviews", label: "Reviews", icon: "⭐" },
-  { to: "/analytics", label: "Analytics", icon: "📈" },
+  { to: "/", label: "Dashboard", icon: "dashboard" },
+  { to: "/sellers", label: "Sellers", icon: "sellers" },
+  { to: "/parts", label: "Parts", icon: "parts" },
+  { to: "/categories", label: "Categories", icon: "categories" },
+  { to: "/vehicles", label: "Vehicles", icon: "vehicles" },
+  { to: "/orders", label: "Orders", icon: "orders" },
+  { to: "/reviews", label: "Reviews", icon: "messages" },
+  { to: "/analytics", label: "Analytics", icon: "insights" },
 ];
 
 function isActivePath(itemTo, pathname) {
@@ -30,8 +31,8 @@ function SidebarContent({ pathname, onNavigate, user, logout, pending }) {
     <div className="flex h-full flex-col bg-gray-950">
       <div className="border-b border-gray-800 px-5 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-xl shadow-lg shadow-blue-900/40">
-            🛡️
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-900/40">
+            <Icon name="oem_origin" className="h-6 w-6" />
           </div>
           <div className="min-w-0">
             <p className="truncate text-lg font-black text-white">{t("PartHub Admin")}</p>
@@ -55,7 +56,7 @@ function SidebarContent({ pathname, onNavigate, user, logout, pending }) {
                   : "text-gray-300 hover:bg-gray-900 hover:text-white",
               ].join(" ")}
             >
-              <span className="text-lg">{item.icon}</span>
+              <Icon name={item.icon} className="h-5 w-5" />
               <span className="flex-1">{t(item.label)}</span>
               {PENDING_KEY[item.to] && pending?.[PENDING_KEY[item.to]] > 0 ? (
                 <span
@@ -125,7 +126,7 @@ export default function AdminLayout() {
             className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-gray-800 bg-gray-900 text-xl text-gray-100"
             aria-label={t("Open navigation")}
           >
-            ☰
+            <Icon name="menu" className="h-6 w-6" />
             {pendingTotal > 0 ? (
               <span className="absolute -end-1 -top-1 min-w-[20px] rounded-full bg-amber-400 px-1.5 text-center text-[11px] font-bold leading-5 text-gray-950">
                 {pendingTotal}

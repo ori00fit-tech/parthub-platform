@@ -6,19 +6,20 @@ import { useReadiness } from "../lib/readiness";
 import StoreChecklist, { StoreStatusBanner } from "../components/store/StoreChecklist";
 import SellerTour, { hasSeenTour } from "../components/onboarding/SellerTour";
 import { statusLabel, t, useT } from "../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 function statCards(stats) {
   return [
-    { label: t("Active Parts"), value: stats?.active_parts ?? "–", icon: "🔩" },
-    { label: t("Total Orders"), value: stats?.total_orders ?? "–", icon: "📦" },
-    { label: t("Pending Orders"), value: stats?.pending_orders ?? "–", icon: "⏳" },
+    { label: t("Active Parts"), value: stats?.active_parts ?? "–", icon: "inventory" },
+    { label: t("Total Orders"), value: stats?.total_orders ?? "–", icon: "orders" },
+    { label: t("Pending Orders"), value: stats?.pending_orders ?? "–", icon: "pending" },
     {
       label: t("Avg Rating"),
       value:
         typeof stats?.avg_rating === "number"
           ? stats.avg_rating.toFixed(1)
           : "–",
-      icon: "⭐",
+      icon: "reviews",
     },
   ];
 }
@@ -135,7 +136,7 @@ export default function DashboardPage() {
             key={card.label}
             className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm"
           >
-            <div className="text-2xl">{card.icon}</div>
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><Icon name={card.icon} className="h-6 w-6" /></span>
             <div className="mt-3 text-3xl font-bold text-gray-900">{card.value}</div>
             <div className="mt-1 text-sm text-gray-500">{card.label}</div>
           </div>

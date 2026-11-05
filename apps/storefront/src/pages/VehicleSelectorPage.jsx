@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { apiGet } from "../lib/api";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import { useT } from "../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 export default function VehicleSelectorPage() {
   const t = useT();
@@ -213,13 +214,13 @@ export default function VehicleSelectorPage() {
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm">
-            {makes.length ? t("✔ {n} makes available", { n: makes.length }) : t("✔ Makes loading…")}
+            <span className="flex items-start gap-2"><Icon name="ok" className="mt-0.5 h-4 w-4 flex-none text-emerald-300" />{makes.length ? t("{n} makes available", { n: makes.length }) : t("Makes loading…")}</span>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm">
-            {t("✔ Saved on this device for your next visit")}
+            <span className="flex items-start gap-2"><Icon name="ok" className="mt-0.5 h-4 w-4 flex-none text-emerald-300" />{t("Saved on this device for your next visit")}</span>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm">
-            {t("✔ Parts that fit are shown first")}
+            <span className="flex items-start gap-2"><Icon name="ok" className="mt-0.5 h-4 w-4 flex-none text-emerald-300" />{t("Parts that fit are shown first")}</span>
           </div>
         </div>
       </div>
@@ -371,9 +372,9 @@ export default function VehicleSelectorPage() {
           <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
             <h2 className="text-lg font-bold text-ink">{t("Why this matters")}</h2>
             <div className="mt-3 space-y-2 text-sm text-muted">
-              <p>{t("✔ The catalog shows parts that fit your vehicle first")}</p>
-              <p>{t("✔ Each part page tells you if it fits")}</p>
-              <p>{t("✔ Sellers see your vehicle when you order or request a part")}</p>
+              <p className="flex items-start gap-2"><Icon name="ok" className="mt-0.5 h-4 w-4 flex-none text-emerald-600" />{t("The catalog shows parts that fit your vehicle first")}</p>
+              <p className="flex items-start gap-2"><Icon name="ok" className="mt-0.5 h-4 w-4 flex-none text-emerald-600" />{t("Each part page tells you if it fits")}</p>
+              <p className="flex items-start gap-2"><Icon name="ok" className="mt-0.5 h-4 w-4 flex-none text-emerald-600" />{t("Sellers see your vehicle when you order or request a part")}</p>
             </div>
           </div>
         </div>

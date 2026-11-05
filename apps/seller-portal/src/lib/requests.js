@@ -14,7 +14,7 @@ export function offerBadge(status) {
     case "pending":
       return { label: t("Offer sent"), className: "bg-amber-50 text-amber-700" };
     case "accepted":
-      return { label: t("Accepted 🎉"), className: "bg-emerald-50 text-emerald-700" };
+      return { label: t("Accepted"), className: "bg-emerald-50 text-emerald-700" };
     case "rejected":
       return { label: t("Not selected"), className: "bg-gray-100 text-gray-600" };
     case "withdrawn":

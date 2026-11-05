@@ -3,6 +3,7 @@ import { api } from "../../lib/api";
 import { mediaUrl } from "../../lib/requests";
 import { uploadPartPhoto } from "../../lib/photos";
 import { useT } from "../../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 const MAX_PHOTOS = 8;
 
@@ -114,7 +115,7 @@ export default function PartPhotos({ partId }) {
             onClick={() => fileRef.current?.click()}
             className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-blue-300 bg-blue-50 text-sm font-semibold text-blue-700 hover:bg-blue-100"
           >
-            <span className="text-2xl" aria-hidden="true">📷</span>
+            <Icon name="add-photo" className="h-7 w-7" />
             {t("Add photos")}
           </button>
         ) : null}

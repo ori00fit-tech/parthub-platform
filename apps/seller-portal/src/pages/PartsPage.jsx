@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { formatMoney } from "@parthub/shared";
 import { statusLabel, useT } from "../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 function normalizeItems(payload) {
   const list =
@@ -233,7 +234,7 @@ export default function PartsPage() {
 
       {filteredParts.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
-          <div className="text-5xl">📦</div>
+          <Icon name="inventory" className="mx-auto h-12 w-12 text-gray-400" />
           <h2 className="mt-4 text-2xl font-bold text-gray-900">{t("No parts yet")}</h2>
           <p className="mt-2 text-sm text-gray-500">
             {t("Create your first listing to start building your seller inventory.")}
@@ -296,7 +297,7 @@ export default function PartsPage() {
 
                     {Number(part.waiting_count || 0) > 0 ? (
                       <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">
-                        <span aria-hidden="true">🔔</span>
+                        <Icon name="bell" className="h-3.5 w-3.5" />
                         {Number(part.waiting_count) === 1
                           ? t("1 buyer waiting for this part")
                           : t("{n} buyers waiting for this part", { n: part.waiting_count })}

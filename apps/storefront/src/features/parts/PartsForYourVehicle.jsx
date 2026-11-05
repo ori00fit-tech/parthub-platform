@@ -6,6 +6,7 @@ import { mediaUrl } from "../../lib/media";
 import { useSelectedVehicle } from "../vehicles/SelectedVehicleContext";
 import { useT } from "../../i18n";
 import StockBadge from "../stock/StockBadge";
+import { Icon } from "@parthub/shared/icons";
 
 const MAX_CARDS = 4;
 
@@ -109,7 +110,7 @@ export default function PartsForYourVehicle() {
                 {part.image_url ? (
                   <img src={mediaUrl(part.image_url)} alt="" loading="lazy" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
                 ) : (
-                  <span className="text-3xl" aria-hidden="true">⚙️</span>
+                  <Icon name="part" className="h-10 w-10 text-faint" />
                 )}
               </div>
               <div className="flex flex-1 flex-col gap-2 p-3.5">

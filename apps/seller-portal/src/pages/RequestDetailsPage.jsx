@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { CONDITION_LABELS, formatMAD, mediaUrl, offerBadge, whatsappLink } from "../lib/requests";
 import { dateLocale, useT } from "../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 const inputClass =
   "h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
@@ -173,7 +174,7 @@ export default function RequestDetailsPage() {
         <aside className="space-y-4">
           {myOffer?.status === "accepted" ? (
             <section className="rounded-3xl border border-emerald-300 bg-emerald-50 p-6">
-              <h2 className="text-lg font-bold text-emerald-900">{t("The buyer accepted your offer 🎉")}</h2>
+              <h2 className="flex items-center gap-2 text-lg font-bold text-emerald-900"><Icon name="celebrate" className="h-5 w-5" />{t("The buyer accepted your offer")}</h2>
               <p className="mt-1 text-sm text-emerald-800">
                 {t("{price} · {condition}. Contact them to arrange the sale.", { price: formatMAD(myOffer.price), condition: CONDITION_LABELS[myOffer.condition] ? t(CONDITION_LABELS[myOffer.condition]) : myOffer.condition })}
               </p>

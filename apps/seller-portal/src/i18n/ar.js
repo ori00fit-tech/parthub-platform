@@ -675,4 +675,5 @@ export default {
   "Buyers post the parts they can't find. Send an offer; if they accept, you get their contact.": "ينشر المشترون القطع التي لم يجدوها. أرسل عرضاً، وإذا قبلوا تحصل على رقمهم.",
   "Your language": "لغتك",
   "Switch between Arabic, French and English at any time.": "بدّل بين العربية والفرنسية والإنجليزية متى شئت.",
+  "The buyer accepted your offer": "قبل المشتري عرضك",
 };

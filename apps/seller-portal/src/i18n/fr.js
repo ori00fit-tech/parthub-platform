@@ -675,4 +675,5 @@ export default {
   "Buyers post the parts they can't find. Send an offer; if they accept, you get their contact.": "Les acheteurs publient les pièces qu'ils ne trouvent pas. Envoyez une offre : s'ils acceptent, vous recevez leur contact.",
   "Your language": "Votre langue",
   "Switch between Arabic, French and English at any time.": "Passez de l'arabe au français ou à l'anglais à tout moment.",
+  "The buyer accepted your offer": "L'acheteur a accepté votre offre",
 };

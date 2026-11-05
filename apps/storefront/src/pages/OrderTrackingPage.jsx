@@ -6,6 +6,7 @@ import { formatPrice } from "../lib/formatters";
 import { mediaUrl } from "../lib/media";
 import { statusLabel, useT } from "../i18n";
 import { OrderStatusBadge, formatOrderDate } from "./OrdersPage";
+import { Icon } from "@parthub/shared/icons";
 
 // Order lifecycle as stored on the order (orders.status).
 const STEPS = [
@@ -123,7 +124,7 @@ export default function OrderTrackingPage() {
                       ].join(" ")}
                       aria-hidden="true"
                     >
-                      {done ? "✓" : i + 1}
+                      {done ? <Icon name="ok" className="h-3.5 w-3.5" strokeWidth={3} /> : i + 1}
                     </span>
                     <p className={["text-sm font-semibold", done ? "text-emerald-900" : "text-muted"].join(" ")}>{t(step.label)}</p>
                   </div>
@@ -145,7 +146,7 @@ export default function OrderTrackingPage() {
                   {item.thumbnail ? (
                     <img src={mediaUrl(item.thumbnail)} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <span aria-hidden="true">⚙️</span>
+                    <Icon name="part" className="h-6 w-6 text-faint" />
                   )}
                 </div>
                 <div className="min-w-0 flex-1">

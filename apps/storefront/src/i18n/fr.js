@@ -873,4 +873,18 @@ export default {
   "Tires & Wheels": "Pneus & jantes",
   "Tools & Equipment": "Outils & équipement",
   "Transmission & Drivetrain": "Transmission",
+
+  // Same texts without the leading symbol (icons now)
+  "Auto parts from Moroccan sellers · Prices in MAD": "Pièces auto de vendeurs marocains · Prix en MAD",
+  "Free, no subscription": "Gratuit, sans abonnement",
+  "Your phone is only shared with sellers you choose": "Votre numéro n'est partagé qu'avec les vendeurs que vous choisissez",
+  "{n} makes available": "{n} marques disponibles",
+  "Makes loading…": "Chargement des marques…",
+  "Saved on this device for your next visit": "Enregistré sur cet appareil pour votre prochaine visite",
+  "Parts that fit are shown first": "Les pièces compatibles s'affichent en premier",
+  "The catalog shows parts that fit your vehicle first": "Le catalogue affiche d'abord les pièces compatibles",
+  "Each part page tells you if it fits": "Chaque fiche indique si la pièce est compatible",
+  "Sellers see your vehicle when you order or request a part": "Les vendeurs voient votre véhicule quand vous commandez ou demandez une pièce",
+  "The part you need": "La pièce recherchée",
+  "Contact": "Contact",
 };
