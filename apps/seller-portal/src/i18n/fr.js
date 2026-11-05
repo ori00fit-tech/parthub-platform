@@ -551,4 +551,5 @@ export default {
   "In transit": "En transit",
   "1 offer so far · posted {date}": "1 offre pour l'instant · publiée le {date}",
   "{n} offers so far · posted {date}": "{n} offres pour l'instant · publiée le {date}",
+  "This page does not exist.": "Cette page n'existe pas.",
 };

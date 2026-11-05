@@ -319,3 +319,16 @@ CREATE INDEX IF NOT EXISTS idx_vehicle_makes_slug ON vehicle_makes(slug);
 -- ── Morocco layer indexes (see migrations/0009_morocco_layer_backfill.sql) ──
 CREATE INDEX IF NOT EXISTS idx_parts_part_origin ON parts(part_origin);
 CREATE INDEX IF NOT EXISTS idx_sellers_seller_type ON sellers(seller_type);
+
+CREATE TABLE IF NOT EXISTS stock_alerts (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  part_id      INTEGER NOT NULL REFERENCES parts(id) ON DELETE CASCADE,
+  user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status       TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'notified')),
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  notified_at  TEXT,
+  UNIQUE (part_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_stock_alerts_part_status ON stock_alerts(part_id, status);
+CREATE INDEX IF NOT EXISTS idx_stock_alerts_user ON stock_alerts(user_id, created_at DESC);

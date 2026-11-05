@@ -9,7 +9,7 @@ export default function NotFoundPage() {
         <div className="text-5xl">🧭</div>
         <h1 className="mt-4 text-3xl font-bold text-gray-900">{t("Page not found")}</h1>
         <p className="mt-2 text-sm text-gray-500">
-          {t("This seller portal route does not exist or is not ready yet.")}
+          {t("This page does not exist.")}
         </p>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">

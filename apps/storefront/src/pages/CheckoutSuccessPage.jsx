@@ -79,17 +79,17 @@ export default function CheckoutSuccessPage() {
 
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              to="/parts"
+              to={orderId ? `/orders/${encodeURIComponent(orderId)}/tracking` : "/orders"}
               className="inline-flex h-12 items-center justify-center rounded-2xl bg-navy px-6 text-sm font-semibold text-white transition hover:bg-navy-deep"
             >
-              {t("Continue browsing")}
+              {t("View my order")}
             </Link>
 
             <Link
-              to="/cart"
+              to="/parts"
               className="inline-flex h-12 items-center justify-center rounded-2xl border border-line bg-surface px-6 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
             >
-              {t("Back to cart")}
+              {t("Continue browsing")}
             </Link>
 
             <a
@@ -111,13 +111,13 @@ export default function CheckoutSuccessPage() {
               <div className="flex items-center justify-between rounded-2xl bg-surface-2 px-4 py-3">
                 <span className="text-sm text-muted">{t("Order reference")}</span>
                 <span className="text-sm font-semibold text-ink">
-                  {orderId || t("Generated successfully")}
+                  {orderId || "—"}
                 </span>
               </div>
 
               <div className="flex items-center justify-between rounded-2xl bg-surface-2 px-4 py-3">
-                <span className="text-sm text-muted">{t("Checkout type")}</span>
-                <span className="text-sm font-semibold text-ink">{t("Guest checkout")}</span>
+                <span className="text-sm text-muted">{t("Status")}</span>
+                <span className="text-sm font-semibold text-ink">{t("Pending")}</span>
               </div>
 
               <div className="flex items-center justify-between rounded-2xl bg-surface-2 px-4 py-3">

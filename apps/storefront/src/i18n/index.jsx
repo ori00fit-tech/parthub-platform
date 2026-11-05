@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import ar from "./ar";
 import fr from "./fr";
+import { translateServerMessage } from "@parthub/shared";
 
 // Storefront translations. Keys are the English source text, so anything not
 // translated yet simply shows in English. Placeholders: t("{n} results", { n }).
@@ -47,6 +48,33 @@ export function conditionLabel(value) {
   if (!value) return "";
   const key = CONDITION_LABELS[String(value).toLowerCase()];
   return key ? t(key) : value;
+}
+
+// Stored status values (pending, shipped, active…) shown in the user's language.
+const STATUS_LABELS = {
+  pending: "Pending", confirmed: "Confirmed", processing: "Processing", shipped: "Shipped",
+  delivered: "Delivered", cancelled: "Cancelled", paid: "Paid", unpaid: "Unpaid", failed: "Failed",
+  refunded: "Refunded", active: "Active", draft: "Draft", archived: "Archived", rejected: "Rejected",
+  suspended: "Suspended", approved: "Approved", open: "Open for offers", closed: "Closed",
+  fulfilled: "Fulfilled", expired: "Expired", accepted: "Accepted", declined: "Declined",
+  withdrawn: "Withdrawn", unknown: "Unknown", new: "New", used: "Used", refurbished: "Refurbished",
+  not_shipped: "Not shipped", in_transit: "In transit",
+};
+export function statusLabel(value) {
+  if (value === undefined || value === null || value === "") return "";
+  const key = STATUS_LABELS[String(value).toLowerCase()];
+  return key ? t(key) : String(value);
+}
+
+// Locale for dates and numbers in the current language.
+export function dateLocale() {
+  return currentLang === "ar" ? "ar-MA" : currentLang === "fr" ? "fr-MA" : "en-GB";
+}
+
+// Messages returned by the API (errors such as "Invalid credentials"),
+// translated with the shared server-message dictionary.
+export function serverMessage(message) {
+  return translateServerMessage(message, currentLang);
 }
 
 const I18nContext = createContext({ lang: "en", dir: "ltr", t: (s, v) => translate("en", s, v), setLang: () => {} });

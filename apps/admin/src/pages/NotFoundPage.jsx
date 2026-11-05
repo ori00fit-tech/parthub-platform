@@ -9,7 +9,7 @@ export default function NotFoundPage() {
         <div className="text-5xl mb-4">🧭</div>
         <h1 className="text-3xl font-bold text-gray-100">{t("Page not found")}</h1>
         <p className="mt-2 text-sm text-gray-400">
-          {t("This admin route does not exist or has not been implemented yet.")}
+          {t("This page does not exist.")}
         </p>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">

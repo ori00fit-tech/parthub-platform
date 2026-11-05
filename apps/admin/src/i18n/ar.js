@@ -322,4 +322,5 @@ export default {
   "Withdrawn": "مسحوب",
   "Not shipped": "لم يُشحن",
   "In transit": "في الطريق",
+  "This page does not exist.": "هذه الصفحة غير موجودة.",
 };

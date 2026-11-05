@@ -243,19 +243,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">{t("Portal scope")}</h2>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">{t("Inventory")}</p>
-                <p className="mt-1 font-semibold text-gray-900">{t("Ready to expand")}</p>
-              </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">{t("Orders")}</p>
-                <p className="mt-1 font-semibold text-gray-900">{t("Foundation active")}</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </section>

@@ -1,262 +1,192 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
-import { t, useT } from "../i18n";
+import { apiGet } from "../lib/api";
+import { formatPrice } from "../lib/formatters";
+import { mediaUrl } from "../lib/media";
+import { statusLabel, useT } from "../i18n";
+import { OrderStatusBadge, formatOrderDate } from "./OrdersPage";
 
-// Built at render time so labels follow the current language.
-const getDemoSteps = () => [
-  {
-    key: "received",
-    label: t("Order received"),
-    description: t("Your order has been captured in the storefront order flow."),
-    done: true,
-  },
-  {
-    key: "review",
-    label: t("Review in progress"),
-    description: t("Order details, buyer information, and part availability are being reviewed."),
-    done: true,
-  },
-  {
-    key: "preparing",
-    label: t("Preparing dispatch"),
-    description: t("The order is being prepared for shipment or seller confirmation."),
-    done: false,
-  },
-  {
-    key: "shipped",
-    label: t("Shipped"),
-    description: t("Tracking and delivery progress will appear here once shipment is live."),
-    done: false,
-  },
-  {
-    key: "delivered",
-    label: t("Delivered"),
-    description: t("Final delivery confirmation will appear at the end of the order flow."),
-    done: false,
-  },
+// Order lifecycle as stored on the order (orders.status).
+const STEPS = [
+  { key: "pending", label: "Order received", text: "The seller has your order and will confirm it." },
+  { key: "confirmed", label: "Confirmed", text: "The seller confirmed availability and fitment." },
+  { key: "shipped", label: "Shipped", text: "Your parts are on the way." },
+  { key: "delivered", label: "Delivered", text: "The order was delivered." },
 ];
+const STEP_INDEX = { pending: 0, confirmed: 1, processing: 1, shipped: 2, delivered: 3 };
 
+// Real order details and status for the signed-in buyer
+// (GET /api/v1/commerce/orders/:reference).
 export default function OrderTrackingPage() {
   const t = useT();
-  const demoSteps = getDemoSteps();
   const { orderNumber } = useParams();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const [state, setState] = useState({ loading: true, error: "", order: null });
+
+  useEffect(() => {
+    if (!isAuthenticated || !orderNumber) return undefined;
+    let active = true;
+    apiGet(`/api/v1/commerce/orders/${encodeURIComponent(orderNumber)}`, undefined, { auth: true })
+      .then((res) => active && setState({ loading: false, error: "", order: res?.data || null }))
+      .catch((err) => active && setState({ loading: false, error: err?.message || t("Could not load this order"), order: null }));
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, orderNumber]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isAuthenticated) {
     return (
-      <section className="space-y-6 pb-10">
-        <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
-          <div className="max-w-3xl">
-            <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              {t("Tracking foundation")}
-            </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">{t("Sign in to access order tracking")}</h1>
-            <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              {t("Buyer sign-in helps keep order tracking connected to account and orders flow.")}
-            </p>
-          </div>
-        </div>
+      <section className="mx-auto max-w-xl rounded-3xl border border-line bg-surface p-8 text-center shadow-sm">
+        <h1 className="text-3xl font-bold text-ink">{t("Sign in to see this order")}</h1>
+        <p className="mt-2 text-sm text-muted">{t("Orders are linked to the account that placed them.")}</p>
+        <Link
+          to={`/auth?redirect=${encodeURIComponent(`/orders/${orderNumber || ""}/tracking`)}`}
+          className="btn-cta mt-6 h-11 rounded-xl px-6 text-sm"
+        >
+          {t("Sign in")}
+        </Link>
+      </section>
+    );
+  }
 
-        <div className="grid gap-4 lg:grid-cols-3">
-          <Link
-            to={`/auth?redirect=/orders/${orderNumber}/tracking`}
-            className="rounded-3xl border border-navy/20 bg-navy/[0.06] p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <p className="text-sm font-medium text-link">{t("Recommended")}</p>
-            <p className="mt-1 text-xl font-bold text-ink">{t("Buyer sign in")}</p>
-            <p className="mt-2 text-sm text-muted">
-              {t("Continue to tracking for order {order}.", { order: orderNumber })}
-            </p>
-          </Link>
+  const { loading, error, order } = state;
+  const back = (
+    <Link to="/orders" className="text-sm font-semibold text-link hover:underline">
+      <span aria-hidden="true" className="inline-block rtl:rotate-180">←</span> {t("My Orders")}
+    </Link>
+  );
 
-          <Link
-            to="/orders"
-            className="rounded-3xl border border-line bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <p className="text-sm font-medium text-muted">{t("Orders")}</p>
-            <p className="mt-1 text-xl font-bold text-ink">{t("Back to orders")}</p>
-            <p className="mt-2 text-sm text-muted">
-              {t("Return to the buyer orders area.")}
-            </p>
-          </Link>
+  if (loading) {
+    return (
+      <section className="space-y-4" aria-busy="true">
+        {back}
+        <div className="h-40 animate-pulse rounded-3xl border border-line bg-surface" />
+        <div className="h-64 animate-pulse rounded-3xl border border-line bg-surface" />
+      </section>
+    );
+  }
 
-          <Link
-            to="/account"
-            className="rounded-3xl border border-line bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <p className="text-sm font-medium text-muted">{t("Account")}</p>
-            <p className="mt-1 text-xl font-bold text-ink">{t("Go to account")}</p>
-            <p className="mt-2 text-sm text-muted">
-              {t("Open your buyer account foundation.")}
-            </p>
-          </Link>
+  if (error || !order) {
+    return (
+      <section className="space-y-4">
+        {back}
+        <div className="rounded-3xl border border-line bg-surface p-8 text-center">
+          <p className="text-lg font-semibold text-ink">{t("Order not found")}</p>
+          <p className="mt-1 text-sm text-muted">{error || t("Check the order number in your account.")}</p>
         </div>
       </section>
     );
   }
 
+  const cancelled = order.status === "cancelled";
+  const current = STEP_INDEX[order.status] ?? 0;
+  const items = Array.isArray(order.items) ? order.items : [];
+  const address = order.shipping_address;
+
   return (
     <section className="space-y-6 pb-10">
-      <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
-        <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
-          <div className="max-w-3xl">
-            <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              {t("Tracking foundation")}
-            </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">{t("Track your order")}</h1>
-            <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              {t("This storefront page is ready for real shipment tracking, order status updates, and delivery milestones.")}
-            </p>
-          </div>
+      {back}
 
-          <div className="flex flex-wrap gap-3">
-            <Link
-              to="/orders"
-              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/[0.12]"
-            >
-              {t("Back to orders")}
-            </Link>
-            <Link
-              to="/account"
-              className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
-            >
-              {t("Buyer account")}
-            </Link>
+      <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">{t("Order")}</p>
+            <h1 className="mt-1 font-mono text-2xl font-bold text-ink">{order.reference}</h1>
+            <p className="mt-1 text-sm text-muted">{t("Placed on {date}", { date: formatOrderDate(order.created_at) })}</p>
           </div>
+          <OrderStatusBadge status={order.status} />
         </div>
+
+        {cancelled ? (
+          <p className="mt-5 rounded-2xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-800">
+            {t("This order was cancelled.")}
+          </p>
+        ) : (
+          <ol className="mt-6 grid gap-3 sm:grid-cols-4">
+            {STEPS.map((step, i) => {
+              const done = i <= current;
+              return (
+                <li
+                  key={step.key}
+                  aria-current={i === current ? "step" : undefined}
+                  className={[
+                    "rounded-2xl border p-4",
+                    done ? "border-emerald-400/40 bg-emerald-400/10" : "border-line bg-surface-2",
+                  ].join(" ")}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={[
+                        "flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs font-bold",
+                        done ? "bg-emerald-600 text-white" : "bg-line-strong text-white",
+                      ].join(" ")}
+                      aria-hidden="true"
+                    >
+                      {done ? "✓" : i + 1}
+                    </span>
+                    <p className={["text-sm font-semibold", done ? "text-emerald-900" : "text-muted"].join(" ")}>{t(step.label)}</p>
+                  </div>
+                  <p className="mt-2 text-xs text-muted">{t(step.text)}</p>
+                </li>
+              );
+            })}
+          </ol>
+        )}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="space-y-4">
-          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-ink">{t("Tracking reference")}</h2>
-                <p className="mt-1 text-sm text-muted">
-                  {t("Signed in as {email}.", { email: user?.email || t("buyer") })}
-                </p>
-              </div>
-
-              <span className="rounded-full bg-navy/[0.06] px-4 py-2 text-sm font-semibold text-link">
-                {orderNumber || t("Order number unavailable")}
-              </span>
-            </div>
-
-            <div className="mt-5 rounded-2xl bg-surface-2 p-4 text-sm text-muted">
-              {t("This is a storefront tracking foundation. Once the real order and shipment APIs are connected, the page can show live shipment status, courier updates, and estimated delivery.")}
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-ink">{t("Order progress")}</h2>
-
-            <div className="mt-6 space-y-4">
-              {demoSteps.map((step, index) => (
-                <div key={step.key} className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={[
-                        "flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold",
-                        step.done
-                          ? "bg-navy text-white"
-                          : "border border-line-strong bg-surface text-muted",
-                      ].join(" ")}
-                    >
-                      {index + 1}
-                    </div>
-                    {index < demoSteps.length - 1 ? (
-                      <div className="mt-2 h-full min-h-[32px] w-px bg-line" />
-                    ) : null}
-                  </div>
-
-                  <div className="pb-4">
-                    <h3 className="text-lg font-semibold text-ink">{step.label}</h3>
-                    <p className="mt-1 text-sm text-muted">{step.description}</p>
-                    <p className="mt-2 text-xs font-medium uppercase tracking-wide text-faint">
-                      {step.done ? t("Completed") : t("Pending")}
-                    </p>
-                  </div>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
+          <h2 className="text-lg font-bold text-ink">{t("Items")}</h2>
+          <ul className="mt-3 divide-y divide-line">
+            {items.map((item) => (
+              <li key={item.id} className="flex items-center gap-3 py-3">
+                <div className="media-well flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-lg">
+                  {item.thumbnail ? (
+                    <img src={mediaUrl(item.thumbnail)} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span aria-hidden="true">⚙️</span>
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-ink">{t("Tracking notes")}</h2>
-            <div className="mt-4 space-y-3 text-sm text-muted">
-              <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Tracking becomes much more useful once real order submission and shipment APIs are connected.")}
-              </div>
-              <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Buyer sign-in keeps tracking linked to account and order history.")}
-              </div>
-              <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Order number is already wired into the route structure for future backend integration.")}
-              </div>
-            </div>
-          </div>
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-2 text-sm font-semibold text-ink">{item.title}</p>
+                  <p className="text-xs text-muted">
+                    {t("{price} each", { price: formatPrice(item.price) })} × {item.quantity}
+                  </p>
+                </div>
+                <p className="font-mono text-sm font-semibold text-ink">{formatPrice(item.subtotal)}</p>
+              </li>
+            ))}
+          </ul>
+          <dl className="mt-3 grid grid-cols-[1fr_auto] gap-y-1.5 border-t border-line pt-3 text-sm">
+            <dt className="text-muted">{t("Subtotal")}</dt>
+            <dd className="text-end font-mono">{formatPrice(order.subtotal)}</dd>
+            <dt className="text-muted">{t("Shipping")}</dt>
+            <dd className="text-end font-mono">{formatPrice(order.shipping_fee)}</dd>
+            <dt className="font-semibold text-ink">{t("Total")}</dt>
+            <dd className="text-end font-mono font-semibold text-ink">{formatPrice(order.total)}</dd>
+          </dl>
         </div>
 
-        <div className="space-y-4">
-          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-ink">{t("Quick actions")}</h2>
-            <div className="mt-4 flex flex-col gap-3">
-              <Link
-                to="/orders"
-                className="inline-flex h-12 items-center justify-center rounded-2xl bg-navy px-5 text-sm font-semibold text-white transition hover:bg-navy-deep"
-              >
-                {t("Back to orders")}
-              </Link>
-              <Link
-                to="/checkout"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
-              >
-                {t("Go to checkout")}
-              </Link>
-              <Link
-                to="/account"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
-              >
-                {t("Buyer account")}
-              </Link>
-              <Link
-                to="/parts"
-                className="inline-flex h-12 items-center justify-center rounded-2xl bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-black"
-              >
-                {t("Browse parts")}
-              </Link>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-ink">{t("Route readiness")}</h2>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">{t("Route param")}</p>
-                <p className="mt-1 font-semibold text-ink">{orderNumber || "—"}</p>
-              </div>
-              <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">{t("Tracking state")}</p>
-                <p className="mt-1 font-semibold text-ink">{t("Foundation ready")}</p>
+        <aside className="space-y-4">
+          {address ? (
+            <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
+              <h2 className="text-lg font-bold text-ink">{t("Delivery details")}</h2>
+              <div className="mt-2 space-y-0.5 text-sm text-ink-2">
+                <p className="font-semibold">{address.full_name}</p>
+                <p>{address.address_line1}</p>
+                {address.address_line2 ? <p>{address.address_line2}</p> : null}
+                <p>{[address.postal_code, address.city].filter(Boolean).join(" ")}</p>
+                <p dir="ltr" className="text-start">{address.phone}</p>
               </div>
             </div>
+          ) : null}
+          <div className="rounded-3xl border border-line bg-surface p-5 text-sm text-muted shadow-sm">
+            <p className="font-semibold text-ink">{t("Payment")}</p>
+            <p className="mt-1">{t("Payment status: {status}", { status: statusLabel(order.payment_status || "unpaid") })}</p>
+            <p className="mt-3">{t("The seller may call you to confirm the part before shipping.")}</p>
           </div>
-
-          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-ink">{t("What comes next")}</h2>
-            <div className="mt-4 space-y-3 text-sm text-muted">
-              <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Real order lookup by order number.")}
-              </div>
-              <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Shipment carrier and tracking code integration.")}
-              </div>
-              <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Buyer notifications and delivery milestone updates.")}
-              </div>
-            </div>
-          </div>
-        </div>
+        </aside>
       </div>
     </section>
   );

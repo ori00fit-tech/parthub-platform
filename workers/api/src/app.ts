@@ -15,6 +15,7 @@ import { adminAnalyticsRoutes } from "./routes/admin.analytics";
 import { healthRoutes } from "./routes/health";
 import { whatsappRoutes } from "./routes/whatsapp";
 import { requestsRoutes } from "./routes/requests";
+import { stockAlertsRoutes } from "./routes/stock-alerts";
 
 const app = new Hono();
 
@@ -49,6 +50,7 @@ app.route("/api/v1/admin", adminRoutes);
 app.route("/api/v1/admin/analytics", adminAnalyticsRoutes);
 app.route("/api/v1/whatsapp", whatsappRoutes);
 app.route("/api/v1/requests", requestsRoutes);
+app.route("/api/v1/stock-alerts", stockAlertsRoutes);
 
 app.notFound((c) => {
   return c.json(

@@ -1,4 +1,5 @@
 import { BASE_URL } from "./api";
+import { serverMessage, t } from "../i18n";
 
 // Uploaded media is served by the API (/api/v1/media/...), not the storefront.
 export function mediaUrl(path) {
@@ -54,11 +55,16 @@ export async function uploadRequestImage(file) {
   body.append("file", await compressImage(file));
 
   const token = readToken();
-  const res = await fetch(`${BASE_URL}/api/v1/requests/images`, {
-    method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    body,
-  });
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}/api/v1/requests/images`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body,
+    });
+  } catch {
+    throw new Error(serverMessage("Failed to fetch"));
+  }
 
   let data = {};
   try {
@@ -66,6 +72,6 @@ export async function uploadRequestImage(file) {
   } catch {
     // ignore
   }
-  if (!res.ok) throw new Error(data?.error?.message || "Photo upload failed");
+  if (!res.ok) throw new Error(serverMessage(data?.error?.message || (typeof data?.error === "string" ? data.error : "")) || t("Photo upload failed"));
   return data.data; // { key, url }
 }

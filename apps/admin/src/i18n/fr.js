@@ -322,4 +322,5 @@ export default {
   "Withdrawn": "Retirée",
   "Not shipped": "Non expédiée",
   "In transit": "En transit",
+  "This page does not exist.": "Cette page n'existe pas.",
 };

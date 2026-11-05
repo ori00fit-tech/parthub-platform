@@ -1,3 +1,4 @@
+import { serverMessage } from "../i18n";
 import { createApiClient, ADMIN_TOKEN_KEY } from "@parthub/shared";
 
 const BASE_URL =
@@ -6,6 +7,7 @@ const BASE_URL =
 
 export const api = createApiClient({
   baseUrl: BASE_URL,
+  translateError: serverMessage,
   getToken: () => localStorage.getItem(ADMIN_TOKEN_KEY),
   onUnauthorized: () => {
     localStorage.removeItem(ADMIN_TOKEN_KEY);

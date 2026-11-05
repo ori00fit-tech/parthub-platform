@@ -1,162 +1,130 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
-import { useCart } from "../features/cart/CartContext";
-import { useT } from "../i18n";
+import { apiGet } from "../lib/api";
+import { formatPrice } from "../lib/formatters";
+import { dateLocale, statusLabel, useT } from "../i18n";
 
+const STATUS_TONE = {
+  pending: "border-amber-400/40 bg-amber-400/10 text-amber-800",
+  confirmed: "border-navy/30 bg-navy/[0.06] text-navy",
+  processing: "border-navy/30 bg-navy/[0.06] text-navy",
+  shipped: "border-violet-400/40 bg-violet-400/10 text-violet-800",
+  delivered: "border-emerald-400/40 bg-emerald-400/10 text-emerald-800",
+  cancelled: "border-red-400/40 bg-red-400/10 text-red-800",
+};
+
+export function formatOrderDate(value) {
+  if (!value) return "";
+  const date = new Date(`${String(value).replace(" ", "T")}Z`);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString(dateLocale(), { year: "numeric", month: "short", day: "numeric" });
+}
+
+export function OrderStatusBadge({ status }) {
+  return (
+    <span
+      className={[
+        "inline-flex h-7 items-center rounded-full border px-3 text-xs font-semibold",
+        STATUS_TONE[status] || "border-line bg-surface-2 text-ink-2",
+      ].join(" ")}
+    >
+      {statusLabel(status || "pending")}
+    </span>
+  );
+}
+
+// Buyer order history (GET /api/v1/commerce/orders).
 export default function OrdersPage() {
   const t = useT();
-  const { isAuthenticated, user } = useAuth();
-  const { totalItems } = useCart();
+  const { isAuthenticated } = useAuth();
+  const [state, setState] = useState({ loading: true, error: "", orders: [] });
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    let active = true;
+    apiGet("/api/v1/commerce/orders", undefined, { auth: true })
+      .then((res) => active && setState({ loading: false, error: "", orders: Array.isArray(res?.data) ? res.data : [] }))
+      .catch((err) => active && setState({ loading: false, error: err?.message || t("Could not load your orders"), orders: [] }));
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isAuthenticated) {
     return (
-      <section className="space-y-6 pb-10">
-        <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
-          <div className="max-w-3xl">
-            <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              {t("Orders foundation")}
-            </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">{t("Sign in to view your orders")}</h1>
-            <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              {t("Buyer sign-in prepares access to order history and tracking entry points.")}
-            </p>
-          </div>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-3">
-          <Link
-            to="/auth?redirect=/orders"
-            className="rounded-3xl border border-navy/20 bg-navy/[0.06] p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <p className="text-sm font-medium text-link">{t("Recommended")}</p>
-            <p className="mt-1 text-xl font-bold text-ink">{t("Buyer sign in")}</p>
-            <p className="mt-2 text-sm text-muted">{t("Continue to your orders area.")}</p>
-          </Link>
-
-          <Link
-            to="/checkout"
-            className="rounded-3xl border border-line bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <p className="text-sm font-medium text-muted">{t("Checkout")}</p>
-            <p className="mt-1 text-xl font-bold text-ink">{t("Go to checkout")}</p>
-            <p className="mt-2 text-sm text-muted">{t("Complete buyer details first.")}</p>
-          </Link>
-
-          <Link
-            to="/cart"
-            className="rounded-3xl border border-line bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <p className="text-sm font-medium text-muted">{t("Cart")}</p>
-            <p className="mt-1 text-xl font-bold text-ink">{t("Review cart")}</p>
-            <p className="mt-2 text-sm text-muted">{t("You currently have {n} item(s).", { n: totalItems })}</p>
-          </Link>
-        </div>
+      <section className="mx-auto max-w-xl rounded-3xl border border-line bg-surface p-8 text-center shadow-sm">
+        <h1 className="text-3xl font-bold text-ink">{t("Sign in to view your orders")}</h1>
+        <p className="mt-2 text-sm text-muted">{t("Your orders and their status are saved in your account.")}</p>
+        <Link to="/auth?redirect=/orders" className="btn-cta mt-6 h-11 rounded-xl px-6 text-sm">
+          {t("Sign in")}
+        </Link>
       </section>
     );
   }
 
+  const { loading, error, orders } = state;
+
   return (
     <section className="space-y-6 pb-10">
-      <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
-        <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
-          <div className="max-w-3xl">
-            <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              {t("Orders foundation")}
-            </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">{t("Your orders")}</h1>
-            <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              {t("This storefront area is ready for buyer order history, status, and tracking integration.")}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Link
-              to="/account"
-              className="inline-flex items-center justify-center rounded-2xl bg-surface px-5 py-3 text-sm font-semibold text-ink transition hover:bg-navy/[0.12]"
-            >
-              {t("Back to account")}
-            </Link>
-            <Link
-              to="/checkout"
-              className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
-            >
-              {t("Go to checkout")}
-            </Link>
-          </div>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-ink sm:text-4xl">{t("My Orders")}</h1>
+          <p className="mt-1 text-sm text-muted">{t("Follow the status of each order.")}</p>
         </div>
+        <Link to="/parts" className="text-sm font-semibold text-link hover:underline">
+          {t("Continue browsing")}
+        </Link>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-          <h2 className="text-2xl font-bold text-ink">{t("Buyer orders area")}</h2>
-          <p className="mt-2 text-sm text-muted">
-            {t("Signed in as {email}.", { email: user?.email || t("buyer") })}
-          </p>
-
-          <div className="mt-6 rounded-2xl border border-dashed border-line-strong bg-surface-2 px-4 py-8 text-center">
-            <h3 className="text-xl font-bold text-ink">{t("No orders yet")}</h3>
-            <p className="mt-2 text-sm text-muted">
-              {t("Once the real checkout submission flow is wired, completed orders can appear here.")}
-            </p>
-
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                to="/checkout"
-                className="btn-cta rounded-2xl px-5 py-3 text-sm"
-              >
-                {t("Continue to checkout")}
-              </Link>
-              <Link
-                to="/parts"
-                className="rounded-2xl border border-line-strong bg-surface px-5 py-3 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
-              >
-                {t("Browse parts")}
-              </Link>
-            </div>
-          </div>
+      {error ? (
+        <div className="rounded-2xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-800" role="alert">
+          {error}
         </div>
+      ) : null}
 
-        <div className="space-y-4">
-          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-ink">{t("Order flow status")}</h2>
-            <div className="mt-4 space-y-3 text-sm text-muted">
-              <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Buyer authentication foundation: ready.")}
-              </div>
-              <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Cart and checkout foundations: ready.")}
-              </div>
-              <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Real order history API integration: next backend-connected step.")}
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-ink">{t("Quick actions")}</h2>
-            <div className="mt-4 flex flex-col gap-3">
-              <Link
-                to="/checkout"
-                className="inline-flex h-12 items-center justify-center rounded-2xl bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-black"
-              >
-                {t("Go to checkout")}
-              </Link>
-              <Link
-                to="/cart"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
-              >
-                {t("Review cart")}
-              </Link>
-              <Link
-                to="/account"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-line-strong bg-surface px-5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
-              >
-                {t("Back to account")}
-              </Link>
-            </div>
-          </div>
+      {loading ? (
+        <div className="space-y-3" aria-busy="true">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-24 animate-pulse rounded-2xl border border-line bg-surface" />
+          ))}
         </div>
-      </div>
+      ) : !error && orders.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-line-strong bg-surface p-8 text-center">
+          <p className="text-lg font-semibold text-ink">{t("No orders yet")}</p>
+          <p className="mt-1 text-sm text-muted">{t("When you place an order, it appears here with its status.")}</p>
+          <Link to="/parts" className="btn-cta mt-5 h-11 rounded-xl px-6 text-sm">
+            {t("Browse parts")}
+          </Link>
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {orders.map((order) => (
+            <li key={order.id} className="rounded-2xl border border-line bg-surface p-4 shadow-sm sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-mono text-sm font-semibold text-ink">{order.reference || `#${order.id}`}</p>
+                  <p className="mt-0.5 text-xs text-muted">{formatOrderDate(order.created_at)}</p>
+                </div>
+                <OrderStatusBadge status={order.status} />
+              </div>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
+                <p className="text-sm text-muted">
+                  {t("Total")}: <span className="font-mono font-semibold text-ink">{formatPrice(order.total)}</span>
+                </p>
+                {order.reference ? (
+                  <Link
+                    to={`/orders/${encodeURIComponent(order.reference)}/tracking`}
+                    className="inline-flex h-9 items-center rounded-xl border border-line-strong px-4 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
+                  >
+                    {t("Order details")}
+                  </Link>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

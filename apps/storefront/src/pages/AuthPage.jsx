@@ -22,8 +22,10 @@ export default function AuthPage() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    phone: "",
     password: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -66,18 +68,21 @@ export default function AuthPage() {
         return;
       }
 
+      if (form.password.length < 8) {
+        setError(t("Use at least 8 characters for your password."));
+        return;
+      }
+
       await register({
         name: form.name.trim(),
         email: form.email.trim(),
+        phone: form.phone.trim(),
         password: form.password,
       });
 
-      setSuccess(t("Account created successfully. Please sign in."));
-      setMode("login");
-      setForm((prev) => ({
-        ...prev,
-        password: "",
-      }));
+      // Signed in straight away: no second form to fill.
+      await login(form.email.trim(), form.password);
+      navigate(redirectTo);
     } catch (err) {
       setError(err?.message || t("Authentication failed."));
     }
@@ -142,24 +147,24 @@ export default function AuthPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              {t("Buyer auth foundation")}
+              {t("Buyer account")}
             </div>
             <h1 className="text-3xl font-bold sm:text-5xl">
               {mode === "login" ? t("Sign in to continue") : t("Create your buyer account")}
             </h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
               {mode === "login"
-                ? t("Access your buyer session for account, orders, cart, and checkout flow.")
-                : t("Create a buyer account to prepare a smoother storefront and checkout experience.")}
+                ? t("Sign in to check out, follow your orders and get offers on your part requests.")
+                : t("A free account lets you order, follow your orders and request parts from sellers.")}
             </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm">
-              {t("✔ Buyer-only storefront auth")}
+              {t("✔ Free, no subscription")}
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm">
-              {t("✔ Session-ready checkout flow")}
+              {t("✔ Your phone is only shared with sellers you choose")}
             </div>
           </div>
         </div>
@@ -171,45 +176,17 @@ export default function AuthPage() {
             <h2 className="text-xl font-bold text-ink">{t("Why sign in?")}</h2>
             <div className="mt-4 space-y-3 text-sm text-muted">
               <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Continue more smoothly from cart to checkout.")}
+                {t("Place orders and see their status.")}
               </div>
               <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Prepare access to buyer account and order history foundation.")}
+                {t("Request a part and compare sellers' offers.")}
               </div>
               <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Keep the storefront flow cleaner across future sessions.")}
+                {t("Sellers reply to your requests with offers.")}
               </div>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-ink">{t("Current storefront state")}</h2>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">{t("Cart items")}</p>
-                <p className="mt-1 text-lg font-semibold text-ink">{totalItems}</p>
-              </div>
-              <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">{t("Post-login redirect")}</p>
-                <p className="mt-1 text-sm font-semibold text-ink">{redirectTo}</p>
-              </div>
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link
-                to="/cart"
-                className="rounded-2xl border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
-              >
-                {t("Back to cart")}
-              </Link>
-              <Link
-                to="/parts"
-                className="rounded-2xl border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
-              >
-                {t("Browse parts")}
-              </Link>
-            </div>
-          </div>
         </div>
 
         <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm sm:p-8">
@@ -273,9 +250,29 @@ export default function AuthPage() {
                 <input
                   value={form.name}
                   onChange={setField("name")}
+                  autoComplete="name"
                   placeholder={t("John Doe")}
                   className={inputCls}
                 />
+              </div>
+            ) : null}
+
+            {mode === "register" ? (
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-ink-2">
+                  {t("Phone (optional)")}
+                </label>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  dir="ltr"
+                  value={form.phone}
+                  onChange={setField("phone")}
+                  placeholder="06 12 34 56 78"
+                  className={inputCls}
+                />
+                <p className="mt-1 text-xs text-muted">{t("Saves time at checkout. Only shared with sellers you order from.")}</p>
               </div>
             ) : null}
 
@@ -285,6 +282,9 @@ export default function AuthPage() {
               </label>
               <input
                 type="email"
+                inputMode="email"
+                autoComplete="email"
+                dir="ltr"
                 value={form.email}
                 onChange={setField("email")}
                 placeholder="you@example.com"
@@ -296,13 +296,24 @@ export default function AuthPage() {
               <label className="mb-1.5 block text-sm font-medium text-ink-2">
                 {t("Password")}
               </label>
-              <input
-                type="password"
-                value={form.password}
-                onChange={setField("password")}
-                placeholder="••••••••"
-                className={inputCls}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  value={form.password}
+                  onChange={setField("password")}
+                  placeholder={mode === "login" ? "••••••••" : t("At least 8 characters")}
+                  className={`${inputCls} pe-20`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-pressed={showPassword}
+                  className="absolute inset-y-0 end-2 my-auto h-8 rounded-lg px-2.5 text-xs font-semibold text-link hover:bg-surface-3"
+                >
+                  {showPassword ? t("Hide") : t("Show")}
+                </button>
+              </div>
             </div>
 
             <button

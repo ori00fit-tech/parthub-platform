@@ -4,6 +4,8 @@ interface ClientOptions {
   baseUrl: string;
   getToken: () => string | null;
   onUnauthorized?: () => void;
+  // Turns an English API/client error message into the user's language.
+  translateError?: (message: string) => string;
 }
 
 type LegacyApiResponse<T> = {
@@ -41,7 +43,8 @@ function isSuccessful(body: unknown): boolean {
 }
 
 export function createApiClient(options: ClientOptions) {
-  const { baseUrl, getToken, onUnauthorized } = options;
+  const { baseUrl, getToken, onUnauthorized, translateError } = options;
+  const fail = (message: string) => new Error(translateError ? translateError(message) : message);
 
   async function request<T>(
     path: string,
@@ -55,25 +58,37 @@ export function createApiClient(options: ClientOptions) {
       ...init.headers,
     };
 
-    const response = await fetch(`${baseUrl}${path}`, {
-      ...init,
-      headers,
-    });
-
-    if (response.status === 401) {
-      onUnauthorized?.();
-      throw new Error("Unauthorized");
+    let response: Response;
+    try {
+      response = await fetch(`${baseUrl}${path}`, {
+        ...init,
+        headers,
+      });
+    } catch {
+      // Network failure (offline, DNS, CORS): browser messages vary, so use one.
+      throw fail("Failed to fetch");
     }
 
     let body: unknown = null;
+    let parsed = true;
     try {
       body = await response.json();
     } catch {
-      throw new Error("Invalid JSON response");
+      parsed = false;
     }
 
+    if (response.status === 401) {
+      // Only an expired/invalid session should sign the user out. A failed
+      // sign-in (no token sent) keeps the server's message, e.g.
+      // "Invalid credentials".
+      if (token) onUnauthorized?.();
+      throw fail(parsed ? extractErrorMessage(body) : "Unauthorized");
+    }
+
+    if (!parsed) throw fail("Invalid JSON response");
+
     if (!response.ok || !isSuccessful(body)) {
-      throw new Error(extractErrorMessage(body));
+      throw fail(extractErrorMessage(body));
     }
 
     return body as ApiResponse<T> | LegacyApiResponse<T>;
