@@ -29,6 +29,7 @@ export default function SellerLayout({ children }) {
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               to="/parts/new"
+              data-tour="add-part"
               className="hidden whitespace-nowrap rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 sm:inline-flex"
             >
               {t("+ Add part")}
@@ -41,7 +42,9 @@ export default function SellerLayout({ children }) {
               <p className="text-xs text-gray-500">{t("Seller session active")}</p>
             </div>
 
-            <LanguageSwitcher />
+            <div data-tour="language">
+              <LanguageSwitcher />
+            </div>
 
             <button
               onClick={logout}
@@ -57,7 +60,7 @@ export default function SellerLayout({ children }) {
             <NavLink to="/" className={navClass}>{t("Dashboard")}</NavLink>
             <NavLink to="/parts" className={navClass}>{t("Inventory")}</NavLink>
             <NavLink to="/orders" className={navClass}>{t("Orders")}</NavLink>
-            <NavLink to="/requests" className={navClass}>{t("Requests")}</NavLink>
+            <NavLink to="/requests" className={navClass} data-tour="requests">{t("Requests")}</NavLink>
             <NavLink to="/reviews" className={navClass}>{t("Reviews")}</NavLink>
             <NavLink to="/insights" className={navClass}>{t("Insights")}</NavLink>
             <NavLink to="/store-settings" className={navClass}>{t("Store")}</NavLink>
