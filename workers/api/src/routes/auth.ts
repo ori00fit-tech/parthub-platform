@@ -4,6 +4,7 @@ import { authMiddleware } from "../middlewares/auth";
 import { ok, fail, created } from "../utils/response";
 import { hashPassword, verifyPassword, needsRehash, signToken } from "../utils/auth";
 import { dbFirst, dbRun } from "../utils/db";
+import { LEGAL_VERSION } from "../utils/legal";
 
 export const authRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -14,6 +15,7 @@ authRoutes.post("/register", async (c) => {
     password: string;
     phone?: string;
     role?: "buyer" | "seller";
+    accept_terms?: boolean;
   }>();
 
   if (!body.name || !body.email || !body.password) {
@@ -29,10 +31,13 @@ authRoutes.post("/register", async (c) => {
   const hashed = await hashPassword(body.password);
   const role = body.role === "seller" ? "seller" : "buyer";
 
+  // Acceptance of the terms of use, recorded with the version of the text.
+  const accepted = body.accept_terms === true;
   const result = await dbRun(
     c.env.DB,
-    "INSERT INTO users (name, email, password_hash, phone, role) VALUES (?, ?, ?, ?, ?)",
-    [body.name, body.email, hashed, body.phone ?? null, role]
+    `INSERT INTO users (name, email, password_hash, phone, role, terms_accepted_at, terms_version)
+     VALUES (?, ?, ?, ?, ?, ${accepted ? "datetime('now')" : "NULL"}, ?)`,
+    [body.name, body.email, hashed, body.phone ?? null, role, accepted ? LEGAL_VERSION : null]
   );
 
   const user = await dbFirst<{ id: number; name: string; email: string; role: string }>(

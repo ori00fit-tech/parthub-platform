@@ -14,6 +14,8 @@ import InsightsPage from "./pages/InsightsPage";
 import StoreSettingsPage from "./pages/StoreSettingsPage";
 import RequestsInboxPage from "./pages/RequestsInboxPage";
 import RequestDetailsPage from "./pages/RequestDetailsPage";
+import AgreementPage from "./pages/AgreementPage";
+import LegalPage from "./pages/LegalPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 function ProtectedShell({ children }) {
@@ -28,6 +30,17 @@ export default function App() {
   return (
     <Routes>
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/legal" element={<LegalPage />} />
+      <Route path="/legal/:doc" element={<LegalPage />} />
+
+      <Route
+        path="/agreement"
+        element={
+          <ProtectedShell>
+            <AgreementPage />
+          </ProtectedShell>
+        }
+      />
 
       <Route
         path="/"

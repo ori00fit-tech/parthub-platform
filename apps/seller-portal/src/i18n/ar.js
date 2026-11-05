@@ -676,4 +676,18 @@ export default {
   "Your language": "لغتك",
   "Switch between Arabic, French and English at any time.": "بدّل بين العربية والفرنسية والإنجليزية متى شئت.",
   "The buyer accepted your offer": "قبل المشتري عرضك",
+  // Legal
+  "Tick the box to accept the seller agreement.": "ضع علامة في المربع لقبول اتفاقية البائع.",
+  "Something went wrong. Please try again.": "حدث خطأ. حاول مرة أخرى.",
+  "Version of {date}": "نسخة {date}",
+  "You accepted this agreement.": "لقد قبلت هذه الاتفاقية.",
+  "I have read and accept the seller agreement and the returns policy.": "قرأت اتفاقية البائع وسياسة الإرجاع وأقبلهما.",
+  "Accept the agreement": "قبول الاتفاقية",
+  "You accept this agreement when you create your store.": "تقبل هذه الاتفاقية عند إنشاء متجرك.",
+  "By creating an account, you accept the [Terms of use] and the [Seller agreement].": "بإنشاء حساب، فإنك تقبل [شروط الاستخدام] و[اتفاقية البائع].",
+  "Policies": "السياسات",
+  "I accept the [Seller agreement] and the [Returns policy].": "أقبل [اتفاقية البائع] و[سياسة الإرجاع].",
+  "Accept the seller agreement": "اقبل اتفاقية البائع",
+  "Listing rules, orders and returns on PartHub.": "قواعد العروض والطلبات والإرجاع في PartHub.",
+  "Read and accept": "اقرأ واقبل",
 };

@@ -676,4 +676,18 @@ export default {
   "Your language": "Votre langue",
   "Switch between Arabic, French and English at any time.": "Passez de l'arabe au français ou à l'anglais à tout moment.",
   "The buyer accepted your offer": "L'acheteur a accepté votre offre",
+  // Legal
+  "Tick the box to accept the seller agreement.": "Cochez la case pour accepter le contrat vendeur.",
+  "Something went wrong. Please try again.": "Une erreur est survenue. Veuillez réessayer.",
+  "Version of {date}": "Version du {date}",
+  "You accepted this agreement.": "Vous avez accepté ce contrat.",
+  "I have read and accept the seller agreement and the returns policy.": "J'ai lu et j'accepte le contrat vendeur et la politique de retour.",
+  "Accept the agreement": "Accepter le contrat",
+  "You accept this agreement when you create your store.": "Vous acceptez ce contrat en créant votre boutique.",
+  "By creating an account, you accept the [Terms of use] and the [Seller agreement].": "En créant un compte, vous acceptez les [Conditions d'utilisation] et le [Contrat vendeur].",
+  "Policies": "Politiques",
+  "I accept the [Seller agreement] and the [Returns policy].": "J'accepte le [Contrat vendeur] et la [Politique de retour].",
+  "Accept the seller agreement": "Accepter le contrat vendeur",
+  "Listing rules, orders and returns on PartHub.": "Règles des annonces, commandes et retours sur PartHub.",
+  "Read and accept": "Lire et accepter",
 };

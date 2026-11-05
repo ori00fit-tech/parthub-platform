@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useT } from "../i18n";
 import LanguageSwitcher from "../components/common/LanguageSwitcher";
+import { LinkedText } from "../components/legal/LegalDocument";
 
 function getRedirectPath(location) {
   const params = new URLSearchParams(location.search);
@@ -263,6 +264,14 @@ export default function AuthPage() {
             >
               {submitting ? (isSignup ? t("Creating account…") : t("Signing in…")) : isSignup ? t("Create account") : t("Sign in")}
             </button>
+            {isSignup ? (
+              <p className="text-center text-xs leading-5 text-gray-500">
+                <LinkedText
+                  text={t("By creating an account, you accept the [Terms of use] and the [Seller agreement].")}
+                  links={["/legal/terms", "/legal/seller"]}
+                />
+              </p>
+            ) : null}
           </form>
         </div>
       </div>

@@ -26,7 +26,8 @@ export function AuthProvider({ children }) {
 
   // Seller sign-up: create the account as a seller, then sign in.
   async function register({ name, email, phone, password }) {
-    await api.post("/api/v1/auth/register", { name, email, phone, password, role: "seller" });
+    // The sign-up form shows the terms notice.
+    await api.post("/api/v1/auth/register", { name, email, phone, password, role: "seller", accept_terms: true });
     await login(email, password);
   }
 

@@ -907,4 +907,15 @@ export default {
   "Rate this part": "Noter cette pièce",
   "Seller rating:": "Note du vendeur :",
   "Buyer reviews": "Avis des acheteurs",
+  // Legal
+  "Seller agreement": "Contrat vendeur",
+  "Policies": "Politiques",
+  "Terms of use": "Conditions d'utilisation",
+  "Returns policy": "Politique de retour",
+  "Privacy policy": "Politique de confidentialité",
+  "By placing your order, you accept the [Terms of use] and the [Returns policy].": "En passant commande, vous acceptez les [Conditions d'utilisation] et la [Politique de retour].",
+  "By creating an account, you accept the [Terms of use] and the [Privacy policy].": "En créant un compte, vous acceptez les [Conditions d'utilisation] et la [Politique de confidentialité].",
+  "Version of {date}": "Version du {date}",
+  "Returns:": "Retours :",
+  "7 days after delivery": "7 jours après la livraison",
 };

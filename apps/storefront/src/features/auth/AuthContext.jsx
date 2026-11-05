@@ -51,6 +51,8 @@ export function AuthProvider({ children }) {
         email,
         password,
         role: "buyer",
+        // Every sign-up form shows the terms notice (LegalConsent).
+        accept_terms: true,
       });
 
       const nextToken =

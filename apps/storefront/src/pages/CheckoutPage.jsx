@@ -6,6 +6,7 @@ import { useCart } from "../features/cart/CartContext";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import { formatPrice } from "../lib/formatters";
 import { useT } from "../i18n";
+import LegalConsent from "../features/legal/LegalConsent";
 
 function getVehicleLabel(vehicle) {
   if (!vehicle) return "";
@@ -471,6 +472,7 @@ export default function CheckoutPage() {
                   ? t("Create account and place order")
                   : t("Place order")}
             </button>
+            <LegalConsent kind="order" className="mt-3" />
           </div>
         </form>
 

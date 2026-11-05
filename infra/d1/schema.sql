@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS users (
   role           TEXT NOT NULL DEFAULT 'buyer' CHECK (role IN ('buyer','seller','admin')),
   avatar_url     TEXT,
   is_active      INTEGER NOT NULL DEFAULT 1,
+  terms_accepted_at TEXT,                   -- terms of use (see migrations/0013)
+  terms_version  TEXT,
   created_at     TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -33,6 +35,8 @@ CREATE TABLE IF NOT EXISTS sellers (
   location    TEXT,
   seller_type TEXT DEFAULT 'shop',          -- shop | breaker | importer (see migrations/0007)
   moderation_note TEXT,                     -- why rejected/suspended (see migrations/0011)
+  agreement_accepted_at TEXT,               -- seller agreement (see migrations/0013)
+  agreement_version TEXT,
   status      TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','active','suspended','rejected')),
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at  TEXT NOT NULL DEFAULT (datetime('now'))

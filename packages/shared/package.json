@@ -6,7 +6,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./icons": "./src/icons/index.jsx"
+    "./icons": "./src/icons/index.jsx",
+    "./legal": "./src/legal/content.js"
   },
   "dependencies": {
     "lucide-react": "0.460.0"

@@ -21,7 +21,7 @@ export default function Footer() {
   const t = useT();
   return (
     <footer className="mt-10 border-t border-line bg-[#0B1222] text-white">
-      <div className="mx-auto grid max-w-[1380px] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-4 lg:px-6">
+      <div className="mx-auto grid max-w-[1380px] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-5 lg:px-6">
         <div>
           <div className="flex items-center gap-2.5">
             <BrandMark className="h-10 w-10" />
@@ -51,6 +51,13 @@ export default function Footer() {
         <FooterColumn title={t("Sellers")}>
           <a href={`${SELLER_PORTAL_URL}/auth`} className={linkClass}>{t("Sell on PartHub")}</a>
           <a href={SELLER_PORTAL_URL} className={linkClass}>{t("Seller Center")}</a>
+          <Link to="/legal/seller" className={linkClass}>{t("Seller agreement")}</Link>
+        </FooterColumn>
+
+        <FooterColumn title={t("Policies")}>
+          <Link to="/legal/terms" className={linkClass}>{t("Terms of use")}</Link>
+          <Link to="/legal/returns" className={linkClass}>{t("Returns policy")}</Link>
+          <Link to="/legal/privacy" className={linkClass}>{t("Privacy policy")}</Link>
         </FooterColumn>
       </div>
 
