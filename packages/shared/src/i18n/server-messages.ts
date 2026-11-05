@@ -123,6 +123,8 @@ export const SERVER_MESSAGES: Record<"ar" | "fr", Record<string, string>> = {
     "NetworkError when attempting to fetch resource.": "Connexion impossible. Vérifiez votre connexion internet.",
     "Upload failed": "Échec de l'envoi",
     "You can rate a part once your order is delivered": "Vous pourrez noter une pièce une fois votre commande livrée",
+    "Please accept the seller agreement to open your store": "Veuillez accepter le contrat vendeur pour ouvrir votre boutique",
+    "Seller agreement accepted": "Contrat vendeur accepté",
   },
   ar: {
     "Select between 1 and {MAX} items": "حدّد بين 1 و{MAX} عنصراً",
@@ -245,6 +247,8 @@ export const SERVER_MESSAGES: Record<"ar" | "fr", Record<string, string>> = {
     "NetworkError when attempting to fetch resource.": "تعذّر الاتصال. تحقق من اتصالك بالإنترنت.",
     "Upload failed": "فشل الرفع",
     "You can rate a part once your order is delivered": "يمكنك تقييم القطعة بعد تسليم طلبك",
+    "Please accept the seller agreement to open your store": "يرجى قبول اتفاقية البائع لفتح متجرك",
+    "Seller agreement accepted": "تم قبول اتفاقية البائع",
   },
 };
 

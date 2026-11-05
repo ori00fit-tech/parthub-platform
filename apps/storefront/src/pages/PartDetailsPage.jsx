@@ -570,6 +570,12 @@ export default function PartDetailsPage() {
                 <span className="font-semibold text-ink">{t("Availability:")}</span>{" "}
                 {inStock ? t("{n} unit(s) available", { n: stock }) : t("Currently unavailable")}
               </p>
+              <p>
+                <span className="font-semibold text-ink">{t("Returns:")}</span>{" "}
+                <Link to="/legal/returns" className="font-semibold text-link hover:underline">
+                  {t("7 days after delivery")}
+                </Link>
+              </p>
               {part.sku ? (
                 <p>
                   <span className="font-semibold text-ink">{t("SKU:")}</span> {part.sku}

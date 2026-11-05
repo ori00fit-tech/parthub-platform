@@ -31,6 +31,7 @@ type SellerRow = {
   logo_url: string | null;
   status: string;
   moderation_note: string | null;
+  agreement_accepted_at?: string | null;
 };
 
 type PartStats = {
@@ -54,6 +55,14 @@ export function buildChecklist(seller: SellerRow | null, parts: PartStats): Chec
       done: hasStore && filled(seller?.name) && filled(seller?.slug) && filled(seller?.location),
       required: true,
       action: { label: hasStore ? "Edit store" : "Create store", to: "/store-settings" },
+    },
+    {
+      id: "agreement",
+      label: "Accept the seller agreement",
+      hint: "Listing rules, orders and returns on PartHub.",
+      done: hasStore && Boolean(seller?.agreement_accepted_at),
+      required: true,
+      action: { label: "Read and accept", to: "/agreement" },
     },
     {
       id: "contact",
@@ -121,7 +130,7 @@ export function readinessPercent(items: ChecklistItem[]): number {
 
 export async function loadReadiness(DB: D1Database, userId: number) {
   const seller = await DB.prepare(
-    `select id, name, slug, phone, whatsapp, location, description, logo_url, status, moderation_note
+    `select id, name, slug, phone, whatsapp, location, description, logo_url, status, moderation_note, agreement_accepted_at
      from sellers where user_id = ?1 limit 1`
   )
     .bind(userId)

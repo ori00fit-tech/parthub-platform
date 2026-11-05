@@ -6,6 +6,7 @@ import { STATUS_COPY, useReadiness } from "../lib/readiness";
 import { mediaUrl } from "../lib/requests";
 import StoreChecklist, { StoreStatusBanner } from "../components/store/StoreChecklist";
 import { useT } from "../i18n";
+import { LinkedText } from "../components/legal/LegalDocument";
 
 function slugify(value) {
   return String(value || "")
@@ -27,6 +28,7 @@ export default function StoreSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [acceptAgreement, setAcceptAgreement] = useState(false);
 
   const [form, setForm] = useState({
     display_name: "",
@@ -133,6 +135,11 @@ export default function StoreSettingsPage() {
       return;
     }
 
+    if (!hasStore && !acceptAgreement) {
+      setError(t("Tick the box to accept the seller agreement."));
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -145,6 +152,7 @@ export default function StoreSettingsPage() {
         description: form.description.trim(),
         logo_url: form.logo_url.trim(),
         banner_url: form.banner_url.trim(),
+        ...(hasStore ? {} : { accept_agreement: acceptAgreement }),
       };
 
       if (hasStore) {
@@ -322,6 +330,23 @@ export default function StoreSettingsPage() {
               />
             </div>
           </div>
+
+          {!hasStore ? (
+            <label className="mt-6 flex items-start gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-800">
+              <input
+                type="checkbox"
+                checked={acceptAgreement}
+                onChange={(e) => setAcceptAgreement(e.target.checked)}
+                className="mt-0.5 h-5 w-5 flex-none rounded border-gray-300 text-blue-600"
+              />
+              <span>
+                <LinkedText
+                  text={t("I accept the [Seller agreement] and the [Returns policy].")}
+                  links={["/legal/seller", "/legal/returns"]}
+                />
+              </span>
+            </label>
+          ) : null}
 
           <div className="mt-6 flex flex-wrap gap-3">
             <button

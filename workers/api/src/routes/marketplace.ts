@@ -5,6 +5,7 @@ import { sellerGuard } from "../middlewares/seller";
 import { resolveActor } from "../utils/seller-actor";
 import { signToken } from "../utils/auth";
 import { loadReadiness } from "../utils/seller-readiness";
+import { LEGAL_VERSION } from "../utils/legal";
 import { notifyBackInStock } from "../utils/stock-alerts";
 import { runInBackground } from "../utils/whatsapp";
 
@@ -759,6 +760,19 @@ marketplaceRoutes.get("/me", authMiddleware, async (c) => {
   return c.json(success(seller));
 });
 
+// POST /api/v1/marketplace/me/agreement — accept the seller agreement
+// (for stores opened before it existed, or after a new version).
+marketplaceRoutes.post("/me/agreement", authMiddleware, async (c) => {
+  const userId = Number(c.get("user_id"));
+  const res = await c.env.DB.prepare(
+    "update sellers set agreement_accepted_at = datetime('now'), agreement_version = ?1, updated_at = datetime('now') where user_id = ?2"
+  )
+    .bind(LEGAL_VERSION, userId)
+    .run();
+  if (!res.meta.changes) return c.json(failure("SELLER_NOT_FOUND", "Seller profile not found"), 404);
+  return c.json(success({ agreement_version: LEGAL_VERSION }, { message: "Seller agreement accepted" }));
+});
+
 marketplaceRoutes.post("/onboarding", authMiddleware, async (c) => {
   const userId = c.get("user_id");
 
@@ -784,6 +798,9 @@ marketplaceRoutes.post("/onboarding", authMiddleware, async (c) => {
   if (cleanPhone(phone) === "invalid") return c.json(failure("PHONE_INVALID", "Enter a valid phone number"), 400);
   if (whatsapp === "invalid") return c.json(failure("WHATSAPP_INVALID", "Enter a valid WhatsApp number"), 400);
   if (logoUrl === "invalid") return c.json(failure("LOGO_INVALID", "Logo must be an uploaded image or an https link"), 400);
+  if (body.accept_agreement !== true) {
+    return c.json(failure("AGREEMENT_REQUIRED", "Please accept the seller agreement to open your store"), 400);
+  }
 
   const existingSeller = await c.env.DB.prepare(
     "select id from sellers where user_id = ?1 limit 1"
@@ -811,10 +828,12 @@ marketplaceRoutes.post("/onboarding", authMiddleware, async (c) => {
       description,
       whatsapp,
       logo_url,
-      status
-    ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'pending')
+      status,
+      agreement_accepted_at,
+      agreement_version
+    ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'pending', datetime('now'), ?9)
   `)
-    .bind(userId, displayName, slug, phone || null, city, description || null, whatsapp, logoUrl)
+    .bind(userId, displayName, slug, phone || null, city, description || null, whatsapp, logoUrl, LEGAL_VERSION)
     .run();
 
   const sellerId = Number(inserted.meta.last_row_id);

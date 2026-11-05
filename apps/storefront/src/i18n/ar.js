@@ -909,4 +909,15 @@ export default {
   "Rate this part": "قيّم هذه القطعة",
   "Seller rating:": "تقييم البائع:",
   "Buyer reviews": "تقييمات المشترين",
+  // Legal
+  "Seller agreement": "اتفاقية البائع",
+  "Policies": "السياسات",
+  "Terms of use": "شروط الاستخدام",
+  "Returns policy": "سياسة الإرجاع",
+  "Privacy policy": "سياسة الخصوصية",
+  "By placing your order, you accept the [Terms of use] and the [Returns policy].": "بتأكيد طلبك، فإنك تقبل [شروط الاستخدام] و[سياسة الإرجاع].",
+  "By creating an account, you accept the [Terms of use] and the [Privacy policy].": "بإنشاء حساب، فإنك تقبل [شروط الاستخدام] و[سياسة الخصوصية].",
+  "Version of {date}": "نسخة {date}",
+  "Returns:": "الإرجاع:",
+  "7 days after delivery": "خلال 7 أيام من الاستلام",
 };

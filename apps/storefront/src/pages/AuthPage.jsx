@@ -4,6 +4,7 @@ import { useAuth } from "../features/auth/AuthContext";
 import { useCart } from "../features/cart/CartContext";
 import { useT } from "../i18n";
 import { Icon } from "@parthub/shared/icons";
+import LegalConsent from "../features/legal/LegalConsent";
 
 function getRedirectPath(location) {
   const params = new URLSearchParams(location.search);
@@ -328,6 +329,7 @@ export default function AuthPage() {
                   ? t("Sign in")
                   : t("Create buyer account")}
             </button>
+            {mode !== "login" ? <LegalConsent kind="account" className="text-center" /> : null}
           </form>
 
           <div className="mt-6 rounded-2xl bg-surface-2 p-4 text-sm text-muted">
