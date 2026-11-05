@@ -18,3 +18,6 @@ export * from "./lib/money";
 
 // API
 export * from "./api/client";
+
+// i18n
+export * from "./i18n/server-messages";

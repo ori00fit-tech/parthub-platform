@@ -759,4 +759,5 @@ export default {
   "Buyer": "مشترٍ",
   "1 offer": "عرض واحد",
   "{n} offers": "{n} عروض",
+  "Photo upload failed": "فشل رفع الصورة",
 };

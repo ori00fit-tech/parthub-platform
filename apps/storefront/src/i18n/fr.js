@@ -757,4 +757,5 @@ export default {
   "Buyer": "Acheteur",
   "1 offer": "1 offre",
   "{n} offers": "{n} offres",
+  "Photo upload failed": "Échec de l'envoi de la photo",
 };

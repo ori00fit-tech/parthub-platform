@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { SELLER_TOKEN_KEY, formatMoney, parseMoneyInput } from "@parthub/shared";
-import { useT } from "../i18n";
+import { serverMessage, useT } from "../i18n";
 
 const API_BASE = "https://parthub-api.ori00fit-c96.workers.dev";
 
@@ -74,7 +74,7 @@ export default function PartCreateWithUploadPage() {
       const data = await res.json();
 
       if (!res.ok || !data?.ok) {
-        throw new Error(data?.error?.message || t("Upload failed"));
+        throw new Error(serverMessage(data?.error?.message || (typeof data?.error === "string" ? data.error : "")) || t("Upload failed"));
       }
 
       setImageUrl(data.data.url);
@@ -125,7 +125,7 @@ export default function PartCreateWithUploadPage() {
       const data = await res.json();
 
       if (!res.ok || !data?.ok) {
-        throw new Error(data?.error?.message || t("Create part failed"));
+        throw new Error(serverMessage(data?.error?.message || (typeof data?.error === "string" ? data.error : "")) || t("Create part failed"));
       }
 
       setSuccess(data.data);

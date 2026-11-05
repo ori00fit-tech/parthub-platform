@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import ar from "./ar";
 import fr from "./fr";
+import { translateServerMessage } from "@parthub/shared";
 
 // Translations. Keys are the English source text, so anything not
 // translated yet simply shows in English. Placeholders: t("{n} results", { n }).
@@ -68,6 +69,12 @@ export function statusLabel(value) {
 // Locale for dates and numbers in the current language.
 export function dateLocale() {
   return currentLang === "ar" ? "ar-MA" : currentLang === "fr" ? "fr-MA" : "en-GB";
+}
+
+// Messages returned by the API (errors such as "Invalid credentials"),
+// translated with the shared server-message dictionary.
+export function serverMessage(message) {
+  return translateServerMessage(message, currentLang);
 }
 
 const I18nContext = createContext({ lang: "en", dir: "ltr", t: (s, v) => translate("en", s, v), setLang: () => {} });

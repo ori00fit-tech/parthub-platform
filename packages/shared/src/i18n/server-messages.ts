@@ -1,0 +1,292 @@
+// Translations of messages returned by the PartHub API (English source text as
+// keys). Shared by the storefront, seller portal and admin. Keys may contain
+// {placeholders} for the variable parts of a message.
+export const SERVER_MESSAGES: Record<"ar" | "fr", Record<string, string>> = {
+  fr: {
+    "A part with this slug already exists": "Une pièce avec ce lien existe déjà",
+    "A seller store is required to answer requests": "Créez d'abord votre boutique pour répondre aux demandes",
+    "A seller with this slug already exists": "Cette adresse de boutique est déjà prise",
+    "A valid phone number is required": "Un numéro de téléphone valide est obligatoire",
+    "Account suspended": "Compte suspendu",
+    "At most {LINES} items per order": "{LINES} articles maximum par commande",
+    "At most {REQUEST} photos per request": "{REQUEST} photos maximum par demande",
+    "Authentication required": "Connexion requise",
+    "Banner must be an uploaded image or an https link": "La bannière doit être une image envoyée ou un lien https",
+    "City is required": "La ville est obligatoire",
+    "city is required": "La ville est obligatoire",
+    "Compatibility added successfully": "Compatibilité ajoutée",
+    "Compatibility deleted successfully": "Compatibilité supprimée",
+    "Compatibility row not found": "Compatibilité introuvable",
+    "Delivery must be 0–60 days": "Le délai doit être de 0 à 60 jours",
+    "Describe the part you need": "Décrivez la pièce recherchée",
+    "Email already registered": "Cet e-mail est déjà utilisé",
+    "Enter a valid WhatsApp number": "Saisissez un numéro WhatsApp valide",
+    "Enter a valid phone number": "Saisissez un numéro de téléphone valide",
+    "Explain the decision to the seller (at least {REASON} characters)": "Expliquez la décision au vendeur (au moins {REASON} caractères)",
+    "Explain what the seller should fix (at least {REASON} characters)": "Expliquez ce que le vendeur doit corriger (au moins {REASON} caractères)",
+    "Featured image updated": "Image principale mise à jour",
+    "File is too large (max 5 MB)": "Fichier trop lourd (5 Mo maximum)",
+    "Forbidden": "Accès refusé",
+    "Forbidden: admins only": "Accès réservé aux administrateurs",
+    "Forbidden: sellers only": "Accès réservé aux vendeurs",
+    "Image added successfully": "Image ajoutée",
+    "Image deleted successfully": "Image supprimée",
+    "Image not found": "Image introuvable",
+    "Images must be uploaded through PartHub": "Les images doivent être envoyées via PartHub",
+    "Photos must be uploaded through PartHub": "Les photos doivent être envoyées via PartHub",
+    "Insufficient stock for: {title}": "Stock insuffisant pour : {title}",
+    "Invalid category": "Catégorie invalide",
+    "Invalid credentials": "E-mail ou mot de passe incorrect",
+    "Invalid id": "Identifiant invalide",
+    "Invalid or expired token": "Session expirée, reconnectez-vous",
+    "Token expired": "Session expirée, reconnectez-vous",
+    "Unauthorized": "Session expirée, reconnectez-vous",
+    "Invalid part id": "Pièce invalide",
+    "Invalid part_id": "Pièce invalide",
+    "Invalid request id": "Demande invalide",
+    "Invalid seller id": "Vendeur invalide",
+    "Invalid status": "Statut invalide",
+    "Logged out": "Déconnecté",
+    "Logo must be an uploaded image or an https link": "Le logo doit être une image envoyée ou un lien https",
+    "No pending offer to withdraw": "Aucune offre en attente à retirer",
+    "Not found": "Introuvable",
+    "Route not found": "Page introuvable",
+    "Offer not found or no longer available": "Offre introuvable ou plus disponible",
+    "Only JPEG, PNG, WebP or GIF images are allowed": "Seules les images JPEG, PNG, WebP ou GIF sont acceptées",
+    "Open request not found": "Demande ouverte introuvable",
+    "Request not found": "Demande introuvable",
+    "This request is no longer open": "Cette demande n'est plus ouverte",
+    "Order updated": "Commande mise à jour",
+    "Order not found": "Commande introuvable",
+    "Part created successfully": "Pièce créée",
+    "Part updated successfully": "Pièce mise à jour",
+    "Part not found": "Pièce introuvable",
+    "Part not found for this seller": "Pièce introuvable pour ce vendeur",
+    "Part {partId} not available": "La pièce {partId} n'est plus disponible",
+    "Price must be a positive amount in cents": "Le prix doit être un montant positif",
+    "price is required": "Le prix est obligatoire",
+    "Review updated": "Avis mis à jour",
+    "Seller account is not active": "Le compte vendeur n'est pas actif",
+    "Seller account required": "Un compte vendeur est requis",
+    "Seller not found": "Vendeur introuvable",
+    "Seller onboarding completed": "Boutique créée",
+    "Seller profile already exists": "Votre boutique existe déjà",
+    "Seller profile not found": "Boutique introuvable",
+    "Seller profile updated": "Boutique mise à jour",
+    "Some items are no longer in stock, please review your cart": "Certains articles ne sont plus en stock, vérifiez votre panier",
+    "Store address may only use lowercase letters, digits and dashes": "L'adresse ne peut contenir que des minuscules, des chiffres et des tirets",
+    "This compatibility row already exists": "Cette compatibilité existe déjà",
+    "User not found": "Utilisateur introuvable",
+    "VIN must be 17 letters/digits (no I, O or Q)": "Le VIN doit faire 17 caractères (sans I, O ni Q)",
+    "Vehicle make is required": "La marque du véhicule est obligatoire",
+    "Vehicle model is required": "Le modèle du véhicule est obligatoire",
+    "make is required": "La marque est obligatoire",
+    "model is required": "Le modèle est obligatoire",
+    "Warranty must be 0–36 months": "La garantie doit être de 0 à 36 mois",
+    "Year must be between 1950 and {maxYear}": "L'année doit être entre 1950 et {maxYear}",
+    "You already reviewed this part": "Vous avez déjà donné votre avis sur cette pièce",
+    "You can have at most {BUYER} open requests": "Vous pouvez avoir au maximum {BUYER} demandes ouvertes",
+    "Your offer was already accepted or declined": "Votre offre a déjà été acceptée ou refusée",
+    "Daily photo upload limit reached, try again tomorrow": "Limite quotidienne de photos atteinte, réessayez demain",
+    "Daily request limit reached, try again tomorrow": "Limite quotidienne de demandes atteinte, réessayez demain",
+    "category_id is required": "La catégorie est obligatoire",
+    "condition must be new, used or refurbished": "L'état doit être neuf, occasion ou reconditionné",
+    "condition_pref must be any, new or used": "L'état souhaité doit être indifférent, neuf ou occasion",
+    "display_name is required": "Le nom de la boutique est obligatoire",
+    "email and password are required": "L'e-mail et le mot de passe sont obligatoires",
+    "name, email and password are required": "Le nom, l'e-mail et le mot de passe sont obligatoires",
+    "password must be at least 8 characters": "Le mot de passe doit faire au moins 8 caractères",
+    "file is required": "Choisissez un fichier",
+    "items are required": "Votre panier est vide",
+    "part_id and rating are required": "La pièce et la note sont obligatoires",
+    "quantity must be a whole number between 1 and {LINE}": "La quantité doit être un nombre entier entre 1 et {LINE}",
+    "rating must be 1–5": "La note doit être entre 1 et 5",
+    "seller_id is required": "Le vendeur est obligatoire",
+    "shipping_address is required": "L'adresse de livraison est obligatoire",
+    "shipping_address.{field} is required": "Adresse de livraison : {field} est obligatoire",
+    "slug is required": "Le lien (slug) est obligatoire",
+    "title is required": "Le titre est obligatoire",
+    "url is required": "Le lien est obligatoire",
+    "year_end is invalid": "L'année de fin est invalide",
+    "year_end must be greater than or equal to year_start": "L'année de fin doit être supérieure ou égale à l'année de début",
+    "year_start is required": "L'année de début est obligatoire",
+    "Request failed": "La requête a échoué",
+    "API request failed": "La requête a échoué",
+    "Something went wrong": "Une erreur s'est produite",
+    "Something went wrong. Please try again.": "Une erreur s'est produite. Réessayez.",
+    "Invalid JSON response": "Le serveur a répondu de façon inattendue. Réessayez.",
+    "Failed to fetch": "Connexion impossible. Vérifiez votre connexion internet.",
+    "Load failed": "Connexion impossible. Vérifiez votre connexion internet.",
+    "NetworkError when attempting to fetch resource.": "Connexion impossible. Vérifiez votre connexion internet.",
+    "Upload failed": "Échec de l'envoi",
+  },
+  ar: {
+    "A part with this slug already exists": "توجد قطعة بهذا الرابط مسبقاً",
+    "A seller store is required to answer requests": "أنشئ متجرك أولاً للرد على الطلبات",
+    "A seller with this slug already exists": "عنوان المتجر هذا مستعمل مسبقاً",
+    "A valid phone number is required": "رقم هاتف صحيح مطلوب",
+    "Account suspended": "الحساب موقوف",
+    "At most {LINES} items per order": "{LINES} قطعة كحد أقصى في الطلب",
+    "At most {REQUEST} photos per request": "{REQUEST} صور كحد أقصى في الطلب",
+    "Authentication required": "يجب تسجيل الدخول",
+    "Banner must be an uploaded image or an https link": "الغلاف يجب أن يكون صورة مرفوعة أو رابط https",
+    "City is required": "المدينة مطلوبة",
+    "city is required": "المدينة مطلوبة",
+    "Compatibility added successfully": "تمت إضافة التوافق",
+    "Compatibility deleted successfully": "تم حذف التوافق",
+    "Compatibility row not found": "التوافق غير موجود",
+    "Delivery must be 0–60 days": "مدة التجهيز يجب أن تكون بين 0 و60 يوماً",
+    "Describe the part you need": "صِف القطعة التي تحتاجها",
+    "Email already registered": "هذا البريد مسجّل مسبقاً",
+    "Enter a valid WhatsApp number": "أدخل رقم واتساب صحيحاً",
+    "Enter a valid phone number": "أدخل رقم هاتف صحيحاً",
+    "Explain the decision to the seller (at least {REASON} characters)": "اشرح القرار للبائع (على الأقل {REASON} حرفاً)",
+    "Explain what the seller should fix (at least {REASON} characters)": "اشرح ما يجب على البائع إصلاحه (على الأقل {REASON} حرفاً)",
+    "Featured image updated": "تم تحديث الصورة الرئيسية",
+    "File is too large (max 5 MB)": "الملف كبير جداً (5 ميغابايت كحد أقصى)",
+    "Forbidden": "غير مسموح",
+    "Forbidden: admins only": "مخصّص للمديرين فقط",
+    "Forbidden: sellers only": "مخصّص للبائعين فقط",
+    "Image added successfully": "تمت إضافة الصورة",
+    "Image deleted successfully": "تم حذف الصورة",
+    "Image not found": "الصورة غير موجودة",
+    "Images must be uploaded through PartHub": "يجب رفع الصور عبر PartHub",
+    "Photos must be uploaded through PartHub": "يجب رفع الصور عبر PartHub",
+    "Insufficient stock for: {title}": "المخزون غير كافٍ لـ: {title}",
+    "Invalid category": "صنف غير صالح",
+    "Invalid credentials": "البريد أو كلمة المرور غير صحيحة",
+    "Invalid id": "معرّف غير صالح",
+    "Invalid or expired token": "انتهت الجلسة، سجّل الدخول من جديد",
+    "Token expired": "انتهت الجلسة، سجّل الدخول من جديد",
+    "Unauthorized": "انتهت الجلسة، سجّل الدخول من جديد",
+    "Invalid part id": "قطعة غير صالحة",
+    "Invalid part_id": "قطعة غير صالحة",
+    "Invalid request id": "طلب غير صالح",
+    "Invalid seller id": "بائع غير صالح",
+    "Invalid status": "حالة غير صالحة",
+    "Logged out": "تم تسجيل الخروج",
+    "Logo must be an uploaded image or an https link": "الشعار يجب أن يكون صورة مرفوعة أو رابط https",
+    "No pending offer to withdraw": "لا يوجد عرض معلّق لسحبه",
+    "Not found": "غير موجود",
+    "Route not found": "غير موجود",
+    "Offer not found or no longer available": "العرض غير موجود أو لم يعد متاحاً",
+    "Only JPEG, PNG, WebP or GIF images are allowed": "تُقبل فقط صور JPEG أو PNG أو WebP أو GIF",
+    "Open request not found": "الطلب المفتوح غير موجود",
+    "Request not found": "الطلب غير موجود",
+    "This request is no longer open": "هذا الطلب لم يعد مفتوحاً",
+    "Order updated": "تم تحديث الطلبية",
+    "Order not found": "الطلبية غير موجودة",
+    "Part created successfully": "تم إنشاء القطعة",
+    "Part updated successfully": "تم تحديث القطعة",
+    "Part not found": "القطعة غير موجودة",
+    "Part not found for this seller": "القطعة غير موجودة لهذا البائع",
+    "Part {partId} not available": "القطعة {partId} لم تعد متوفّرة",
+    "Price must be a positive amount in cents": "السعر يجب أن يكون مبلغاً موجباً",
+    "price is required": "السعر مطلوب",
+    "Review updated": "تم تحديث التقييم",
+    "Seller account is not active": "حساب البائع غير نشط",
+    "Seller account required": "يلزم حساب بائع",
+    "Seller not found": "البائع غير موجود",
+    "Seller onboarding completed": "تم إنشاء المتجر",
+    "Seller profile already exists": "متجرك موجود مسبقاً",
+    "Seller profile not found": "المتجر غير موجود",
+    "Seller profile updated": "تم تحديث المتجر",
+    "Some items are no longer in stock, please review your cart": "بعض القطع لم تعد متوفّرة، راجع سلّتك",
+    "Store address may only use lowercase letters, digits and dashes": "العنوان يقبل فقط حروفاً لاتينية صغيرة وأرقاماً وشرطات",
+    "This compatibility row already exists": "هذا التوافق موجود مسبقاً",
+    "User not found": "المستخدم غير موجود",
+    "VIN must be 17 letters/digits (no I, O or Q)": "رقم الهيكل يجب أن يتكون من 17 حرفاً أو رقماً (بدون I وO وQ)",
+    "Vehicle make is required": "علامة السيارة مطلوبة",
+    "Vehicle model is required": "طراز السيارة مطلوب",
+    "make is required": "العلامة مطلوبة",
+    "model is required": "الطراز مطلوب",
+    "Warranty must be 0–36 months": "الضمان يجب أن يكون بين 0 و36 شهراً",
+    "Year must be between 1950 and {maxYear}": "السنة يجب أن تكون بين 1950 و{maxYear}",
+    "You already reviewed this part": "سبق أن قيّمت هذه القطعة",
+    "You can have at most {BUYER} open requests": "يمكنك فتح {BUYER} طلبات كحد أقصى",
+    "Your offer was already accepted or declined": "تم قبول عرضك أو رفضه مسبقاً",
+    "Daily photo upload limit reached, try again tomorrow": "وصلت للحد اليومي لرفع الصور، أعد المحاولة غداً",
+    "Daily request limit reached, try again tomorrow": "وصلت للحد اليومي للطلبات، أعد المحاولة غداً",
+    "category_id is required": "الصنف مطلوب",
+    "condition must be new, used or refurbished": "الحالة يجب أن تكون جديدة أو مستعملة أو مُجدّدة",
+    "condition_pref must be any, new or used": "الحالة المطلوبة يجب أن تكون أي حالة أو جديدة أو مستعملة",
+    "display_name is required": "اسم المتجر مطلوب",
+    "email and password are required": "البريد وكلمة المرور مطلوبان",
+    "name, email and password are required": "الاسم والبريد وكلمة المرور مطلوبة",
+    "password must be at least 8 characters": "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
+    "file is required": "اختر ملفاً",
+    "items are required": "سلّتك فارغة",
+    "part_id and rating are required": "القطعة والتقييم مطلوبان",
+    "quantity must be a whole number between 1 and {LINE}": "الكمية يجب أن تكون عدداً صحيحاً بين 1 و{LINE}",
+    "rating must be 1–5": "التقييم يجب أن يكون بين 1 و5",
+    "seller_id is required": "البائع مطلوب",
+    "shipping_address is required": "عنوان التوصيل مطلوب",
+    "shipping_address.{field} is required": "عنوان التوصيل: {field} مطلوب",
+    "slug is required": "الرابط (slug) مطلوب",
+    "title is required": "العنوان مطلوب",
+    "url is required": "الرابط مطلوب",
+    "year_end is invalid": "سنة النهاية غير صالحة",
+    "year_end must be greater than or equal to year_start": "سنة النهاية يجب أن تكون أكبر من أو تساوي سنة البداية",
+    "year_start is required": "سنة البداية مطلوبة",
+    "Request failed": "فشل الطلب",
+    "API request failed": "فشل الطلب",
+    "Something went wrong": "حدث خطأ ما",
+    "Something went wrong. Please try again.": "حدث خطأ ما. أعد المحاولة.",
+    "Invalid JSON response": "ردّ الخادم بشكل غير متوقع. أعد المحاولة.",
+    "Failed to fetch": "تعذّر الاتصال. تحقق من اتصالك بالإنترنت.",
+    "Load failed": "تعذّر الاتصال. تحقق من اتصالك بالإنترنت.",
+    "NetworkError when attempting to fetch resource.": "تعذّر الاتصال. تحقق من اتصالك بالإنترنت.",
+    "Upload failed": "فشل الرفع",
+  },
+};
+
+const GENERIC_ERROR = "Something went wrong. Please try again.";
+
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+let patterns: { key: string; re: RegExp; names: string[] }[] | null = null;
+function getPatterns() {
+  if (patterns) return patterns;
+  patterns = Object.keys(SERVER_MESSAGES.fr)
+    .filter((k) => /\{\w+\}/.test(k))
+    .map((key) => {
+      const names: string[] = [];
+      const source = key
+        .split(/(\{\w+\})/)
+        .map((part) => {
+          const m = part.match(/^\{(\w+)\}$/);
+          if (m) {
+            names.push(m[1]);
+            return "(.+?)";
+          }
+          return escapeRegExp(part);
+        })
+        .join("");
+      return { key, re: new RegExp(`^${source}$`), names };
+    });
+  return patterns;
+}
+
+// Translate an API error/success message into `lang` ("ar" | "fr" | "en").
+// Unknown messages are returned unchanged; "Unknown … error" fallbacks from the
+// API become a generic message.
+export function translateServerMessage(message: string, lang: string): string {
+  if (!message) return message;
+  let text = String(message).trim();
+  if (/^Unknown .*error$/i.test(text)) text = GENERIC_ERROR;
+  if (lang !== "ar" && lang !== "fr") return text;
+  const dict = SERVER_MESSAGES[lang];
+  if (dict[text]) return dict[text];
+  for (const p of getPatterns()) {
+    const m = text.match(p.re);
+    if (!m) continue;
+    let out = dict[p.key];
+    p.names.forEach((name, i) => {
+      out = out.replace(`{${name}}`, () => m[i + 1]);
+    });
+    return out;
+  }
+  return text;
+}

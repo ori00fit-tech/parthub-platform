@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import ar from "./ar";
 import fr from "./fr";
+import { translateServerMessage } from "@parthub/shared";
 
 // Storefront translations. Keys are the English source text, so anything not
 // translated yet simply shows in English. Placeholders: t("{n} results", { n }).
@@ -47,6 +48,12 @@ export function conditionLabel(value) {
   if (!value) return "";
   const key = CONDITION_LABELS[String(value).toLowerCase()];
   return key ? t(key) : value;
+}
+
+// Messages returned by the API (errors such as "Invalid credentials"),
+// translated with the shared server-message dictionary.
+export function serverMessage(message) {
+  return translateServerMessage(message, currentLang);
 }
 
 const I18nContext = createContext({ lang: "en", dir: "ltr", t: (s, v) => translate("en", s, v), setLang: () => {} });
