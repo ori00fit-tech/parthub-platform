@@ -30,7 +30,7 @@ export default function CheckoutPage() {
 
   const vehicleCtx = useSelectedVehicle();
   const selectedVehicle = vehicleCtx?.selectedVehicle || null;
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, login, register } = useAuth();
 
   // Delivery fee comes from the API so the total shown is the total charged.
   const [shippingFee, setShippingFee] = useState(null);
@@ -62,6 +62,68 @@ export default function CheckoutPage() {
   });
 
   const vehicleLabel = useMemo(() => getVehicleLabel(selectedVehicle), [selectedVehicle]);
+
+  // Signed-out buyers check out in one step: create an account (or sign in)
+  // with the same form, then the order is placed.
+  const [accountMode, setAccountMode] = useState("new"); // "new" | "existing"
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
+
+  // After signing in, fill the delivery fields the buyer left empty.
+  useEffect(() => {
+    if (!user) return;
+    setForm((prev) => ({
+      ...prev,
+      buyer_name: prev.buyer_name || user.name || "",
+      buyer_email: prev.buyer_email || user.email || "",
+      buyer_phone: prev.buyer_phone || user.phone || "",
+    }));
+  }, [user]);
+
+  function tokenFrom(res) {
+    return res?.data?.token || res?.data?.access_token || res?.token || "";
+  }
+
+  async function signInOnly() {
+    setError("");
+    if (!form.buyer_email.trim() || !password) {
+      setError(t("Please enter your email and password."));
+      return;
+    }
+    try {
+      setSigningIn(true);
+      await login(form.buyer_email.trim(), password);
+      setPassword("");
+    } catch (err) {
+      setError(err?.message || t("Authentication failed."));
+    } finally {
+      setSigningIn(false);
+    }
+  }
+
+  // Returns a token for the order request: the current session, or a new one
+  // from creating the account / signing in right now.
+  async function ensureAccount() {
+    if (isAuthenticated) return null;
+    const email = form.buyer_email.trim();
+    if (!email || !password) throw new Error(t("Please enter your email and password."));
+    if (accountMode === "new") {
+      if (password.length < 8) throw new Error(t("Use at least 8 characters for your password."));
+      try {
+        await register({ name: form.buyer_name.trim(), email, password, phone: form.buyer_phone.trim() });
+      } catch (err) {
+        if (/already registered/i.test(err?.rawMessage || "") || err?.status === 409) {
+          setAccountMode("existing");
+          throw new Error(t("This email already has an account. Enter its password to sign in and place the order."));
+        }
+        throw err;
+      }
+    }
+    const res = await login(email, password);
+    setPassword("");
+    return tokenFrom(res);
+  }
 
   function setField(key) {
     return (e) => {
@@ -107,6 +169,8 @@ export default function CheckoutPage() {
     try {
       setSaving(true);
 
+      const freshToken = await ensureAccount();
+
       // Shape expected by POST /api/v1/commerce/orders.
       const payload = {
         shipping_address: {
@@ -131,7 +195,11 @@ export default function CheckoutPage() {
         })),
       };
 
-      const response = await apiPost("/api/v1/commerce/orders", payload, { auth: true });
+      const response = await apiPost(
+        "/api/v1/commerce/orders",
+        payload,
+        freshToken ? { headers: { Authorization: `Bearer ${freshToken}` } } : { auth: true }
+      );
       const orderId = response?.data?.reference || response?.data?.id || null;
 
       setSuccess(t("Order placed successfully."));
@@ -158,20 +226,6 @@ export default function CheckoutPage() {
         <p className="mt-2 text-sm text-muted">
           {t("Add parts to your cart before proceeding to checkout.")}
         </p>
-      </section>
-    );
-  }
-  // Orders belong to an account (order history, tracking, seller follow-up).
-  if (!isAuthenticated) {
-    return (
-      <section className="mx-auto max-w-xl rounded-3xl border border-line bg-surface p-8 text-center shadow-panel">
-        <h1 className="text-3xl font-bold uppercase text-ink">{t("Sign in to check out")}</h1>
-        <p className="mt-3 text-sm text-muted">
-          {t("Your cart is saved. Sign in or create a free account so you can track the order and the seller can reach you.")}
-        </p>
-        <Link to="/auth?redirect=/checkout" className="btn-cta mt-6 h-12 px-6 text-sm">
-          {t("Sign in to continue")}
-        </Link>
       </section>
     );
   }
@@ -211,38 +265,117 @@ export default function CheckoutPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <form onSubmit={handleSubmit} className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+          {!isAuthenticated ? (
+            <fieldset className="mb-8 rounded-2xl border border-line bg-surface-2 p-4 sm:p-5">
+              <legend className="px-1 text-sm font-semibold text-ink">{t("Your account")}</legend>
+              <div role="tablist" aria-label={t("Your account")} className="mb-4 grid grid-cols-2 gap-1 rounded-xl border border-line bg-surface p-1">
+                {[
+                  ["new", t("New customer")],
+                  ["existing", t("I have an account")],
+                ].map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    role="tab"
+                    aria-selected={accountMode === mode}
+                    onClick={() => {
+                      setAccountMode(mode);
+                      setError("");
+                    }}
+                    className={[
+                      "h-10 rounded-lg text-sm font-semibold transition",
+                      accountMode === mode ? "bg-navy text-white" : "text-ink-2 hover:bg-surface-3",
+                    ].join(" ")}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="checkout-email" className="mb-1.5 block text-sm font-medium text-ink-2">{t("Email")}</label>
+                  <input
+                    id="checkout-email"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    dir="ltr"
+                    value={form.buyer_email}
+                    onChange={setField("buyer_email")}
+                    className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
+                    placeholder="youssef@exemple.ma"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="checkout-password" className="mb-1.5 block text-sm font-medium text-ink-2">{t("Password")}</label>
+                  <div className="relative">
+                    <input
+                      id="checkout-password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete={accountMode === "new" ? "new-password" : "current-password"}
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setError("");
+                      }}
+                      className="h-12 w-full rounded-2xl border border-line bg-surface pe-20 ps-4 text-sm text-ink outline-none focus:border-sky-400"
+                      placeholder={accountMode === "new" ? t("At least 8 characters") : ""}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute inset-y-0 end-2 my-auto h-8 rounded-lg px-2.5 text-xs font-semibold text-link hover:bg-surface-3"
+                      aria-pressed={showPassword}
+                    >
+                      {showPassword ? t("Hide") : t("Show")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {accountMode === "new" ? (
+                <p className="mt-3 text-xs text-muted">
+                  {t("We create your free account when you place the order, so you can follow it in My Orders.")}
+                </p>
+              ) : (
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={signInOnly}
+                    disabled={signingIn}
+                    className="inline-flex h-10 items-center rounded-xl border border-line-strong bg-surface px-4 text-sm font-semibold text-ink-2 transition hover:bg-surface-3 disabled:opacity-60"
+                  >
+                    {signingIn ? t("Signing in…") : t("Sign in")}
+                  </button>
+                  <span className="text-xs text-muted">{t("Or fill in the delivery details and place the order directly.")}</span>
+                </div>
+              )}
+            </fieldset>
+          ) : null}
+
           <h2 className="text-2xl font-bold text-ink">{t("Delivery details")}</h2>
           <p className="mt-1 text-sm text-muted">
             {t("Where should the seller deliver your parts?")}
           </p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
+            <div>
               <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Full name")}</label>
               <input
                 value={form.buyer_name}
                 onChange={setField("buyer_name")}
+                autoComplete="name"
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder={t("Youssef Benali")}
               />
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Email (optional)")}</label>
-              <input
-                value={form.buyer_email}
-                onChange={setField("buyer_email")}
-                type="email"
-                className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
-                placeholder="youssef@exemple.ma"
-              />
-            </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Phone")}</label>
               <input
                 value={form.buyer_phone}
                 onChange={setField("buyer_phone")}
+                type="tel" inputMode="tel" autoComplete="tel" dir="ltr"
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder="06 12 34 56 78"
               />
@@ -253,6 +386,7 @@ export default function CheckoutPage() {
               <input
                 value={form.address_line1}
                 onChange={setField("address_line1")}
+                autoComplete="address-line1"
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder={t("Street address")}
               />
@@ -263,6 +397,7 @@ export default function CheckoutPage() {
               <input
                 value={form.address_line2}
                 onChange={setField("address_line2")}
+                autoComplete="address-line2"
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder={t("Apartment, suite, etc.")}
               />
@@ -273,6 +408,7 @@ export default function CheckoutPage() {
               <input
                 value={form.city}
                 onChange={setField("city")}
+                autoComplete="address-level2"
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder={t("Casablanca")}
               />
@@ -283,6 +419,7 @@ export default function CheckoutPage() {
               <input
                 value={form.state}
                 onChange={setField("state")}
+                autoComplete="address-level1"
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder={t("Casablanca-Settat")}
               />
@@ -293,6 +430,7 @@ export default function CheckoutPage() {
               <input
                 value={form.postal_code}
                 onChange={setField("postal_code")}
+                autoComplete="postal-code" inputMode="numeric"
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder="20000"
               />
@@ -303,6 +441,7 @@ export default function CheckoutPage() {
               <input
                 value={form.country}
                 onChange={setField("country")}
+                autoComplete="country"
                 className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
                 placeholder={t("MA")}
               />
@@ -326,7 +465,11 @@ export default function CheckoutPage() {
               disabled={saving}
               className="btn-cta h-12 rounded-2xl px-6 text-sm"
             >
-              {saving ? t("Placing order...") : t("Place order")}
+              {saving
+                ? t("Placing order...")
+                : !isAuthenticated && accountMode === "new"
+                  ? t("Create account and place order")
+                  : t("Place order")}
             </button>
           </div>
         </form>

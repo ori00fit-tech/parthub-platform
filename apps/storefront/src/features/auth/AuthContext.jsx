@@ -67,6 +67,9 @@ export function AuthProvider({ children }) {
           role: "buyer",
         };
 
+      // Store the session now, not in the effect below, so requests made
+      // right after sign-in (redirect to /orders, placing an order) carry it.
+      persistSession(nextToken, nextUser);
       setToken(nextToken);
       setUser(nextUser);
       return res;
@@ -82,6 +85,7 @@ export function AuthProvider({ children }) {
         name: form.name,
         email: form.email,
         password: form.password,
+        phone: form.phone || undefined,
         role: "buyer",
       });
     } finally {

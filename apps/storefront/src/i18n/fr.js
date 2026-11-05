@@ -826,4 +826,20 @@ export default {
   "Refunded": "Remboursée",
   "Failed": "Échoué",
   "Lowest prices": "Prix les plus bas",
+
+  // One-step checkout and sign-in
+  "Use at least 8 characters for your password.": "Utilisez au moins 8 caractères pour le mot de passe.",
+  "Phone (optional)": "Téléphone (facultatif)",
+  "Saves time at checkout. Only shared with sellers you order from.": "Pour commander plus vite. Partagé uniquement avec les vendeurs à qui vous commandez.",
+  "At least 8 characters": "Au moins 8 caractères",
+  "Hide": "Masquer",
+  "Show": "Afficher",
+  "This email already has an account. Enter its password to sign in and place the order.": "Cet e-mail a déjà un compte. Saisissez son mot de passe pour vous connecter et commander.",
+  "Your account": "Votre compte",
+  "New customer": "Nouveau client",
+  "I have an account": "J'ai un compte",
+  "We create your free account when you place the order, so you can follow it in My Orders.": "Nous créons votre compte gratuit en même temps que la commande, pour que vous puissiez la suivre dans Mes commandes.",
+  "Signing in…": "Connexion…",
+  "Or fill in the delivery details and place the order directly.": "Ou remplissez la livraison et commandez directement.",
+  "Create account and place order": "Créer mon compte et commander",
 };

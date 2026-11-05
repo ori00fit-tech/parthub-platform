@@ -76,7 +76,11 @@ async function request(path, options = {}) {
   const data = await parseJson(res);
 
   if (!res.ok) {
-    throw new Error(serverMessage(extractErrorMessage(data, "API request failed")));
+    const raw = extractErrorMessage(data, "API request failed");
+    const error = new Error(serverMessage(raw));
+    error.status = res.status; // e.g. 409 when an email is already registered
+    error.rawMessage = raw; // untranslated API text, for code that needs to branch on it
+    throw error;
   }
 
   return data;

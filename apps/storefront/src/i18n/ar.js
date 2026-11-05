@@ -828,4 +828,20 @@ export default {
   "Refunded": "مسترجع",
   "Failed": "فشل",
   "Lowest prices": "الأقل سعراً",
+
+  // One-step checkout and sign-in
+  "Use at least 8 characters for your password.": "استعمل 8 أحرف على الأقل لكلمة المرور.",
+  "Phone (optional)": "الهاتف (اختياري)",
+  "Saves time at checkout. Only shared with sellers you order from.": "يوفّر الوقت عند الطلب. لا يُشارك إلا مع البائعين الذين تطلب منهم.",
+  "At least 8 characters": "8 أحرف على الأقل",
+  "Hide": "إخفاء",
+  "Show": "إظهار",
+  "This email already has an account. Enter its password to sign in and place the order.": "هذا البريد له حساب مسبقاً. أدخل كلمة مروره لتسجيل الدخول وإتمام الطلب.",
+  "Your account": "حسابك",
+  "New customer": "زبون جديد",
+  "I have an account": "لدي حساب",
+  "We create your free account when you place the order, so you can follow it in My Orders.": "ننشئ حسابك المجاني مع الطلب، لتتابعه في طلباتي.",
+  "Signing in…": "جارٍ الدخول…",
+  "Or fill in the delivery details and place the order directly.": "أو املأ معلومات التوصيل وأكمل الطلب مباشرة.",
+  "Create account and place order": "إنشاء الحساب وتأكيد الطلب",
 };

@@ -22,8 +22,10 @@ export default function AuthPage() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    phone: "",
     password: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -66,18 +68,21 @@ export default function AuthPage() {
         return;
       }
 
+      if (form.password.length < 8) {
+        setError(t("Use at least 8 characters for your password."));
+        return;
+      }
+
       await register({
         name: form.name.trim(),
         email: form.email.trim(),
+        phone: form.phone.trim(),
         password: form.password,
       });
 
-      setSuccess(t("Account created successfully. Please sign in."));
-      setMode("login");
-      setForm((prev) => ({
-        ...prev,
-        password: "",
-      }));
+      // Signed in straight away: no second form to fill.
+      await login(form.email.trim(), form.password);
+      navigate(redirectTo);
     } catch (err) {
       setError(err?.message || t("Authentication failed."));
     }
@@ -245,9 +250,29 @@ export default function AuthPage() {
                 <input
                   value={form.name}
                   onChange={setField("name")}
+                  autoComplete="name"
                   placeholder={t("John Doe")}
                   className={inputCls}
                 />
+              </div>
+            ) : null}
+
+            {mode === "register" ? (
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-ink-2">
+                  {t("Phone (optional)")}
+                </label>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  dir="ltr"
+                  value={form.phone}
+                  onChange={setField("phone")}
+                  placeholder="06 12 34 56 78"
+                  className={inputCls}
+                />
+                <p className="mt-1 text-xs text-muted">{t("Saves time at checkout. Only shared with sellers you order from.")}</p>
               </div>
             ) : null}
 
@@ -257,6 +282,9 @@ export default function AuthPage() {
               </label>
               <input
                 type="email"
+                inputMode="email"
+                autoComplete="email"
+                dir="ltr"
                 value={form.email}
                 onChange={setField("email")}
                 placeholder="you@example.com"
@@ -268,13 +296,24 @@ export default function AuthPage() {
               <label className="mb-1.5 block text-sm font-medium text-ink-2">
                 {t("Password")}
               </label>
-              <input
-                type="password"
-                value={form.password}
-                onChange={setField("password")}
-                placeholder="••••••••"
-                className={inputCls}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  value={form.password}
+                  onChange={setField("password")}
+                  placeholder={mode === "login" ? "••••••••" : t("At least 8 characters")}
+                  className={`${inputCls} pe-20`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-pressed={showPassword}
+                  className="absolute inset-y-0 end-2 my-auto h-8 rounded-lg px-2.5 text-xs font-semibold text-link hover:bg-surface-3"
+                >
+                  {showPassword ? t("Hide") : t("Show")}
+                </button>
+              </div>
             </div>
 
             <button
