@@ -45,19 +45,19 @@ jobs:
       # d1-apply-add-column.sh, which treats "duplicate column" as done.
 
       - name: 0002 search logs table (create if missing)
-        run: npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0002_search_engine.sql"
+        run: ../../.github/scripts/d1-exec-retry.sh --file="$MIGRATIONS/0002_search_engine.sql"
 
       - name: 0003 part requests (create tables if missing)
-        run: npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0003_part_requests.sql"
+        run: ../../.github/scripts/d1-exec-retry.sh --file="$MIGRATIONS/0003_part_requests.sql"
 
       - name: 0004 WhatsApp notification log (create table if missing)
-        run: npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0004_whatsapp_notifications.sql"
+        run: ../../.github/scripts/d1-exec-retry.sh --file="$MIGRATIONS/0004_whatsapp_notifications.sql"
 
       - name: 0005 request photos (add column if missing)
         run: ../../.github/scripts/d1-apply-add-column.sh "$MIGRATIONS/0005_part_request_images.sql"
 
       - name: 0006 core indexes (create if missing)
-        run: npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0006_core_indexes.sql"
+        run: ../../.github/scripts/d1-exec-retry.sh --file="$MIGRATIONS/0006_core_indexes.sql"
 
       - name: 0007 sellers.seller_type (add column if missing)
         run: ../../.github/scripts/d1-apply-add-column.sh "$MIGRATIONS/0007_seller_type.sql"
@@ -66,7 +66,7 @@ jobs:
         run: ../../.github/scripts/d1-apply-add-column.sh "$MIGRATIONS/0008_part_origin.sql"
 
       - name: 0009 Morocco layer defaults and indexes
-        run: npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$MIGRATIONS/0009_morocco_layer_backfill.sql"
+        run: ../../.github/scripts/d1-exec-retry.sh --file="$MIGRATIONS/0009_morocco_layer_backfill.sql"
 
       - name: 0010 parts.moderation_note (add column if missing)
         run: ../../.github/scripts/d1-apply-add-column.sh "$MIGRATIONS/0010_parts_moderation_note.sql"

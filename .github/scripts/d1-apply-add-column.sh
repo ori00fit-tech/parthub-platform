@@ -3,12 +3,13 @@
 # SQLite has no "ADD COLUMN IF NOT EXISTS", so a "duplicate column" error
 # means the migration was already applied and is treated as success.
 # Uses a file import, which still works when D1's daily read limit is hit.
+# Temporary Cloudflare errors are retried (see d1-exec-retry.sh).
 #
 # Usage (from workers/api): d1-apply-add-column.sh <migration file>
 set -uo pipefail
 
 file="$1"
-out=$(npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --file="$file" 2>&1)
+out=$("$(dirname "$0")/d1-exec-retry.sh" --file="$file" 2>&1)
 code=$?
 echo "$out"
 
