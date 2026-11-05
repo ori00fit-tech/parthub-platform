@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
 import { useCart } from "../features/cart/CartContext";
 import { useT } from "../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 function getRedirectPath(location) {
   const params = new URLSearchParams(location.search);
@@ -161,10 +162,10 @@ export default function AuthPage() {
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm">
-              {t("✔ Free, no subscription")}
+              <span className="flex items-start gap-2"><Icon name="ok" className="mt-0.5 h-4 w-4 flex-none text-emerald-300" />{t("Free, no subscription")}</span>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm">
-              {t("✔ Your phone is only shared with sellers you choose")}
+              <span className="flex items-start gap-2"><Icon name="ok" className="mt-0.5 h-4 w-4 flex-none text-emerald-300" />{t("Your phone is only shared with sellers you choose")}</span>
             </div>
           </div>
         </div>

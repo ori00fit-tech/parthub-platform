@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { apiDelete, apiGet, apiPost } from "../../lib/api";
 import { useT } from "../../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 // "Notify me when back in stock" for an out-of-stock part.
 // Signed-out buyers are sent to sign in and come back to the part.
@@ -73,7 +74,7 @@ export default function NotifyWhenAvailable({ part, compact = false }) {
         ) : state.following ? (
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex h-11 items-center gap-2 rounded-2xl border border-emerald-400/40 bg-emerald-400/10 px-4 text-sm font-semibold text-emerald-800" role="status">
-              <span aria-hidden="true">✓</span> {t("We'll notify you")}
+              <Icon name="ok" className="h-4 w-4" /> {t("We'll notify you")}
             </span>
             <button
               type="button"

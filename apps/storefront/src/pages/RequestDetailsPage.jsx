@@ -9,6 +9,7 @@ import {
 } from "../features/requests/api";
 import { mediaUrl } from "../lib/media";
 import { useI18n, useT } from "../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 function Spec({ label, value }) {
   if (!value) return null;
@@ -254,7 +255,7 @@ export default function RequestDetailsPage() {
 
           {offers.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-line-strong bg-surface p-10 text-center">
-              <div className="text-4xl">⏳</div>
+              <Icon name="waiting" className="mx-auto h-10 w-10 text-faint" />
               <p className="mt-3 text-base font-bold text-ink">{t("Waiting for offers")}</p>
               <p className="mt-1 text-sm text-muted">
                 {t("Sellers who stock parts for your {make} can see your request in their inbox.", { make: request.make })}

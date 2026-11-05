@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { formatMAD, mediaUrl, offerBadge } from "../lib/requests";
 import { useT } from "../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 export default function RequestsInboxPage() {
   const t = useT();
@@ -106,7 +107,7 @@ export default function RequestsInboxPage() {
         </div>
       ) : requests.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center">
-          <div className="text-4xl">📭</div>
+          <Icon name="requests" className="mx-auto h-10 w-10 text-gray-400" />
           <p className="mt-3 text-base font-bold text-gray-900">{t("No requests right now")}</p>
           <p className="mt-1 text-sm text-gray-500">
             {scope === "matched"
@@ -135,7 +136,7 @@ export default function RequestsInboxPage() {
                       ) : null}
                     </>
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-xl">⚙️</div>
+                    <div className="flex h-full w-full items-center justify-center text-gray-400"><Icon name="part" className="h-6 w-6" /></div>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { statusLabel, useT } from "../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 function normalizeOrders(payload) {
   const list =
@@ -227,7 +228,7 @@ export default function OrdersPage() {
 
       {filteredOrders.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
-          <div className="text-5xl">📦</div>
+          <Icon name="orders" className="mx-auto h-12 w-12 text-gray-400" />
           <h2 className="mt-4 text-2xl font-bold text-gray-900">{t("No orders yet")}</h2>
           <p className="mt-2 text-sm text-gray-500">
             {t("New seller orders will appear here when buyer activity starts.")}

@@ -5,6 +5,7 @@ import { useSelectedVehicle } from "../vehicles/SelectedVehicleContext";
 import { formatPrice } from "../../lib/formatters";
 import { mediaUrl } from "../../lib/media";
 import { useT } from "../../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 const MAX_QTY = 10;
 
@@ -180,7 +181,7 @@ export default function CartDrawer() {
                     {item.thumbnail ? (
                       <img src={mediaUrl(item.thumbnail)} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <span className="text-2xl" aria-hidden="true">⚙️</span>
+                      <Icon name="part" className="h-7 w-7 text-faint" />
                     )}
                   </Link>
                   <div className="min-w-0">

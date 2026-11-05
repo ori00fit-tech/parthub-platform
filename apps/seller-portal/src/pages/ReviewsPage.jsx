@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useT } from "../i18n";
+import { Icon } from "@parthub/shared/icons";
 
 function normalizeReviews(payload) {
   const list =
@@ -20,9 +21,7 @@ function renderStars(value) {
   const full = Math.round(rating);
 
   return Array.from({ length: 5 }).map((_, index) => (
-    <span key={index} className={index < full ? "text-amber-400" : "text-gray-300"}>
-      ★
-    </span>
+    <Icon key={index} name="featured" className={["h-4 w-4", index < full ? "fill-current text-amber-400" : "text-gray-300"].join(" ")} />
   ));
 }
 
@@ -211,7 +210,7 @@ export default function ReviewsPage() {
 
       {filteredReviews.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
-          <div className="text-5xl">⭐</div>
+          <Icon name="reviews" className="mx-auto h-12 w-12 text-gray-400" />
           <h2 className="mt-4 text-2xl font-bold text-gray-900">{t("No reviews yet")}</h2>
           <p className="mt-2 text-sm text-gray-500">
             {t("Reviews will appear here once buyers start rating your listings.")}

@@ -10,6 +10,7 @@ import VehicleContextBar from "../features/vehicles/VehicleContextBar";
 import SavedSearchesPanel, { saveSearchItem } from "../features/search/SavedSearchesPanel";
 import { conditionLabel, t, useT } from "../i18n";
 import StockBadge from "../features/stock/StockBadge";
+import { Icon } from "@parthub/shared/icons";
 
 function normalizeList(payload, fallbackKey) {
   const list =
@@ -212,6 +213,7 @@ function getOriginBadge(part) {
   if (origin === "oem") {
     return {
       label: "OEM",
+      icon: "oem_origin",
       className: "bg-navy text-white ring-1 ring-inset ring-white/15",
     };
   }
@@ -219,12 +221,14 @@ function getOriginBadge(part) {
   if (origin === "used") {
     return {
       label: t("Used"),
+      icon: "used",
       className: "border border-amber-400/35 bg-canvas/80 text-amber-700",
     };
   }
 
   return {
     label: t("Aftermarket"),
+    icon: "aftermarket",
     className: "border border-line-strong bg-canvas/80 text-ink-2",
   };
 }
@@ -975,7 +979,8 @@ export default function PartsPage() {
                         )}
 
                         <div className="absolute start-2.5 top-2.5 flex flex-wrap gap-1.5">
-                          <span className={["rounded px-2 py-1 text-[10.5px] font-semibold uppercase tracking-[0.1em]", origin.className].join(" ")}>
+                          <span className={["inline-flex items-center gap-1 rounded px-2 py-1 text-[10.5px] font-semibold uppercase tracking-[0.1em]", origin.className].join(" ")}>
+                            <Icon name={origin.icon} className="h-3 w-3" strokeWidth={2.25} />
                             {origin.label}
                           </span>
                           <span className="rounded border border-line-strong bg-canvas/80 px-2 py-1 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-ink-2">

@@ -875,4 +875,18 @@ export default {
   "Tires & Wheels": "الإطارات والعجلات",
   "Tools & Equipment": "الأدوات والمعدات",
   "Transmission & Drivetrain": "ناقل الحركة",
+
+  // Same texts without the leading symbol (icons now)
+  "Auto parts from Moroccan sellers · Prices in MAD": "قطع غيار من بائعين مغاربة · الأسعار بالدرهم",
+  "Free, no subscription": "مجاني بدون اشتراك",
+  "Your phone is only shared with sellers you choose": "رقمك لا يُشارك إلا مع البائعين الذين تختارهم",
+  "{n} makes available": "{n} علامة متوفّرة",
+  "Makes loading…": "جارٍ تحميل العلامات…",
+  "Saved on this device for your next visit": "يُحفظ على هذا الجهاز لزيارتك القادمة",
+  "Parts that fit are shown first": "القطع المناسبة تظهر أولاً",
+  "The catalog shows parts that fit your vehicle first": "الكتالوج يعرض القطع المناسبة لسيارتك أولاً",
+  "Each part page tells you if it fits": "كل صفحة قطعة تخبرك إن كانت مناسبة",
+  "Sellers see your vehicle when you order or request a part": "يرى البائعون سيارتك عند الطلب أو طلب قطعة",
+  "The part you need": "القطعة التي تحتاجها",
+  "Contact": "التواصل",
 };
