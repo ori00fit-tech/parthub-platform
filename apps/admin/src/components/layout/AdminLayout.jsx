@@ -3,6 +3,10 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useT } from "../../i18n";
 import LanguageSwitcher from "../common/LanguageSwitcher";
+import { usePendingCounts } from "../../lib/pending";
+
+// Nav items whose badge shows how many items wait for moderation.
+const PENDING_KEY = { "/sellers": "sellers", "/parts": "parts", "/reviews": "reviews" };
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: "📊" },
@@ -20,7 +24,7 @@ function isActivePath(itemTo, pathname) {
   return pathname === itemTo || pathname.startsWith(`${itemTo}/`);
 }
 
-function SidebarContent({ pathname, onNavigate, user, logout }) {
+function SidebarContent({ pathname, onNavigate, user, logout, pending }) {
   const t = useT();
   return (
     <div className="flex h-full flex-col bg-gray-950">
@@ -52,7 +56,19 @@ function SidebarContent({ pathname, onNavigate, user, logout }) {
               ].join(" ")}
             >
               <span className="text-lg">{item.icon}</span>
-              <span>{t(item.label)}</span>
+              <span className="flex-1">{t(item.label)}</span>
+              {PENDING_KEY[item.to] && pending?.[PENDING_KEY[item.to]] > 0 ? (
+                <span
+                  className={[
+                    "min-w-[24px] rounded-full px-2 py-0.5 text-center text-xs font-bold",
+                    active ? "bg-white text-blue-700" : "bg-amber-400 text-gray-950",
+                  ].join(" ")}
+                  title={t("{n} waiting for review", { n: pending[PENDING_KEY[item.to]] })}
+                >
+                  {pending[PENDING_KEY[item.to]]}
+                  <span className="sr-only"> {t("waiting for review")}</span>
+                </span>
+              ) : null}
             </NavLink>
           );
         })}
@@ -87,6 +103,8 @@ export default function AdminLayout() {
   const location = useLocation();
   const pathname = location.pathname;
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pending = usePendingCounts(pathname);
+  const pendingTotal = (pending.sellers || 0) + (pending.parts || 0) + (pending.reviews || 0);
 
   const currentLabel = useMemo(() => {
     const current = navItems.find((item) => isActivePath(item.to, pathname));
@@ -104,10 +122,15 @@ export default function AdminLayout() {
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           <button
             onClick={() => setMobileOpen(true)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-gray-800 bg-gray-900 text-xl text-gray-100"
+            className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-gray-800 bg-gray-900 text-xl text-gray-100"
             aria-label={t("Open navigation")}
           >
             ☰
+            {pendingTotal > 0 ? (
+              <span className="absolute -end-1 -top-1 min-w-[20px] rounded-full bg-amber-400 px-1.5 text-center text-[11px] font-bold leading-5 text-gray-950">
+                {pendingTotal}
+              </span>
+            ) : null}
           </button>
 
           <div className="min-w-0 flex-1">
@@ -134,6 +157,7 @@ export default function AdminLayout() {
             onNavigate={undefined}
             user={user}
             logout={logout}
+            pending={pending}
           />
         </aside>
 
@@ -149,6 +173,7 @@ export default function AdminLayout() {
               <SidebarContent
                 pathname={pathname}
                 onNavigate={closeMobileMenu}
+                pending={pending}
                 user={user}
                 logout={() => {
                   closeMobileMenu();

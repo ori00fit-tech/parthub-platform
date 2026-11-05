@@ -3,6 +3,7 @@
 // {placeholders} for the variable parts of a message.
 export const SERVER_MESSAGES: Record<"ar" | "fr", Record<string, string>> = {
   fr: {
+    "Select between 1 and {MAX} items": "Sélectionnez entre 1 et {MAX} éléments",
     "This part is in stock": "Cette pièce est en stock",
     "You can follow at most {MAX} parts": "Vous pouvez suivre au maximum {MAX} pièces",
     "A part with this slug already exists": "Une pièce avec ce lien existe déjà",
@@ -123,6 +124,7 @@ export const SERVER_MESSAGES: Record<"ar" | "fr", Record<string, string>> = {
     "Upload failed": "Échec de l'envoi",
   },
   ar: {
+    "Select between 1 and {MAX} items": "حدّد بين 1 و{MAX} عنصراً",
     "This part is in stock": "هذه القطعة متوفّرة",
     "You can follow at most {MAX} parts": "يمكنك متابعة {MAX} قطعة كحد أقصى",
     "A part with this slug already exists": "توجد قطعة بهذا الرابط مسبقاً",

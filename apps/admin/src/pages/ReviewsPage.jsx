@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { useT } from "../i18n";
+import { notifyPendingChanged } from "../lib/pending";
 
 function normalizeRows(payload) {
   return Array.isArray(payload?.data) ? payload.data : [];
@@ -32,6 +33,7 @@ export default function ReviewsPage() {
   async function moderate(id, status) {
     try {
       await api.patch(`/api/v1/admin/reviews/${id}/status`, { status });
+      notifyPendingChanged();
       await loadRows();
     } catch (err) {
       setError(err?.message || t("Failed to update review status"));

@@ -84,7 +84,7 @@ function ReasonDialog({ open, title, description, confirmLabel, tone, required, 
         ) : null}
 
         <label htmlFor="reason-text" className="mt-4 block text-sm font-semibold text-gray-800">
-          Message to the seller {required ? <span className="text-red-600">*</span> : <span className="font-normal text-gray-500">(optional)</span>}
+          {t("Message to the seller")} {required ? <span className="text-red-600">*</span> : <span className="font-normal text-gray-500">{t("(optional)")}</span>}
         </label>
         <textarea
           id="reason-text"
