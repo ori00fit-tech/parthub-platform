@@ -842,4 +842,22 @@ export default {
   "Signing in…": "Connexion…",
   "Or fill in the delivery details and place the order directly.": "Ou remplissez la livraison et commandez directement.",
   "Create account and place order": "Créer mon compte et commander",
+
+  // Stock badges and back-in-stock alerts
+  "Something went wrong. Please try again.": "Une erreur s'est produite. Réessayez.",
+  "This part is out of stock": "Cette pièce est en rupture de stock",
+  "We'll let you know as soon as the seller restocks it. Your alerts are in My Account.": "Nous vous prévenons dès que le vendeur la remet en stock. Vos alertes sont dans Mon compte.",
+  "Notify me when it's back": "Me prévenir quand elle revient",
+  "We'll notify you": "Nous vous préviendrons",
+  "Stop alerts": "Arrêter les alertes",
+  "Saving…": "Enregistrement…",
+  "Stock alerts": "Alertes de stock",
+  "1 back in stock": "1 de retour en stock",
+  "{n} back in stock": "{n} de retour en stock",
+  "When a part is out of stock, tap “Notify me when it's back” on its page. It will show up here.": "Quand une pièce est en rupture, appuyez sur « Me prévenir quand elle revient » sur sa page. Elle apparaîtra ici.",
+  "Buy now": "Acheter",
+  "Only 1 left": "Plus qu'1 en stock",
+  "Only {n} left": "Plus que {n} en stock",
+  "Cart ({n})": "Panier ({n})",
+  "Notify me": "Me prévenir",
 };

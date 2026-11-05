@@ -5,6 +5,8 @@ import { sellerGuard } from "../middlewares/seller";
 import { resolveActor } from "../utils/seller-actor";
 import { signToken } from "../utils/auth";
 import { loadReadiness } from "../utils/seller-readiness";
+import { notifyBackInStock } from "../utils/stock-alerts";
+import { runInBackground } from "../utils/whatsapp";
 
 export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -373,6 +375,8 @@ marketplaceRoutes.put("/parts/:id", authMiddleware, sellerGuard, async (c) => {
       .run();
 
     const updated = await getPartById(c.env.DB, id);
+    // Back in stock? Tell the buyers who asked (no-op when nobody is waiting).
+    runInBackground(c, notifyBackInStock(c.env, id));
     return c.json(success(updated, { message: "Part updated successfully" }));
   } catch (error) {
     return c.json(
@@ -1143,6 +1147,8 @@ marketplaceRoutes.put("/me/parts/:id", authMiddleware, async (c) => {
     }
 
     const updated = await getPartById(c.env.DB, partId);
+    // Back in stock? Tell the buyers who asked (no-op when nobody is waiting).
+    runInBackground(c, notifyBackInStock(c.env, partId));
     return c.json(success(updated, { message: "Part updated successfully" }));
   } catch (error) {
     return c.json(

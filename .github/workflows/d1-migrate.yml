@@ -74,6 +74,9 @@ jobs:
       - name: 0011 sellers.moderation_note (add column if missing)
         run: ../../.github/scripts/d1-apply-add-column.sh "$MIGRATIONS/0011_sellers_moderation_note.sql"
 
+      - name: 0012 stock alerts (create table if missing)
+        run: ../../.github/scripts/d1-exec-retry.sh --file="$MIGRATIONS/0012_stock_alerts.sql"
+
       # Read query: fails while the daily read limit is exceeded, which
       # doesn't mean the migrations failed.
       - name: Verify
@@ -81,7 +84,7 @@ jobs:
         run: |
           npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --command \
             "SELECT
-               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('part_requests','request_offers','whatsapp_notifications','part_search_logs')) AS tables_of_4,
+               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('part_requests','request_offers','whatsapp_notifications','part_search_logs','stock_alerts')) AS tables_of_5,
                (SELECT CASE WHEN instr(sql, 'images') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='part_requests') AS images_column,
                (SELECT CASE WHEN instr(sql, 'seller_type') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='sellers') AS seller_type_column,
                (SELECT CASE WHEN instr(sql, 'part_origin') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='parts') AS part_origin_column,

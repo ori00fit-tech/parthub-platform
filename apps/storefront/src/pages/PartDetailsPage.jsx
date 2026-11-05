@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { apiGet } from "../lib/api";
 import { formatPrice } from "../lib/formatters";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import VehicleContextBar from "../features/vehicles/VehicleContextBar";
 import { useCart } from "../features/cart/CartContext";
 import { conditionLabel, t, useT } from "../i18n";
+import StockBadge from "../features/stock/StockBadge";
+import NotifyWhenAvailable from "../features/stock/NotifyWhenAvailable";
 
 function normalizeGallery(part) {
   const candidates = [
@@ -250,6 +252,15 @@ export default function PartDetailsPage() {
   const safeRelatedParts = Array.isArray(relatedParts) ? relatedParts : [];
   const stock = Number(part?.quantity || 0);
   const inStock = stock > 0;
+
+  // Links to "#notify" (from the catalog or after signing in) land on the
+  // back-in-stock box once the part has loaded.
+  const location = useLocation();
+  useEffect(() => {
+    if (!part || location.hash !== "#notify") return;
+    const el = document.getElementById("notify");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [part, location.hash]);
   const selectedVehicleMatch = compatibility.some((row) =>
     doesVehicleMatch(row, selectedVehicle)
   );
@@ -353,9 +364,9 @@ export default function PartDetailsPage() {
             </div>
             <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
               <p className="text-xs uppercase tracking-wide text-faint">{t("Stock status")}</p>
-              <p className="mt-1 text-sm font-semibold text-ink">
-                {inStock ? t("{n} available", { n: stock }) : t("Out of stock")}
-              </p>
+              <div className="mt-1.5">
+                <StockBadge quantity={stock} />
+              </div>
             </div>
             <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
               <p className="text-xs uppercase tracking-wide text-faint">{t("Compatibility")}</p>
@@ -411,9 +422,7 @@ export default function PartDetailsPage() {
               </div>
 
               <div className="text-end text-sm">
-                <p className={inStock ? "font-semibold text-emerald-700" : "font-semibold text-red-700"}>
-                  {inStock ? t("In stock ({n})", { n: stock }) : t("Out of stock")}
-                </p>
+                <StockBadge quantity={stock} size="lg" />
                 <p className="text-muted">
                   {t("Seller:")}{" "}
                   {part.seller_slug ? (
@@ -462,43 +471,47 @@ export default function PartDetailsPage() {
             </div>
 
             <div className="mt-6 flex flex-col gap-3">
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <div className="inline-flex h-12 items-center rounded-2xl border border-line bg-surface">
+              {inStock ? (
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <div className="inline-flex h-12 items-center rounded-2xl border border-line bg-surface">
+                    <button
+                      type="button"
+                      onClick={() => handleQuantityChange(quantity - 1)}
+                      className="h-full px-4 text-lg text-ink-2"
+                    >
+                      −
+                    </button>
+                    <span className="min-w-[44px] text-center text-sm font-semibold text-ink">
+                      {quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleQuantityChange(quantity + 1)}
+                      className="h-full px-4 text-lg text-ink-2"
+                    >
+                      +
+                    </button>
+                  </div>
+
                   <button
                     type="button"
-                    onClick={() => handleQuantityChange(quantity - 1)}
-                    className="h-full px-4 text-lg text-ink-2"
+                    onClick={handleAddToCart}
+                    disabled={!inStock || adding}
+                    className="btn-cta h-12 flex-1 rounded-2xl px-6 text-sm"
                   >
-                    −
+                    {adding ? t("Adding...") : added ? t("Added to cart") : t("Add to cart")}
                   </button>
-                  <span className="min-w-[44px] text-center text-sm font-semibold text-ink">
-                    {quantity}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleQuantityChange(quantity + 1)}
-                    className="h-full px-4 text-lg text-ink-2"
+
+                  <Link
+                    to="/cart"
+                    className="inline-flex h-12 items-center justify-center rounded-2xl border border-line bg-surface px-6 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
                   >
-                    +
-                  </button>
+                    {t("Cart ({n})", { n: totalItems })}
+                  </Link>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={handleAddToCart}
-                  disabled={!inStock || adding}
-                  className="btn-cta h-12 flex-1 rounded-2xl px-6 text-sm"
-                >
-                  {adding ? t("Adding...") : added ? t("Added to cart") : t("Add to cart")}
-                </button>
-
-                <Link
-                  to="/cart"
-                  className="inline-flex h-12 items-center justify-center rounded-2xl border border-line bg-surface px-6 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
-                >
-                  Cart ({totalItems})
-                </Link>
-              </div>
+              ) : (
+                <NotifyWhenAvailable part={part} />
+              )}
 
               <a
                 href={whatsappLink}
@@ -747,14 +760,20 @@ export default function PartDetailsPage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            disabled={!inStock || adding}
-            className="btn-cta h-11 rounded-2xl px-5 text-sm"
-          >
-            {adding ? t("Adding...") : added ? t("Added") : t("Add to cart")}
-          </button>
+          {inStock ? (
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={adding}
+              className="btn-cta h-11 rounded-2xl px-5 text-sm"
+            >
+              {adding ? t("Adding...") : added ? t("Added") : t("Add to cart")}
+            </button>
+          ) : (
+            <a href="#notify" className="btn-cta h-11 rounded-2xl px-5 text-sm">
+              {t("Notify me")}
+            </a>
+          )}
         </div>
       </div>
     </section>

@@ -1,12 +1,13 @@
 # WhatsApp notifications — "Request a part"
 
-The API sends WhatsApp template messages at three moments:
+The API sends WhatsApp template messages at four moments:
 
 | When | To | Template |
 |---|---|---|
 | A buyer posts a part request | Matching active sellers (stock the same make or category) | `parthub_new_request` |
 | A seller sends the first offer on a request | The buyer | `parthub_new_offer` |
 | The buyer accepts an offer | That seller | `parthub_offer_accepted` |
+| A seller restocks a part a buyer asked to be told about | That buyer (if their account has a phone) | `parthub_back_in_stock` |
 
 Sending is **best-effort and off the request path** (`waitUntil`): if WhatsApp
 is not configured, a number is invalid, or Meta rejects a message, the API
@@ -37,7 +38,7 @@ request still succeeds and the failure is logged.
    | `STOREFRONT_URL` | `https://parthub.site` | Link sent to buyers |
    | `SELLER_PORTAL_URL` | `https://seller.parthub.site` | Link sent to sellers |
 
-4. **Create and get the three templates approved** in Meta Business Manager →
+4. **Create and get the four templates approved** in Meta Business Manager →
    WhatsApp Manager → Message templates. Category: **Utility**. The names and
    the number/order of `{{n}}` variables must match exactly. Suggested text
    (French, matching the default `fr`):
@@ -62,6 +63,16 @@ request still succeeds and the failure is logged.
 > Ses coordonnées sont disponibles ici : {{3}}
 
 `{{1}}` part · `{{2}}` buyer name · `{{3}}` seller-portal link
+
+### `parthub_back_in_stock`
+
+> Bonne nouvelle ! **{{1}}** est de nouveau disponible à **{{2}}** sur PartHub.
+> Commandez-la ici : {{3}}
+
+`{{1}}` part · `{{2}}` price (e.g. "1000.00 MAD") · `{{3}}` storefront link to the part
+
+Back-in-stock alerts need migration `0012_stock_alerts.sql`. Without WhatsApp,
+buyers still see restocked parts under **Stock alerts** in their account.
 
 To use Arabic instead, register the templates in Arabic (`ar`) and set
 `WHATSAPP_TEMPLATE_LANG = "ar"`.

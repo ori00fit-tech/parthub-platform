@@ -844,4 +844,22 @@ export default {
   "Signing in…": "جارٍ الدخول…",
   "Or fill in the delivery details and place the order directly.": "أو املأ معلومات التوصيل وأكمل الطلب مباشرة.",
   "Create account and place order": "إنشاء الحساب وتأكيد الطلب",
+
+  // Stock badges and back-in-stock alerts
+  "Something went wrong. Please try again.": "حدث خطأ ما. أعد المحاولة.",
+  "This part is out of stock": "هذه القطعة غير متوفّرة حالياً",
+  "We'll let you know as soon as the seller restocks it. Your alerts are in My Account.": "سنُعلمك فور أن يعيد البائع توفيرها. تجد تنبيهاتك في حسابي.",
+  "Notify me when it's back": "نبّهني عند توفّرها",
+  "We'll notify you": "سنُعلمك",
+  "Stop alerts": "إيقاف التنبيه",
+  "Saving…": "جارٍ الحفظ…",
+  "Stock alerts": "تنبيهات التوفّر",
+  "1 back in stock": "قطعة واحدة عادت للتوفّر",
+  "{n} back in stock": "{n} قطع عادت للتوفّر",
+  "When a part is out of stock, tap “Notify me when it's back” on its page. It will show up here.": "عندما تكون قطعة غير متوفّرة، اضغط «نبّهني عند توفّرها» في صفحتها، وستظهر هنا.",
+  "Buy now": "اشترِ الآن",
+  "Only 1 left": "بقيت قطعة واحدة",
+  "Only {n} left": "بقي {n} فقط",
+  "Cart ({n})": "السلة ({n})",
+  "Notify me": "نبّهني",
 };

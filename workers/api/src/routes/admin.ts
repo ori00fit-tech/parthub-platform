@@ -5,6 +5,8 @@ import { adminGuard } from "../middlewares/admin";
 import { ok, fail, paginated } from "../utils/response";
 import { dbAll, dbRun, dbFirst, dbCount } from "../utils/db";
 import { parsePagination } from "../utils/pagination";
+import { notifyBackInStock } from "../utils/stock-alerts";
+import { runInBackground } from "../utils/whatsapp";
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -167,6 +169,7 @@ adminRoutes.patch("/parts/:id/status", async (c) => {
     "UPDATE parts SET status = ?, moderation_note = ?, updated_at = datetime('now') WHERE id = ?",
     [status, note, id]
   );
+  if (status === "active") runInBackground(c, notifyBackInStock(c.env, Number(id)));
   return ok(c, { message: `Part ${status}`, status, moderation_note: note });
 });
 

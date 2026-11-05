@@ -9,6 +9,7 @@ import GaragePanel from "../features/vehicles/GaragePanel";
 import VehicleContextBar from "../features/vehicles/VehicleContextBar";
 import SavedSearchesPanel, { saveSearchItem } from "../features/search/SavedSearchesPanel";
 import { conditionLabel, t, useT } from "../i18n";
+import StockBadge from "../features/stock/StockBadge";
 
 function normalizeList(payload, fallbackKey) {
   const list =
@@ -946,7 +947,6 @@ export default function PartsPage() {
                   const rankingBadges = getRankingBadges(part, hasVehicle);
 
                   const inStock = Number(part.quantity || 0) > 0;
-                  const lowStock = inStock && Number(part.quantity) <= 3;
                   const origin = getOriginBadge(part);
                   const inCart = cartItems.some((item) => item.part_id === part.id);
 
@@ -1017,18 +1017,7 @@ export default function PartsPage() {
                         </dl>
 
                         <div className="flex flex-wrap gap-1.5">
-                          <span
-                            className={[
-                              "inline-flex h-6 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium before:h-1.5 before:w-1.5 before:rounded-full before:bg-current",
-                              !inStock
-                                ? "border-red-400/25 bg-red-400/10 text-red-700"
-                                : lowStock
-                                ? "border-amber-400/25 bg-amber-400/10 text-amber-700"
-                                : "border-emerald-400/25 bg-emerald-400/10 text-emerald-700",
-                            ].join(" ")}
-                          >
-                            {!inStock ? t("Out of stock") : lowStock ? t("Low stock · {n} left", { n: part.quantity }) : t("In stock · {n}", { n: part.quantity })}
-                          </span>
+                          <StockBadge quantity={part.quantity} />
 
                           {exactMatched ? (
                             <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 text-xs font-medium text-emerald-700 before:h-1.5 before:w-1.5 before:rounded-full before:bg-current">
@@ -1086,9 +1075,9 @@ export default function PartsPage() {
                                 <path d="M6 3h12v18l-6-4-6 4z" />
                               </svg>
                             </button>
+                            {inStock ? (
                             <button
                               type="button"
-                              disabled={!inStock}
                               onClick={() =>
                                 addItem({
                                   part_id: part.id,
@@ -1104,8 +1093,16 @@ export default function PartsPage() {
                               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
                                 <path d="M12 5v14M5 12h14" />
                               </svg>
-                              {inStock ? (inCart ? t("Add more") : t("Add to Cart")) : t("Sold out")}
+                              {inCart ? t("Add more") : t("Add to Cart")}
                             </button>
+                            ) : (
+                              <Link
+                                to={`/parts/${part.slug}#notify`}
+                                className="inline-flex h-[42px] items-center rounded-xl border border-line-strong bg-surface px-3.5 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
+                              >
+                                {t("Notify me")}
+                              </Link>
+                            )}
                           </div>
                         </div>
                       </div>

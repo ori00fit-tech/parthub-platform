@@ -5,6 +5,7 @@ import PartsForYourVehicle from "../features/parts/PartsForYourVehicle";
 import { apiGet } from "../lib/api";
 import { formatPrice } from "../lib/formatters";
 import { mediaUrl } from "../lib/media";
+import StockBadge from "../features/stock/StockBadge";
 import { t, useT } from "../i18n";
 
 function getVehicleLabel(vehicle) {
@@ -341,7 +342,10 @@ export default function HomePage() {
                       {part.seller_location ? `${part.seller_name} · ${part.seller_location}` : part.seller_name}
                     </p>
                   ) : null}
-                  <p className="mt-auto pt-1 font-mono text-lg font-semibold text-ink">{formatPrice(part.price)}</p>
+                  <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+                    <p className="font-mono text-lg font-semibold text-ink">{formatPrice(part.price)}</p>
+                    <StockBadge quantity={part.quantity} />
+                  </div>
                 </div>
               </Link>
             ))}

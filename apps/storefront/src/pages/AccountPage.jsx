@@ -3,6 +3,7 @@ import { useAuth } from "../features/auth/AuthContext";
 import { useCart } from "../features/cart/CartContext";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import { useT } from "../i18n";
+import StockAlertsList from "../features/stock/StockAlertsList";
 
 export default function AccountPage() {
   const t = useT();
@@ -173,6 +174,8 @@ export default function AccountPage() {
         </div>
 
         <div className="space-y-4">
+          <StockAlertsList />
+
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
             <h2 className="text-xl font-bold text-ink">{t("Quick actions")}</h2>
 
