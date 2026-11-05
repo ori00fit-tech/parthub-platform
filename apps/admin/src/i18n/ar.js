@@ -103,7 +103,7 @@ export default {
   "Admin operations are being monitored.": "العمليات تحت المراقبة.",
   "Admin command center": "مركز التحكم",
   "Marketplace dashboard": "لوحة تحكم السوق",
-  "Track moderation, supply growth, order activity, and marketplace health from one place.": "المراجعة والعرض والطلبات وحالة السوق في مكان واحد.",
+  "Track moderation, supply growth, order activity, and marketplace health from one place.": "المراجعة والعرض والطلبيات وحالة السوق في مكان واحد.",
   "Operational status": "الحالة التشغيلية",
   "Total sellers": "مجموع البائعين",
   "All marketplace seller accounts": "كل حسابات البائعين",

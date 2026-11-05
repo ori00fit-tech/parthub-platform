@@ -19,24 +19,14 @@ export default function SellerLayout({ children }) {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-6">
-            <Link to="/" className="whitespace-nowrap text-xl font-black tracking-tight text-slate-950">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-6">
+            <Link to="/" className="truncate text-lg font-black tracking-tight text-slate-950 sm:text-xl">
               {t("PartHub Seller")}
             </Link>
-
-            <nav className="hidden items-center gap-1 xl:flex">
-              <NavLink to="/" className={navClass}>{t("Dashboard")}</NavLink>
-              <NavLink to="/parts" className={navClass}>{t("Inventory")}</NavLink>
-              <NavLink to="/orders" className={navClass}>{t("Orders")}</NavLink>
-              <NavLink to="/requests" className={navClass}>{t("Requests")}</NavLink>
-              <NavLink to="/reviews" className={navClass}>{t("Reviews")}</NavLink>
-              <NavLink to="/insights" className={navClass}>{t("Insights")}</NavLink>
-              <NavLink to="/store-settings" className={navClass}>{t("Store")}</NavLink>
-            </nav>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               to="/parts/create"
               className="hidden whitespace-nowrap rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 sm:inline-flex"
@@ -44,7 +34,7 @@ export default function SellerLayout({ children }) {
               {t("+ Add part")}
             </Link>
 
-            <div className="hidden max-w-[160px] text-end sm:block">
+            <div className="hidden max-w-[160px] text-end lg:block">
               <p className="truncate text-sm font-semibold text-gray-900">
                 {user?.name || user?.email || t("Seller")}
               </p>
@@ -55,23 +45,23 @@ export default function SellerLayout({ children }) {
 
             <button
               onClick={logout}
-              className="whitespace-nowrap rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+              className="whitespace-nowrap rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold sm:px-4 text-gray-700 transition hover:bg-gray-50"
             >
               {t("Sign out")}
             </button>
           </div>
         </div>
 
-        <div className="border-t border-gray-100 bg-white xl:hidden">
-          <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-3 sm:px-6">
-            <NavLink to="/" className={navClass}>{t("Home")}</NavLink>
-            <NavLink to="/parts" className={navClass}>{t("Parts")}</NavLink>
+        <div className="border-t border-gray-100 bg-white">
+          <nav className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 py-2 sm:px-6 lg:px-8">
+            <NavLink to="/" className={navClass}>{t("Dashboard")}</NavLink>
+            <NavLink to="/parts" className={navClass}>{t("Inventory")}</NavLink>
             <NavLink to="/orders" className={navClass}>{t("Orders")}</NavLink>
             <NavLink to="/requests" className={navClass}>{t("Requests")}</NavLink>
             <NavLink to="/reviews" className={navClass}>{t("Reviews")}</NavLink>
             <NavLink to="/insights" className={navClass}>{t("Insights")}</NavLink>
             <NavLink to="/store-settings" className={navClass}>{t("Store")}</NavLink>
-          </div>
+          </nav>
         </div>
       </header>
 
