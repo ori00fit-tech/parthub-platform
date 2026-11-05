@@ -7,7 +7,6 @@ import DashboardPage from "./pages/DashboardPage";
 import PartsPage from "./pages/PartsPage";
 import PartWizardPage from "./pages/PartWizardPage";
 import PartEditPage from "./pages/PartEditPage";
-import MediaUploadPage from "./pages/MediaUploadPage";
 import OrdersPage from "./pages/OrdersPage";
 import OrderDetailsPage from "./pages/OrderDetailsPage";
 import ReviewsPage from "./pages/ReviewsPage";
@@ -73,14 +72,6 @@ export default function App() {
         }
       />
 
-      <Route
-        path="/media-upload"
-        element={
-          <ProtectedShell>
-            <MediaUploadPage />
-          </ProtectedShell>
-        }
-      />
 
       <Route
         path="/orders"

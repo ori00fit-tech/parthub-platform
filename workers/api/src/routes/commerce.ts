@@ -4,6 +4,8 @@ import { authMiddleware } from "../middlewares/auth";
 import { ok, created, fail, notFound } from "../utils/response";
 import { dbFirst, dbAll, dbRun } from "../utils/db";
 
+const MAX_REVIEW_LENGTH = 1000;
+
 export const commerceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
 const MAX_ORDER_LINES = 50;
@@ -172,7 +174,15 @@ commerceRoutes.get("/orders/:reference", authMiddleware, async (c) => {
   );
   if (!order) return notFound(c, "Order");
 
-  const items = await dbAll(c.env.DB, "SELECT * FROM order_items WHERE order_id = ?", [(order as any).id]);
+  // my_review: the buyer's review of that part, if any (to show "Rate" or the status).
+  const items = await dbAll(
+    c.env.DB,
+    `SELECT oi.*, r.rating as my_rating, r.status as my_review_status
+     FROM order_items oi
+     LEFT JOIN reviews r ON r.part_id = oi.part_id AND r.buyer_id = ?
+     WHERE oi.order_id = ?`,
+    [buyerId, (order as any).id]
+  );
   const address = await dbFirst(c.env.DB, "SELECT * FROM order_addresses WHERE order_id = ?", [(order as any).id]);
 
   return ok(c, { ...order, items, shipping_address: address });
@@ -181,40 +191,36 @@ commerceRoutes.get("/orders/:reference", authMiddleware, async (c) => {
 // POST /api/v1/commerce/reviews
 commerceRoutes.post("/reviews", authMiddleware, async (c) => {
   const buyerId = c.get("user_id");
-  const body = await c.req.json<{
-    part_id: number; rating: number; body?: string; order_item_id?: number;
-  }>();
+  const body = await c.req
+    .json<{ part_id?: unknown; rating?: unknown; body?: unknown }>()
+    .catch(() => ({}) as { part_id?: unknown; rating?: unknown; body?: unknown });
+  const partId = Number(body.part_id);
+  const rating = Number(body.rating);
+  if (!Number.isInteger(partId) || partId <= 0 || !body.rating) return fail(c, "part_id and rating are required");
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) return fail(c, "rating must be 1–5");
+  const text = typeof body.body === "string" ? body.body.trim().slice(0, MAX_REVIEW_LENGTH) : "";
 
-  if (!body.part_id || !body.rating) return fail(c, "part_id and rating are required");
-  if (body.rating < 1 || body.rating > 5) return fail(c, "rating must be 1–5");
-
-  const existing = await dbFirst(
-    c.env.DB,
-    "SELECT id FROM reviews WHERE part_id = ? AND buyer_id = ?",
-    [body.part_id, buyerId]
-  );
+  const existing = await dbFirst(c.env.DB, "SELECT id FROM reviews WHERE part_id = ? AND buyer_id = ?", [partId, buyerId]);
   if (existing) return fail(c, "You already reviewed this part", 409);
 
-  // Verify purchase
-  let is_verified = false;
-  if (body.order_item_id) {
-    const orderItem = await dbFirst(
-      c.env.DB,
-      `SELECT oi.id FROM order_items oi
-       JOIN orders o ON o.id = oi.order_id
-       WHERE oi.id = ? AND o.buyer_id = ? AND o.status = 'delivered'`,
-      [body.order_item_id, buyerId]
-    );
-    is_verified = !!orderItem;
-  }
+  // Only buyers who received the part can rate it.
+  const orderItem = await dbFirst<{ id: number }>(
+    c.env.DB,
+    `SELECT oi.id FROM order_items oi
+     JOIN orders o ON o.id = oi.order_id
+     WHERE oi.part_id = ? AND o.buyer_id = ? AND o.status = 'delivered'
+     ORDER BY o.created_at DESC LIMIT 1`,
+    [partId, buyerId]
+  );
+  if (!orderItem) return fail(c, "You can rate a part once your order is delivered", 403);
 
   const result = await dbRun(
     c.env.DB,
     `INSERT INTO reviews (part_id, buyer_id, order_item_id, rating, body, is_verified_purchase, status)
-     VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-    [body.part_id, buyerId, body.order_item_id ?? null, body.rating, body.body ?? null, is_verified ? 1 : 0]
+     VALUES (?, ?, ?, ?, ?, 1, 'pending')`,
+    [partId, buyerId, orderItem.id, rating, text || null]
   );
 
-  const review = await dbFirst(c.env.DB, "SELECT * FROM reviews WHERE id = ?", [result.lastRowId]);
+  const review = await dbFirst(c.env.DB, "SELECT id, part_id, rating, body, status, created_at FROM reviews WHERE id = ?", [result.lastRowId]);
   return created(c, review);
 });

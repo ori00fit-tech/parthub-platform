@@ -5,9 +5,10 @@ import { formatPrice } from "../lib/formatters";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import VehicleContextBar from "../features/vehicles/VehicleContextBar";
 import { useCart } from "../features/cart/CartContext";
-import { conditionLabel, t, useT } from "../i18n";
+import { conditionLabel, statusLabel, t, useT } from "../i18n";
 import StockBadge from "../features/stock/StockBadge";
 import NotifyWhenAvailable from "../features/stock/NotifyWhenAvailable";
+import { RatingSummary, ReviewList } from "../features/reviews/Reviews";
 
 function normalizeGallery(part) {
   const candidates = [
@@ -371,7 +372,7 @@ export default function PartDetailsPage() {
             <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
               <p className="text-xs uppercase tracking-wide text-faint">{t("Compatibility")}</p>
               <p className="mt-1 text-sm font-semibold text-ink">
-                {compatibility.length} row{compatibility.length === 1 ? "" : "s"}
+                {compatibility.length === 1 ? t("1 compatibility row") : t("{n} compatibility rows", { n: compatibility.length })}
               </p>
             </div>
           </div>
@@ -404,6 +405,9 @@ export default function PartDetailsPage() {
             </div>
 
             <h1 className="mt-4 text-3xl font-bold text-ink">{part.title}</h1>
+            <a href="#reviews" className="mt-2 inline-block">
+              <RatingSummary rating={part.rating} />
+            </a>
 
             <p className="mt-3 text-sm leading-6 text-muted">
               {part.description || t("No description available for this part yet.")}
@@ -550,13 +554,17 @@ export default function PartDetailsPage() {
                   part.seller_name || t("Unknown")
                 )}
               </p>
+              <p className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold text-ink">{t("Seller rating:")}</span>
+                <RatingSummary rating={part.seller_rating} />
+              </p>
               <p>
                 <span className="font-semibold text-ink">{t("Location:")}</span>{" "}
                 {part.seller_location || t("Not specified")}
               </p>
               <p>
                 <span className="font-semibold text-ink">{t("Listing status:")}</span>{" "}
-                {part.status}
+                {statusLabel(part.status)}
               </p>
               <p>
                 <span className="font-semibold text-ink">{t("Availability:")}</span>{" "}
@@ -659,6 +667,16 @@ export default function PartDetailsPage() {
         </div>
 
         <div className="space-y-6">
+          <div id="reviews" className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <h2 className="text-2xl font-bold text-ink">{t("Buyer reviews")}</h2>
+              <RatingSummary rating={part.rating} />
+            </div>
+            <div className="mt-4">
+              <ReviewList reviews={part.reviews || []} />
+            </div>
+          </div>
+
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
             <h2 className="text-2xl font-bold text-ink">{t("Specifications")}</h2>
 

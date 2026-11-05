@@ -7,6 +7,7 @@ import { mediaUrl } from "../lib/media";
 import { statusLabel, useT } from "../i18n";
 import { OrderStatusBadge, formatOrderDate } from "./OrdersPage";
 import { Icon } from "@parthub/shared/icons";
+import { ItemReview } from "../features/reviews/Reviews";
 
 // Order lifecycle as stored on the order (orders.status).
 const STEPS = [
@@ -141,21 +142,24 @@ export default function OrderTrackingPage() {
           <h2 className="text-lg font-bold text-ink">{t("Items")}</h2>
           <ul className="mt-3 divide-y divide-line">
             {items.map((item) => (
-              <li key={item.id} className="flex items-center gap-3 py-3">
-                <div className="media-well flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-lg">
-                  {item.thumbnail ? (
-                    <img src={mediaUrl(item.thumbnail)} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <Icon name="part" className="h-6 w-6 text-faint" />
-                  )}
+              <li key={item.id} className="py-3">
+                <div className="flex items-center gap-3">
+                  <div className="media-well flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-lg">
+                    {item.thumbnail ? (
+                      <img src={mediaUrl(item.thumbnail)} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <Icon name="part" className="h-6 w-6 text-faint" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-sm font-semibold text-ink">{item.title}</p>
+                    <p className="text-xs text-muted">
+                      {t("{price} each", { price: formatPrice(item.price) })} × {item.quantity}
+                    </p>
+                  </div>
+                  <p className="font-mono text-sm font-semibold text-ink">{formatPrice(item.subtotal)}</p>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-sm font-semibold text-ink">{item.title}</p>
-                  <p className="text-xs text-muted">
-                    {t("{price} each", { price: formatPrice(item.price) })} × {item.quantity}
-                  </p>
-                </div>
-                <p className="font-mono text-sm font-semibold text-ink">{formatPrice(item.subtotal)}</p>
+                {order.status === "delivered" && item.part_id ? <ItemReview item={item} /> : null}
               </li>
             ))}
           </ul>

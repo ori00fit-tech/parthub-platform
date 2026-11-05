@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { apiGet } from "../lib/api";
 import { formatPrice } from "../lib/formatters";
 import { t, useT } from "../i18n";
+import { RatingSummary, ReviewList } from "../features/reviews/Reviews";
 
 function getSellerBadges(seller) {
   const badges = [];
@@ -146,6 +147,9 @@ export default function SellerProfilePage() {
             </div>
 
             <h1 className="text-3xl font-bold sm:text-5xl">{seller.name}</h1>
+            <div className="mt-3 rounded-xl bg-white/95 px-3 py-1.5 w-fit">
+              <RatingSummary rating={seller.rating} />
+            </div>
 
             <p className="mt-3 text-sm text-indigo-100 sm:text-base">
               {t("Browse this seller’s active inventory and trust signals before purchase.")}
@@ -221,6 +225,16 @@ export default function SellerProfilePage() {
               <p>{t("• Fitment-ready listings usually reduce buyer hesitation and improve part matching.")}</p>
               <p>{t("• Stock visibility and structured compatibility are stronger trust signals than title alone.")}</p>
             </div>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <h2 className="text-2xl font-bold text-ink">{t("Buyer reviews")}</h2>
+            <RatingSummary rating={seller.rating} />
+          </div>
+          <div className="mt-4">
+            <ReviewList reviews={seller.reviews || []} showPart />
           </div>
         </div>
 

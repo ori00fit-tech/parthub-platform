@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { Env, HonoVariables } from "../types";
+import { sellerRating, sellerReviews } from "../utils/reviews";
 import { ok, fail } from "../utils/response";
 
 export const storefrontSellersRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
@@ -87,8 +88,12 @@ storefrontSellersRoutes.get("/:slug", async (c) => {
     .bind(seller.id)
     .all();
 
+  const [rating, reviews] = await Promise.all([sellerRating(c.env, seller.id), sellerReviews(c.env, seller.id)]);
+
   return ok(c, {
     ...seller,
     parts: parts.results || [],
+    rating,
+    reviews,
   });
 });
