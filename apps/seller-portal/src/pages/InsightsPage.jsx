@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { formatMoney } from "@parthub/shared";
-import { useT } from "../i18n";
+import { statusLabel, useT } from "../i18n";
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -298,7 +298,7 @@ export default function InsightsPage() {
                     <div key={item.id} className="rounded-2xl bg-gray-50 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <p className="font-semibold text-gray-900">{item.title}</p>
-                        <span className="text-sm font-semibold text-gray-700">{item.status}</span>
+                        <span className="text-sm font-semibold text-gray-700">{statusLabel(item.status)}</span>
                       </div>
                       <p className="mt-1 text-sm text-gray-500">
                         {t("stock: {n}", { n: item.quantity })} • {t("price: {price}", { price: formatMoney(item.price) })} • {t("fitment rows: {n}", { n: item.compatibility_count })}
