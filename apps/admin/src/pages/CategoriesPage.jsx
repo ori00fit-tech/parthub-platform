@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
+import { useT } from "../i18n";
 
 function slugify(value) {
   return String(value || "")
@@ -22,6 +23,7 @@ function normalizeCategories(payload) {
 }
 
 export default function CategoriesPage() {
+  const t = useT();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,7 +45,7 @@ export default function CategoriesPage() {
       setCategories(normalizeCategories(res));
     } catch (err) {
       setCategories([]);
-      setError(err?.message || "Failed to load categories");
+      setError(err?.message || t("Failed to load categories"));
     } finally {
       setLoading(false);
     }
@@ -88,12 +90,12 @@ export default function CategoriesPage() {
     setSuccess("");
 
     if (!form.name.trim()) {
-      setError("Category name is required.");
+      setError(t("Category name is required."));
       return;
     }
 
     if (!form.slug.trim()) {
-      setError("Category slug is required.");
+      setError(t("Category slug is required."));
       return;
     }
 
@@ -107,7 +109,7 @@ export default function CategoriesPage() {
         icon: form.icon.trim() || null,
       });
 
-      setSuccess("Category created successfully.");
+      setSuccess(t("Category created successfully."));
       setForm({
         name: "",
         slug: "",
@@ -117,7 +119,7 @@ export default function CategoriesPage() {
 
       await loadCategories();
     } catch (err) {
-      setError(err?.message || "Failed to create category");
+      setError(err?.message || t("Failed to create category"));
     } finally {
       setSaving(false);
     }
@@ -128,11 +130,11 @@ export default function CategoriesPage() {
       <div className="overflow-hidden rounded-[28px] border border-gray-800 bg-gradient-to-br from-gray-900 via-slate-950 to-blue-950 p-6 text-white shadow-xl sm:p-8">
         <div className="max-w-3xl">
           <div className="mb-3 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/80">
-            Categories management
+            {t("Categories management")}
           </div>
-          <h1 className="text-3xl font-bold sm:text-5xl">Marketplace categories</h1>
+          <h1 className="text-3xl font-bold sm:text-5xl">{t("Marketplace categories")}</h1>
           <p className="mt-3 text-sm text-gray-300 sm:text-base">
-            Manage the category structure used across parts listings and marketplace navigation.
+            {t("Manage the category structure used across parts listings and marketplace navigation.")}
           </p>
         </div>
       </div>
@@ -155,28 +157,28 @@ export default function CategoriesPage() {
           className="rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-sm"
         >
           <div>
-            <h2 className="text-2xl font-bold text-gray-100">Create category</h2>
+            <h2 className="text-2xl font-bold text-gray-100">{t("Create category")}</h2>
             <p className="mt-1 text-sm text-gray-400">
-              Add a new category for admin moderation and seller listing organization.
+              {t("Add a new category for admin moderation and seller listing organization.")}
             </p>
           </div>
 
           <div className="mt-6 grid gap-4">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-400">
-                Category name
+                {t("Category name")}
               </label>
               <input
                 value={form.name}
                 onChange={setField("name")}
-                placeholder="Brake System"
+                placeholder={t("Brake System")}
                 className="h-12 w-full rounded-2xl border border-gray-700 bg-gray-950 px-4 text-sm text-gray-100 outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-400">
-                Slug
+                {t("Slug")}
               </label>
               <input
                 value={form.slug}
@@ -188,14 +190,14 @@ export default function CategoriesPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-400">
-                Parent category
+                {t("Parent category")}
               </label>
               <select
                 value={form.parent_id}
                 onChange={setField("parent_id")}
                 className="h-12 w-full rounded-2xl border border-gray-700 bg-gray-950 px-4 text-sm text-gray-100 outline-none"
               >
-                <option value="">No parent</option>
+                <option value="">{t("No parent")}</option>
                 {sortedCategories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
@@ -206,7 +208,7 @@ export default function CategoriesPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-400">
-                Icon
+                {t("Icon")}
               </label>
               <input
                 value={form.icon}
@@ -223,7 +225,7 @@ export default function CategoriesPage() {
               disabled={saving}
               className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-60"
             >
-              {saving ? "Creating..." : "Create category"}
+              {saving ? t("Creating...") : t("Create category")}
             </button>
           </div>
         </form>
@@ -231,25 +233,25 @@ export default function CategoriesPage() {
         <div className="rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-100">Categories list</h2>
+              <h2 className="text-2xl font-bold text-gray-100">{t("Categories list")}</h2>
               <p className="mt-1 text-sm text-gray-400">
-                Current marketplace taxonomy used across product listings.
+                {t("Current marketplace taxonomy used across product listings.")}
               </p>
             </div>
 
-            <div className="rounded-2xl bg-gray-950 px-4 py-3 text-right">
-              <p className="text-xs uppercase tracking-wide text-gray-500">Total</p>
+            <div className="rounded-2xl bg-gray-950 px-4 py-3 text-end">
+              <p className="text-xs uppercase tracking-wide text-gray-500">{t("Total")}</p>
               <p className="mt-1 text-xl font-bold text-gray-100">{categories.length}</p>
             </div>
           </div>
 
           {loading ? (
             <div className="mt-6 rounded-2xl bg-gray-950 p-4 text-sm text-gray-400">
-              Loading categories...
+              {t("Loading categories...")}
             </div>
           ) : sortedCategories.length === 0 ? (
             <div className="mt-6 rounded-2xl border border-dashed border-gray-700 bg-gray-950 p-8 text-center text-sm text-gray-400">
-              No categories found.
+              {t("No categories found.")}
             </div>
           ) : (
             <div className="mt-6 space-y-3">
@@ -269,9 +271,9 @@ export default function CategoriesPage() {
                         <p className="mt-1 text-sm text-gray-500">{category.slug || "—"}</p>
                       </div>
 
-                      <div className="grid gap-2 text-xs text-gray-400 sm:text-right">
+                      <div className="grid gap-2 text-xs text-gray-400 sm:text-end">
                         <p>ID: {category.id ?? "—"}</p>
-                        <p>Parent: {parent?.name || "None"}</p>
+                        <p>Parent: {parent?.name || t("None")}</p>
                         <p>Icon: {category.icon || "—"}</p>
                       </div>
                     </div>

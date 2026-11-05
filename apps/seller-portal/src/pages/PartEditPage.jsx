@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { centimesToInput, parseMoneyInput } from "@parthub/shared";
+import { t, useT } from "../i18n";
 
 function slugify(value) {
   return String(value || "")
@@ -84,34 +85,34 @@ function buildCompatibilitySuggestions(form) {
   const notes = [];
 
   const vehicles = [
-    { keys: ["audi a4"], label: "Audi A4 2014-2016 2.0 TDI" },
-    { keys: ["audi a3"], label: "Audi A3 2013-2018 1.6 TDI" },
-    { keys: ["bmw 3 series", "bmw 320"], label: "BMW 3 Series 2012-2018 320d" },
-    { keys: ["golf", "vw golf", "volkswagen golf"], label: "Volkswagen Golf 2013-2020 2.0 TDI" },
-    { keys: ["mercedes c class", "c220", "c class"], label: "Mercedes C-Class 2014-2019 C220 CDI" },
-    { keys: ["ford focus"], label: "Ford Focus 2012-2018 1.5 TDCi" },
+    { keys: ["audi a4"], label: t("Audi A4 2014-2016 2.0 TDI") },
+    { keys: ["audi a3"], label: t("Audi A3 2013-2018 1.6 TDI") },
+    { keys: ["bmw 3 series", "bmw 320"], label: t("BMW 3 Series 2012-2018 320d") },
+    { keys: ["golf", "vw golf", "volkswagen golf"], label: t("Volkswagen Golf 2013-2020 2.0 TDI") },
+    { keys: ["mercedes c class", "c220", "c class"], label: t("Mercedes C-Class 2014-2019 C220 CDI") },
+    { keys: ["ford focus"], label: t("Ford Focus 2012-2018 1.5 TDCi") },
   ];
 
   const partHints = [
     {
       keys: ["turbo", "turbocharger"],
       templates: [
-        "Confirm exact engine code before sale.",
-        "Add make/model/year compatibility rows after saving changes.",
+        t("Confirm exact engine code before sale."),
+        t("Add make/model/year compatibility rows after saving changes."),
       ],
     },
     {
       keys: ["brake", "pads", "rotor", "disc"],
       templates: [
-        "Specify front / rear axle in compatibility details.",
-        "Brake fitment should match make/model/year precisely.",
+        t("Specify front / rear axle in compatibility details."),
+        t("Brake fitment should match make/model/year precisely."),
       ],
     },
     {
       keys: ["filter", "oil filter", "air filter", "fuel filter"],
       templates: [
-        "Include engine variant in fitment rows.",
-        "Filter compatibility converts better when SKU and engine are both clear.",
+        t("Include engine variant in fitment rows."),
+        t("Filter compatibility converts better when SKU and engine are both clear."),
       ],
     },
   ];
@@ -136,22 +137,23 @@ function buildFitmentHints(form) {
   const title = String(form.title || "").toLowerCase();
 
   if (title.includes("turbo")) {
-    hints.push("Turbo parts perform better when engine variants and exact year ranges are explicit.");
+    hints.push(t("Turbo parts perform better when engine variants and exact year ranges are explicit."));
   }
   if (title.includes("brake")) {
-    hints.push("Brake listings convert better when fitment rows and axle/position context are clear.");
+    hints.push(t("Brake listings convert better when fitment rows and axle/position context are clear."));
   }
   if (title.includes("filter")) {
-    hints.push("Filters should include SKU and engine compatibility for stronger buyer trust.");
+    hints.push(t("Filters should include SKU and engine compatibility for stronger buyer trust."));
   }
   if (!title) {
-    hints.push("Add or refine the title to unlock stronger listing suggestions.");
+    hints.push(t("Add or refine the title to unlock stronger listing suggestions."));
   }
 
   return hints.slice(0, 3);
 }
 
 export default function PartEditPage() {
+  const t = useT();
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -201,7 +203,7 @@ export default function PartEditPage() {
         setBrands(normalizeList(brandsRes, "brands"));
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load edit form data");
+        setError(err?.message || t("Failed to load edit form data"));
       } finally {
         if (active) setLoadingMeta(false);
       }
@@ -228,7 +230,7 @@ export default function PartEditPage() {
 
         const part = normalizePart(res);
         if (!part) {
-          throw new Error("Part not found");
+          throw new Error(t("Part not found"));
         }
         setModeration({ status: part.status || "", note: part.moderation_note || "" });
 
@@ -254,7 +256,7 @@ export default function PartEditPage() {
         });
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load part");
+        setError(err?.message || t("Failed to load part"));
       } finally {
         if (active) setLoadingPart(false);
       }
@@ -283,17 +285,17 @@ export default function PartEditPage() {
 
   const titleSuggestions = useMemo(
     () => buildTitleSuggestions(form, suggestedBrand),
-    [form, suggestedBrand]
+    [form, suggestedBrand, t]
   );
 
   const fitmentHints = useMemo(
     () => buildFitmentHints(form),
-    [form]
+    [form, t]
   );
 
   const compatibilitySuggestions = useMemo(
     () => buildCompatibilitySuggestions(form),
-    [form]
+    [form, t]
   );
 
   function setField(key) {
@@ -358,38 +360,38 @@ export default function PartEditPage() {
     setSuccess("");
 
     if (!form.title.trim()) {
-      setError("Part title is required.");
+      setError(t("Part title is required."));
       return;
     }
 
     if (!computedSlug.trim()) {
-      setError("Part slug is required.");
+      setError(t("Part slug is required."));
       return;
     }
 
     if (!form.category_id) {
-      setError("Category is required.");
+      setError(t("Category is required."));
       return;
     }
 
     if (form.price === "" || form.price === null) {
-      setError("Price is required.");
+      setError(t("Price is required."));
       return;
     }
 
     const priceCentimes = parseMoneyInput(form.price);
     const compareCentimes = parseMoneyInput(form.compare_price);
     if (priceCentimes === null || Number.isNaN(priceCentimes) || priceCentimes <= 0) {
-      setError("Enter the price in dirhams, e.g. 350 or 349,90.");
+      setError(t("Enter the price in dirhams, e.g. 350 or 349,90."));
       return;
     }
     if (Number.isNaN(compareCentimes)) {
-      setError("Enter the compare-at price in dirhams, e.g. 420.");
+      setError(t("Enter the compare-at price in dirhams, e.g. 420."));
       return;
     }
 
     if (form.quantity === "" || form.quantity === null) {
-      setError("Quantity is required.");
+      setError(t("Quantity is required."));
       return;
     }
 
@@ -415,9 +417,9 @@ export default function PartEditPage() {
       };
 
       await api.put(`/api/v1/marketplace/me/parts/${id}`, payload);
-      setSuccess("Part updated successfully.");
+      setSuccess(t("Part updated successfully."));
     } catch (err) {
-      setError(err?.message || "Failed to update part");
+      setError(err?.message || t("Failed to update part"));
     } finally {
       setSaving(false);
     }
@@ -427,7 +429,7 @@ export default function PartEditPage() {
     return (
       <section className="space-y-6">
         <div className="rounded-3xl border border-gray-200 bg-white p-6 text-sm text-gray-500 shadow-sm">
-          Loading part editor...
+          {t("Loading part editor...")}
         </div>
       </section>
     );
@@ -439,11 +441,11 @@ export default function PartEditPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Edit part
+              {t("Edit part")}
             </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">Update your listing</h1>
+            <h1 className="text-3xl font-bold sm:text-5xl">{t("Update your listing")}</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Refine your seller listing, adjust stock, pricing, and improve product presentation.
+              {t("Refine your seller listing, adjust stock, pricing, and improve product presentation.")}
             </p>
           </div>
 
@@ -452,13 +454,13 @@ export default function PartEditPage() {
               to="/parts"
               className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
             >
-              Back to inventory
+              {t("Back to inventory")}
             </Link>
             <Link
               to="/media-upload"
               className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
             >
-              Upload media
+              {t("Upload media")}
             </Link>
           </div>
         </div>
@@ -467,20 +469,20 @@ export default function PartEditPage() {
       <div className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
         <form onSubmit={handleSubmit} className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Part details</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t("Part details")}</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Edit your product data and keep the listing accurate.
+              {t("Edit your product data and keep the listing accurate.")}
             </p>
           </div>
 
           {(moderation.status === "rejected" || moderation.status === "archived") && moderation.note ? (
             <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="status">
               <p className="font-semibold">
-                {moderation.status === "rejected" ? "PartHub didn't approve this listing" : "PartHub archived this listing"}
+                {moderation.status === "rejected" ? t("PartHub didn't approve this listing") : t("PartHub archived this listing")}
               </p>
               <p className="mt-1">{moderation.note}</p>
               {moderation.status === "rejected" ? (
-                <p className="mt-2 text-xs text-red-700">Fix the issue and save: the listing goes back for review.</p>
+                <p className="mt-2 text-xs text-red-700">{t("Fix the issue and save: the listing goes back for review.")}</p>
               ) : null}
             </div>
           ) : null}
@@ -500,19 +502,19 @@ export default function PartEditPage() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Title
+                {t("Title")}
               </label>
               <input
                 value={form.title}
                 onChange={setField("title")}
-                placeholder="Bosch Front Brake Pads Set"
+                placeholder={t("Bosch Front Brake Pads Set")}
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
 
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Slug
+                {t("Slug")}
               </label>
               <div className="flex gap-3">
                 <input
@@ -526,7 +528,7 @@ export default function PartEditPage() {
                   onClick={applySuggestedSlug}
                   className="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
                 >
-                  Use slug
+                  {t("Use slug")}
                 </button>
               </div>
               <p className="mt-1 text-xs text-gray-400">
@@ -536,19 +538,19 @@ export default function PartEditPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                SKU
+                {t("SKU")}
               </label>
               <input
                 value={form.sku}
                 onChange={setField("sku")}
-                placeholder="BOSCH-FBP-001"
+                placeholder={t("BOSCH-FBP-001")}
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Brand
+                {t("Brand")}
               </label>
               <div className="flex gap-3">
                 <select
@@ -556,7 +558,7 @@ export default function PartEditPage() {
                   onChange={setField("brand_id")}
                   className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
                 >
-                  <option value="">Select brand</option>
+                  <option value="">{t("Select brand")}</option>
                   {brands.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
@@ -569,7 +571,7 @@ export default function PartEditPage() {
                     onClick={applySuggestedBrand}
                     className="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
                   >
-                    Match
+                    {t("Match")}
                   </button>
                 ) : null}
               </div>
@@ -577,7 +579,7 @@ export default function PartEditPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Category
+                {t("Category")}
               </label>
               <div className="flex gap-3">
                 <select
@@ -585,7 +587,7 @@ export default function PartEditPage() {
                   onChange={setField("category_id")}
                   className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
                 >
-                  <option value="">Select category</option>
+                  <option value="">{t("Select category")}</option>
                   {categories.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
@@ -598,7 +600,7 @@ export default function PartEditPage() {
                     onClick={applySuggestedCategory}
                     className="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
                   >
-                    Suggest
+                    {t("Suggest")}
                   </button>
                 ) : null}
               </div>
@@ -606,7 +608,7 @@ export default function PartEditPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Price (MAD)
+                {t("Price (MAD)")}
               </label>
               <input
                 value={form.price}
@@ -619,7 +621,7 @@ export default function PartEditPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Compare-at price (MAD)
+                {t("Compare-at price (MAD)")}
               </label>
               <input
                 value={form.compare_price}
@@ -632,7 +634,7 @@ export default function PartEditPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Quantity
+                {t("Quantity")}
               </label>
               <input
                 value={form.quantity}
@@ -645,38 +647,38 @@ export default function PartEditPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Condition
+                {t("Condition")}
               </label>
               <select
                 value={form.condition}
                 onChange={setField("condition")}
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               >
-                <option value="new">New</option>
-                <option value="used">Used</option>
-                <option value="refurbished">Refurbished</option>
+                <option value="new">{t("New")}</option>
+                <option value="used">{t("Used")}</option>
+                <option value="refurbished">{t("Refurbished")}</option>
               </select>
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Status
+                {t("Status")}
               </label>
               <select
                 value={form.status}
                 onChange={setField("status")}
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               >
-                <option value="active">Active</option>
-                <option value="draft">Draft</option>
-                <option value="pending">Pending</option>
-                <option value="archived">Archived</option>
+                <option value="active">{t("Active")}</option>
+                <option value="draft">{t("Draft")}</option>
+                <option value="pending">{t("Pending")}</option>
+                <option value="archived">{t("Archived")}</option>
               </select>
             </div>
 
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Image URL
+                {t("Image URL")}
               </label>
               <input
                 value={form.image_url}
@@ -688,33 +690,33 @@ export default function PartEditPage() {
 
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Description
+                {t("Description")}
               </label>
               <textarea
                 value={form.description}
                 onChange={setField("description")}
                 rows={5}
-                placeholder="Describe the part, condition, and trust signals..."
+                placeholder={t("Describe the part, condition, and trust signals...")}
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
 
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Fitment notes
+                {t("Fitment notes")}
               </label>
               <textarea
                 value={form.fitment_notes}
                 onChange={setField("fitment_notes")}
                 rows={4}
-                placeholder="Audi A4 2014-2016 2.0 TDI S Line..."
+                placeholder={t("Audi A4 2014-2016 2.0 TDI S Line...")}
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Weight (kg)
+                {t("Weight (kg)")}
               </label>
               <input
                 value={form.weight_kg}
@@ -733,7 +735,7 @@ export default function PartEditPage() {
                   onChange={setField("featured")}
                   className="h-4 w-4 rounded border-gray-300"
                 />
-                Featured listing
+                {t("Featured listing")}
               </label>
             </div>
           </div>
@@ -744,55 +746,55 @@ export default function PartEditPage() {
               disabled={saving}
               className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
             >
-              {saving ? "Saving..." : "Save changes"}
+              {saving ? t("Saving...") : t("Save changes")}
             </button>
 
             <Link
               to="/parts"
               className="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
             >
-              Cancel
+              {t("Cancel")}
             </Link>
           </div>
         </form>
 
         <div className="space-y-6">
           <div className="rounded-3xl border border-blue-200 bg-blue-50 p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-slate-950">Listing assistant</h2>
+            <h2 className="text-2xl font-bold text-slate-950">{t("Listing assistant")}</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Suggestions based on your current listing fields.
+              {t("Suggestions based on your current listing fields.")}
             </p>
 
             <div className="mt-5 space-y-4">
               <div className="rounded-2xl bg-white/80 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Suggested slug</p>
+                <p className="text-xs uppercase tracking-wide text-gray-400">{t("Suggested slug")}</p>
                 <p className="mt-1 text-sm font-semibold text-gray-900">
-                  {computedSlug || "Waiting for title"}
+                  {computedSlug || t("Waiting for title")}
                 </p>
               </div>
 
               <div className="rounded-2xl bg-white/80 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Suggested category</p>
+                <p className="text-xs uppercase tracking-wide text-gray-400">{t("Suggested category")}</p>
                 <p className="mt-1 text-sm font-semibold text-gray-900">
-                  {suggestedCategory?.name || "No strong category signal yet"}
+                  {suggestedCategory?.name || t("No strong category signal yet")}
                 </p>
               </div>
 
               <div className="rounded-2xl bg-white/80 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Suggested brand</p>
+                <p className="text-xs uppercase tracking-wide text-gray-400">{t("Suggested brand")}</p>
                 <p className="mt-1 text-sm font-semibold text-gray-900">
-                  {suggestedBrand?.name || "No brand detected in title"}
+                  {suggestedBrand?.name || t("No brand detected in title")}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Title suggestions</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("Title suggestions")}</h2>
 
             {titleSuggestions.length === 0 ? (
               <p className="mt-4 text-sm text-gray-500">
-                Refine the title to unlock cleanup suggestions.
+                {t("Refine the title to unlock cleanup suggestions.")}
               </p>
             ) : (
               <div className="mt-4 space-y-3">
@@ -807,7 +809,7 @@ export default function PartEditPage() {
                       onClick={() => applyTitleSuggestion(item)}
                       className="inline-flex h-10 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
                     >
-                      Use title
+                      {t("Use title")}
                     </button>
                   </div>
                 ))}
@@ -816,7 +818,7 @@ export default function PartEditPage() {
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Fitment guidance</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("Fitment guidance")}</h2>
 
             <div className="mt-4 space-y-3">
               {fitmentHints.map((item, index) => (
@@ -827,19 +829,19 @@ export default function PartEditPage() {
             </div>
 
             <p className="mt-4 text-xs text-gray-500">
-              Listings with clearer compatibility context usually rank better and reduce buyer hesitation.
+              {t("Listings with clearer compatibility context usually rank better and reduce buyer hesitation.")}
             </p>
           </div>
 
           <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-slate-950">Compatibility suggestions</h2>
+            <h2 className="text-xl font-bold text-slate-950">{t("Compatibility suggestions")}</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Quick notes you can insert into fitment notes before refining structured compatibility rows.
+              {t("Quick notes you can insert into fitment notes before refining structured compatibility rows.")}
             </p>
 
             {compatibilitySuggestions.length === 0 ? (
               <p className="mt-4 text-sm text-gray-600">
-                Refine the title with vehicle or part context to unlock compatibility suggestions.
+                {t("Refine the title with vehicle or part context to unlock compatibility suggestions.")}
               </p>
             ) : (
               <div className="mt-4 space-y-3">
@@ -854,7 +856,7 @@ export default function PartEditPage() {
                       onClick={() => applyCompatibilitySuggestion(item)}
                       className="inline-flex h-10 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-100 px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-200"
                     >
-                      Add to notes
+                      {t("Add to notes")}
                     </button>
                   </div>
                 ))}

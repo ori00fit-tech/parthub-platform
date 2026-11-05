@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
+import { statusLabel, useT } from "../i18n";
 
 function normalizeOrders(payload) {
   const list =
@@ -46,6 +47,7 @@ function paymentBadgeClasses(status) {
 }
 
 export default function OrdersPage() {
+  const t = useT();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -66,7 +68,7 @@ export default function OrdersPage() {
       } catch (err) {
         if (!active) return;
         setOrders([]);
-        setError(err?.message || "Failed to load seller orders");
+        setError(err?.message || t("Failed to load seller orders"));
       } finally {
         if (active) setLoading(false);
       }
@@ -121,7 +123,7 @@ export default function OrdersPage() {
     return (
       <section className="space-y-6">
         <div className="rounded-3xl border border-gray-200 bg-white p-6 text-sm text-gray-500 shadow-sm">
-          Loading seller orders...
+          {t("Loading seller orders...")}
         </div>
       </section>
     );
@@ -133,11 +135,11 @@ export default function OrdersPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Orders management
+              {t("Orders management")}
             </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">Seller orders</h1>
+            <h1 className="text-3xl font-bold sm:text-5xl">{t("Seller orders")}</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Review incoming orders, monitor statuses, and move into order details.
+              {t("Review incoming orders, monitor statuses, and move into order details.")}
             </p>
           </div>
 
@@ -146,13 +148,13 @@ export default function OrdersPage() {
               to="/parts"
               className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
             >
-              Inventory
+              {t("Inventory")}
             </Link>
             <Link
               to="/store-settings"
               className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
             >
-              Store settings
+              {t("Store settings")}
             </Link>
           </div>
         </div>
@@ -166,22 +168,22 @@ export default function OrdersPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Total orders</p>
+          <p className="text-sm text-gray-500">{t("Total orders")}</p>
           <p className="mt-2 text-3xl font-bold text-gray-900">{counts.total}</p>
         </div>
 
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Pending</p>
+          <p className="text-sm text-gray-500">{t("Pending")}</p>
           <p className="mt-2 text-3xl font-bold text-gray-900">{counts.pending}</p>
         </div>
 
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Shipped</p>
+          <p className="text-sm text-gray-500">{t("Shipped")}</p>
           <p className="mt-2 text-3xl font-bold text-gray-900">{counts.shipped}</p>
         </div>
 
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Delivered</p>
+          <p className="text-sm text-gray-500">{t("Delivered")}</p>
           <p className="mt-2 text-3xl font-bold text-gray-900">{counts.delivered}</p>
         </div>
       </div>
@@ -191,7 +193,7 @@ export default function OrdersPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search order id, buyer, status..."
+            placeholder={t("Search order id, buyer, status...")}
             className="h-12 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
           />
 
@@ -200,13 +202,13 @@ export default function OrdersPage() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="h-12 rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none"
           >
-            <option value="">All statuses</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="processing">Processing</option>
-            <option value="shipped">Shipped</option>
-            <option value="delivered">Delivered</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="">{t("All statuses")}</option>
+            <option value="pending">{t("Pending")}</option>
+            <option value="confirmed">{t("Confirmed")}</option>
+            <option value="processing">{t("Processing")}</option>
+            <option value="shipped">{t("Shipped")}</option>
+            <option value="delivered">{t("Delivered")}</option>
+            <option value="cancelled">{t("Cancelled")}</option>
           </select>
 
           <button
@@ -214,21 +216,21 @@ export default function OrdersPage() {
             onClick={clearFilters}
             className="h-12 rounded-2xl border border-gray-200 px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
           >
-            Reset
+            {t("Reset")}
           </button>
         </div>
 
         <div className="mt-4 text-sm text-gray-500">
-          <span className="font-semibold text-gray-900">{filteredOrders.length}</span> orders found
+          {t("{n} orders found", { n: filteredOrders.length })}
         </div>
       </div>
 
       {filteredOrders.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
           <div className="text-5xl">📦</div>
-          <h2 className="mt-4 text-2xl font-bold text-gray-900">No orders yet</h2>
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">{t("No orders yet")}</h2>
           <p className="mt-2 text-sm text-gray-500">
-            New seller orders will appear here when buyer activity starts.
+            {t("New seller orders will appear here when buyer activity starts.")}
           </p>
         </div>
       ) : (
@@ -242,7 +244,7 @@ export default function OrdersPage() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-xl font-bold text-gray-900">
-                      {order.order_number || order.id || "Order"}
+                      {order.order_number || order.id || t("Order")}
                     </h3>
 
                     <span
@@ -251,7 +253,7 @@ export default function OrdersPage() {
                         badgeClasses(order.status),
                       ].join(" ")}
                     >
-                      {order.status || "unknown"}
+                      {statusLabel(order.status || "unknown")}
                     </span>
 
                     {order.payment_status ? (
@@ -261,22 +263,22 @@ export default function OrdersPage() {
                           paymentBadgeClasses(order.payment_status),
                         ].join(" ")}
                       >
-                        Payment: {order.payment_status}
+                        {t("Payment: {status}", { status: statusLabel(order.payment_status) })}
                       </span>
                     ) : null}
                   </div>
 
                   <div className="mt-3 grid gap-2 text-sm text-gray-600 sm:grid-cols-2 xl:grid-cols-3">
-                    <p>Buyer: {order.buyer_name || "—"}</p>
-                    <p>Email: {order.buyer_email || "—"}</p>
-                    <p>Shipping: {order.shipping_status || "—"}</p>
-                    <p>Created: {order.created_at || "—"}</p>
+                    <p>{t("Buyer: {name}", { name: order.buyer_name || "—" })}</p>
+                    <p>{t("Email: {email}", { email: order.buyer_email || "—" })}</p>
+                    <p>{t("Shipping: {status}", { status: statusLabel(order.shipping_status) || "—" })}</p>
+                    <p>{t("Created: {date}", { date: order.created_at || "—" })}</p>
                   </div>
                 </div>
 
                 <div className="flex flex-col items-start gap-3 xl:items-end">
-                  <div className="rounded-2xl bg-gray-50 px-4 py-3 text-right">
-                    <p className="text-xs uppercase tracking-wide text-gray-400">Total</p>
+                  <div className="rounded-2xl bg-gray-50 px-4 py-3 text-end">
+                    <p className="text-xs uppercase tracking-wide text-gray-400">{t("Total")}</p>
                     <p className="mt-1 text-lg font-bold text-gray-900">
                       {order.total || "—"}
                     </p>
@@ -286,7 +288,7 @@ export default function OrdersPage() {
                     to={`/orders/${order.id}`}
                     className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
                   >
-                    View order
+                    {t("View order")}
                   </Link>
                 </div>
               </div>

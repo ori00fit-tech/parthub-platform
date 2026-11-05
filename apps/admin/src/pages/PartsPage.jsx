@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
+import { formatMoney } from "@parthub/shared";
 import { reasonPromptFor, useReasonDialog } from "../components/ReasonDialog";
+import { statusLabel, useT } from "../i18n";
 
 function normalizeRows(payload) {
   return Array.isArray(payload?.data) ? payload.data : [];
@@ -32,6 +34,7 @@ function statusClasses(status) {
 }
 
 export default function PartsPage() {
+  const t = useT();
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ page: 1, total: 0, totalPages: 1 });
@@ -48,7 +51,7 @@ export default function PartsPage() {
       setRows(normalizeRows(res));
       setMeta(normalizePagination(res));
     } catch (err) {
-      setError(err?.message || "Failed to load parts");
+      setError(err?.message || t("Failed to load parts"));
     } finally {
       setLoading(false);
     }
@@ -72,7 +75,7 @@ export default function PartsPage() {
       await api.patch(`/api/v1/admin/parts/${id}/status`, { status: nextStatus, reason });
       await loadRows();
     } catch (err) {
-      setError(err?.message || "Failed to update part status");
+      setError(err?.message || t("Failed to update part status"));
     }
   }
 
@@ -85,9 +88,9 @@ export default function PartsPage() {
   return (
     <section className="space-y-6">
       <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-700 p-6 text-white shadow-lg sm:p-8">
-        <h1 className="text-3xl font-bold sm:text-5xl">Part moderation</h1>
+        <h1 className="text-3xl font-bold sm:text-5xl">{t("Part moderation")}</h1>
         <p className="mt-3 text-sm text-indigo-100 sm:text-base">
-          Review marketplace listings, approve high-quality parts, and reject poor or invalid submissions.
+          {t("Review marketplace listings, approve high-quality parts, and reject poor or invalid submissions.")}
         </p>
       </div>
 
@@ -111,7 +114,7 @@ export default function PartsPage() {
         </div>
 
         <div className="mt-4 text-sm text-gray-500">
-          {loading ? "Loading parts..." : `${meta.total} listing${meta.total === 1 ? "" : "s"}`}
+          {loading ? t("Loading parts...") : (meta.total === 1 ? t("1 listing") : t("{n} listings", { n: meta.total }))}
         </div>
       </div>
 
@@ -123,9 +126,9 @@ export default function PartsPage() {
 
       <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
         {loading ? (
-          <div className="p-6 text-sm text-gray-500">Loading moderation queue...</div>
+          <div className="p-6 text-sm text-gray-500">{t("Loading moderation queue...")}</div>
         ) : rows.length === 0 ? (
-          <div className="p-6 text-sm text-gray-500">No parts found for this status.</div>
+          <div className="p-6 text-sm text-gray-500">{t("No parts found for this status.")}</div>
         ) : (
           <div className="divide-y divide-gray-100">
             {rows.map((part) => (
@@ -140,16 +143,16 @@ export default function PartsPage() {
                           statusClasses(part.status),
                         ].join(" ")}
                       >
-                        {part.status}
+                        {statusLabel(part.status)}
                       </span>
                     </div>
 
                     <p className="mt-1 text-sm text-gray-500">
-                      seller: {part.seller_name || "unknown"} • price: {part.price} • slug: {part.slug}
+                      {t("seller: {seller}", { seller: part.seller_name || t("unknown") })} • {t("price: {price}", { price: formatMoney(part.price) })} • slug: {part.slug}
                     </p>
 
                     <p className="mt-2 text-sm text-gray-600">
-                      {part.description || "No part description available."}
+                      {part.description || t("No part description available.")}
                     </p>
                   </div>
 
@@ -158,7 +161,7 @@ export default function PartsPage() {
                       to={`/parts/${part.id}`}
                       className="inline-flex h-10 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
                     >
-                      View details
+                      {t("View details")}
                     </Link>
 
                     <button
@@ -166,7 +169,7 @@ export default function PartsPage() {
                       onClick={() => updateStatus(part.id, "active", part.title)}
                       className="inline-flex h-10 items-center justify-center rounded-2xl bg-green-600 px-4 text-sm font-semibold text-white transition hover:bg-green-700"
                     >
-                      Approve
+                      {t("Approve")}
                     </button>
 
                     <button
@@ -174,7 +177,7 @@ export default function PartsPage() {
                       onClick={() => updateStatus(part.id, "rejected", part.title)}
                       className="inline-flex h-10 items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
                     >
-                      Reject
+                      {t("Reject")}
                     </button>
 
                     <button
@@ -182,7 +185,7 @@ export default function PartsPage() {
                       onClick={() => updateStatus(part.id, "archived", part.title)}
                       className="inline-flex h-10 items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
                     >
-                      Archive
+                      {t("Archive")}
                     </button>
                   </div>
                 </div>

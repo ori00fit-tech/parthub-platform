@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { t, useT } from "../i18n";
 
 export const MIN_REASON = 10;
 const MAX_REASON = 500;
 
+// English keys; ReasonDialog shows them translated.
 export const REASON_PRESETS = {
   partRejected: [
     "Photos don't show the actual part. Please upload real photos.",
@@ -27,6 +29,7 @@ export const REASON_PRESETS = {
 // Modal asking the admin why they reject/suspend/archive something.
 // The seller sees this text, so it should say what to fix.
 function ReasonDialog({ open, title, description, confirmLabel, tone, required, presets, onConfirm, onCancel }) {
+  const t = useT();
   const [text, setText] = useState("");
   const textRef = useRef(null);
 
@@ -69,12 +72,12 @@ function ReasonDialog({ open, title, description, confirmLabel, tone, required, 
                 key={p}
                 type="button"
                 onClick={() => {
-                  setText(p);
+                  setText(t(p));
                   textRef.current?.focus();
                 }}
-                className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-left text-xs font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-100"
+                className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-start text-xs font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-100"
               >
-                {p}
+                {t(p)}
               </button>
             ))}
           </div>
@@ -90,11 +93,11 @@ function ReasonDialog({ open, title, description, confirmLabel, tone, required, 
           maxLength={MAX_REASON}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Say what's wrong and what to change."
+          placeholder={t("Say what's wrong and what to change.")}
           className="mt-1.5 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500"
         />
         <div className="mt-1 flex justify-between text-xs text-gray-500">
-          <span>{tooShort ? `At least ${MIN_REASON} characters.` : "The seller sees this message."}</span>
+          <span>{tooShort ? t("At least {n} characters.", { n: MIN_REASON }) : t("The seller sees this message.")}</span>
           <span>
             {text.length}/{MAX_REASON}
           </span>
@@ -106,7 +109,7 @@ function ReasonDialog({ open, title, description, confirmLabel, tone, required, 
             onClick={onCancel}
             className="h-11 rounded-2xl border border-gray-200 px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
           >
-            Cancel
+            {t("Cancel")}
           </button>
           <button
             type="button"
@@ -148,7 +151,7 @@ export function useReasonDialog() {
       open={Boolean(state)}
       title={state?.title}
       description={state?.description}
-      confirmLabel={state?.confirmLabel || "Confirm"}
+      confirmLabel={state?.confirmLabel || t("Confirm")}
       tone={state?.tone || "danger"}
       required={state?.required ?? true}
       presets={state?.presets}
@@ -163,16 +166,16 @@ export function useReasonDialog() {
 // Which decisions need a message, and how to ask for it.
 export function reasonPromptFor(kind, status, name) {
   if (kind === "seller" && status === "rejected") {
-    return { title: `Reject ${name || "this store"}?`, description: "The seller can fix the issue and ask for a new review.", confirmLabel: "Reject store", presets: REASON_PRESETS.sellerRejected, required: true };
+    return { title: name ? t("Reject {name}?", { name }) : t("Reject this store?"), description: t("The seller can fix the issue and ask for a new review."), confirmLabel: t("Reject store"), presets: REASON_PRESETS.sellerRejected, required: true };
   }
   if (kind === "seller" && status === "suspended") {
-    return { title: `Suspend ${name || "this store"}?`, description: "Their parts are hidden from buyers until you reactivate the store.", confirmLabel: "Suspend store", presets: REASON_PRESETS.sellerSuspended, required: true };
+    return { title: name ? t("Suspend {name}?", { name }) : t("Suspend this store?"), description: t("Their parts are hidden from buyers until you reactivate the store."), confirmLabel: t("Suspend store"), presets: REASON_PRESETS.sellerSuspended, required: true };
   }
   if (kind === "part" && status === "rejected") {
-    return { title: `Reject ${name || "this part"}?`, description: "The seller can edit the listing and send it back for review.", confirmLabel: "Reject part", presets: REASON_PRESETS.partRejected, required: true };
+    return { title: name ? t("Reject {name}?", { name }) : t("Reject this part?"), description: t("The seller can edit the listing and send it back for review."), confirmLabel: t("Reject part"), presets: REASON_PRESETS.partRejected, required: true };
   }
   if (kind === "part" && status === "archived") {
-    return { title: `Archive ${name || "this part"}?`, confirmLabel: "Archive part", presets: REASON_PRESETS.partArchived, required: false, tone: "neutral" };
+    return { title: name ? t("Archive {name}?", { name }) : t("Archive this part?"), confirmLabel: t("Archive part"), presets: REASON_PRESETS.partArchived, required: false, tone: "neutral" };
   }
   return null;
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { parseMoneyInput } from "@parthub/shared";
+import { t, useT } from "../i18n";
 
 function slugify(value) {
   return String(value || "")
@@ -77,34 +78,34 @@ function buildCompatibilitySuggestions(form) {
   const notes = [];
 
   const vehicles = [
-    { keys: ["audi a4"], label: "Audi A4 2014-2016 2.0 TDI" },
-    { keys: ["audi a3"], label: "Audi A3 2013-2018 1.6 TDI" },
-    { keys: ["bmw 3 series", "bmw 320"], label: "BMW 3 Series 2012-2018 320d" },
-    { keys: ["golf", "vw golf", "volkswagen golf"], label: "Volkswagen Golf 2013-2020 2.0 TDI" },
-    { keys: ["mercedes c class", "c220", "c class"], label: "Mercedes C-Class 2014-2019 C220 CDI" },
-    { keys: ["ford focus"], label: "Ford Focus 2012-2018 1.5 TDCi" },
+    { keys: ["audi a4"], label: t("Audi A4 2014-2016 2.0 TDI") },
+    { keys: ["audi a3"], label: t("Audi A3 2013-2018 1.6 TDI") },
+    { keys: ["bmw 3 series", "bmw 320"], label: t("BMW 3 Series 2012-2018 320d") },
+    { keys: ["golf", "vw golf", "volkswagen golf"], label: t("Volkswagen Golf 2013-2020 2.0 TDI") },
+    { keys: ["mercedes c class", "c220", "c class"], label: t("Mercedes C-Class 2014-2019 C220 CDI") },
+    { keys: ["ford focus"], label: t("Ford Focus 2012-2018 1.5 TDCi") },
   ];
 
   const partHints = [
     {
       keys: ["turbo", "turbocharger"],
       templates: [
-        "Confirm exact engine code before sale.",
-        "Add make/model/year compatibility rows after creation.",
+        t("Confirm exact engine code before sale."),
+        t("Add make/model/year compatibility rows after creation."),
       ],
     },
     {
       keys: ["brake", "pads", "rotor", "disc"],
       templates: [
-        "Specify front / rear axle in compatibility details.",
-        "Brake fitment should match make/model/year precisely.",
+        t("Specify front / rear axle in compatibility details."),
+        t("Brake fitment should match make/model/year precisely."),
       ],
     },
     {
       keys: ["filter", "oil filter", "air filter", "fuel filter"],
       templates: [
-        "Include engine variant in fitment rows.",
-        "Filter compatibility converts better when SKU and engine are both clear.",
+        t("Include engine variant in fitment rows."),
+        t("Filter compatibility converts better when SKU and engine are both clear."),
       ],
     },
   ];
@@ -129,22 +130,23 @@ function buildFitmentHints(form) {
   const title = String(form.title || "").toLowerCase();
 
   if (title.includes("turbo")) {
-    hints.push("Add make/model/year ranges for the exact engine variants using this turbo.");
+    hints.push(t("Add make/model/year ranges for the exact engine variants using this turbo."));
   }
   if (title.includes("brake")) {
-    hints.push("Brake parts convert better when compatibility rows and axle position are clear.");
+    hints.push(t("Brake parts convert better when compatibility rows and axle position are clear."));
   }
   if (title.includes("filter")) {
-    hints.push("Filters need SKU and engine compatibility for stronger buyer confidence.");
+    hints.push(t("Filters need SKU and engine compatibility for stronger buyer confidence."));
   }
   if (!title) {
-    hints.push("Add a clear part title first to unlock better suggestions.");
+    hints.push(t("Add a clear part title first to unlock better suggestions."));
   }
 
   return hints.slice(0, 3);
 }
 
 export default function PartCreatePage() {
+  const t = useT();
   const navigate = useNavigate();
 
   const [loadingMeta, setLoadingMeta] = useState(true);
@@ -192,7 +194,7 @@ export default function PartCreatePage() {
         setBrands(normalizeList(brandsRes, "brands"));
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load part form data");
+        setError(err?.message || t("Failed to load part form data"));
       } finally {
         if (active) setLoadingMeta(false);
       }
@@ -221,17 +223,17 @@ export default function PartCreatePage() {
 
   const titleSuggestions = useMemo(
     () => buildTitleSuggestions(form, suggestedBrand),
-    [form, suggestedBrand]
+    [form, suggestedBrand, t]
   );
 
   const fitmentHints = useMemo(
     () => buildFitmentHints(form),
-    [form]
+    [form, t]
   );
 
   const compatibilitySuggestions = useMemo(
     () => buildCompatibilitySuggestions(form),
-    [form]
+    [form, t]
   );
 
   function setField(key) {
@@ -296,38 +298,38 @@ export default function PartCreatePage() {
     setSuccess("");
 
     if (!form.title.trim()) {
-      setError("Part title is required.");
+      setError(t("Part title is required."));
       return;
     }
 
     if (!computedSlug.trim()) {
-      setError("Part slug is required.");
+      setError(t("Part slug is required."));
       return;
     }
 
     if (!form.category_id) {
-      setError("Category is required.");
+      setError(t("Category is required."));
       return;
     }
 
     if (!form.price) {
-      setError("Price is required.");
+      setError(t("Price is required."));
       return;
     }
 
     const priceCentimes = parseMoneyInput(form.price);
     const compareCentimes = parseMoneyInput(form.compare_price);
     if (priceCentimes === null || Number.isNaN(priceCentimes) || priceCentimes <= 0) {
-      setError("Enter the price in dirhams, e.g. 350 or 349,90.");
+      setError(t("Enter the price in dirhams, e.g. 350 or 349,90."));
       return;
     }
     if (Number.isNaN(compareCentimes)) {
-      setError("Enter the compare-at price in dirhams, e.g. 420.");
+      setError(t("Enter the compare-at price in dirhams, e.g. 420."));
       return;
     }
 
     if (!form.quantity && form.quantity !== "0") {
-      setError("Quantity is required.");
+      setError(t("Quantity is required."));
       return;
     }
 
@@ -355,7 +357,7 @@ export default function PartCreatePage() {
       const res = await api.post("/api/v1/marketplace/me/parts", payload);
 
       const createdId = res?.data?.id;
-      setSuccess("Part created successfully.");
+      setSuccess(t("Part created successfully."));
 
       if (createdId) {
         setTimeout(() => {
@@ -367,7 +369,7 @@ export default function PartCreatePage() {
         }, 700);
       }
     } catch (err) {
-      setError(err?.message || "Failed to create part");
+      setError(err?.message || t("Failed to create part"));
     } finally {
       setSaving(false);
     }
@@ -377,7 +379,7 @@ export default function PartCreatePage() {
     return (
       <section className="space-y-6">
         <div className="rounded-3xl border border-gray-200 bg-white p-6 text-sm text-gray-500 shadow-sm">
-          Loading part creation form...
+          {t("Loading part creation form...")}
         </div>
       </section>
     );
@@ -389,11 +391,11 @@ export default function PartCreatePage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Create part
+              {t("Create part")}
             </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">Add a new listing</h1>
+            <h1 className="text-3xl font-bold sm:text-5xl">{t("Add a new listing")}</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Create a seller listing with core product data, stock, pricing, and fitment notes.
+              {t("Create a seller listing with core product data, stock, pricing, and fitment notes.")}
             </p>
           </div>
 
@@ -402,13 +404,13 @@ export default function PartCreatePage() {
               to="/media-upload"
               className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
             >
-              Upload media
+              {t("Upload media")}
             </Link>
             <Link
               to="/parts"
               className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
             >
-              Back to inventory
+              {t("Back to inventory")}
             </Link>
           </div>
         </div>
@@ -417,9 +419,9 @@ export default function PartCreatePage() {
       <div className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
         <form onSubmit={handleSubmit} className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Part details</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t("Part details")}</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Fill in the essential fields for a clean seller listing.
+              {t("Fill in the essential fields for a clean seller listing.")}
             </p>
           </div>
 
@@ -438,19 +440,19 @@ export default function PartCreatePage() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Title
+                {t("Title")}
               </label>
               <input
                 value={form.title}
                 onChange={setField("title")}
-                placeholder="Bosch Front Brake Pads Set"
+                placeholder={t("Bosch Front Brake Pads Set")}
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
 
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Slug
+                {t("Slug")}
               </label>
               <div className="flex gap-3">
                 <input
@@ -464,7 +466,7 @@ export default function PartCreatePage() {
                   onClick={applySuggestedSlug}
                   className="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
                 >
-                  Use slug
+                  {t("Use slug")}
                 </button>
               </div>
               <p className="mt-1 text-xs text-gray-400">
@@ -474,19 +476,19 @@ export default function PartCreatePage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                SKU
+                {t("SKU")}
               </label>
               <input
                 value={form.sku}
                 onChange={setField("sku")}
-                placeholder="BOSCH-FBP-001"
+                placeholder={t("BOSCH-FBP-001")}
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Brand
+                {t("Brand")}
               </label>
               <div className="flex gap-3">
                 <select
@@ -494,7 +496,7 @@ export default function PartCreatePage() {
                   onChange={setField("brand_id")}
                   className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
                 >
-                  <option value="">Select brand</option>
+                  <option value="">{t("Select brand")}</option>
                   {brands.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
@@ -507,7 +509,7 @@ export default function PartCreatePage() {
                     onClick={applySuggestedBrand}
                     className="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
                   >
-                    Match
+                    {t("Match")}
                   </button>
                 ) : null}
               </div>
@@ -515,7 +517,7 @@ export default function PartCreatePage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Category
+                {t("Category")}
               </label>
               <div className="flex gap-3">
                 <select
@@ -523,7 +525,7 @@ export default function PartCreatePage() {
                   onChange={setField("category_id")}
                   className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
                 >
-                  <option value="">Select category</option>
+                  <option value="">{t("Select category")}</option>
                   {categories.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
@@ -536,7 +538,7 @@ export default function PartCreatePage() {
                     onClick={applySuggestedCategory}
                     className="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
                   >
-                    Suggest
+                    {t("Suggest")}
                   </button>
                 ) : null}
               </div>
@@ -544,7 +546,7 @@ export default function PartCreatePage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Price (MAD)
+                {t("Price (MAD)")}
               </label>
               <input
                 value={form.price}
@@ -557,7 +559,7 @@ export default function PartCreatePage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Compare-at price (MAD)
+                {t("Compare-at price (MAD)")}
               </label>
               <input
                 value={form.compare_price}
@@ -570,7 +572,7 @@ export default function PartCreatePage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Quantity
+                {t("Quantity")}
               </label>
               <input
                 value={form.quantity}
@@ -583,37 +585,37 @@ export default function PartCreatePage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Condition
+                {t("Condition")}
               </label>
               <select
                 value={form.condition}
                 onChange={setField("condition")}
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               >
-                <option value="new">New</option>
-                <option value="used">Used</option>
-                <option value="refurbished">Refurbished</option>
+                <option value="new">{t("New")}</option>
+                <option value="used">{t("Used")}</option>
+                <option value="refurbished">{t("Refurbished")}</option>
               </select>
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Status
+                {t("Status")}
               </label>
               <select
                 value={form.status}
                 onChange={setField("status")}
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               >
-                <option value="active">Active</option>
-                <option value="draft">Draft</option>
-                <option value="pending">Pending</option>
+                <option value="active">{t("Active")}</option>
+                <option value="draft">{t("Draft")}</option>
+                <option value="pending">{t("Pending")}</option>
               </select>
             </div>
 
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Image URL
+                {t("Image URL")}
               </label>
               <input
                 value={form.image_url}
@@ -625,33 +627,33 @@ export default function PartCreatePage() {
 
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Description
+                {t("Description")}
               </label>
               <textarea
                 value={form.description}
                 onChange={setField("description")}
                 rows={5}
-                placeholder="Describe the part, condition, and trust signals..."
+                placeholder={t("Describe the part, condition, and trust signals...")}
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
 
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Fitment notes
+                {t("Fitment notes")}
               </label>
               <textarea
                 value={form.fitment_notes}
                 onChange={setField("fitment_notes")}
                 rows={4}
-                placeholder="Audi A4 2014-2016 2.0 TDI S Line..."
+                placeholder={t("Audi A4 2014-2016 2.0 TDI S Line...")}
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Weight (kg)
+                {t("Weight (kg)")}
               </label>
               <input
                 value={form.weight_kg}
@@ -670,7 +672,7 @@ export default function PartCreatePage() {
                   onChange={setField("featured")}
                   className="h-4 w-4 rounded border-gray-300"
                 />
-                Featured listing
+                {t("Featured listing")}
               </label>
             </div>
           </div>
@@ -681,55 +683,55 @@ export default function PartCreatePage() {
               disabled={saving}
               className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
             >
-              {saving ? "Creating..." : "Create part"}
+              {saving ? t("Creating...") : t("Create part")}
             </button>
 
             <Link
               to="/parts"
               className="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
             >
-              Cancel
+              {t("Cancel")}
             </Link>
           </div>
         </form>
 
         <div className="space-y-6">
           <div className="rounded-3xl border border-blue-200 bg-blue-50 p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-slate-950">Listing assistant</h2>
+            <h2 className="text-2xl font-bold text-slate-950">{t("Listing assistant")}</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Suggestions based on your current inputs.
+              {t("Suggestions based on your current inputs.")}
             </p>
 
             <div className="mt-5 space-y-4">
               <div className="rounded-2xl bg-white/80 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Suggested slug</p>
+                <p className="text-xs uppercase tracking-wide text-gray-400">{t("Suggested slug")}</p>
                 <p className="mt-1 text-sm font-semibold text-gray-900">
-                  {computedSlug || "Waiting for title"}
+                  {computedSlug || t("Waiting for title")}
                 </p>
               </div>
 
               <div className="rounded-2xl bg-white/80 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Suggested category</p>
+                <p className="text-xs uppercase tracking-wide text-gray-400">{t("Suggested category")}</p>
                 <p className="mt-1 text-sm font-semibold text-gray-900">
-                  {suggestedCategory?.name || "No strong category signal yet"}
+                  {suggestedCategory?.name || t("No strong category signal yet")}
                 </p>
               </div>
 
               <div className="rounded-2xl bg-white/80 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Suggested brand</p>
+                <p className="text-xs uppercase tracking-wide text-gray-400">{t("Suggested brand")}</p>
                 <p className="mt-1 text-sm font-semibold text-gray-900">
-                  {suggestedBrand?.name || "No brand detected in title"}
+                  {suggestedBrand?.name || t("No brand detected in title")}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Title suggestions</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("Title suggestions")}</h2>
 
             {titleSuggestions.length === 0 ? (
               <p className="mt-4 text-sm text-gray-500">
-                Add a clearer title to unlock title cleanup suggestions.
+                {t("Add a clearer title to unlock title cleanup suggestions.")}
               </p>
             ) : (
               <div className="mt-4 space-y-3">
@@ -744,7 +746,7 @@ export default function PartCreatePage() {
                       onClick={() => applyTitleSuggestion(item)}
                       className="inline-flex h-10 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
                     >
-                      Use title
+                      {t("Use title")}
                     </button>
                   </div>
                 ))}
@@ -753,7 +755,7 @@ export default function PartCreatePage() {
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Fitment guidance</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("Fitment guidance")}</h2>
 
             <div className="mt-4 space-y-3">
               {fitmentHints.map((item, index) => (
@@ -764,19 +766,19 @@ export default function PartCreatePage() {
             </div>
 
             <p className="mt-4 text-xs text-gray-500">
-              Listings with stronger compatibility data usually rank better and convert better for vehicle-aware buyers.
+              {t("Listings with stronger compatibility data usually rank better and convert better for vehicle-aware buyers.")}
             </p>
           </div>
 
           <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-slate-950">Compatibility suggestions</h2>
+            <h2 className="text-xl font-bold text-slate-950">{t("Compatibility suggestions")}</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Quick notes you can insert into fitment notes before adding structured compatibility rows.
+              {t("Quick notes you can insert into fitment notes before adding structured compatibility rows.")}
             </p>
 
             {compatibilitySuggestions.length === 0 ? (
               <p className="mt-4 text-sm text-gray-600">
-                Add a clearer vehicle or part title to unlock compatibility suggestions.
+                {t("Add a clearer vehicle or part title to unlock compatibility suggestions.")}
               </p>
             ) : (
               <div className="mt-4 space-y-3">
@@ -791,7 +793,7 @@ export default function PartCreatePage() {
                       onClick={() => applyCompatibilitySuggestion(item)}
                       className="inline-flex h-10 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-100 px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-200"
                     >
-                      Add to notes
+                      {t("Add to notes")}
                     </button>
                   </div>
                 ))}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../lib/api";
+import { useT } from "../../i18n";
 
 function parseYearsInput(value) {
   return String(value || "")
@@ -68,6 +69,7 @@ const PRESETS = [
 ];
 
 export default function CompatibilityEditor({ partId }) {
+  const t = useT();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -92,7 +94,7 @@ export default function CompatibilityEditor({ partId }) {
       const res = await api.get(`/api/v1/marketplace/me/parts/${partId}/compatibility`);
       setRows(normalizeRows(res));
     } catch (err) {
-      setError(err?.message || "Failed to load compatibility");
+      setError(err?.message || t("Failed to load compatibility"));
     } finally {
       setLoading(false);
     }
@@ -132,7 +134,7 @@ export default function CompatibilityEditor({ partId }) {
       notes: preset.notes,
       bulk_years: preset.bulk_years,
     });
-    setSuccess(`Preset loaded: ${preset.label}`);
+    setSuccess(t("Preset loaded: {name}", { name: preset.label }));
   }
 
   async function addSingleRow(e) {
@@ -141,17 +143,17 @@ export default function CompatibilityEditor({ partId }) {
     setSuccess("");
 
     if (!form.make.trim()) {
-      setError("Make is required.");
+      setError(t("Make is required."));
       return;
     }
 
     if (!form.model.trim()) {
-      setError("Model is required.");
+      setError(t("Model is required."));
       return;
     }
 
     if (!form.year_start) {
-      setError("Year start is required.");
+      setError(t("Year start is required."));
       return;
     }
 
@@ -168,7 +170,7 @@ export default function CompatibilityEditor({ partId }) {
         notes: form.notes.trim() || null,
       });
 
-      setSuccess("Compatibility row added.");
+      setSuccess(t("Compatibility row added."));
       setForm((prev) => ({
         ...prev,
         year_start: "",
@@ -179,7 +181,7 @@ export default function CompatibilityEditor({ partId }) {
       }));
       await loadRows();
     } catch (err) {
-      setError(err?.message || "Failed to add compatibility row");
+      setError(err?.message || t("Failed to add compatibility row"));
     } finally {
       setSaving(false);
     }
@@ -190,17 +192,17 @@ export default function CompatibilityEditor({ partId }) {
     setSuccess("");
 
     if (!form.make.trim()) {
-      setError("Make is required.");
+      setError(t("Make is required."));
       return;
     }
 
     if (!form.model.trim()) {
-      setError("Model is required.");
+      setError(t("Model is required."));
       return;
     }
 
     if (parsedBulkYears.length === 0) {
-      setError("Add comma-separated years first.");
+      setError(t("Add comma-separated years first."));
       return;
     }
 
@@ -225,16 +227,16 @@ export default function CompatibilityEditor({ partId }) {
       const failedCount = results.length - successCount;
 
       if (successCount > 0 && failedCount === 0) {
-        setSuccess(`Added ${successCount} compatibility row${successCount === 1 ? "" : "s"}.`);
+        setSuccess(successCount === 1 ? t("Added 1 compatibility row.") : t("Added {n} compatibility rows.", { n: successCount }));
       } else if (successCount > 0 && failedCount > 0) {
-        setSuccess(`Added ${successCount} row(s). ${failedCount} duplicate or failed row(s) were skipped.`);
+        setSuccess(t("Added {n} row(s). {failed} duplicate or failed row(s) were skipped.", { n: successCount, failed: failedCount }));
       } else {
-        setError("No bulk rows were added.");
+        setError(t("No bulk rows were added."));
       }
 
       await loadRows();
     } catch (err) {
-      setError(err?.message || "Bulk add failed");
+      setError(err?.message || t("Bulk add failed"));
     } finally {
       setSaving(false);
     }
@@ -247,9 +249,9 @@ export default function CompatibilityEditor({ partId }) {
 
       await api.delete(`/api/v1/marketplace/me/parts/${partId}/compatibility/${rowId}`);
       setRows((prev) => prev.filter((row) => row.id !== rowId));
-      setSuccess("Compatibility row deleted.");
+      setSuccess(t("Compatibility row deleted."));
     } catch (err) {
-      setError(err?.message || "Failed to delete row");
+      setError(err?.message || t("Failed to delete row"));
     }
   }
 
@@ -268,19 +270,19 @@ export default function CompatibilityEditor({ partId }) {
         notes: row.notes || null,
       });
 
-      setSuccess("Compatibility row duplicated.");
+      setSuccess(t("Compatibility row duplicated."));
       await loadRows();
     } catch (err) {
-      setError(err?.message || "Could not duplicate row");
+      setError(err?.message || t("Could not duplicate row"));
     }
   }
 
   return (
     <section className="space-y-6">
       <div className="rounded-3xl border border-indigo-200 bg-indigo-50 p-6 shadow-sm">
-        <h2 className="text-2xl font-bold text-slate-950">Quick presets</h2>
+        <h2 className="text-2xl font-bold text-slate-950">{t("Quick presets")}</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Load common vehicle fitment presets, then fine-tune before saving rows.
+          {t("Load common vehicle fitment presets, then fine-tune before saving rows.")}
         </p>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -289,7 +291,7 @@ export default function CompatibilityEditor({ partId }) {
               key={preset.id}
               type="button"
               onClick={() => applyPreset(preset)}
-              className="rounded-2xl border border-indigo-200 bg-white px-4 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:bg-indigo-50"
+              className="rounded-2xl border border-indigo-200 bg-white px-4 py-4 text-start shadow-sm transition hover:-translate-y-0.5 hover:bg-indigo-50"
             >
               <p className="font-semibold text-gray-900">{preset.label}</p>
               <p className="mt-1 text-xs text-gray-500">
@@ -302,9 +304,9 @@ export default function CompatibilityEditor({ partId }) {
 
       <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Compatibility editor</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t("Compatibility editor")}</h2>
           <p className="mt-1 text-sm text-gray-500">
-            Add exact fitment rows or bulk-add multiple model years for this part.
+            {t("Add exact fitment rows or bulk-add multiple model years for this part.")}
           </p>
         </div>
 
@@ -322,7 +324,7 @@ export default function CompatibilityEditor({ partId }) {
 
         <form onSubmit={addSingleRow} className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Make</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">{t("Make")}</label>
             <input
               value={form.make}
               onChange={setField("make")}
@@ -332,7 +334,7 @@ export default function CompatibilityEditor({ partId }) {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Model</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">{t("Model")}</label>
             <input
               value={form.model}
               onChange={setField("model")}
@@ -342,17 +344,17 @@ export default function CompatibilityEditor({ partId }) {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Engine</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">{t("Engine")}</label>
             <input
               value={form.engine}
               onChange={setField("engine")}
-              placeholder="2.0 TDI"
+              placeholder={t("2.0 TDI")}
               className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Year start</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">{t("Year start")}</label>
             <input
               value={form.year_start}
               onChange={setField("year_start")}
@@ -363,7 +365,7 @@ export default function CompatibilityEditor({ partId }) {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Year end</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">{t("Year end")}</label>
             <input
               value={form.year_end}
               onChange={setField("year_end")}
@@ -374,21 +376,21 @@ export default function CompatibilityEditor({ partId }) {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Trim</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">{t("Trim")}</label>
             <input
               value={form.trim}
               onChange={setField("trim")}
-              placeholder="S Line"
+              placeholder={t("S Line")}
               className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
             />
           </div>
 
           <div className="sm:col-span-2 xl:col-span-3">
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Notes</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">{t("Notes")}</label>
             <textarea
               value={form.notes}
               onChange={setField("notes")}
-              placeholder="Verified seller fitment"
+              placeholder={t("Verified seller fitment")}
               rows={3}
               className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500"
             />
@@ -400,22 +402,22 @@ export default function CompatibilityEditor({ partId }) {
               disabled={saving}
               className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
             >
-              {saving ? "Saving..." : "Add single row"}
+              {saving ? t("Saving...") : t("Add single row")}
             </button>
           </div>
         </form>
       </div>
 
       <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="text-xl font-bold text-gray-900">Bulk add years</h3>
+        <h3 className="text-xl font-bold text-gray-900">{t("Bulk add years")}</h3>
         <p className="mt-1 text-sm text-gray-500">
-          Add multiple year-specific compatibility rows at once using comma-separated years.
+          {t("Add multiple year-specific compatibility rows at once using comma-separated years.")}
         </p>
 
         <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto]">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">
-              Years
+              {t("Years")}
             </label>
             <input
               value={form.bulk_years}
@@ -424,7 +426,7 @@ export default function CompatibilityEditor({ partId }) {
               className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
             />
             <p className="mt-2 text-xs text-gray-500">
-              Parsed years: {parsedBulkYears.length ? parsedBulkYears.join(", ") : "none"}
+              {t("Parsed years: {years}", { years: parsedBulkYears.length ? parsedBulkYears.join(", ") : t("none") })}
             </p>
           </div>
 
@@ -435,7 +437,7 @@ export default function CompatibilityEditor({ partId }) {
               disabled={saving}
               className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 disabled:opacity-60"
             >
-              {saving ? "Processing..." : "Bulk add years"}
+              {saving ? t("Processing...") : t("Bulk add years")}
             </button>
           </div>
         </div>
@@ -444,18 +446,18 @@ export default function CompatibilityEditor({ partId }) {
       <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h3 className="text-xl font-bold text-gray-900">Current compatibility rows</h3>
+            <h3 className="text-xl font-bold text-gray-900">{t("Current compatibility rows")}</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Manage the vehicle rows already linked to this part.
+              {t("Manage the vehicle rows already linked to this part.")}
             </p>
           </div>
         </div>
 
         {loading ? (
-          <div className="mt-5 text-sm text-gray-500">Loading compatibility rows...</div>
+          <div className="mt-5 text-sm text-gray-500">{t("Loading compatibility rows...")}</div>
         ) : rows.length === 0 ? (
           <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500">
-            No compatibility rows linked yet.
+            {t("No compatibility rows linked yet.")}
           </div>
         ) : (
           <div className="mt-5 space-y-3">
@@ -485,7 +487,7 @@ export default function CompatibilityEditor({ partId }) {
                     onClick={() => duplicateRow(row)}
                     className="inline-flex h-10 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
                   >
-                    Duplicate
+                    {t("Duplicate")}
                   </button>
 
                   <button
@@ -493,7 +495,7 @@ export default function CompatibilityEditor({ partId }) {
                     onClick={() => deleteRow(row.id)}
                     className="inline-flex h-10 items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
                   >
-                    Delete
+                    {t("Delete")}
                   </button>
                 </div>
               </div>

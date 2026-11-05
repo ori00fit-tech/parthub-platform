@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { formatMoney } from "@parthub/shared";
+import { useT } from "../i18n";
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -55,6 +56,7 @@ function RecommendationCard({ tone = "neutral", title, description, ctaLabel, ct
 }
 
 export default function InsightsPage() {
+  const t = useT();
   const [data, setData] = useState({
     seller_stats: {},
     top_demand: [],
@@ -84,7 +86,7 @@ export default function InsightsPage() {
         });
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load insights");
+        setError(err?.message || t("Failed to load insights"));
       } finally {
         if (active) setLoading(false);
       }
@@ -109,9 +111,9 @@ export default function InsightsPage() {
       const topMiss = missedDemand[0];
       recs.push({
         tone: "warning",
-        title: "High missed demand detected",
-        description: `Buyers are searching for "${topMiss.query || "unlabeled part"}" and not finding results. Strong opportunity to add inventory for ${topMiss.make_slug || "target makes"} / ${topMiss.model_slug || "target models"}${topMiss.year ? ` / ${topMiss.year}` : ""}.`,
-        ctaLabel: "Add matching part",
+        title: t("High missed demand detected"),
+        description: t('Buyers are searching for "{query}" and not finding results. Strong opportunity to add inventory for {vehicle}.', { query: topMiss.query || t("unlabeled part"), vehicle: [topMiss.make_slug || t("target makes"), topMiss.model_slug || t("target models"), topMiss.year].filter(Boolean).join(" / ") }),
+        ctaLabel: t("Add matching part"),
         ctaTo: "/parts/create",
       });
     }
@@ -123,9 +125,9 @@ export default function InsightsPage() {
     if (lowCompatibility.length > 0) {
       recs.push({
         tone: "danger",
-        title: "Some listings have no compatibility data",
-        description: `${lowCompatibility.length} listing(s) currently have zero compatibility rows. These parts may rank weaker and convert worse for vehicle-aware buyers.`,
-        ctaLabel: "Improve inventory",
+        title: t("Some listings have no compatibility data"),
+        description: t("{n} listing(s) currently have zero compatibility rows. These parts may rank weaker and convert worse for vehicle-aware buyers.", { n: lowCompatibility.length }),
+        ctaLabel: t("Improve inventory"),
         ctaTo: "/parts",
       });
     }
@@ -135,9 +137,9 @@ export default function InsightsPage() {
     if (lowStock.length > 0) {
       recs.push({
         tone: "warning",
-        title: "Low stock risk on active inventory",
-        description: `${lowStock.length} listing(s) are running low on stock. Replenishing them early reduces missed orders and keeps search coverage stable.`,
-        ctaLabel: "Review inventory",
+        title: t("Low stock risk on active inventory"),
+        description: t("{n} listing(s) are running low on stock. Replenishing them early reduces missed orders and keeps search coverage stable.", { n: lowStock.length }),
+        ctaLabel: t("Review inventory"),
         ctaTo: "/parts",
       });
     }
@@ -146,9 +148,9 @@ export default function InsightsPage() {
       const topVehicle = topVehicleDemand[0];
       recs.push({
         tone: "success",
-        title: "Vehicle niche worth targeting",
-        description: `One of the strongest buyer demand signals is ${topVehicle.make_slug} / ${topVehicle.model_slug}${topVehicle.year ? ` / ${topVehicle.year}` : ""}. Prioritize fitment-rich stock for this vehicle niche.`,
-        ctaLabel: "Create targeted listing",
+        title: t("Vehicle niche worth targeting"),
+        description: t("One of the strongest buyer demand signals is {vehicle}. Prioritize fitment-rich stock for this vehicle niche.", { vehicle: [topVehicle.make_slug, topVehicle.model_slug, topVehicle.year].filter(Boolean).join(" / ") }),
+        ctaLabel: t("Create targeted listing"),
         ctaTo: "/parts/create",
       });
     }
@@ -156,23 +158,23 @@ export default function InsightsPage() {
     if (recs.length === 0) {
       recs.push({
         tone: "neutral",
-        title: "No critical recommendation yet",
+        title: t("No critical recommendation yet"),
         description:
-          "Your insights are loading normally, but there is not enough demand data yet to produce a high-confidence seller recommendation.",
-        ctaLabel: "Add new part",
+          t("Your insights are loading normally, but there is not enough demand data yet to produce a high-confidence seller recommendation."),
+        ctaLabel: t("Add new part"),
         ctaTo: "/parts/create",
       });
     }
 
     return recs.slice(0, 4);
-  }, [data.missed_demand, data.inventory_snapshot, data.top_vehicle_demand]);
+  }, [data.missed_demand, data.inventory_snapshot, data.top_vehicle_demand, t]);
 
   return (
     <section className="space-y-6">
       <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-700 p-6 text-white shadow-lg sm:p-8">
-        <h1 className="text-3xl font-bold sm:text-5xl">Seller insights</h1>
+        <h1 className="text-3xl font-bold sm:text-5xl">{t("Seller insights")}</h1>
         <p className="mt-3 text-sm text-cyan-100 sm:text-base">
-          Understand demand, missed searches, and which vehicle niches are worth stocking.
+          {t("Understand demand, missed searches, and which vehicle niches are worth stocking.")}
         </p>
       </div>
 
@@ -191,15 +193,15 @@ export default function InsightsPage() {
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Card title="Total parts" value={Number(stats.total_parts || 0)} subtitle="All seller listings" />
-            <Card title="Active parts" value={Number(stats.active_parts || 0)} subtitle="Currently live in the marketplace" />
-            <Card title="Pending parts" value={Number(stats.pending_parts || 0)} subtitle="Listings waiting for approval" />
-            <Card title="Order items" value={Number(stats.order_items_count || 0)} subtitle="Demand already converted into orders" />
+            <Card title={t("Total parts")} value={Number(stats.total_parts || 0)} subtitle={t("All seller listings")} />
+            <Card title={t("Active parts")} value={Number(stats.active_parts || 0)} subtitle={t("Currently live in the marketplace")} />
+            <Card title={t("Pending parts")} value={Number(stats.pending_parts || 0)} subtitle={t("Listings waiting for approval")} />
+            <Card title={t("Order items")} value={Number(stats.order_items_count || 0)} subtitle={t("Demand already converted into orders")} />
           </div>
 
           <Section
-            title="Recommended actions"
-            subtitle="What you should do next based on real marketplace demand signals."
+            title={t("Recommended actions")}
+            subtitle={t("What you should do next based on real marketplace demand signals.")}
           >
             <div className="grid gap-4 lg:grid-cols-2">
               {recommendations.map((item, index) => (
@@ -217,21 +219,21 @@ export default function InsightsPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Section
-              title="Top buyer demand"
-              subtitle="The most common query demand flowing through the marketplace."
+              title={t("Top buyer demand")}
+              subtitle={t("The most common query demand flowing through the marketplace.")}
             >
               {data.top_demand.length === 0 ? (
-                <p className="text-sm text-gray-500">No demand signals yet.</p>
+                <p className="text-sm text-gray-500">{t("No demand signals yet.")}</p>
               ) : (
                 <div className="space-y-3">
                   {data.top_demand.map((item, index) => (
                     <div key={`${item.query}-${index}`} className="rounded-2xl bg-gray-50 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <p className="font-semibold text-gray-900">{item.query}</p>
-                        <span className="text-sm font-semibold text-gray-700">{item.searches} searches</span>
+                        <span className="text-sm font-semibold text-gray-700">{t("{n} searches", { n: item.searches })}</span>
                       </div>
                       <p className="mt-1 text-sm text-gray-500">
-                        Avg. results in market: {Number(item.avg_results || 0).toFixed(1)}
+                        {t("Avg. results in market: {n}", { n: Number(item.avg_results || 0).toFixed(1) })}
                       </p>
                     </div>
                   ))}
@@ -240,21 +242,21 @@ export default function InsightsPage() {
             </Section>
 
             <Section
-              title="Missed demand"
-              subtitle="Searches with zero results. These are stocking opportunities."
+              title={t("Missed demand")}
+              subtitle={t("Searches with zero results. These are stocking opportunities.")}
             >
               {data.missed_demand.length === 0 ? (
-                <p className="text-sm text-gray-500">No missed demand captured yet.</p>
+                <p className="text-sm text-gray-500">{t("No missed demand captured yet.")}</p>
               ) : (
                 <div className="space-y-3">
                   {data.missed_demand.map((item, index) => (
                     <div key={`${item.query}-${index}`} className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
                       <div className="flex items-center justify-between gap-3">
-                        <p className="font-semibold text-gray-900">{item.query || "No keyword"}</p>
-                        <span className="text-sm font-semibold text-amber-700">{item.searches} misses</span>
+                        <p className="font-semibold text-gray-900">{item.query || t("No keyword")}</p>
+                        <span className="text-sm font-semibold text-amber-700">{t("{n} misses", { n: item.searches })}</span>
                       </div>
                       <p className="mt-1 text-sm text-gray-600">
-                        {item.make_slug || "any make"} • {item.model_slug || "any model"} • {item.year || "any year"}
+                        {item.make_slug || t("any make")} • {item.model_slug || t("any model")} • {item.year || t("any year")}
                       </p>
                     </div>
                   ))}
@@ -263,20 +265,20 @@ export default function InsightsPage() {
             </Section>
 
             <Section
-              title="Top vehicle demand"
-              subtitle="Vehicle combinations buyers search for most."
+              title={t("Top vehicle demand")}
+              subtitle={t("Vehicle combinations buyers search for most.")}
             >
               {data.top_vehicle_demand.length === 0 ? (
-                <p className="text-sm text-gray-500">No vehicle demand data yet.</p>
+                <p className="text-sm text-gray-500">{t("No vehicle demand data yet.")}</p>
               ) : (
                 <div className="space-y-3">
                   {data.top_vehicle_demand.map((item, index) => (
                     <div key={`${item.make_slug}-${item.model_slug}-${item.year}-${index}`} className="rounded-2xl bg-gray-50 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <p className="font-semibold text-gray-900">
-                          {item.make_slug} • {item.model_slug} • {item.year || "year unspecified"}
+                          {item.make_slug} • {item.model_slug} • {item.year || t("year unspecified")}
                         </p>
-                        <span className="text-sm font-semibold text-gray-700">{item.searches} searches</span>
+                        <span className="text-sm font-semibold text-gray-700">{t("{n} searches", { n: item.searches })}</span>
                       </div>
                     </div>
                   ))}
@@ -285,11 +287,11 @@ export default function InsightsPage() {
             </Section>
 
             <Section
-              title="Inventory snapshot"
-              subtitle="Recent seller listings and compatibility coverage."
+              title={t("Inventory snapshot")}
+              subtitle={t("Recent seller listings and compatibility coverage.")}
             >
               {data.inventory_snapshot.length === 0 ? (
-                <p className="text-sm text-gray-500">No inventory found.</p>
+                <p className="text-sm text-gray-500">{t("No inventory found.")}</p>
               ) : (
                 <div className="space-y-3">
                   {data.inventory_snapshot.map((item) => (
@@ -299,7 +301,7 @@ export default function InsightsPage() {
                         <span className="text-sm font-semibold text-gray-700">{item.status}</span>
                       </div>
                       <p className="mt-1 text-sm text-gray-500">
-                        stock: {item.quantity} • price: {formatMoney(item.price)} • fitment rows: {item.compatibility_count}
+                        {t("stock: {n}", { n: item.quantity })} • {t("price: {price}", { price: formatMoney(item.price) })} • {t("fitment rows: {n}", { n: item.compatibility_count })}
                       </p>
                     </div>
                   ))}

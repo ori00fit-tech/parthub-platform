@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { useAuth } from "../context/AuthContext";
+import { t } from "../i18n";
 
 // Store status + setup checklist from GET /api/v1/marketplace/me/readiness.
 // When the API returns a fresh token (the store was created after this
@@ -21,7 +22,7 @@ export function useReadiness() {
       if (res?.data?.access_token) saveToken.current(res.data.access_token);
       setReadiness(res?.data || null);
     } catch (err) {
-      setError(err?.message || "Could not load your store status");
+      setError(err?.message || t("Could not load your store status"));
     } finally {
       setLoading(false);
     }
@@ -34,6 +35,7 @@ export function useReadiness() {
   return { readiness, loading, error, reload };
 }
 
+// English keys; translated where shown.
 export const STATUS_COPY = {
   no_store: {
     tone: "info",

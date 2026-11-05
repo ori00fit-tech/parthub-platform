@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../lib/api";
+import { statusLabel, useT } from "../i18n";
 
 function badgeClasses(status) {
   switch (String(status || "").toLowerCase()) {
@@ -48,6 +49,7 @@ function normalizeItems(order) {
 }
 
 export default function OrderDetailsPage() {
+  const t = useT();
   const { id } = useParams();
 
   const [order, setOrder] = useState(null);
@@ -68,7 +70,7 @@ export default function OrderDetailsPage() {
         setOrder(normalizeOrder(res));
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load order details");
+        setError(err?.message || t("Failed to load order details"));
         setOrder(null);
       } finally {
         if (active) setLoading(false);
@@ -88,7 +90,7 @@ export default function OrderDetailsPage() {
     return (
       <section className="space-y-6">
         <div className="rounded-3xl border border-gray-200 bg-white p-6 text-sm text-gray-500 shadow-sm">
-          Loading order details...
+          {t("Loading order details...")}
         </div>
       </section>
     );
@@ -98,7 +100,7 @@ export default function OrderDetailsPage() {
     return (
       <section className="space-y-6">
         <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
-          {error || "Order not found"}
+          {error || t("Order not found")}
         </div>
       </section>
     );
@@ -110,13 +112,13 @@ export default function OrderDetailsPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Order details
+              {t("Order details")}
             </div>
             <h1 className="text-3xl font-bold sm:text-5xl">
-              {order.order_number || order.id || "Order"}
+              {order.order_number || order.id || t("Order")}
             </h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Review buyer information, line items, payment state, and shipping progress.
+              {t("Review buyer information, line items, payment state, and shipping progress.")}
             </p>
           </div>
 
@@ -125,13 +127,13 @@ export default function OrderDetailsPage() {
               to="/orders"
               className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
             >
-              Back to orders
+              {t("Back to orders")}
             </Link>
             <Link
               to="/parts"
               className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
             >
-              Inventory
+              {t("Inventory")}
             </Link>
           </div>
         </div>
@@ -139,7 +141,7 @@ export default function OrderDetailsPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Order status</p>
+          <p className="text-sm text-gray-500">{t("Order status")}</p>
           <div className="mt-3">
             <span
               className={[
@@ -147,13 +149,13 @@ export default function OrderDetailsPage() {
                 badgeClasses(order.status),
               ].join(" ")}
             >
-              {order.status || "unknown"}
+              {statusLabel(order.status || "unknown")}
             </span>
           </div>
         </div>
 
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Payment</p>
+          <p className="text-sm text-gray-500">{t("Payment")}</p>
           <div className="mt-3">
             <span
               className={[
@@ -161,20 +163,20 @@ export default function OrderDetailsPage() {
                 paymentBadgeClasses(order.payment_status),
               ].join(" ")}
             >
-              {order.payment_status || "unknown"}
+              {statusLabel(order.payment_status || "unknown")}
             </span>
           </div>
         </div>
 
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Shipping</p>
+          <p className="text-sm text-gray-500">{t("Shipping")}</p>
           <p className="mt-2 text-2xl font-bold text-gray-900">
-            {order.shipping_status || "—"}
+            {statusLabel(order.shipping_status) || "—"}
           </p>
         </div>
 
         <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Total</p>
+          <p className="text-sm text-gray-500">{t("Total")}</p>
           <p className="mt-2 text-2xl font-bold text-gray-900">
             {order.total_formatted || order.total || "—"}
           </p>
@@ -184,9 +186,9 @@ export default function OrderDetailsPage() {
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="space-y-4">
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900">Line items</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t("Line items")}</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Products included in this order.
+              {t("Products included in this order.")}
             </p>
 
             {items.length ? (
@@ -199,13 +201,13 @@ export default function OrderDetailsPage() {
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0">
                         <p className="text-lg font-semibold text-gray-900">
-                          {item.part_title || item.title || item.name || "Part"}
+                          {item.part_title || item.title || item.name || t("Part")}
                         </p>
                         <div className="mt-2 grid gap-2 text-sm text-gray-600 sm:grid-cols-2">
                           <p>SKU: {item.sku || "—"}</p>
                           <p>Quantity: {item.quantity || "—"}</p>
-                          <p>Unit price: {item.unit_price_formatted || item.unit_price || "—"}</p>
-                          <p>Line total: {item.total_formatted || item.total || "—"}</p>
+                          <p>{t("Unit price: {price}", { price: item.unit_price_formatted || item.unit_price || "—" })}</p>
+                          <p>{t("Line total: {price}", { price: item.total_formatted || item.total || "—" })}</p>
                         </div>
                       </div>
 
@@ -213,7 +215,7 @@ export default function OrderDetailsPage() {
                         <div className="h-20 w-20 overflow-hidden rounded-2xl bg-gray-100">
                           <img
                             src={item.image_url}
-                            alt={item.part_title || item.title || "Part"}
+                            alt={item.part_title || item.title || t("Part")}
                             className="h-full w-full object-cover"
                           />
                         </div>
@@ -224,90 +226,90 @@ export default function OrderDetailsPage() {
               </div>
             ) : (
               <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-sm text-gray-500">
-                No line items available for this order yet.
+                {t("No line items available for this order yet.")}
               </div>
             )}
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900">Order notes</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t("Order notes")}</h2>
             <div className="mt-5 rounded-2xl bg-gray-50 p-4 text-sm text-gray-600">
-              {order.notes || order.buyer_notes || "No notes attached to this order."}
+              {order.notes || order.buyer_notes || t("No notes attached to this order.")}
             </div>
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Buyer information</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("Buyer information")}</h2>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Buyer name</p>
+                <p className="text-xs uppercase tracking-wide text-gray-400">{t("Buyer name")}</p>
                 <p className="mt-1 font-semibold text-gray-900">{order.buyer_name || "—"}</p>
               </div>
 
               <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Email</p>
+                <p className="text-xs uppercase tracking-wide text-gray-400">{t("Email")}</p>
                 <p className="mt-1 font-semibold text-gray-900">{order.buyer_email || "—"}</p>
               </div>
 
               <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Phone</p>
+                <p className="text-xs uppercase tracking-wide text-gray-400">{t("Phone")}</p>
                 <p className="mt-1 font-semibold text-gray-900">{order.buyer_phone || "—"}</p>
               </div>
 
               <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">City</p>
+                <p className="text-xs uppercase tracking-wide text-gray-400">{t("City")}</p>
                 <p className="mt-1 font-semibold text-gray-900">{order.buyer_city || "—"}</p>
               </div>
 
               <div className="rounded-2xl bg-gray-50 p-4 sm:col-span-2">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Address</p>
+                <p className="text-xs uppercase tracking-wide text-gray-400">{t("Address")}</p>
                 <p className="mt-1 font-semibold text-gray-900">{order.buyer_address || "—"}</p>
               </div>
             </div>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Status summary</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("Status summary")}</h2>
 
             <div className="mt-5 space-y-3 text-sm text-gray-600">
               <div className="rounded-2xl bg-gray-50 p-4">
-                <span className="font-semibold text-gray-900">Order status:</span> {order.status || "—"}
+                <span className="font-semibold text-gray-900">{t("Order status:")}</span> {order.status || "—"}
               </div>
               <div className="rounded-2xl bg-gray-50 p-4">
-                <span className="font-semibold text-gray-900">Payment status:</span> {order.payment_status || "—"}
+                <span className="font-semibold text-gray-900">{t("Payment status:")}</span> {order.payment_status || "—"}
               </div>
               <div className="rounded-2xl bg-gray-50 p-4">
-                <span className="font-semibold text-gray-900">Shipping status:</span> {order.shipping_status || "—"}
+                <span className="font-semibold text-gray-900">{t("Shipping status:")}</span> {statusLabel(order.shipping_status) || "—"}
               </div>
               <div className="rounded-2xl bg-gray-50 p-4">
-                <span className="font-semibold text-gray-900">Created at:</span> {order.created_at || "—"}
+                <span className="font-semibold text-gray-900">{t("Created at:")}</span> {order.created_at || "—"}
               </div>
             </div>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Quick actions</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("Quick actions")}</h2>
             <div className="mt-4 flex flex-col gap-3">
               <Link
                 to="/orders"
                 className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
               >
-                Back to orders
+                {t("Back to orders")}
               </Link>
               <Link
                 to="/parts"
                 className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
               >
-                Review inventory
+                {t("Review inventory")}
               </Link>
               <Link
                 to="/store-settings"
                 className="inline-flex h-12 items-center justify-center rounded-2xl bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-black"
               >
-                Store settings
+                {t("Store settings")}
               </Link>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { STATUS_COPY, useReadiness } from "../lib/readiness";
 import { mediaUrl } from "../lib/requests";
 import StoreChecklist, { StoreStatusBanner } from "../components/store/StoreChecklist";
+import { useT } from "../i18n";
 
 function slugify(value) {
   return String(value || "")
@@ -15,6 +16,7 @@ function slugify(value) {
 }
 
 export default function StoreSettingsPage() {
+  const t = useT();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, setSessionToken } = useAuth();
@@ -69,7 +71,7 @@ export default function StoreSettingsPage() {
         });
       } catch (err) {
         if (!active) return;
-        setError(err?.message || "Failed to load store settings");
+        setError(err?.message || t("Failed to load store settings"));
       } finally {
         if (active) setLoading(false);
       }
@@ -83,7 +85,7 @@ export default function StoreSettingsPage() {
   }, [readinessLoading, hasStore]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const completion = readiness?.percent ?? 0;
-  const storeStatus = (STATUS_COPY[readiness?.status] || STATUS_COPY.setup).title;
+  const storeStatus = t((STATUS_COPY[readiness?.status] || STATUS_COPY.setup).title);
 
   function setField(key) {
     return (e) => {
@@ -117,17 +119,17 @@ export default function StoreSettingsPage() {
     setSuccess("");
 
     if (!form.display_name.trim()) {
-      setError("Store display name is required.");
+      setError(t("Store display name is required."));
       return;
     }
 
     if (!form.slug.trim()) {
-      setError("Store slug is required.");
+      setError(t("Store slug is required."));
       return;
     }
 
     if (!form.city.trim()) {
-      setError("City is required.");
+      setError(t("City is required."));
       return;
     }
 
@@ -147,17 +149,17 @@ export default function StoreSettingsPage() {
 
       if (hasStore) {
         await api.put("/api/v1/marketplace/onboarding", payload);
-        setSuccess("Store settings saved.");
+        setSuccess(t("Store settings saved."));
       } else {
         const res = await api.post("/api/v1/marketplace/onboarding", payload);
         // The new token carries the seller id, so the rest of the portal works right away.
         setSessionToken(res?.data?.access_token);
-        setSuccess("Store created. PartHub will review it; meanwhile you can add your first parts.");
+        setSuccess(t("Store created. PartHub will review it; meanwhile you can add your first parts."));
         if (isWelcome) navigate("/store-settings", { replace: true });
       }
       await reloadReadiness();
     } catch (err) {
-      setError(err?.message || "Failed to save store settings");
+      setError(err?.message || t("Failed to save store settings"));
     } finally {
       setSaving(false);
     }
@@ -167,7 +169,7 @@ export default function StoreSettingsPage() {
     return (
       <section className="space-y-6">
         <div className="rounded-3xl border border-gray-200 bg-white p-6 text-sm text-gray-500 shadow-sm">
-          Loading store settings...
+          {t("Loading store settings...")}
         </div>
       </section>
     );
@@ -179,18 +181,18 @@ export default function StoreSettingsPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Store settings
+              {t("Store settings")}
             </div>
-            <h1 className="text-3xl font-bold sm:text-5xl">{hasStore ? "Manage your seller profile" : "Create your store"}</h1>
+            <h1 className="text-3xl font-bold sm:text-5xl">{hasStore ? t("Manage your seller profile") : t("Create your store")}</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
               {hasStore
-                ? "Complete your store identity so your listings and seller presence look stronger."
-                : "Name, web address and city are enough to start. You can add the rest later."}
+                ? t("Complete your store identity so your listings and seller presence look stronger.")
+                : t("Name, web address and city are enough to start. You can add the rest later.")}
             </p>
           </div>
 
           <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4">
-            <p className="text-xs uppercase tracking-wide text-white/70">Store readiness</p>
+            <p className="text-xs uppercase tracking-wide text-white/70">{t("Store readiness")}</p>
             <p className="mt-1 text-3xl font-bold">{completion}%</p>
             <p className="mt-1 text-sm text-blue-100">{storeStatus}</p>
           </div>
@@ -202,9 +204,9 @@ export default function StoreSettingsPage() {
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <form onSubmit={handleSubmit} className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Store profile</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t("Store profile")}</h2>
             <p className="mt-1 text-sm text-gray-500">
-              These details define how your seller presence appears across the marketplace.
+              {t("These details define how your seller presence appears across the marketplace.")}
             </p>
           </div>
 
@@ -223,19 +225,19 @@ export default function StoreSettingsPage() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Store display name
+                {t("Store display name")}
               </label>
               <input
                 value={form.display_name}
                 onChange={setField("display_name")}
-                placeholder="Casse Hay Hassani"
+                placeholder={t("Casse Hay Hassani")}
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Store web address
+                {t("Store web address")}
               </label>
               <input
                 value={form.slug}
@@ -247,7 +249,7 @@ export default function StoreSettingsPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Phone
+                {t("Phone")}
               </label>
               <input
                 value={form.phone}
@@ -260,7 +262,7 @@ export default function StoreSettingsPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                WhatsApp
+                {t("WhatsApp")}
               </label>
               <input
                 value={form.whatsapp}
@@ -273,32 +275,32 @@ export default function StoreSettingsPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                City
+                {t("City")}
               </label>
               <input
                 value={form.city}
                 onChange={setField("city")}
-                placeholder="Casablanca"
+                placeholder={t("Casablanca")}
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
 
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Description
+                {t("Description")}
               </label>
               <textarea
                 rows={5}
                 value={form.description}
                 onChange={setField("description")}
-                placeholder="Tell buyers about your store, specialties, and trust signals..."
+                placeholder={t("Tell buyers about your store, specialties, and trust signals...")}
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Logo URL
+                {t("Logo URL")}
               </label>
               <input
                 value={form.logo_url}
@@ -310,7 +312,7 @@ export default function StoreSettingsPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Banner URL
+                {t("Banner URL")}
               </label>
               <input
                 value={form.banner_url}
@@ -327,7 +329,7 @@ export default function StoreSettingsPage() {
               disabled={saving}
               className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
             >
-              {saving ? "Saving…" : hasStore ? "Save store settings" : "Create store"}
+              {saving ? t("Saving…") : hasStore ? t("Save store settings") : t("Create store")}
             </button>
           </div>
         </form>
@@ -341,12 +343,12 @@ export default function StoreSettingsPage() {
           />
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Preview snapshot</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("Preview snapshot")}</h2>
 
             <div className="mt-5 overflow-hidden rounded-3xl border border-gray-200 bg-white">
               <div className="h-28 bg-gray-100">
                 {form.banner_url ? (
-                  <img src={mediaUrl(form.banner_url)} alt="Store banner" className="h-full w-full object-cover" />
+                  <img src={mediaUrl(form.banner_url)} alt={t("Store banner")} className="h-full w-full object-cover" />
                 ) : null}
               </div>
 
@@ -354,41 +356,41 @@ export default function StoreSettingsPage() {
                 <div className="flex items-start gap-4">
                   <div className="h-16 w-16 overflow-hidden rounded-2xl bg-gray-100">
                     {form.logo_url ? (
-                      <img src={mediaUrl(form.logo_url)} alt="Store logo" className="h-full w-full object-cover" />
+                      <img src={mediaUrl(form.logo_url)} alt={t("Store logo")} className="h-full w-full object-cover" />
                     ) : null}
                   </div>
 
                   <div className="min-w-0">
                     <h3 className="truncate text-xl font-bold text-gray-900">
-                      {form.display_name || "Your store name"}
+                      {form.display_name || t("Your store name")}
                     </h3>
                     <p className="mt-1 text-sm text-gray-500">
                       /{form.slug || "your-store-slug"}
                     </p>
                     <p className="mt-2 text-sm text-gray-600">
-                      {form.city || "City not set"}{form.phone ? ` • ${form.phone}` : ""}
+                      {form.city || t("City not set")}{form.phone ? ` • ${form.phone}` : ""}
                     </p>
                   </div>
                 </div>
 
                 <p className="mt-4 text-sm text-gray-600">
-                  {form.description || "Your store description preview will appear here."}
+                  {form.description || t("Your store description preview will appear here.")}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">What helps most</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("What helps most")}</h2>
             <div className="mt-4 space-y-3 text-sm text-gray-600">
               <div className="rounded-2xl bg-gray-50 p-4">
-                A clear store name and description improve seller credibility.
+                {t("A clear store name and description improve seller credibility.")}
               </div>
               <div className="rounded-2xl bg-gray-50 p-4">
-                City and phone make your seller profile feel more complete.
+                {t("City and phone make your seller profile feel more complete.")}
               </div>
               <div className="rounded-2xl bg-gray-50 p-4">
-                Logo and banner URLs help your store look more professional.
+                {t("Logo and banner URLs help your store look more professional.")}
               </div>
             </div>
           </div>

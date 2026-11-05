@@ -49,27 +49,27 @@ marketplaceAnalyticsRoutes.get("/me/insights", authMiddleware, async (c) => {
     c.env.DB.prepare(`
       select
         query,
-        make_slug,
-        model_slug,
+        make as make_slug,
+        model as model_slug,
         year,
         count(*) as searches
       from part_search_logs
       where coalesce(results_count, 0) = 0
-      group by query, make_slug, model_slug, year
+      group by query, make, model, year
       order by searches desc
       limit 10
     `).all(),
 
     c.env.DB.prepare(`
       select
-        make_slug,
-        model_slug,
+        make as make_slug,
+        model as model_slug,
         year,
         count(*) as searches
       from part_search_logs
-      where make_slug is not null
-        and model_slug is not null
-      group by make_slug, model_slug, year
+      where make is not null
+        and model is not null
+      group by make, model, year
       order by searches desc
       limit 10
     `).all(),

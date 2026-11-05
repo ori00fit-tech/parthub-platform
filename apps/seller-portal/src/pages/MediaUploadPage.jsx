@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { SELLER_TOKEN_KEY } from "@parthub/shared";
+import { useT } from "../i18n";
 
 const API_BASE = "https://parthub-api.ori00fit-c96.workers.dev";
 
@@ -9,6 +10,7 @@ function authHeaders() {
 }
 
 export default function MediaUploadPage() {
+  const t = useT();
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState(null);
@@ -20,7 +22,7 @@ export default function MediaUploadPage() {
     setResult(null);
 
     if (!file) {
-      setError("Please choose an image first.");
+      setError(t("Please choose an image first."));
       return;
     }
 
@@ -39,12 +41,12 @@ export default function MediaUploadPage() {
       const data = await res.json();
 
       if (!res.ok || !data?.ok) {
-        throw new Error(data?.error?.message || "Upload failed");
+        throw new Error(data?.error?.message || t("Upload failed"));
       }
 
       setResult(data.data);
     } catch (err) {
-      setError(err.message || "Upload failed");
+      setError(err.message || t("Upload failed"));
     } finally {
       setUploading(false);
     }
@@ -53,9 +55,9 @@ export default function MediaUploadPage() {
   return (
     <section className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Upload product media</h1>
+        <h1 className="text-2xl font-bold">{t("Upload product media")}</h1>
         <p className="text-sm text-gray-500">
-          Upload JPG, PNG, or WEBP images directly to R2.
+          {t("Upload JPG, PNG, or WEBP images directly to R2.")}
         </p>
       </div>
 
@@ -75,7 +77,7 @@ export default function MediaUploadPage() {
           disabled={uploading}
           className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
         >
-          {uploading ? "Uploading..." : "Upload image"}
+          {uploading ? t("Uploading...") : t("Upload image")}
         </button>
       </form>
 
@@ -88,14 +90,14 @@ export default function MediaUploadPage() {
       {result ? (
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-4">
           <div>
-            <h2 className="text-lg font-bold">Upload complete</h2>
-            <p className="text-sm text-gray-500">Use this URL when attaching images to a part.</p>
+            <h2 className="text-lg font-bold">{t("Upload complete")}</h2>
+            <p className="text-sm text-gray-500">{t("Use this URL when attaching images to a part.")}</p>
           </div>
 
           <div className="space-y-2 text-sm">
-            <p><span className="font-semibold">Key:</span> {result.key}</p>
-            <p><span className="font-semibold">Filename:</span> {result.filename}</p>
-            <p><span className="font-semibold">Type:</span> {result.content_type}</p>
+            <p><span className="font-semibold">{t("Key:")}</span> {result.key}</p>
+            <p><span className="font-semibold">{t("Filename:")}</span> {result.filename}</p>
+            <p><span className="font-semibold">{t("Type:")}</span> {result.content_type}</p>
           </div>
 
           <div className="rounded-xl bg-gray-50 p-3 text-sm break-all">
@@ -103,7 +105,7 @@ export default function MediaUploadPage() {
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
-            <img src={`${API_BASE}${result.url}`} alt="Uploaded preview" className="w-full object-cover" />
+            <img src={`${API_BASE}${result.url}`} alt={t("Uploaded preview")} className="w-full object-cover" />
           </div>
         </div>
       ) : null}

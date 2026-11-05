@@ -4,14 +4,15 @@ import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useReadiness } from "../lib/readiness";
 import StoreChecklist, { StoreStatusBanner } from "../components/store/StoreChecklist";
+import { statusLabel, t, useT } from "../i18n";
 
 function statCards(stats) {
   return [
-    { label: "Active Parts", value: stats?.active_parts ?? "–", icon: "🔩" },
-    { label: "Total Orders", value: stats?.total_orders ?? "–", icon: "📦" },
-    { label: "Pending Orders", value: stats?.pending_orders ?? "–", icon: "⏳" },
+    { label: t("Active Parts"), value: stats?.active_parts ?? "–", icon: "🔩" },
+    { label: t("Total Orders"), value: stats?.total_orders ?? "–", icon: "📦" },
+    { label: t("Pending Orders"), value: stats?.pending_orders ?? "–", icon: "⏳" },
     {
-      label: "Avg Rating",
+      label: t("Avg Rating"),
       value:
         typeof stats?.avg_rating === "number"
           ? stats.avg_rating.toFixed(1)
@@ -22,6 +23,7 @@ function statCards(stats) {
 }
 
 export default function DashboardPage() {
+  const t = useT();
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -60,7 +62,7 @@ export default function DashboardPage() {
     };
   }, [readinessLoading, sellerId]);
 
-  const cards = useMemo(() => statCards(stats), [stats]);
+  const cards = useMemo(() => statCards(stats), [stats, t]);
 
   const lowStockCount =
     typeof stats?.low_stock_parts === "number"
@@ -79,13 +81,13 @@ export default function DashboardPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              Seller dashboard
+              {t("Seller dashboard")}
             </div>
             <h1 className="text-3xl font-bold sm:text-5xl">
-              Welcome back{user?.name ? `, ${user.name}` : ""}
+              {user?.name ? t("Welcome back, {name}", { name: user.name }) : t("Welcome back")}
             </h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              Review store activity, inventory health, orders, and quick actions from one place.
+              {t("Review store activity, inventory health, orders, and quick actions from one place.")}
             </p>
           </div>
 
@@ -94,13 +96,13 @@ export default function DashboardPage() {
               to="/parts/create"
               className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-blue-50"
             >
-              + Add new part
+              {t("+ Add new part")}
             </Link>
             <Link
               to="/orders"
               className="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
             >
-              View orders
+              {t("View orders")}
             </Link>
           </div>
         </div>
@@ -126,9 +128,9 @@ export default function DashboardPage() {
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Quick actions</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t("Quick actions")}</h2>
                 <p className="text-sm text-gray-500">
-                  Jump directly into the most common seller workflows.
+                  {t("Jump directly into the most common seller workflows.")}
                 </p>
               </div>
             </div>
@@ -138,41 +140,41 @@ export default function DashboardPage() {
                 to="/parts/create"
                 className="rounded-2xl bg-blue-600 px-5 py-4 text-sm font-semibold text-white transition hover:bg-blue-700"
               >
-                + Create new part
+                {t("+ Create new part")}
               </Link>
 
               <Link
                 to="/media-upload"
                 className="rounded-2xl border border-gray-300 bg-white px-5 py-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
               >
-                Upload media
+                {t("Upload media")}
               </Link>
 
               <Link
                 to="/parts"
                 className="rounded-2xl border border-gray-300 bg-white px-5 py-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
               >
-                Manage inventory
+                {t("Manage inventory")}
               </Link>
 
               <Link
                 to="/store-settings"
                 className="rounded-2xl border border-gray-300 bg-white px-5 py-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
               >
-                Store settings
+                {t("Store settings")}
               </Link>
             </div>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900">Recent orders</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t("Recent orders")}</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Quick preview of the newest seller-side order activity.
+              {t("Quick preview of the newest seller-side order activity.")}
             </p>
 
             {loading ? (
               <div className="mt-5 rounded-2xl bg-gray-50 px-4 py-6 text-sm text-gray-500">
-                Loading dashboard activity...
+                {t("Loading dashboard activity...")}
               </div>
             ) : recentOrders.length ? (
               <div className="mt-5 space-y-3">
@@ -184,10 +186,10 @@ export default function DashboardPage() {
                   >
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-gray-900">
-                        {order.order_number || order.id || "Order"}
+                        {order.order_number || order.id || t("Order")}
                       </p>
                       <p className="mt-1 text-sm text-gray-500">
-                        {order.buyer_name || "Buyer"} • {order.status || "pending"}
+                        {order.buyer_name || t("Buyer")} • {statusLabel(order.status || "pending")}
                       </p>
                     </div>
                     <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
@@ -198,7 +200,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-sm text-gray-500">
-                No recent orders yet. New seller orders can appear here once order activity grows.
+                {t("No recent orders yet. New seller orders can appear here once order activity grows.")}
               </div>
             )}
 
@@ -207,7 +209,7 @@ export default function DashboardPage() {
                 to="/orders"
                 className="text-sm font-semibold text-blue-600 hover:text-blue-700"
               >
-                View all orders →
+                {t("View all orders →")}
               </Link>
             </div>
           </div>
@@ -222,35 +224,35 @@ export default function DashboardPage() {
           />
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-gray-400">Low stock parts</p>
+            <p className="text-xs uppercase tracking-wide text-gray-400">{t("Low stock parts")}</p>
             <p className="mt-1 text-lg font-semibold text-gray-900">{lowStockCount}</p>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Suggested next steps</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("Suggested next steps")}</h2>
             <div className="mt-4 space-y-3 text-sm text-gray-600">
               <div className="rounded-2xl bg-gray-50 p-4">
-                Add more parts to increase storefront coverage.
+                {t("Add more parts to increase storefront coverage.")}
               </div>
               <div className="rounded-2xl bg-gray-50 p-4">
-                Upload better product images to improve listing quality.
+                {t("Upload better product images to improve listing quality.")}
               </div>
               <div className="rounded-2xl bg-gray-50 p-4">
-                Complete store settings to strengthen seller presence.
+                {t("Complete store settings to strengthen seller presence.")}
               </div>
             </div>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-gray-900">Portal scope</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("Portal scope")}</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Inventory</p>
-                <p className="mt-1 font-semibold text-gray-900">Ready to expand</p>
+                <p className="text-xs uppercase tracking-wide text-gray-400">{t("Inventory")}</p>
+                <p className="mt-1 font-semibold text-gray-900">{t("Ready to expand")}</p>
               </div>
               <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400">Orders</p>
-                <p className="mt-1 font-semibold text-gray-900">Foundation active</p>
+                <p className="text-xs uppercase tracking-wide text-gray-400">{t("Orders")}</p>
+                <p className="mt-1 font-semibold text-gray-900">{t("Foundation active")}</p>
               </div>
             </div>
           </div>
