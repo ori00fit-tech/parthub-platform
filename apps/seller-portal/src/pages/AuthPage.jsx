@@ -138,7 +138,7 @@ export default function AuthPage() {
       <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
         <div className="max-w-3xl">
           <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-            {t("Seller auth foundation")}
+            {t("Seller account")}
           </div>
           <h1 className="text-3xl font-bold sm:text-5xl">{isSignup ? t("Sell your parts on PartHub") : t("Sign in to seller portal")}</h1>
           <p className="mt-3 text-sm text-blue-100 sm:text-base">

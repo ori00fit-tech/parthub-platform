@@ -1,7 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import PartsForYourVehicle from "../features/parts/PartsForYourVehicle";
+import { apiGet } from "../lib/api";
+import { formatPrice } from "../lib/formatters";
+import { mediaUrl } from "../lib/media";
 import { t, useT } from "../i18n";
 
 function getVehicleLabel(vehicle) {
@@ -45,87 +48,8 @@ function CategoryCard({ icon, title, to }) {
   );
 }
 
-function ProductCard({ brand, title, price, was, fitment, to, badge, icon }) {
-  return (
-    <Link
-      to={to}
-      className="group overflow-hidden rounded-3xl border border-line bg-surface shadow-panel transition hover:-translate-y-0.5 hover:border-line-strong hover:shadow-lift"
-    >
-      <div className="relative flex aspect-square items-center justify-center bg-gradient-to-br from-surface-2 to-surface-2">
-        {badge ? (
-          <span className="absolute start-3 top-3 rounded-md bg-red-600 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
-            {badge}
-          </span>
-        ) : null}
-        <div className="text-6xl">{icon}</div>
-      </div>
-      <div className="p-4">
-        <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-link">
-          {brand}
-        </p>
-        <h3 className="mt-2 line-clamp-2 text-sm font-semibold leading-6 text-ink">
-          {title}
-        </h3>
-        <div className="mt-3 inline-flex rounded-md border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-          {fitment}
-        </div>
-        <div className="mt-4 flex items-end justify-between gap-3">
-          <div>
-            <p className="text-xl font-black tracking-tight text-ink">{price}</p>
-            {was ? <p className="text-xs text-faint line-through">{was}</p> : null}
-          </div>
-          <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-line-strong text-muted transition group-hover:border-link group-hover:text-link" aria-hidden="true">
-            →
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
 
-function SellerCard({ initials, name, location, rating, sales, to, color }) {
-  const t = useT();
-  return (
-    <Link
-      to={to}
-      className="flex items-center gap-4 rounded-2xl border border-line bg-surface p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-navy hover:shadow-md"
-    >
-      <div
-        className="flex h-12 w-12 items-center justify-center rounded-xl text-sm font-black text-white"
-        style={{ background: color }}
-      >
-        {initials}
-      </div>
-      <div>
-        <div className="flex items-center gap-2">
-          <p className="font-bold text-ink">{name}</p>
-          <span className="rounded-full bg-navy/[0.06] px-2 py-0.5 text-[10px] font-bold text-link">
-            {t("Verified")}
-          </span>
-        </div>
-        <p className="mt-1 text-xs text-muted">{location}</p>
-        <p className="mt-1 text-xs font-semibold text-amber-700">
-          {rating} · {sales} sales
-        </p>
-      </div>
-    </Link>
-  );
-}
 
-function WhyCard({ icon, title, description, bg }) {
-  return (
-    <div className="rounded-2xl border border-line bg-surface p-5 shadow-sm">
-      <div
-        className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl"
-        style={{ background: bg }}
-      >
-        {icon}
-      </div>
-      <h3 className="mt-4 text-base font-bold text-ink">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-muted">{description}</p>
-    </div>
-  );
-}
 
 export default function HomePage() {
   const t = useT();
@@ -137,6 +61,20 @@ export default function HomePage() {
   const [partQuery, setPartQuery] = useState("");
   const [oemQuery, setOemQuery] = useState("");
   const [vinQuery, setVinQuery] = useState("");
+  const [catalog, setCatalog] = useState({ loading: true, parts: [] });
+
+  // Live catalog: newest/featured active parts (not logged as search demand).
+  useEffect(() => {
+    let active = true;
+    apiGet("/api/v1/catalog/parts")
+      .then((res) => active && setCatalog({ loading: false, parts: Array.isArray(res?.data) ? res.data : [] }))
+      .catch(() => active && setCatalog({ loading: false, parts: [] }));
+    return () => {
+      active = false;
+    };
+  }, []);
+  const partCount = catalog.parts.length;
+  const latestParts = catalog.parts.slice(0, 4);
 
   const selectedVehicleLabel = useMemo(
     () => getVehicleLabel(selectedVehicle),
@@ -185,7 +123,7 @@ export default function HomePage() {
     { icon: "🚘", title: t("Suspension"), to: "/parts?q=suspension" },
     { icon: "💡", title: t("Lighting"), to: "/parts?q=light" },
     { icon: "🔥", title: t("Exhaust"), to: "/parts?q=exhaust" },
-    { icon: "⚡", title: t("Flash Deals"), to: "/parts?sort=price_asc" },
+    { icon: "🏷️", title: t("Lowest prices"), to: "/parts?sort=price_asc" },
   ];
 
   return (
@@ -193,7 +131,7 @@ export default function HomePage() {
       <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-b from-surface to-canvas px-4 py-10 text-center sm:px-6">
         <div className="mx-auto max-w-4xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-navy/20 bg-navy/[0.06] px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-link">
-            {t("✓ 2.4M+ Parts · 1,200+ Verified Sellers")}
+            {t("✓ Auto parts from Moroccan sellers · Prices in MAD")}
           </div>
 
           <h1 className="mt-6 text-4xl font-black tracking-tight text-ink sm:text-5xl">
@@ -338,9 +276,13 @@ export default function HomePage() {
           </div>
 
           <div className="mx-auto grid max-w-4xl border border-line border-t-0 bg-surface shadow-sm sm:grid-cols-3">
-            <HeroStat value="2.4M+" label={t("Parts in catalog")} icon="📦" />
-            <HeroStat value="1,200+" label={t("Verified sellers")} icon="✅" />
-            <HeroStat value="4.9/5" label={t("Average buyer rating")} icon="⭐" />
+            <HeroStat
+              value={catalog.loading ? "…" : partCount >= 60 ? "60+" : String(partCount)}
+              label={t("Parts listed now")}
+              icon="📦"
+            />
+            <HeroStat value={t("Reviewed")} label={t("Every store is checked by PartHub")} icon="✅" />
+            <HeroStat value={t("WhatsApp")} label={t("Ask the seller before you buy")} icon="💬" />
           </div>
         </div>
       </section>
@@ -365,125 +307,66 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
-        <div className="mb-5 flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-black tracking-tight text-ink">{t("Featured discovery")}</h2>
-            <p className="mt-1 text-sm text-muted">{t("High-intent starting points for buyers")}</p>
-          </div>
-          <Link to="/parts" className="text-sm font-bold text-link hover:underline">
-            {t("View all")}
-          </Link>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <ProductCard
-            brand="Bosch"
-            title={t("Front Brake Pads Kit")}
-            price="380,00 MAD"
-            was="450,00 MAD"
-            fitment={t("Vehicle compatibility added")}
-            to="/parts?q=brake"
-            badge={t("Sale")}
-            icon="🛑"
-          />
-          <ProductCard
-            brand="K&N"
-            title={t("Performance Air Filter")}
-            price="190,00 MAD"
-            was="240,00 MAD"
-            fitment={t("Popular vehicle match")}
-            to="/parts?q=air%20filter"
-            badge={t("New")}
-            icon="🧴"
-          />
-          <ProductCard
-            brand="NGK"
-            title={t("Spark Plug Set")}
-            price="160,00 MAD"
-            fitment={t("Garage-friendly search")}
-            to="/parts?q=spark%20plug"
-            badge="OEM"
-            icon="⚡"
-          />
-          <ProductCard
-            brand="Monroe"
-            title={t("Rear Shock Absorber Pair")}
-            price="690,00 MAD"
-            was="790,00 MAD"
-            fitment={t("Compatibility-first listing")}
-            to="/parts?q=shock"
-            icon="🚘"
-          />
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-2">
-        <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+      {latestParts.length ? (
+        <section className="rounded-3xl border border-line bg-surface p-5 shadow-sm" aria-labelledby="latest-parts">
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-black tracking-tight text-ink">{t("Top verified sellers")}</h2>
-              <p className="mt-1 text-sm text-muted">{t("Seller trust and storefront discovery")}</p>
+              <h2 id="latest-parts" className="text-2xl font-black tracking-tight text-ink">{t("Latest parts")}</h2>
+              <p className="mt-1 text-sm text-muted">{t("Recently listed by sellers on PartHub")}</p>
             </div>
+            <Link to="/parts" className="text-sm font-bold text-link hover:underline">
+              {t("View all")}
+            </Link>
           </div>
 
-          <div className="space-y-3">
-            <SellerCard
-              initials="AP"
-              name="AutoParts Pro"
-              location="Casablanca"
-              rating="★★★★★ 4.9"
-              sales="12,400"
-              to="/parts"
-              color="linear-gradient(135deg,#0077b6,#00b4d8)"
-            />
-            <SellerCard
-              initials="GS"
-              name="GenuineStar"
-              location="Rabat"
-              rating="★★★★★ 4.8"
-              sales="8,900"
-              to="/parts"
-              color="linear-gradient(135deg,#f4a823,#e85d04)"
-            />
-            <SellerCard
-              initials="QP"
-              name="QuickParts"
-              location="Tanger"
-              rating="★★★★☆ 4.7"
-              sales="6,200"
-              to="/parts"
-              color="linear-gradient(135deg,#2d6a4f,#52b788)"
-            />
-            <SellerCard
-              initials="OE"
-              name="OEM Direct"
-              location="Marrakech"
-              rating="★★★★★ 4.9"
-              sales="21,000"
-              to="/parts"
-              color="linear-gradient(135deg,#6a0572,#ab83a1)"
-            />
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {latestParts.map((part) => (
+              <Link
+                key={part.id}
+                to={`/parts/${part.slug}`}
+                className="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-panel transition hover:-translate-y-0.5 hover:border-line-strong hover:shadow-lift"
+              >
+                <div className="media-well flex aspect-[4/3] items-center justify-center overflow-hidden border-b border-line">
+                  {part.image_url ? (
+                    <img src={mediaUrl(part.image_url)} alt="" loading="lazy" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
+                  ) : (
+                    <span className="text-3xl" aria-hidden="true">⚙️</span>
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col gap-1.5 p-3.5">
+                  <p className="truncate text-xs font-semibold uppercase tracking-[0.08em] text-navy">{part.brand_name || t("Unbranded")}</p>
+                  <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-ink">{part.title}</p>
+                  {part.seller_name ? (
+                    <p className="truncate text-xs text-muted">
+                      {part.seller_location ? `${part.seller_name} · ${part.seller_location}` : part.seller_name}
+                    </p>
+                  ) : null}
+                  <p className="mt-auto pt-1 font-mono text-lg font-semibold text-ink">{formatPrice(part.price)}</p>
+                </div>
+              </Link>
+            ))}
           </div>
-        </div>
+        </section>
+      ) : null}
 
+      <section>
         <div className="rounded-3xl bg-gradient-to-br from-navy to-blue-700 p-6 text-white shadow-xl">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-100">
               {t("Why PartHub")}
             </p>
-            <h2 className="mt-2 text-3xl font-black tracking-tight">{t("The cleaner buyer journey")}</h2>
+            <h2 className="mt-2 text-3xl font-black tracking-tight">{t("Buy the right part with confidence")}</h2>
             <p className="mt-2 text-sm leading-6 text-blue-100">
-              {t("Fitment-first discovery, verified sellers, tracked orders, and support-oriented flows.")}
+              {t("Search by your vehicle, buy from reviewed sellers, and follow your order from your account.")}
             </p>
           </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
               <div className="text-2xl">🔍</div>
               <h3 className="mt-3 font-bold">{t("Vehicle Compatibility Check")}</h3>
               <p className="mt-2 text-sm text-blue-100">
-                {t("Filter discovery by your exact year, make, model, and engine context.")}
+                {t("Filter by your year, make and model to see the parts that fit.")}
               </p>
             </div>
 
@@ -491,15 +374,18 @@ export default function HomePage() {
               <div className="text-2xl">✅</div>
               <h3 className="mt-3 font-bold">{t("Verified Sellers")}</h3>
               <p className="mt-2 text-sm text-blue-100">
-                {t("Seller trust signals and public storefront access improve buyer confidence.")}
+                {t("PartHub reviews every store before its parts go live.")}
               </p>
             </div>
 
             <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
-              <div className="text-2xl">🚚</div>
-              <h3 className="mt-3 font-bold">{t("Fast Shipping Flow")}</h3>
+              <div className="text-2xl">📨</div>
+              <h3 className="mt-3 font-bold">{t("Can't find a part?")}</h3>
               <p className="mt-2 text-sm text-blue-100">
-                {t("Cart, checkout, order history, and tracking pages already exist in the storefront.")}
+                {t("Send one request and sellers reply with offers.")}{" "}
+                <Link to="/request-part" className="font-semibold text-white underline underline-offset-2">
+                  {t("Request a part")}
+                </Link>
               </p>
             </div>
 
@@ -507,7 +393,7 @@ export default function HomePage() {
               <div className="text-2xl">🔄</div>
               <h3 className="mt-3 font-bold">{t("Compare Before You Buy")}</h3>
               <p className="mt-2 text-sm text-blue-100">
-                {t("Compare shortlisted parts before opening details or moving to checkout.")}
+                {t("Shortlist parts and compare price, condition and fitment side by side.")}
               </p>
             </div>
           </div>

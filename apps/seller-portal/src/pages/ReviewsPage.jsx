@@ -120,7 +120,7 @@ export default function ReviewsPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              {t("Reviews foundation")}
+              {t("Reviews")}
             </div>
             <h1 className="text-3xl font-bold sm:text-5xl">{t("Seller reviews")}</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">

@@ -103,7 +103,7 @@ export default function AuthPage() {
         <div className="space-y-4">
           <div className="overflow-hidden rounded-[28px] border border-gray-800 bg-gradient-to-br from-gray-900 via-slate-950 to-blue-950 p-8 shadow-xl">
             <div className="mb-3 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/80">
-              {t("Admin auth foundation")}
+              {t("Admin Panel")}
             </div>
             <h1 className="text-3xl font-bold text-white sm:text-5xl">{t("Sign in to admin panel")}</h1>
             <p className="mt-3 text-sm text-gray-300 sm:text-base">

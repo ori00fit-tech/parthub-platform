@@ -142,24 +142,24 @@ export default function AuthPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              {t("Buyer auth foundation")}
+              {t("Buyer account")}
             </div>
             <h1 className="text-3xl font-bold sm:text-5xl">
               {mode === "login" ? t("Sign in to continue") : t("Create your buyer account")}
             </h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
               {mode === "login"
-                ? t("Access your buyer session for account, orders, cart, and checkout flow.")
-                : t("Create a buyer account to prepare a smoother storefront and checkout experience.")}
+                ? t("Sign in to check out, follow your orders and get offers on your part requests.")
+                : t("A free account lets you order, follow your orders and request parts from sellers.")}
             </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm">
-              {t("✔ Buyer-only storefront auth")}
+              {t("✔ Free, no subscription")}
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm">
-              {t("✔ Session-ready checkout flow")}
+              {t("✔ Your phone is only shared with sellers you choose")}
             </div>
           </div>
         </div>
@@ -171,45 +171,17 @@ export default function AuthPage() {
             <h2 className="text-xl font-bold text-ink">{t("Why sign in?")}</h2>
             <div className="mt-4 space-y-3 text-sm text-muted">
               <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Continue more smoothly from cart to checkout.")}
+                {t("Place orders and see their status.")}
               </div>
               <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Prepare access to buyer account and order history foundation.")}
+                {t("Request a part and compare sellers' offers.")}
               </div>
               <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Keep the storefront flow cleaner across future sessions.")}
+                {t("Sellers reply to your requests with offers.")}
               </div>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-ink">{t("Current storefront state")}</h2>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">{t("Cart items")}</p>
-                <p className="mt-1 text-lg font-semibold text-ink">{totalItems}</p>
-              </div>
-              <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">{t("Post-login redirect")}</p>
-                <p className="mt-1 text-sm font-semibold text-ink">{redirectTo}</p>
-              </div>
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link
-                to="/cart"
-                className="rounded-2xl border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
-              >
-                {t("Back to cart")}
-              </Link>
-              <Link
-                to="/parts"
-                className="rounded-2xl border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-2 transition hover:bg-surface-3"
-              >
-                {t("Browse parts")}
-              </Link>
-            </div>
-          </div>
         </div>
 
         <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm sm:p-8">

@@ -199,7 +199,7 @@ export default function VehicleSelectorPage() {
       <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
         <div className="max-w-3xl">
           <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-            {t("Vehicle Selector PRO MAX")}
+            {t("Vehicle selector")}
           </div>
 
           <h1 className="text-3xl font-bold sm:text-5xl">
@@ -213,13 +213,13 @@ export default function VehicleSelectorPage() {
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm">
-            {t("✔ 30 makes")}
+            {makes.length ? t("✔ {n} makes available", { n: makes.length }) : t("✔ Makes loading…")}
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm">
-            {t("✔ 150 models")}
+            {t("✔ Saved on this device for your next visit")}
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm">
-            {t("✔ 3300 year entries")}
+            {t("✔ Parts that fit are shown first")}
           </div>
         </div>
       </div>
@@ -371,10 +371,9 @@ export default function VehicleSelectorPage() {
           <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
             <h2 className="text-lg font-bold text-ink">{t("Why this matters")}</h2>
             <div className="mt-3 space-y-2 text-sm text-muted">
-              <p>{t("✔ Faster catalog browsing")}</p>
-              <p>{t("✔ Better fitment workflows")}</p>
-              <p>{t("✔ Stronger vehicle-specific search foundation")}</p>
-              <p>{t("✔ Ready for VIN / plate lookup later")}</p>
+              <p>{t("✔ The catalog shows parts that fit your vehicle first")}</p>
+              <p>{t("✔ Each part page tells you if it fits")}</p>
+              <p>{t("✔ Sellers see your vehicle when you order or request a part")}</p>
             </div>
           </div>
         </div>

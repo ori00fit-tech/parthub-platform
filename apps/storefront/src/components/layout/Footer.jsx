@@ -2,6 +2,21 @@ import { Link } from "react-router-dom";
 import BrandMark, { Wordmark } from "../brand/BrandMark";
 import { useT } from "../../i18n";
 
+// Seller portal (separate app). Override with VITE_SELLER_PORTAL_URL when a
+// custom domain is set up.
+const SELLER_PORTAL_URL = (import.meta.env.VITE_SELLER_PORTAL_URL || "https://parthub-platform-seller.pages.dev").replace(/\/$/, "");
+
+function FooterColumn({ title, children }) {
+  return (
+    <div>
+      <div className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-white">{title}</div>
+      <div className="space-y-3 text-sm text-faint">{children}</div>
+    </div>
+  );
+}
+
+const linkClass = "block hover:text-blue-300";
+
 export default function Footer() {
   const t = useT();
   return (
@@ -14,68 +29,34 @@ export default function Footer() {
           </div>
 
           <p className="mt-4 max-w-xs text-sm leading-7 text-faint">
-            {t("The trusted marketplace for OEM and aftermarket auto parts. Search by vehicle, compare listings, and buy from sellers with clearer trust signals.")}
+            {t("Auto parts marketplace for Morocco. Search by vehicle, compare listings and buy from sellers reviewed by PartHub.")}
           </p>
-
-          <div className="mt-5 flex gap-2">
-            {["𝕏", "f", "in", "▶"].map((item) => (
-              <div
-                key={item}
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 text-sm text-slate-300"
-              >
-                {item}
-              </div>
-            ))}
-          </div>
         </div>
 
-        <div>
-          <div className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-white">{t("Shop")}</div>
-          <div className="space-y-3 text-sm text-faint">
-            <Link to="/parts" className="block hover:text-blue-300">{t("Browse All Parts")}</Link>
-            <Link to="/vehicle-selector" className="block hover:text-blue-300">{t("Shop by Vehicle")}</Link>
-            <Link to="/parts?q=oem" className="block hover:text-blue-300">{t("OEM Parts")}</Link>
-            <Link to="/parts?sort=price_asc" className="block hover:text-blue-300">{t("Flash Deals")}</Link>
-            <Link to="/compare" className="block hover:text-blue-300">{t("Compare Parts")}</Link>
-          </div>
-        </div>
+        <FooterColumn title={t("Shop")}>
+          <Link to="/parts" className={linkClass}>{t("Browse All Parts")}</Link>
+          <Link to="/vehicle-selector" className={linkClass}>{t("Shop by Vehicle")}</Link>
+          <Link to="/request-part" className={linkClass}>{t("Request a part")}</Link>
+          <Link to="/compare" className={linkClass}>{t("Compare Parts")}</Link>
+        </FooterColumn>
 
-        <div>
-          <div className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-white">{t("Account")}</div>
-          <div className="space-y-3 text-sm text-faint">
-            <Link to="/auth" className="block hover:text-blue-300">{t("Sign In / Register")}</Link>
-            <Link to="/orders" className="block hover:text-blue-300">{t("My Orders")}</Link>
-            <Link to="/vehicle-selector" className="block hover:text-blue-300">{t("My Garage")}</Link>
-            <Link to="/compare" className="block hover:text-blue-300">{t("Saved Compare")}</Link>
-            <Link to="/account" className="block hover:text-blue-300">{t("My Account")}</Link>
-          </div>
-        </div>
+        <FooterColumn title={t("Account")}>
+          <Link to="/auth" className={linkClass}>{t("Sign In / Register")}</Link>
+          <Link to="/orders" className={linkClass}>{t("My Orders")}</Link>
+          <Link to="/requests" className={linkClass}>{t("My part requests")}</Link>
+          <Link to="/vehicle-selector" className={linkClass}>{t("My Garage")}</Link>
+          <Link to="/account" className={linkClass}>{t("My Account")}</Link>
+        </FooterColumn>
 
-        <div>
-          <div className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-white">{t("Support")}</div>
-          <div className="space-y-3 text-sm text-faint">
-            <Link to="/orders" className="block hover:text-blue-300">{t("Track My Order")}</Link>
-            <Link to="/checkout/success" className="block hover:text-blue-300">{t("Order Confirmation")}</Link>
-            <Link to="/parts" className="block hover:text-blue-300">{t("Seller Center")}</Link>
-            <Link to="/account" className="block hover:text-blue-300">{t("Contact Support")}</Link>
-            <Link to="/auth" className="block hover:text-blue-300">{t("Help Center")}</Link>
-          </div>
-        </div>
+        <FooterColumn title={t("Sellers")}>
+          <a href={`${SELLER_PORTAL_URL}/auth`} className={linkClass}>{t("Sell on PartHub")}</a>
+          <a href={SELLER_PORTAL_URL} className={linkClass}>{t("Seller Center")}</a>
+        </FooterColumn>
       </div>
 
       <div className="border-t border-slate-800">
-        <div className="mx-auto flex max-w-[1380px] flex-wrap items-center justify-between gap-3 px-4 py-5 text-xs text-faint sm:px-6 lg:px-6">
-          <div>{t("© 2026 PartHub Inc. All rights reserved.")}</div>
-          <div className="flex flex-wrap gap-2">
-            {["VISA", "MASTERCARD", "PAYPAL", "APPLE PAY", "GOOGLE PAY"].map((item) => (
-              <span
-                key={item}
-                className="rounded bg-slate-800 px-3 py-1 text-[11px] font-semibold text-slate-300"
-              >
-                {item}
-              </span>
-            ))}
-          </div>
+        <div className="mx-auto max-w-[1380px] px-4 py-5 text-xs text-faint sm:px-6 lg:px-6">
+          {t("© {year} PartHub. All rights reserved.", { year: new Date().getFullYear() })}
         </div>
       </div>
     </footer>

@@ -16,11 +16,11 @@ export default function AccountPage() {
         <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              {t("Buyer account foundation")}
+              {t("My Account")}
             </div>
             <h1 className="text-3xl font-bold sm:text-5xl">{t("Sign in to access your account")}</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
-              {t("View buyer information, orders, vehicle context, and continue the storefront flow.")}
+              {t("See your orders, part requests and saved vehicle.")}
             </p>
           </div>
         </div>
@@ -33,7 +33,7 @@ export default function AccountPage() {
             <p className="text-sm font-medium text-link">{t("Recommended")}</p>
             <p className="mt-1 text-xl font-bold text-ink">{t("Buyer sign in")}</p>
             <p className="mt-2 text-sm text-muted">
-              {t("Unlock account and order continuity.")}
+              {t("Track your orders and part requests.")}
             </p>
           </Link>
 
@@ -69,7 +69,7 @@ export default function AccountPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              {t("Buyer account foundation")}
+              {t("My Account")}
             </div>
             <h1 className="text-3xl font-bold sm:text-5xl">{t("Your buyer account")}</h1>
             <p className="mt-3 text-sm text-blue-100 sm:text-base">
@@ -112,8 +112,8 @@ export default function AccountPage() {
               </div>
 
               <div className="rounded-2xl bg-surface-2 p-4 sm:col-span-2">
-                <p className="text-xs uppercase tracking-wide text-faint">{t("Session state")}</p>
-                <p className="mt-1 font-semibold text-ink">{t("Authenticated storefront buyer session active")}</p>
+                <p className="text-xs uppercase tracking-wide text-faint">{t("Status")}</p>
+                <p className="mt-1 font-semibold text-ink">{t("Signed in")}</p>
               </div>
             </div>
           </div>
@@ -174,22 +174,6 @@ export default function AccountPage() {
 
         <div className="space-y-4">
           <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-ink">{t("Storefront state")}</h2>
-
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">{t("Cart items")}</p>
-                <p className="mt-1 text-2xl font-bold text-ink">{totalItems}</p>
-              </div>
-
-              <div className="rounded-2xl bg-surface-2 p-4">
-                <p className="text-xs uppercase tracking-wide text-faint">{t("Orders area")}</p>
-                <p className="mt-1 text-lg font-semibold text-ink">{t("Ready")}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
             <h2 className="text-xl font-bold text-ink">{t("Quick actions")}</h2>
 
             <div className="mt-4 flex flex-col gap-3">
@@ -223,20 +207,6 @@ export default function AccountPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-ink">{t("What comes next")}</h2>
-            <div className="mt-4 space-y-3 text-sm text-muted">
-              <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Orders history can plug into real buyer order APIs later.")}
-              </div>
-              <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Account profile details can expand without touching seller/admin portals.")}
-              </div>
-              <div className="rounded-2xl bg-surface-2 p-4">
-                {t("Vehicle context remains reusable across browsing and checkout.")}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </section>
