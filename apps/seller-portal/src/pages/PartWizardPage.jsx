@@ -7,6 +7,7 @@ import { uploadPartPhoto } from "../lib/photos";
 import { useT } from "../i18n";
 import { Icon } from "@parthub/shared/icons";
 import VehicleFitmentFields, { EMPTY_FITMENT, SuggestCatalogEntry, fitmentLabel, fitmentPayload } from "../components/parts/VehicleFitmentFields";
+import PartNumbersFields, { EMPTY_NUMBERS, numbersPayload } from "../components/parts/PartNumbersFields";
 
 // Add a part in five short steps instead of one long form. The draft is kept
 // on this device, so a seller on a phone can stop and come back.
@@ -20,6 +21,7 @@ const EMPTY = {
   brand_id: "",
   condition: "used",
   part_origin: "aftermarket",
+  numbers: { oem: [""], maker: "" }, // PartNumbersFields
   sku: "",
   photos: [], // [{ url }]
   price: "",
@@ -303,6 +305,14 @@ export default function PartWizardPage() {
           warnings.push(t("A photo could not be attached. Add it again from the edit page."));
         }
       }
+      const numbers = numbersPayload(form.numbers, { origin: form.part_origin, brandId: form.brand_id });
+      if (numbers.length) {
+        try {
+          await api.put(`/api/v1/marketplace/me/parts/${partId}/numbers`, { numbers });
+        } catch (err) {
+          warnings.push(`${t("Part numbers")}: ${err.message}`);
+        }
+      }
       for (const row of form.fitment) {
         if (!row.make || !row.model) continue;
         try {
@@ -479,8 +489,16 @@ export default function PartWizardPage() {
               />
             </Field>
 
-            <Field label={t("OEM / part number (optional)")} htmlFor="w-sku" hint={t("Buyers often search by this number.")}>
-              <input id="w-sku" dir="ltr" value={form.sku} onChange={(e) => set("sku")(e.target.value)} className={inputCls} placeholder="231004779R" />
+            <PartNumbersFields
+              value={form.numbers || EMPTY_NUMBERS}
+              onChange={set("numbers")}
+              origin={form.part_origin}
+              brandName={brands.find((b) => String(b.id) === String(form.brand_id))?.name || ""}
+              idPrefix="w-num"
+            />
+
+            <Field label={t("Your stock code (optional)")} htmlFor="w-sku" hint={t("Your own reference for this listing. Put part numbers in the fields above.")}>
+              <input id="w-sku" dir="ltr" value={form.sku} onChange={(e) => set("sku")(e.target.value)} className={inputCls} placeholder="A-12" />
             </Field>
           </div>
         ) : null}
@@ -636,6 +654,7 @@ export default function PartWizardPage() {
               {[
                 [t("Condition"), t(form.condition === "new" ? "New" : form.condition === "refurbished" ? "Refurbished" : "Used"), 0],
                 [t("Origin"), t(form.part_origin === "oem" ? "OEM" : form.part_origin === "used" ? "Used Part" : "Aftermarket"), 0],
+                [t("Part numbers"), numbersPayload(form.numbers, { origin: form.part_origin }).map((n) => n.number).join(", ") || t("None"), 0],
                 [t("Photos"), String(form.photos.length), 1],
                 [t("Quantity in stock"), String(form.quantity), 2],
                 [t("Vehicles"), form.fitment.filter((r) => r.make && r.model).map((r) => fitmentLabel(r, t)).join(", ") || t("None"), 3],

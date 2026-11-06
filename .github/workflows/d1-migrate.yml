@@ -99,6 +99,9 @@ jobs:
       - name: 0018 catalog quality (engine scope, data source, verification)
         run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0018_catalog_quality.sql"
 
+      - name: 0019 part numbers (OEM / aftermarket references)
+        run: ../../.github/scripts/d1-exec-retry.sh --file="$MIGRATIONS/0019_part_numbers.sql"
+
       # Read query: fails while the daily read limit is exceeded, which
       # doesn't mean the migrations failed.
       - name: Verify
@@ -120,4 +123,5 @@ jobs:
                (SELECT COUNT(*) FROM vehicle_generations) AS vehicle_generations,
                (SELECT COUNT(*) FROM vehicle_engines) AS vehicle_engines,
                (SELECT CASE WHEN instr(sql, 'engine_scope') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='part_compatibility') AS engine_scope_column,
-               (SELECT COUNT(*) FROM vehicle_engines WHERE source IS NULL) AS engines_without_source"
+               (SELECT COUNT(*) FROM vehicle_engines WHERE source IS NULL) AS engines_without_source,
+               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('part_numbers','part_listing_numbers','part_number_links')) AS part_number_tables_of_3"

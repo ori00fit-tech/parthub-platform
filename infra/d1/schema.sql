@@ -433,3 +433,41 @@ CREATE INDEX IF NOT EXISTS idx_catalog_suggestions_status ON catalog_suggestions
 CREATE INDEX IF NOT EXISTS idx_part_compat_generation ON part_compatibility(generation_id);
 CREATE INDEX IF NOT EXISTS idx_part_compat_engine ON part_compatibility(engine_id);
 CREATE INDEX IF NOT EXISTS idx_catalog_suggestions_kind_status ON catalog_suggestions(kind, status);
+
+-- ── Part numbers (see migrations/0019) ────────────────────────
+CREATE TABLE IF NOT EXISTS part_numbers (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  number       TEXT NOT NULL,
+  number_norm  TEXT NOT NULL,
+  kind         TEXT NOT NULL CHECK (kind IN ('oem','aftermarket')),
+  brand_id     INTEGER REFERENCES brands(id),
+  source       TEXT,
+  verification TEXT NOT NULL DEFAULT 'unverified',
+  created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_part_numbers_norm_brand ON part_numbers(number_norm, coalesce(brand_id, 0));
+
+CREATE TABLE IF NOT EXISTS part_listing_numbers (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  part_id         INTEGER NOT NULL REFERENCES parts(id) ON DELETE CASCADE,
+  part_number_id  INTEGER NOT NULL REFERENCES part_numbers(id) ON DELETE CASCADE,
+  role            TEXT NOT NULL CHECK (role IN ('own','replaces')),
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (part_id, part_number_id)
+);
+CREATE INDEX IF NOT EXISTS idx_part_listing_numbers_number ON part_listing_numbers(part_number_id);
+
+CREATE TABLE IF NOT EXISTS part_number_links (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_id       INTEGER NOT NULL REFERENCES part_numbers(id) ON DELETE CASCADE,
+  to_id         INTEGER NOT NULL REFERENCES part_numbers(id) ON DELETE CASCADE,
+  relation      TEXT NOT NULL CHECK (relation IN ('equivalent','supersedes')),
+  source        TEXT,
+  verification  TEXT NOT NULL DEFAULT 'unverified' CHECK (verification IN ('unverified','admin_approved','verified','rejected')),
+  created_by    INTEGER REFERENCES users(id),
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  decided_at    TEXT,
+  UNIQUE (from_id, to_id, relation)
+);
+CREATE INDEX IF NOT EXISTS idx_part_number_links_to ON part_number_links(to_id);
+CREATE INDEX IF NOT EXISTS idx_part_number_links_verification ON part_number_links(verification);

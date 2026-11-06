@@ -977,4 +977,14 @@ export default {
   "Engine (optional)": "Moteur (facultatif)",
   "I don't know / skip": "Je ne sais pas / passer",
   "With the engine, parts made for your engine are confirmed, and parts for other engines are hidden.": "Avec le moteur, les pièces prévues pour votre moteur sont confirmées et celles des autres moteurs sont masquées.",
+  // Part numbers
+  "Replaces original number": "Remplace la référence d'origine",
+  "Original (OEM) number": "Référence d'origine (OEM)",
+  "{brand} number": "Référence {brand}",
+  "Maker's number": "Référence fabricant",
+  "according to the seller": "selon le vendeur",
+  "Part numbers": "Références",
+  "Check the number on your old part: it is the surest way to get the right one.": "Comparez avec le numéro de votre ancienne pièce : c'est le moyen le plus sûr d'avoir la bonne.",
+  "Other offers for this reference": "Autres offres pour cette référence",
+  "Same part number from other sellers: compare price, condition and stock.": "Même référence chez d'autres vendeurs : comparez prix, état et stock.",
 };

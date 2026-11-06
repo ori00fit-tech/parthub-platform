@@ -10,6 +10,7 @@ import StockBadge from "../features/stock/StockBadge";
 import NotifyWhenAvailable from "../features/stock/NotifyWhenAvailable";
 import { RatingSummary, ReviewList } from "../features/reviews/Reviews";
 import { usePageMeta } from "../lib/pageMeta";
+import { OtherOffers, PartNumbersList } from "../features/parts/PartNumbers";
 
 function normalizeGallery(part) {
   const candidates = [
@@ -706,6 +707,29 @@ export default function PartDetailsPage() {
         </div>
 
         <div className="space-y-6">
+          {part.part_numbers?.length || part.other_offers?.length ? (
+            <div id="numbers" className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+              {part.part_numbers?.length ? (
+                <>
+                  <h2 className="text-xl font-bold text-ink">{t("Part numbers")}</h2>
+                  <p className="mt-1 text-sm text-muted">{t("Check the number on your old part: it is the surest way to get the right one.")}</p>
+                  <div className="mt-4">
+                    <PartNumbersList numbers={part.part_numbers} />
+                  </div>
+                </>
+              ) : null}
+              {part.other_offers?.length ? (
+                <div className={part.part_numbers?.length ? "mt-6" : ""}>
+                  <h2 className="text-xl font-bold text-ink">{t("Other offers for this reference")}</h2>
+                  <p className="mt-1 text-sm text-muted">{t("Same part number from other sellers: compare price, condition and stock.")}</p>
+                  <div className="mt-4">
+                    <OtherOffers offers={part.other_offers} />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
           <div id="reviews" className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
             <div className="flex flex-wrap items-end justify-between gap-2">
               <h2 className="text-2xl font-bold text-ink">{t("Buyer reviews")}</h2>

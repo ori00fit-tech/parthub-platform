@@ -9,6 +9,7 @@ import { parsePagination } from "../utils/pagination";
 import { notifyBackInStock } from "../utils/stock-alerts";
 import { runInBackground } from "../utils/whatsapp";
 import { type LineStatus, logOrderEvent, refreshOrderStatus, setLineStatus } from "../utils/fulfillment";
+import { readNumbersInput } from "../utils/part-numbers";
 import { ensureBrand, ensureVehicle, engineInfo, readVehicleEntry } from "../utils/vehicle-catalog";
 import { type IssueRow, cleanNote, loadIssue, nowText, publicIssue, updateIssue } from "../utils/issues";
 
@@ -40,12 +41,13 @@ adminRoutes.get("/dashboard", async (c) => {
 
 // GET /api/v1/admin/pending-counts — what is waiting for moderation (sidebar badges).
 adminRoutes.get("/pending-counts", async (c) => {
-  const [sellers, parts, reviews, issues, catalog] = await Promise.all([
+  const [sellers, parts, reviews, issues, catalog, numbers] = await Promise.all([
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM sellers WHERE status = 'pending'"),
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM parts WHERE status = 'pending'"),
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM reviews WHERE status = 'pending'"),
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM order_issues WHERE status = 'escalated'"),
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM catalog_suggestions WHERE status = 'pending'"),
+    dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM part_number_links WHERE verification = 'unverified'"),
   ]);
   return ok(c, {
     sellers: sellers?.n ?? 0,
@@ -53,6 +55,7 @@ adminRoutes.get("/pending-counts", async (c) => {
     reviews: reviews?.n ?? 0,
     issues: issues?.n ?? 0,
     catalog: catalog?.n ?? 0,
+    numbers: numbers?.n ?? 0,
   });
 });
 
@@ -547,6 +550,95 @@ adminRoutes.delete("/vehicles/engines/:id", async (c) => {
   const res = await dbRun(c.env.DB, "DELETE FROM vehicle_engines WHERE id = ?", [id]);
   if (!res.changes) return fail(c, "Engine not found", 404);
   return ok(c, { id, deleted: true });
+});
+
+// ── Part numbers (OEM / aftermarket) ──────────────────────────
+
+// GET /api/v1/admin/part-numbers/links?status=unverified|all
+// Seller claims ("this part replaces that number") wait here; once verified
+// they link every listing carrying either number.
+adminRoutes.get("/part-numbers/links", async (c) => {
+  const all = c.req.query("status") === "all";
+  const rows = await dbAll(
+    c.env.DB,
+    `SELECT l.id, l.relation, l.source, l.verification, l.created_at, l.decided_at,
+            a.number AS from_number, a.kind AS from_kind, ba.name AS from_brand,
+            b.number AS to_number, b.kind AS to_kind, bb.name AS to_brand,
+            u.name AS claimed_by,
+            (SELECT COUNT(*) FROM part_listing_numbers x WHERE x.part_number_id = l.from_id) AS from_listings,
+            (SELECT COUNT(*) FROM part_listing_numbers x WHERE x.part_number_id = l.to_id) AS to_listings,
+            (SELECT group_concat(p.title, ' | ') FROM part_listing_numbers x JOIN part_listing_numbers y ON y.part_id = x.part_id
+               JOIN parts p ON p.id = x.part_id
+             WHERE x.part_number_id = l.from_id AND y.part_number_id = l.to_id) AS claimed_on
+     FROM part_number_links l
+     JOIN part_numbers a ON a.id = l.from_id
+     JOIN part_numbers b ON b.id = l.to_id
+     LEFT JOIN brands ba ON ba.id = a.brand_id
+     LEFT JOIN brands bb ON bb.id = b.brand_id
+     LEFT JOIN users u ON u.id = l.created_by
+     ${all ? "" : "WHERE l.verification = 'unverified'"}
+     ORDER BY CASE l.verification WHEN 'unverified' THEN 0 ELSE 1 END, l.created_at DESC
+     LIMIT 200`
+  );
+  return ok(c, rows);
+});
+
+// POST /api/v1/admin/part-numbers/links/:id/decide { decision: verify|reject, relation? }
+adminRoutes.post("/part-numbers/links/:id/decide", async (c) => {
+  const id = Number(c.req.param("id"));
+  const body = await c.req.json<{ decision?: unknown; relation?: unknown }>().catch(() => ({} as { decision?: unknown; relation?: unknown }));
+  const decision = String(body.decision || "");
+  if (decision !== "verify" && decision !== "reject") return fail(c, "Choose to verify or reject");
+  const relation = body.relation === "supersedes" ? "supersedes" : body.relation === "equivalent" ? "equivalent" : null;
+  const res = await dbRun(
+    c.env.DB,
+    `UPDATE part_number_links
+     SET verification = ?, relation = coalesce(?, relation), decided_at = datetime('now')
+     WHERE id = ?`,
+    [decision === "verify" ? "verified" : "rejected", relation, id]
+  );
+  if (!res.changes) return fail(c, "Link not found", 404);
+  return ok(c, await dbFirst(c.env.DB, "SELECT * FROM part_number_links WHERE id = ?", [id]));
+});
+
+// POST /api/v1/admin/part-numbers/links { from: {number, kind, brand_id?}, to: {...}, relation }
+// An admin records a link directly (verified).
+adminRoutes.post("/part-numbers/links", async (c) => {
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const parsed = readNumbersInput([body.from, body.to]);
+  if (typeof parsed === "string") return fail(c, parsed);
+  if (parsed.length !== 2) return fail(c, "Give two different part numbers");
+  const relation = body.relation === "supersedes" ? "supersedes" : "equivalent";
+  const ids: number[] = [];
+  for (const n of parsed) {
+    await dbRun(
+      c.env.DB,
+      "INSERT OR IGNORE INTO part_numbers (number, number_norm, kind, brand_id, source, verification) VALUES (?, ?, ?, ?, 'admin', 'admin_approved')",
+      [n.number, n.norm, n.kind, n.brand_id]
+    );
+    const row = await dbFirst<{ id: number }>(c.env.DB, "SELECT id FROM part_numbers WHERE number_norm = ? AND coalesce(brand_id, 0) = ?", [n.norm, n.brand_id ?? 0]);
+    if (!row) return fail(c, "Part number not saved", 500);
+    ids.push(row.id);
+  }
+  await dbRun(
+    c.env.DB,
+    `INSERT INTO part_number_links (from_id, to_id, relation, source, verification, created_by, decided_at)
+     VALUES (?, ?, ?, 'admin', 'verified', ?, datetime('now'))
+     ON CONFLICT (from_id, to_id, relation) DO UPDATE SET verification = 'verified', decided_at = datetime('now')`,
+    [ids[0], ids[1], relation, Number(c.get("user_id")) || null]
+  );
+  return ok(c, await dbFirst(c.env.DB, "SELECT * FROM part_number_links WHERE from_id = ? AND to_id = ? AND relation = ?", [ids[0], ids[1], relation]));
+});
+
+// PATCH /api/v1/admin/part-numbers/:id { verification }
+adminRoutes.patch("/part-numbers/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  const body = await c.req.json<{ verification?: unknown }>().catch(() => ({} as { verification?: unknown }));
+  const verification = readVerification(body.verification);
+  if (!verification || verification === "invalid") return fail(c, "Unknown verification status");
+  const res = await dbRun(c.env.DB, "UPDATE part_numbers SET verification = ? WHERE id = ?", [verification, id]);
+  if (!res.changes) return fail(c, "Part number not found", 404);
+  return ok(c, await dbFirst(c.env.DB, "SELECT * FROM part_numbers WHERE id = ?", [id]));
 });
 
 // GET /api/v1/admin/reviews

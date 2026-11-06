@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Env, HonoVariables } from "../types";
 import { partRating, partReviews, sellerRating } from "../utils/reviews";
+import { listingNumbers, otherOffers } from "../utils/part-numbers";
 
 export const catalogRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -230,10 +231,13 @@ catalogRoutes.get("/parts/:slug", async (c) => {
 
   const compatibilityResults = compatibility.results ?? [];
   // Approved reviews only; the seller's rating covers all their parts.
-  const [rating, reviews, sellerSummary] = await Promise.all([
+  // Part numbers, and other sellers' listings for the same reference.
+  const [rating, reviews, sellerSummary, numbers, offers] = await Promise.all([
     partRating(c.env, Number(part.id)),
     partReviews(c.env, Number(part.id)),
     sellerRating(c.env, Number(part.seller_id)),
+    listingNumbers(c.env.DB, Number(part.id)),
+    otherOffers(c.env.DB, Number(part.id)),
   ]);
 
   return c.json(
@@ -249,6 +253,8 @@ catalogRoutes.get("/parts/:slug", async (c) => {
         rating,
         reviews,
         seller_rating: sellerSummary,
+        part_numbers: numbers,
+        other_offers: offers,
         fitment_notes: compatibilityResults.map((c: any) =>
           [c.year_start, c.make, c.model, c.engine].filter(Boolean).join(" ")
         ),

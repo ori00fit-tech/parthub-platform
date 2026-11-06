@@ -8,6 +8,7 @@ import { loadReadiness } from "../utils/seller-readiness";
 import { LEGAL_VERSION } from "../utils/legal";
 import { notifyBackInStock } from "../utils/stock-alerts";
 import { readVehicleEntry } from "../utils/vehicle-catalog";
+import { listingNumbers, readNumbersInput, saveListingNumbers } from "../utils/part-numbers";
 import { type IssueRow, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, updateIssue } from "../utils/issues";
 import { type LineStatus, SELLER_NEXT, logOrderEvent, refreshOrderStatus, rollupStatus, setLineStatus } from "../utils/fulfillment";
 import { runInBackground } from "../utils/whatsapp";
@@ -1653,6 +1654,33 @@ marketplaceRoutes.get("/me/parts/:id/compatibility", authMiddleware, async (c) =
       500
     );
   }
+});
+
+// GET /api/v1/marketplace/me/parts/:id/numbers — the listing's part numbers.
+marketplaceRoutes.get("/me/parts/:id/numbers", authMiddleware, async (c) => {
+  const sellerId = Number(c.get("seller_id"));
+  const partId = Number(c.req.param("id"));
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const owned = await getOwnedPartForSeller(c.env.DB, sellerId, partId);
+  if (!owned) return c.json(failure("PART_NOT_FOUND", "Part not found for this seller"), 404);
+  return c.json(success(await listingNumbers(c.env.DB, partId)));
+});
+
+// PUT /api/v1/marketplace/me/parts/:id/numbers { numbers: [{ number, kind, role, brand_id? }] }
+// Replaces the listing's numbers. "replaces" = the seller's claim that this
+// part replaces an original number (verified by PartHub before it links
+// other sellers' listings).
+marketplaceRoutes.put("/me/parts/:id/numbers", authMiddleware, async (c) => {
+  const sellerId = Number(c.get("seller_id"));
+  const partId = Number(c.req.param("id"));
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const owned = await getOwnedPartForSeller(c.env.DB, sellerId, partId);
+  if (!owned) return c.json(failure("PART_NOT_FOUND", "Part not found for this seller"), 404);
+  const body = await c.req.json<{ numbers?: unknown }>().catch(() => ({} as { numbers?: unknown }));
+  const numbers = readNumbersInput(body.numbers);
+  if (typeof numbers === "string") return c.json(failure("INVALID_NUMBERS", numbers), 400);
+  const saved = await saveListingNumbers(c.env.DB, partId, numbers, Number(c.get("user_id")) || null);
+  return c.json(success(saved, { message: "Part numbers saved" }));
 });
 
 marketplaceRoutes.post("/me/parts/:id/compatibility", authMiddleware, async (c) => {
