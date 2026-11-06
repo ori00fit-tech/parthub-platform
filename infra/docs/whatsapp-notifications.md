@@ -35,8 +35,8 @@ request still succeeds and the failure is logged.
    | Var | Default | Used for |
    |---|---|---|
    | `WHATSAPP_TEMPLATE_LANG` | `fr` | Language code the templates are registered in |
-   | `STOREFRONT_URL` | `https://parthub.site` | Link sent to buyers |
-   | `SELLER_PORTAL_URL` | `https://seller.parthub.site` | Link sent to sellers |
+   | `STOREFRONT_URL` | `https://parthub.autos` | Link sent to buyers |
+   | `SELLER_PORTAL_URL` | `https://seller.parthub.autos` | Link sent to sellers |
 
 4. **Create and get the four templates approved** in Meta Business Manager →
    WhatsApp Manager → Message templates. Category: **Utility**. The names and

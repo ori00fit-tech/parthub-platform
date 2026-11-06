@@ -2,7 +2,7 @@
 
 ## Onboarding
 1. Register with role=seller at storefront /auth
-2. Go to seller.parthub.site → auto-redirect to /auth
+2. Go to seller.parthub.autos → auto-redirect to /auth
 3. Login with seller credentials
 4. POST /api/v1/marketplace/sellers/onboard with store name
 5. Status starts as `pending` → Admin approves → `active`

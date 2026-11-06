@@ -135,7 +135,7 @@ export default function AuthPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@parthub.site"
+                placeholder="admin@parthub.autos"
                 className={inputCls}
               />
             </div>

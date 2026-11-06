@@ -5,9 +5,9 @@
 ```
 Browser
   │
-  ├── storefront (CF Pages) → parthub.site
-  ├── seller-portal (CF Pages) → seller.parthub.site
-  └── admin (CF Pages) → admin.parthub.site
+  ├── storefront (CF Pages) → parthub.autos
+  ├── seller-portal (CF Pages) → seller.parthub.autos
+  └── admin (CF Pages) → admin.parthub.autos
           │
           ▼
       Cloudflare Worker (Hono API)
@@ -50,4 +50,4 @@ Browser
 2. API validates mime + size
 3. File stored in R2: `parts/{seller_id}/{part_id}/{timestamp}.webp`
 4. URL recorded in `part_images` table
-5. Public URL served via `media.parthub.site` (R2 custom domain)
+5. Public URL served via `media.parthub.autos` (R2 custom domain)
