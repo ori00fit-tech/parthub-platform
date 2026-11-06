@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { formatMoney } from "@parthub/shared";
 import { Icon } from "@parthub/shared/icons";
 import { api } from "../lib/api";
 import { mediaUrl } from "../lib/requests";
 import { dateLocale, statusLabel, useT } from "../i18n";
+import IssueCard from "../components/issues/IssueCard";
 
 export function badgeClasses(status) {
   switch (String(status || "").toLowerCase()) {
@@ -53,6 +54,18 @@ const ACTIONS = {
   cancelled: { label: "Cancel order", hint: "The quantities go back to your stock.", tone: "danger" },
 };
 
+// Claim steps recorded in the order history (see utils/issues.ts in the API).
+const EVENT_LABELS = {
+  issue_opened: "Claim opened",
+  issue_accepted: "Claim accepted",
+  issue_refused: "Claim refused",
+  issue_escalated: "Sent to PartHub",
+  issue_decided_buyer: "PartHub decided for the buyer",
+  issue_decided_seller: "PartHub decided for the seller",
+  issue_refunded: "Refund done",
+  issue_withdrawn: "Claim withdrawn",
+};
+
 function Badge({ status }) {
   return (
     <span className={["inline-flex rounded-full px-3 py-1 text-xs font-semibold", badgeClasses(status)].join(" ")}>
@@ -80,18 +93,20 @@ export default function OrderDetailsPage() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelNote, setCancelNote] = useState("");
 
+  const load = useCallback(
+    () =>
+      api
+        .get(`/api/v1/marketplace/me/orders/${id}`)
+        .then((res) => (setOrder(res?.data || null), setError("")))
+        .catch((err) => (setOrder(null), setError(err?.message || t("Failed to load order details"))))
+        .finally(() => setLoading(false)),
+    [id] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
   useEffect(() => {
-    let active = true;
     setLoading(true);
-    api
-      .get(`/api/v1/marketplace/me/orders/${id}`)
-      .then((res) => active && (setOrder(res?.data || null), setError("")))
-      .catch((err) => active && (setOrder(null), setError(err?.message || t("Failed to load order details"))))
-      .finally(() => active && setLoading(false));
-    return () => {
-      active = false;
-    };
-  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+    load();
+  }, [load]);
 
   async function move(status) {
     setActionError("");
@@ -233,6 +248,21 @@ export default function OrderDetailsPage() {
         ) : null}
       </div>
 
+      {Array.isArray(order.issues) && order.issues.length ? (
+        <div className="rounded-3xl border border-amber-200 bg-amber-50/40 p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-gray-900">{t("Returns and claims")}</h2>
+          <div className="mt-4 space-y-3">
+            {order.issues.map((issue) => (
+              <IssueCard
+                key={issue.id}
+                issue={{ ...issue, part_title: items.find((i) => i.id === issue.order_item_id)?.title }}
+                onChange={load}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-6">
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -278,7 +308,7 @@ export default function OrderDetailsPage() {
                   <span className={["mt-1.5 h-2 w-2 flex-none rounded-full", ev.event === "cancelled" ? "bg-red-500" : "bg-blue-500"].join(" ")} aria-hidden="true" />
                   <div>
                     <p className="font-semibold text-gray-900">
-                      {statusLabel(ev.event)} <span className="font-normal text-gray-500">· {actorLabel(t, ev.created_by)}</span>
+                      {EVENT_LABELS[ev.event] ? t(EVENT_LABELS[ev.event]) : statusLabel(ev.event)} <span className="font-normal text-gray-500">· {actorLabel(t, ev.created_by)}</span>
                     </p>
                     {ev.note ? <p className="text-gray-700">{ev.note}</p> : null}
                     <p className="text-xs text-gray-500">{formatOrderDate(ev.created_at, true)}</p>

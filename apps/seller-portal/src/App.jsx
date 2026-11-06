@@ -15,6 +15,7 @@ import StoreSettingsPage from "./pages/StoreSettingsPage";
 import RequestsInboxPage from "./pages/RequestsInboxPage";
 import RequestDetailsPage from "./pages/RequestDetailsPage";
 import AgreementPage from "./pages/AgreementPage";
+import IssuesPage from "./pages/IssuesPage";
 import LegalPage from "./pages/LegalPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
@@ -32,6 +33,15 @@ export default function App() {
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/legal" element={<LegalPage />} />
       <Route path="/legal/:doc" element={<LegalPage />} />
+
+      <Route
+        path="/issues"
+        element={
+          <ProtectedShell>
+            <IssuesPage />
+          </ProtectedShell>
+        }
+      />
 
       <Route
         path="/agreement"

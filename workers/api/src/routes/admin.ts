@@ -9,6 +9,7 @@ import { parsePagination } from "../utils/pagination";
 import { notifyBackInStock } from "../utils/stock-alerts";
 import { runInBackground } from "../utils/whatsapp";
 import { type LineStatus, logOrderEvent, refreshOrderStatus, setLineStatus } from "../utils/fulfillment";
+import { type IssueRow, cleanNote, loadIssue, nowText, publicIssue, updateIssue } from "../utils/issues";
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -38,12 +39,18 @@ adminRoutes.get("/dashboard", async (c) => {
 
 // GET /api/v1/admin/pending-counts — what is waiting for moderation (sidebar badges).
 adminRoutes.get("/pending-counts", async (c) => {
-  const [sellers, parts, reviews] = await Promise.all([
+  const [sellers, parts, reviews, issues] = await Promise.all([
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM sellers WHERE status = 'pending'"),
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM parts WHERE status = 'pending'"),
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM reviews WHERE status = 'pending'"),
+    dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM order_issues WHERE status = 'escalated'"),
   ]);
-  return ok(c, { sellers: sellers?.n ?? 0, parts: parts?.n ?? 0, reviews: reviews?.n ?? 0 });
+  return ok(c, {
+    sellers: sellers?.n ?? 0,
+    parts: parts?.n ?? 0,
+    reviews: reviews?.n ?? 0,
+    issues: issues?.n ?? 0,
+  });
 });
 
 // GET /api/v1/admin/sellers
@@ -315,6 +322,57 @@ adminRoutes.patch("/orders/:id/status", async (c) => {
   await refreshOrderStatus(c.env.DB, orderId);
   for (const partId of restocked) runInBackground(c, notifyBackInStock(c.env, partId));
   return ok(c, { message: "Order updated" });
+});
+
+// GET /api/v1/admin/issues?status=escalated|active|all — returns and complaints.
+adminRoutes.get("/issues", async (c) => {
+  const q = c.req.query();
+  const { page, limit, offset } = parsePagination(q);
+  const status = q["status"] || "escalated";
+  const where =
+    status === "all" ? "" : status === "active" ? "WHERE i.status != 'closed'" : "WHERE i.status = 'escalated'";
+  const total = await dbCount(c.env.DB, `SELECT COUNT(*) as total FROM order_issues i ${where}`);
+  const rows = await dbAll<IssueRow>(
+    c.env.DB,
+    `SELECT i.*, o.reference, oi.title AS part_title, oi.subtotal, oi.delivered_at,
+            u.name AS buyer_name, u.email AS buyer_email, a.phone AS buyer_phone,
+            s.name AS seller_name, s.phone AS seller_phone, s.whatsapp AS seller_whatsapp
+     FROM order_issues i
+     JOIN orders o ON o.id = i.order_id
+     JOIN order_items oi ON oi.id = i.order_item_id
+     JOIN users u ON u.id = i.buyer_id
+     JOIN sellers s ON s.id = i.seller_id
+     LEFT JOIN order_addresses a ON a.order_id = i.order_id
+     ${where}
+     ORDER BY CASE i.status WHEN 'escalated' THEN 0 ELSE 1 END, i.escalated_at ASC, i.created_at DESC
+     LIMIT ? OFFSET ?`,
+    [limit, offset]
+  );
+  return paginated(c, rows.map(publicIssue), { page, limit, total });
+});
+
+// POST /api/v1/admin/issues/:id/decide { outcome: buyer|seller, note }
+// PartHub's decision, recorded on the order. For the buyer: the seller must
+// take the part back and refund (claim stays "accepted" until refunded).
+// For the seller: the claim is closed.
+adminRoutes.post("/issues/:id/decide", async (c) => {
+  const issue = await loadIssue(c.env.DB, Number(c.req.param("id")));
+  if (!issue) return fail(c, "Claim not found", 404);
+  if (issue.status === "closed") return fail(c, "This claim is already closed", 409);
+  const body = await c.req.json<{ outcome?: unknown; note?: unknown; return_paid_by?: unknown }>().catch(() => ({} as Record<string, unknown>));
+  const outcome = String(body.outcome || "");
+  const note = cleanNote(body.note);
+  if (outcome !== "buyer" && outcome !== "seller") return fail(c, "Choose who the decision favours");
+  if (!note) return fail(c, "Write the reason for the decision");
+  const paidBy = body.return_paid_by === "buyer" || body.return_paid_by === "seller" ? body.return_paid_by : issue.return_paid_by;
+  const fields =
+    outcome === "buyer"
+      ? { status: "accepted" as const, admin_note: note, return_paid_by: paidBy, seller_replied_at: nowText() }
+      : { status: "closed" as const, outcome: "seller" as const, admin_note: note, closed_at: nowText() };
+  const updated = await updateIssue(
+    c.env.DB, issue, fields, outcome === "buyer" ? "issue_decided_buyer" : "issue_decided_seller", "admin", note
+  );
+  return ok(c, publicIssue(updated));
 });
 
 // GET /api/v1/admin/reviews

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
 import { apiGet } from "../lib/api";
@@ -8,6 +8,7 @@ import { statusLabel, useT } from "../i18n";
 import { OrderStatusBadge, formatOrderDate } from "./OrdersPage";
 import { Icon } from "@parthub/shared/icons";
 import { ItemReview } from "../features/reviews/Reviews";
+import ItemIssue from "../features/issues/ItemIssue";
 
 // Order lifecycle as stored on the order (orders.status).
 const STEPS = [
@@ -26,16 +27,18 @@ export default function OrderTrackingPage() {
   const { isAuthenticated } = useAuth();
   const [state, setState] = useState({ loading: true, error: "", order: null });
 
+  const load = useCallback(
+    () =>
+      apiGet(`/api/v1/commerce/orders/${encodeURIComponent(orderNumber)}`, undefined, { auth: true })
+        .then((res) => setState({ loading: false, error: "", order: res?.data || null }))
+        .catch((err) => setState({ loading: false, error: err?.message || t("Could not load this order"), order: null })),
+    [orderNumber] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
   useEffect(() => {
-    if (!isAuthenticated || !orderNumber) return undefined;
-    let active = true;
-    apiGet(`/api/v1/commerce/orders/${encodeURIComponent(orderNumber)}`, undefined, { auth: true })
-      .then((res) => active && setState({ loading: false, error: "", order: res?.data || null }))
-      .catch((err) => active && setState({ loading: false, error: err?.message || t("Could not load this order"), order: null }));
-    return () => {
-      active = false;
-    };
-  }, [isAuthenticated, orderNumber]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!isAuthenticated || !orderNumber) return;
+    load();
+  }, [isAuthenticated, orderNumber, load]);
 
   if (!isAuthenticated) {
     return (
@@ -86,7 +89,7 @@ export default function OrderTrackingPage() {
   const items = Array.isArray(order.items) ? order.items : [];
   const events = Array.isArray(order.events) ? order.events : [];
   // Messages left with a status change (e.g. why a seller cancelled).
-  const notes = events.filter((e) => e.note);
+  const notes = events.filter((e) => e.note && e.actor !== "buyer" && !String(e.event).startsWith("issue_"));
   const cancelNote = [...events].reverse().find((e) => e.event === "cancelled" && e.note)?.note || "";
   const address = order.shipping_address;
 
@@ -174,6 +177,7 @@ export default function OrderTrackingPage() {
                   </div>
                 </div>
                 {(item.status || order.status) === "delivered" && item.part_id ? <ItemReview item={item} /> : null}
+                {item.issue || item.can_report ? <ItemIssue reference={order.reference} item={item} onChange={load} /> : null}
               </li>
             ))}
           </ul>

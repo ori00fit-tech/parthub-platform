@@ -3,6 +3,8 @@ import type { Env, HonoVariables } from "../types";
 import { authMiddleware } from "../middlewares/auth";
 import { ok, created, fail, notFound } from "../utils/response";
 import { dbFirst, dbAll, dbRun } from "../utils/db";
+import { logOrderEvent } from "../utils/fulfillment";
+import { ISSUE_REASONS, type IssueRow, canEscalate, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, reportWindow, updateIssue } from "../utils/issues";
 
 const MAX_REVIEW_LENGTH = 1000;
 
@@ -193,7 +195,85 @@ commerceRoutes.get("/orders/:reference", authMiddleware, async (c) => {
     [(order as any).id]
   );
 
-  return ok(c, { ...order, items, shipping_address: address, events });
+  // Returns: the latest claim on each line, and whether a new one can be opened.
+  const issues = await issuesForOrder(c.env.DB, (order as any).id);
+  const withIssues = (items as Array<Record<string, any>>).map((item) => {
+    const issue = issues.filter((i) => i.order_item_id === item.id).pop() || null;
+    const window = reportWindow(item);
+    const reopenable = !issue || (issue.status === "closed" && issue.outcome === "withdrawn");
+    return { ...item, issue, report_until: window.until, can_report: window.open && reopenable };
+  });
+
+  return ok(c, { ...order, items: withIssues, shipping_address: address, events });
+});
+
+// POST /api/v1/commerce/orders/:reference/issues { order_item_id, reason, details }
+// Report a problem with a delivered part, within 7 days of delivery.
+commerceRoutes.post("/orders/:reference/issues", authMiddleware, async (c) => {
+  const buyerId = Number(c.get("user_id"));
+  const body = await c.req
+    .json<{ order_item_id?: unknown; reason?: unknown; details?: unknown }>()
+    .catch(() => ({}) as { order_item_id?: unknown; reason?: unknown; details?: unknown });
+  const itemId = Number(body.order_item_id);
+  const reason = String(body.reason || "");
+  const details = cleanNote(body.details);
+  if (!(reason in ISSUE_REASONS)) return fail(c, "Choose what the problem is");
+  if (!details || details.length < 10) return fail(c, "Describe the problem in a few words (at least 10 characters)");
+
+  const item = await dbFirst<{ id: number; order_id: number; seller_id: number; status: string; delivered_at: string | null }>(
+    c.env.DB,
+    `SELECT oi.id, oi.order_id, oi.seller_id, oi.status, oi.delivered_at
+     FROM order_items oi JOIN orders o ON o.id = oi.order_id
+     WHERE oi.id = ? AND o.reference = ? AND o.buyer_id = ?`,
+    [itemId, c.req.param("reference"), buyerId]
+  );
+  if (!item) return notFound(c, "Order item");
+  if (item.status !== "delivered") return fail(c, "You can report a problem once the part is delivered", 409);
+  if (!reportWindow(item).open) return fail(c, "The 7-day returns window for this part has closed", 409);
+  const existing = await dbFirst<{ id: number }>(
+    c.env.DB,
+    "SELECT id FROM order_issues WHERE order_item_id = ? AND NOT (status = 'closed' AND outcome = 'withdrawn')",
+    [item.id]
+  );
+  if (existing) return fail(c, "A problem is already reported for this part", 409);
+
+  const res = await dbRun(
+    c.env.DB,
+    `INSERT INTO order_issues (order_id, order_item_id, buyer_id, seller_id, reason, details, return_paid_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [item.order_id, item.id, buyerId, item.seller_id, reason, details, ISSUE_REASONS[reason]]
+  );
+  await logOrderEvent(c.env.DB, item.order_id, "issue_opened", "buyer", details);
+  const issue = await loadIssue(c.env.DB, Number(res.lastRowId));
+  return created(c, publicIssue(issue as IssueRow));
+});
+
+async function buyerIssue(c: { env: Env; req: { param: (k: string) => string }; get: (k: "user_id") => unknown }) {
+  const issue = await loadIssue(c.env.DB, Number(c.req.param("id")));
+  return issue && issue.buyer_id === Number(c.get("user_id")) ? issue : null;
+}
+
+// POST /api/v1/commerce/issues/:id/escalate { note? } — ask PartHub to decide.
+commerceRoutes.post("/issues/:id/escalate", authMiddleware, async (c) => {
+  const issue = await buyerIssue(c);
+  if (!issue) return notFound(c, "Claim");
+  if (!canEscalate(issue)) return fail(c, "You can ask PartHub once the seller refuses or does not reply in time", 409);
+  const body = await c.req.json<{ note?: unknown }>().catch(() => ({}) as { note?: unknown });
+  const updated = await updateIssue(
+    c.env.DB, issue, { status: "escalated", escalated_at: nowText() }, "issue_escalated", "buyer", cleanNote(body.note)
+  );
+  return ok(c, publicIssue(updated));
+});
+
+// POST /api/v1/commerce/issues/:id/withdraw — the buyer closes the claim.
+commerceRoutes.post("/issues/:id/withdraw", authMiddleware, async (c) => {
+  const issue = await buyerIssue(c);
+  if (!issue) return notFound(c, "Claim");
+  if (issue.status === "closed") return fail(c, "This claim is already closed", 409);
+  const updated = await updateIssue(
+    c.env.DB, issue, { status: "closed", outcome: "withdrawn", closed_at: nowText() }, "issue_withdrawn", "buyer", null
+  );
+  return ok(c, publicIssue(updated));
 });
 
 // POST /api/v1/commerce/reviews

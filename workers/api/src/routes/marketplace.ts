@@ -7,6 +7,7 @@ import { signToken } from "../utils/auth";
 import { loadReadiness } from "../utils/seller-readiness";
 import { LEGAL_VERSION } from "../utils/legal";
 import { notifyBackInStock } from "../utils/stock-alerts";
+import { type IssueRow, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, updateIssue } from "../utils/issues";
 import { type LineStatus, SELLER_NEXT, logOrderEvent, refreshOrderStatus, rollupStatus, setLineStatus } from "../utils/fulfillment";
 import { runInBackground } from "../utils/whatsapp";
 
@@ -1359,8 +1360,10 @@ async function loadSellerOrder(DB: D1Database, sellerId: number, orderId: number
   ).bind(orderId, sellerId).first<{ n: number }>();
 
   const status = rollupStatus(lines.map((l) => l.status));
+  const issues = await issuesForOrder(DB, orderId, sellerId);
   return {
     ...order,
+    issues,
     status,
     total: lines.reduce((sum, l) => sum + Number(l.subtotal || 0), 0),
     next_statuses: SELLER_NEXT[status] ?? [],
@@ -1380,6 +1383,74 @@ marketplaceRoutes.get("/me/orders/:id", authMiddleware, async (c) => {
   const order = await loadSellerOrder(c.env.DB, sellerId, orderId);
   if (!order) return c.json(failure("NOT_FOUND", "Order not found"), 404);
   return c.json(success(order));
+});
+
+// GET /api/v1/marketplace/me/issues?status=active|all — returns and complaints
+// on the seller's parts. "active" (default) = open, accepted, refused, escalated.
+marketplaceRoutes.get("/me/issues", authMiddleware, async (c) => {
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const all = c.req.query("status") === "all";
+  const rows = await c.env.DB.prepare(`
+    select i.*, o.reference, oi.title as part_title, oi.subtotal, coalesce(u.name, 'Buyer') as buyer_name
+    from order_issues i
+    join orders o on o.id = i.order_id
+    join order_items oi on oi.id = i.order_item_id
+    left join users u on u.id = i.buyer_id
+    where i.seller_id = ?1 ${all ? "" : "and i.status != 'closed'"}
+    order by case i.status when 'open' then 0 when 'escalated' then 1 when 'accepted' then 2 when 'refused' then 3 else 4 end, i.created_at desc
+    limit 200
+  `).bind(sellerId).all<IssueRow>();
+  const waiting = await c.env.DB.prepare(
+    "select count(*) as n from order_issues where seller_id = ?1 and status = 'open'"
+  ).bind(sellerId).first<{ n: number }>();
+  return c.json(success({ items: (rows.results || []).map(publicIssue), waiting: Number(waiting?.n || 0) }));
+});
+
+async function sellerIssue(c: Parameters<typeof ownSellerId>[0] & { req: { param: (k: string) => string } }) {
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return { sellerId: null, issue: null };
+  const issue = await loadIssue(c.env.DB, Number(c.req.param("id")));
+  return { sellerId, issue: issue && issue.seller_id === sellerId ? issue : null };
+}
+
+// POST /api/v1/marketplace/me/issues/:id/respond { decision: accept|refuse, note }
+marketplaceRoutes.post("/me/issues/:id/respond", authMiddleware, async (c) => {
+  const { sellerId, issue } = await sellerIssue(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  if (!issue) return c.json(failure("NOT_FOUND", "Claim not found"), 404);
+  if (issue.status !== "open") return c.json(failure("ALREADY_ANSWERED", "This claim was already answered"), 409);
+  const body = await c.req.json<{ decision?: unknown; note?: unknown }>().catch(() => ({} as { decision?: unknown; note?: unknown }));
+  const decision = String(body.decision || "");
+  const note = cleanNote(body.note);
+  if (decision !== "accept" && decision !== "refuse") {
+    return c.json(failure("INVALID_DECISION", "Choose to accept or refuse the claim"), 400);
+  }
+  if (decision === "refuse" && !note) {
+    return c.json(failure("NOTE_REQUIRED", "Explain to the buyer why you refuse"), 400);
+  }
+  const updated = await updateIssue(
+    c.env.DB,
+    issue,
+    { status: decision === "accept" ? "accepted" : "refused", seller_note: note, seller_replied_at: nowText() },
+    decision === "accept" ? "issue_accepted" : "issue_refused",
+    `seller:${sellerId}`,
+    note
+  );
+  return c.json(success(publicIssue(updated), { message: "Reply sent to the buyer" }));
+});
+
+// POST /api/v1/marketplace/me/issues/:id/resolve — the refund is done.
+marketplaceRoutes.post("/me/issues/:id/resolve", authMiddleware, async (c) => {
+  const { sellerId, issue } = await sellerIssue(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  if (!issue) return c.json(failure("NOT_FOUND", "Claim not found"), 404);
+  if (issue.status !== "accepted") return c.json(failure("NOT_ACCEPTED", "Accept the claim before marking it refunded"), 409);
+  const body = await c.req.json<{ note?: unknown }>().catch(() => ({} as { note?: unknown }));
+  const updated = await updateIssue(
+    c.env.DB, issue, { status: "closed", outcome: "buyer", closed_at: nowText() }, "issue_refunded", `seller:${sellerId}`, cleanNote(body.note)
+  );
+  return c.json(success(publicIssue(updated), { message: "Claim closed" }));
 });
 
 // PATCH /api/v1/marketplace/me/orders/:id/status { status, note? }

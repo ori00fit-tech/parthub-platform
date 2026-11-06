@@ -9,7 +9,7 @@
 // steps?: string[], table?: { head: string[], rows: string[][] }, after?: string[] }
 // "{email}" is replaced with LEGAL_CONTACT_EMAIL when rendered.
 
-export const LEGAL_VERSION = "2026-11-05";
+export const LEGAL_VERSION = "2026-11-06";
 export const LEGAL_CONTACT_EMAIL = "support@parthub.com";
 
 export const LEGAL_DOC_IDS = ["terms", "seller", "returns", "privacy"];
@@ -262,7 +262,7 @@ const seller = {
         title: "Returns and refunds",
         paragraphs: [
           "Follow the PartHub returns policy. You pay for the return when the part is faulty, damaged on arrival, different from its description, not compatible because of your information, or has a hidden defect (used parts). You cannot refuse a defect or non-conformity claim only because the part was fitted.",
-          "Buyers pay you directly, so you refund them yourself, within 7 days of receiving the returned part (or of the decision when no return is needed). When you and the buyer disagree, PartHub reviews the case and records its decision on the order.",
+          "Answer each claim in the seller portal (Returns) within 2 working days: accept it or explain why you refuse. Buyers pay you directly, so you refund them yourself, within 7 days of receiving the returned part (or of the decision when no return is needed), then mark the claim as refunded. When you and the buyer disagree, PartHub reviews the case and records its decision on the order.",
         ],
       },
       {
@@ -331,7 +331,7 @@ const seller = {
         title: "الإرجاع واسترجاع المبلغ",
         paragraphs: [
           "التزم بسياسة الإرجاع في PartHub. تتحمّل تكلفة الإرجاع إذا كانت القطعة معيبة، أو تالفة عند الوصول، أو مختلفة عن الوصف، أو غير متوافقة بسبب معلوماتك، أو بها عيب خفي (القطع المستعملة). لا يمكنك رفض شكوى عيب أو عدم مطابقة لمجرد أن القطعة رُكّبت.",
-          "يدفع لك المشترون مباشرة، لذا تُرجع لهم المبلغ بنفسك خلال 7 أيام من استلام القطعة المُرجَعة (أو من القرار إن لم يلزم الإرجاع). عند الخلاف بينك وبين المشتري، تراجع PartHub الحالة وتسجّل قرارها في الطلب.",
+          "أجب عن كل شكوى في بوابة البائع (الإرجاع) خلال يومي عمل: اقبلها أو اشرح سبب الرفض. يدفع لك المشترون مباشرة، لذا تُرجع لهم المبلغ بنفسك خلال 7 أيام من استلام القطعة المُرجَعة (أو من القرار إن لم يلزم الإرجاع)، ثم تعلّم الشكوى على أنها مُسترجعة. عند الخلاف بينك وبين المشتري، تراجع PartHub الحالة وتسجّل قرارها في الطلب.",
         ],
       },
       {
@@ -400,7 +400,7 @@ const seller = {
         title: "Retours et remboursements",
         paragraphs: [
           "Respectez la politique de retour de PartHub. Vous payez le retour lorsque la pièce est défectueuse, endommagée à l'arrivée, différente de sa description, incompatible à cause de vos informations, ou présente un vice caché (pièces d'occasion). Vous ne pouvez pas refuser une réclamation pour défaut ou non-conformité au seul motif que la pièce a été montée.",
-          "Les acheteurs vous paient directement : vous les remboursez vous-même, dans les 7 jours suivant la réception de la pièce retournée (ou la décision, si aucun retour n'est nécessaire). En cas de désaccord avec l'acheteur, PartHub examine le dossier et inscrit sa décision sur la commande.",
+          "Répondez à chaque réclamation dans l'espace vendeur (Retours) sous 2 jours ouvrables : acceptez-la ou expliquez votre refus. Les acheteurs vous paient directement : vous les remboursez vous-même, dans les 7 jours suivant la réception de la pièce retournée (ou la décision, si aucun retour n'est nécessaire), puis marquez la réclamation comme remboursée. En cas de désaccord avec l'acheteur, PartHub examine le dossier et inscrit sa décision sur la commande.",
         ],
       },
       {
@@ -472,9 +472,9 @@ const returns = {
       {
         title: "How to ask for a return",
         steps: [
-          "Contact the seller from your order page (phone or WhatsApp) with the order number, the reason and photos.",
-          "The seller replies within 2 working days and tells you how to send the part back.",
-          "If you do not reach an agreement, write to PartHub at {email} with your order number. PartHub reviews the case with both sides and records the decision on the order.",
+          "On your order page, choose \"Problem with this part?\", pick the reason and describe what happened. You can send photos to the seller on WhatsApp.",
+          "The seller accepts or refuses within 2 working days. If they accept, agree with them how to send the part back.",
+          "If the seller refuses or does not reply in time, ask PartHub to decide from the same page. PartHub reviews the case with both sides and records the decision on the order. You can also write to {email}.",
         ],
       },
       {
@@ -523,9 +523,9 @@ const returns = {
       {
         title: "كيف تطلب الإرجاع",
         steps: [
-          "تواصل مع البائع من صفحة طلبك (هاتف أو واتساب) مع رقم الطلب والسبب والصور.",
-          "يردّ البائع خلال يومي عمل ويخبرك بطريقة إرجاع القطعة.",
-          "إن لم تتفقا، راسل PartHub على {email} مع رقم الطلب. تراجع PartHub الحالة مع الطرفين وتسجّل القرار في الطلب.",
+          "في صفحة طلبك، اختر \"مشكلة في هذه القطعة؟\"، وحدّد السبب وصِف ما حدث. يمكنك إرسال الصور للبائع عبر واتساب.",
+          "يقبل البائع أو يرفض خلال يومي عمل. إن قبل، اتفق معه على طريقة إرجاع القطعة.",
+          "إن رفض البائع أو لم يردّ في الوقت المحدد، اطلب من PartHub البتّ من الصفحة نفسها. تراجع PartHub الحالة مع الطرفين وتسجّل القرار في الطلب. يمكنك أيضاً مراسلتنا على {email}.",
         ],
       },
       {
@@ -574,9 +574,9 @@ const returns = {
       {
         title: "Comment demander un retour",
         steps: [
-          "Contactez le vendeur depuis la page de votre commande (téléphone ou WhatsApp) avec le numéro de commande, le motif et des photos.",
-          "Le vendeur répond sous 2 jours ouvrables et vous indique comment renvoyer la pièce.",
-          "Faute d'accord, écrivez à PartHub à {email} avec votre numéro de commande. PartHub examine le dossier avec les deux parties et inscrit la décision sur la commande.",
+          "Sur la page de votre commande, choisissez « Un problème avec cette pièce ? », indiquez le motif et décrivez ce qui s'est passé. Vous pouvez envoyer des photos au vendeur sur WhatsApp.",
+          "Le vendeur accepte ou refuse sous 2 jours ouvrables. S'il accepte, convenez avec lui du renvoi de la pièce.",
+          "Si le vendeur refuse ou ne répond pas à temps, demandez à PartHub de trancher depuis la même page. PartHub examine le dossier avec les deux parties et inscrit la décision sur la commande. Vous pouvez aussi écrire à {email}.",
         ],
       },
       {

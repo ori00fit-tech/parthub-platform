@@ -1,4 +1,6 @@
-import { Link, NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { api } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { useT } from "../../i18n";
 import LanguageSwitcher from "../common/LanguageSwitcher";
@@ -12,9 +14,27 @@ function navClass({ isActive }) {
   ].join(" ");
 }
 
+// Claims waiting for the seller's reply (badge on "Returns").
+function useWaitingClaims() {
+  const { pathname } = useLocation();
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    let active = true;
+    api
+      .get("/api/v1/marketplace/me/issues")
+      .then((res) => active && setN(Number(res?.data?.waiting || 0)))
+      .catch(() => active && setN(0));
+    return () => {
+      active = false;
+    };
+  }, [pathname]);
+  return n;
+}
+
 export default function SellerLayout({ children }) {
   const t = useT();
   const { user, logout } = useAuth();
+  const waitingClaims = useWaitingClaims();
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -60,6 +80,14 @@ export default function SellerLayout({ children }) {
             <NavLink to="/" className={navClass}>{t("Dashboard")}</NavLink>
             <NavLink to="/parts" className={navClass}>{t("Inventory")}</NavLink>
             <NavLink to="/orders" className={navClass}>{t("Orders")}</NavLink>
+            <NavLink to="/issues" className={navClass}>
+              {t("Returns")}
+              {waitingClaims ? (
+                <span className="ms-1.5 rounded-full bg-amber-500 px-1.5 text-[11px] font-bold leading-5 text-white" aria-label={t("{n} waiting for your reply", { n: waitingClaims })}>
+                  {waitingClaims}
+                </span>
+              ) : null}
+            </NavLink>
             <NavLink to="/requests" className={navClass} data-tour="requests">{t("Requests")}</NavLink>
             <NavLink to="/reviews" className={navClass}>{t("Reviews")}</NavLink>
             <NavLink to="/insights" className={navClass}>{t("Insights")}</NavLink>
