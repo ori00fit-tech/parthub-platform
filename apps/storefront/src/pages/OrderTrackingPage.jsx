@@ -216,7 +216,12 @@ export default function OrderTrackingPage() {
           ) : null}
           <div className="rounded-3xl border border-line bg-surface p-5 text-sm text-muted shadow-sm">
             <p className="font-semibold text-ink">{t("Payment")}</p>
-            <p className="mt-1">{t("Payment status: {status}", { status: statusLabel(order.payment_status || "unpaid") })}</p>
+            <p className="mt-1 font-semibold text-ink">{t("Cash on delivery")}</p>
+            {order.payment_status === "paid" ? (
+              <p className="mt-1">{t("Payment status: {status}", { status: statusLabel("paid") })}</p>
+            ) : cancelled || order.status === "delivered" ? null : (
+              <p className="mt-1">{t("To pay the seller on delivery: {amount}", { amount: formatPrice(order.total) })}</p>
+            )}
             <p className="mt-3">{t("The seller may call you to confirm the part before shipping.")}</p>
           </div>
         </aside>

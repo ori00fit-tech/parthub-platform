@@ -757,4 +757,7 @@ export default {
   "PartHub decided for the buyer": "قرّرت PartHub لصالح المشتري",
   "PartHub decided for the seller": "قرّرت PartHub لصالح البائع",
   "Claim withdrawn": "سُحبت الشكوى",
+  "Cash on delivery": "الدفع عند الاستلام",
+  "Collect {amount} for your parts": "حصّل {amount} مقابل قطعك",
+  "Collect {amount} (shipping included)": "حصّل {amount} (التوصيل مشمول)",
 };

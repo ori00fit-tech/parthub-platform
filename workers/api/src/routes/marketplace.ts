@@ -1327,7 +1327,7 @@ marketplaceRoutes.get("/me/orders", authMiddleware, async (c) => {
 async function loadSellerOrder(DB: D1Database, sellerId: number, orderId: number) {
   const order = await DB.prepare(`
     select o.id, o.reference, cast(o.id as text) as order_number, o.status as order_status,
-           o.payment_status, o.notes, o.created_at,
+           o.payment_status, o.notes, o.created_at, o.total as order_total, o.shipping_fee,
            coalesce(u.name, 'Buyer') as buyer_name, u.email as buyer_email,
            a.full_name as ship_name, a.phone as buyer_phone, a.address_line1, a.address_line2,
            a.city as buyer_city, a.state, a.postal_code, a.country
