@@ -444,4 +444,17 @@ export default {
   "diesel": "diesel",
   "hybrid": "hybride",
   "electric": "électrique",
+  // Catalog quality
+  "Mark verified": "Marquer vérifié",
+  "Verified": "Vérifié",
+  "Unverified": "Non vérifié",
+  "Fuel, size and power read from the name, not checked": "Carburant, cylindrée et puissance lus dans le nom, non vérifiés",
+  "Mark {name} as verified": "Marquer {name} comme vérifié",
+  "Mark {name} as verified? Fuel, size and power will count as checked.": "Marquer {name} comme vérifié ? Carburant, cylindrée et puissance compteront comme vérifiés.",
+  "The initial list was compiled by PartHub and is not verified yet. Check generations and engines against a reliable source, then mark them verified.": "La liste initiale a été compilée par PartHub et n'est pas encore vérifiée. Contrôlez générations et moteurs avec une source fiable, puis marquez-les vérifiés.",
+  "Initial list": "Liste initiale",
+  "PartHub list": "Liste PartHub",
+  "Added by admin": "Ajouté par l'admin",
+  "Seller suggestion": "Suggestion d'un vendeur",
+  "Imported": "Importé",
 };

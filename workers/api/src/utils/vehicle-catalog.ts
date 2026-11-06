@@ -58,11 +58,17 @@ export function readVehicleEntry(body: Record<string, unknown>): VehicleEntry | 
   return entry;
 }
 
+// Where a new catalog row comes from (infra/d1/migrations/0018_catalog_quality.sql).
+export type Provenance = { source: "admin" | "seller_suggestion" | "imported"; verification: "unverified" | "admin_approved" | "verified" };
+
 // Add whatever is missing (make, model, generation, engine); existing rows
-// with the same slug are reused, so nothing is duplicated.
-export async function ensureVehicle(DB: D1Database, entry: VehicleEntry) {
+// with the same slug are reused (and keep their own provenance), so nothing
+// is duplicated.
+export async function ensureVehicle(DB: D1Database, entry: VehicleEntry, prov: Provenance = { source: "admin", verification: "admin_approved" }) {
   const makeSlug = catalogSlug(entry.make);
-  await DB.prepare("insert or ignore into vehicle_makes (slug, name) values (?1, ?2)").bind(makeSlug, entry.make).run();
+  await DB.prepare("insert or ignore into vehicle_makes (slug, name, source, verification) values (?1, ?2, ?3, ?4)")
+    .bind(makeSlug, entry.make, prov.source, prov.verification)
+    .run();
   const make = await DB.prepare("select id, name from vehicle_makes where slug = ?1").bind(makeSlug).first<{ id: number; name: string }>();
   if (!make) throw new Error("make not saved");
 
@@ -72,7 +78,9 @@ export async function ensureVehicle(DB: D1Database, entry: VehicleEntry) {
     "select id, name from vehicle_models where make_id = ?1 and (slug = ?2 or lower(name) = lower(?3))"
   ).bind(make.id, modelSlug, entry.model).first<{ id: number; name: string }>();
   if (!model) {
-    await DB.prepare("insert or ignore into vehicle_models (make_id, slug, name) values (?1, ?2, ?3)").bind(make.id, modelSlug, entry.model).run();
+    await DB.prepare("insert or ignore into vehicle_models (make_id, slug, name, source, verification) values (?1, ?2, ?3, ?4, ?5)")
+      .bind(make.id, modelSlug, entry.model, prov.source, prov.verification)
+      .run();
     model = await DB.prepare("select id, name from vehicle_models where make_id = ?1 and slug = ?2").bind(make.id, modelSlug).first();
   }
   if (!model) throw new Error("model not saved");
@@ -81,9 +89,9 @@ export async function ensureVehicle(DB: D1Database, entry: VehicleEntry) {
   if (entry.generation && entry.year_start) {
     const genSlug = catalogSlug(entry.generation);
     await DB.prepare(
-      `insert or ignore into vehicle_generations (model_id, slug, name, year_start, year_end, sort_order)
-       values (?1, ?2, ?3, ?4, ?5, (select coalesce(max(sort_order), -1) + 1 from vehicle_generations where model_id = ?1))`
-    ).bind(model.id, genSlug, entry.generation, entry.year_start, entry.year_end ?? null).run();
+      `insert or ignore into vehicle_generations (model_id, slug, name, year_start, year_end, sort_order, source, verification)
+       values (?1, ?2, ?3, ?4, ?5, (select coalesce(max(sort_order), -1) + 1 from vehicle_generations where model_id = ?1), ?6, ?7)`
+    ).bind(model.id, genSlug, entry.generation, entry.year_start, entry.year_end ?? null, prov.source, prov.verification).run();
     generation = await DB.prepare("select id, name, year_start, year_end from vehicle_generations where model_id = ?1 and slug = ?2")
       .bind(model.id, genSlug)
       .first();
@@ -101,9 +109,9 @@ export async function ensureVehicle(DB: D1Database, entry: VehicleEntry) {
   if (generation && entry.engine) {
     const info = engineInfo(entry.engine);
     await DB.prepare(
-      `insert or ignore into vehicle_engines (generation_id, slug, name, fuel, displacement_cc, power_hp)
-       values (?1, ?2, ?3, ?4, ?5, ?6)`
-    ).bind(generation.id, catalogSlug(entry.engine), entry.engine, info.fuel, info.cc, info.hp).run();
+      `insert or ignore into vehicle_engines (generation_id, slug, name, fuel, displacement_cc, power_hp, source, verification, specs_inferred)
+       values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 1)`
+    ).bind(generation.id, catalogSlug(entry.engine), entry.engine, info.fuel, info.cc, info.hp, prov.source, prov.verification).run();
     engine = await DB.prepare("select id, name from vehicle_engines where generation_id = ?1 and slug = ?2")
       .bind(generation.id, catalogSlug(entry.engine))
       .first();
@@ -112,8 +120,10 @@ export async function ensureVehicle(DB: D1Database, entry: VehicleEntry) {
   return { make, model, generation, engine };
 }
 
-export async function ensureBrand(DB: D1Database, name: string) {
+export async function ensureBrand(DB: D1Database, name: string, prov: Provenance = { source: "admin", verification: "admin_approved" }) {
   const slug = catalogSlug(name);
-  await DB.prepare("insert or ignore into brands (slug, name) values (?1, ?2)").bind(slug, name).run();
+  await DB.prepare("insert or ignore into brands (slug, name, source, verification) values (?1, ?2, ?3, ?4)")
+    .bind(slug, name, prov.source, prov.verification)
+    .run();
   return DB.prepare("select id, slug, name from brands where slug = ?1").bind(slug).first<{ id: number; slug: string; name: string }>();
 }

@@ -15,7 +15,7 @@ const BRANDS = [
   "Brembo", "Ferodo", "Textar", "Hella", "Magneti Marelli", "Delphi", "Denso", "NGK", "Champion",
   "Continental", "Gates", "Dayco", "INA", "Monroe", "KYB", "Moog", "Lemförder", "Corteco", "Elring",
   "Victor Reinz", "Pierburg", "Varta", "Exide", "Castrol", "Total", "Motul", "Shell", "Liqui Moly",
-  "Michelin", "Bridgestone", "Hankook", "Continental Tyres", "Renault (origine)", "PSA (origine)",
+  "Michelin", "Bridgestone", "Hankook", "Renault (origine)", "PSA (origine)",
   "Toyota (origine)", "Hyundai / Kia (origine)", "VAG (origine)", "Mercedes-Benz (origine)",
 ];
 

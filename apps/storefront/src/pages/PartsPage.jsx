@@ -98,6 +98,10 @@ function buildApiQuery(filters, vehicle) {
     params.set("year", String(vehicle.year));
   }
 
+  // The engine, when the buyer chose it in My Garage.
+  if (vehicle?.engine_id) params.set("engine_id", String(vehicle.engine_id));
+  if (vehicle?.engine_name) params.set("engine", String(vehicle.engine_name));
+
   // With a vehicle: only parts that fit (default) or all parts, best fit first.
   if (vehicle) params.set("fit", filters.fit === "rank" ? "rank" : "only");
 
@@ -1031,6 +1035,10 @@ export default function PartsPage() {
                           {exactMatched ? (
                             <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 text-xs font-medium text-emerald-700 before:h-1.5 before:w-1.5 before:rounded-full before:bg-current">
                               {t("Fits your vehicle")}
+                            </span>
+                          ) : hasVehicle && Number(part?.engine_check_match || 0) === 1 ? (
+                            <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 text-xs font-medium text-amber-800 before:h-1.5 before:w-1.5 before:rounded-full before:bg-current">
+                              {t("Check the engine")}
                             </span>
                           ) : hasVehicle && Number(part?.partial_vehicle_match || 0) === 1 ? (
                             <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 text-xs font-medium text-amber-800 before:h-1.5 before:w-1.5 before:rounded-full before:bg-current">

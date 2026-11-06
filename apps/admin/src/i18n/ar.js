@@ -444,4 +444,17 @@ export default {
   "diesel": "ديزل",
   "hybrid": "هجين",
   "electric": "كهربائي",
+  // Catalog quality
+  "Mark verified": "تعليم كموثّق",
+  "Verified": "موثّق",
+  "Unverified": "غير موثّق",
+  "Fuel, size and power read from the name, not checked": "الوقود والسعة والقوة مستخرجة من الاسم ولم يُتحقق منها",
+  "Mark {name} as verified": "تعليم {name} كموثّق",
+  "Mark {name} as verified? Fuel, size and power will count as checked.": "تعليم {name} كموثّق؟ سيُعتبر الوقود والسعة والقوة مُتحققاً منها.",
+  "The initial list was compiled by PartHub and is not verified yet. Check generations and engines against a reliable source, then mark them verified.": "القائمة الأولية جمعتها PartHub ولم تُوثَّق بعد. تحقق من الأجيال والمحركات من مصدر موثوق ثم علّمها كموثّقة.",
+  "Initial list": "القائمة الأولية",
+  "PartHub list": "قائمة PartHub",
+  "Added by admin": "أضافتها الإدارة",
+  "Seller suggestion": "اقتراح بائع",
+  "Imported": "مستورد",
 };

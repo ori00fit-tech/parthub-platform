@@ -161,6 +161,8 @@ export const SERVER_MESSAGES: Record<"ar" | "fr", Record<string, string>> = {
     "Give the engine name": "Indiquez le nom du moteur",
     "Generation not found": "Génération introuvable",
     "Engine not found": "Moteur introuvable",
+    "This suggestion is already waiting for review": "Cette suggestion attend déjà d'être examinée",
+    "Unknown verification status": "Statut de vérification inconnu",
   },
   ar: {
     "Select between 1 and {MAX} items": "حدّد بين 1 و{MAX} عنصراً",
@@ -321,6 +323,8 @@ export const SERVER_MESSAGES: Record<"ar" | "fr", Record<string, string>> = {
     "Give the engine name": "أدخل اسم المحرك",
     "Generation not found": "الجيل غير موجود",
     "Engine not found": "المحرك غير موجود",
+    "This suggestion is already waiting for review": "هذا الاقتراح في انتظار المراجعة بالفعل",
+    "Unknown verification status": "حالة التحقق غير معروفة",
   },
 };
 

@@ -5,14 +5,16 @@ import { useT } from "../../i18n";
 
 // One vehicle a part fits, picked from PartHub's catalog:
 // make → model → generation (fills the years) → engine (optional) → years.
-// value: { make, make_slug, model, model_slug, generation_id, generation, engine_id, engine, year_start, year_end }
+// value: { make, make_slug, model, model_slug, generation_id, generation, engine_id, engine, engine_scope, year_start, year_end }
+// engine_scope: "specific" (engine chosen), "all" (seller confirms every
+// engine) or "unspecified" (not given — NOT the same as every engine).
 
 const inputCls =
   "h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-400";
 const labelCls = "mb-1 block text-xs font-semibold text-gray-700";
 
 export const EMPTY_FITMENT = {
-  make: "", make_slug: "", model: "", model_slug: "", generation_id: "", generation: "", engine_id: "", engine: "", year_start: "", year_end: "",
+  make: "", make_slug: "", model: "", model_slug: "", generation_id: "", generation: "", engine_id: "", engine: "", engine_scope: "unspecified", year_start: "", year_end: "",
 };
 
 export default function VehicleFitmentFields({ value, onChange, idPrefix = "fit" }) {
@@ -48,7 +50,7 @@ export default function VehicleFitmentFields({ value, onChange, idPrefix = "fit"
           disabled={!value.make_slug}
           onChange={(e) => {
             const m = models.find((x) => x.slug === e.target.value);
-            set({ model: m?.name || "", model_slug: m?.slug || "", generation_id: "", generation: "", engine_id: "", engine: "", year_start: "", year_end: "" });
+            set({ model: m?.name || "", model_slug: m?.slug || "", generation_id: "", generation: "", engine_id: "", engine: "", engine_scope: "unspecified", year_start: "", year_end: "" });
           }}
           className={inputCls}
         >
@@ -69,6 +71,7 @@ export default function VehicleFitmentFields({ value, onChange, idPrefix = "fit"
               generation: g?.name || "",
               engine_id: "",
               engine: "",
+              engine_scope: "unspecified",
               year_start: g ? String(g.year_start) : value.year_start,
               year_end: g ? String(g.year_end || new Date().getFullYear()) : value.year_end,
             });
@@ -83,15 +86,17 @@ export default function VehicleFitmentFields({ value, onChange, idPrefix = "fit"
         <label htmlFor={`${idPrefix}-engine`} className={labelCls}>{t("Engine")}</label>
         <select
           id={`${idPrefix}-engine`}
-          value={value.engine_id}
+          value={value.engine_scope === "all" ? "all" : value.engine_id}
           disabled={!value.generation_id}
           onChange={(e) => {
+            if (e.target.value === "all") return set({ engine_id: "", engine: "", engine_scope: "all" });
             const en = engines.find((x) => String(x.id) === e.target.value);
-            set({ engine_id: en ? String(en.id) : "", engine: en?.name || "" });
+            set({ engine_id: en ? String(en.id) : "", engine: en?.name || "", engine_scope: en ? "specific" : "unspecified" });
           }}
           className={inputCls}
         >
-          <option value="">{value.generation_id ? t("All engines") : t("Choose generation first")}</option>
+          <option value="">{value.generation_id ? t("Engine not specified") : t("Choose generation first")}</option>
+          {value.generation_id ? <option value="all">{t("All engines (confirmed)")}</option> : null}
           {engines.map((en) => <option key={en.id} value={en.id}>{en.name}</option>)}
         </select>
       </div>
@@ -107,11 +112,13 @@ export default function VehicleFitmentFields({ value, onChange, idPrefix = "fit"
   );
 }
 
-// "Renault Clio IV · 1.5 dCi 90 · 2012–2019"
-export function fitmentLabel(row) {
+// "Renault Clio IV · 1.5 dCi 90 · 2012–2019"; with t, "all engines" /
+// "engine not specified" are shown when no engine is named.
+export function fitmentLabel(row, t) {
   const name = [row.make, row.generation || row.model].filter(Boolean).join(" ");
   const years = yearsLabel(Number(row.year_start) || null, Number(row.year_end) || null);
-  return [name, row.engine, years].filter(Boolean).join(" · ");
+  const engine = row.engine || (t ? (row.engine_scope === "all" ? t("all engines") : t("engine not specified")) : "");
+  return [name, engine, years].filter(Boolean).join(" · ");
 }
 
 // The API body for a fitment row.
@@ -122,6 +129,7 @@ export function fitmentPayload(row) {
     model: row.model,
     ...(row.generation_id ? { generation_id: Number(row.generation_id) } : {}),
     ...(row.engine_id ? { engine_id: Number(row.engine_id) } : {}),
+    ...(!row.engine_id && row.engine_scope === "all" ? { engine_scope: "all" } : {}),
     year_start: ys,
     year_end: row.year_end ? Number(row.year_end) : ys,
   };

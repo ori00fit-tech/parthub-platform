@@ -308,7 +308,7 @@ export default function PartWizardPage() {
         try {
           await api.post(`/api/v1/marketplace/me/parts/${partId}/compatibility`, fitmentPayload(row));
         } catch (err) {
-          warnings.push(`${fitmentLabel(row)}: ${err.message}`);
+          warnings.push(`${fitmentLabel(row, t)}: ${err.message}`);
         }
       }
       try {
@@ -605,7 +605,7 @@ export default function PartWizardPage() {
               <div key={i} className="space-y-2 rounded-2xl border border-gray-200 bg-gray-50 p-3">
                 <VehicleFitmentFields value={row} onChange={(next) => setFitmentRow(i, next)} idPrefix={`fit-${i}`} />
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs text-gray-500">{row.make && row.model ? fitmentLabel(row) : ""}</p>
+                  <p className="text-xs text-gray-500">{row.make && row.model ? fitmentLabel(row, t) : ""}</p>
                   <button type="button" onClick={() => removeFitment(i)} className="h-9 rounded-xl px-3 text-sm font-semibold text-red-700 hover:bg-red-50">
                     {t("Remove")}
                   </button>
@@ -638,7 +638,7 @@ export default function PartWizardPage() {
                 [t("Origin"), t(form.part_origin === "oem" ? "OEM" : form.part_origin === "used" ? "Used Part" : "Aftermarket"), 0],
                 [t("Photos"), String(form.photos.length), 1],
                 [t("Quantity in stock"), String(form.quantity), 2],
-                [t("Vehicles"), form.fitment.filter((r) => r.make && r.model).map(fitmentLabel).join(", ") || t("None"), 3],
+                [t("Vehicles"), form.fitment.filter((r) => r.make && r.model).map((r) => fitmentLabel(r, t)).join(", ") || t("None"), 3],
               ].map(([k, v, s]) => (
                 <div key={k} className="flex items-center justify-between gap-3 px-4 py-3">
                   <dt className="text-gray-500">{k}</dt>

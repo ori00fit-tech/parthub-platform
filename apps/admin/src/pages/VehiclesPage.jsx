@@ -12,6 +12,25 @@ const input = "h-10 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 te
 const btn = "h-9 rounded-xl px-3 text-sm font-semibold transition disabled:opacity-50";
 const yearsLabel = (a, b) => (a ? (b ? `${a}–${b}` : `${a} →`) : "");
 
+// Data quality (migrations/0018): where a row comes from and whether it was checked.
+const VERIFICATION_STYLE = {
+  verified: "border-emerald-700 text-emerald-300",
+  admin_approved: "border-blue-700 text-blue-300",
+  unverified: "border-amber-700 text-amber-300",
+};
+const VERIFICATION_LABEL = { verified: "Verified", admin_approved: "Approved", unverified: "Unverified" };
+const SOURCE_LABEL = { seed: "Initial list", seed_parthub: "PartHub list", admin: "Added by admin", seller_suggestion: "Seller suggestion", imported: "Imported" };
+
+function Verification({ value, source }) {
+  const t = useT();
+  const v = value || "unverified";
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${VERIFICATION_STYLE[v] || VERIFICATION_STYLE.unverified}`} title={source ? t(SOURCE_LABEL[source] || source) : undefined}>
+      {t(VERIFICATION_LABEL[v] || v)}
+    </span>
+  );
+}
+
 function Suggestion({ item, onDone }) {
   const t = useT();
   const [fields, setFields] = useState({
@@ -103,11 +122,17 @@ function Generation({ gen, onChange }) {
         </div>
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="font-semibold text-gray-100">
+          <p className="flex flex-wrap items-center gap-2 font-semibold text-gray-100">
             {gen.name} <span className="font-normal text-gray-400">· {yearsLabel(gen.year_start, gen.year_end)}</span>
-            <span className="ms-2 text-xs text-gray-500">{t("{n} fitment rows", { n: gen.fitment_count || 0 })}</span>
+            <Verification value={gen.verification} source={gen.source} />
+            <span className="text-xs font-normal text-gray-500">{t("{n} fitment rows", { n: gen.fitment_count || 0 })}</span>
           </p>
           <div className="flex gap-1">
+            {gen.verification !== "verified" ? (
+              <button type="button" className={`${btn} text-emerald-300 hover:bg-gray-800`} onClick={() => run(() => api.patch(`/api/v1/admin/vehicles/generations/${gen.id}`, { verification: "verified" }))}>
+                {t("Mark verified")}
+              </button>
+            ) : null}
             <button type="button" className={`${btn} text-blue-300 hover:bg-gray-800`} onClick={() => setEdit({ name: gen.name, year_start: gen.year_start, year_end: gen.year_end ?? "" })}>{t("Edit")}</button>
             <button type="button" className={`${btn} text-red-300 hover:bg-gray-800`} onClick={() => {
               if (window.confirm(t("Delete {name} and its engines? Parts keep their fitment text.", { name: gen.name }))) {
@@ -122,6 +147,15 @@ function Generation({ gen, onChange }) {
           <span key={en.id} className="inline-flex items-center gap-1 rounded-full border border-gray-700 px-3 py-1 text-xs text-gray-200">
             {en.name}
             <span className="text-gray-500">· {t(en.fuel || "petrol")}</span>
+            {en.verification === "verified" ? (
+              <span className="text-emerald-300" title={t("Verified")}>✓</span>
+            ) : (
+              <button type="button" className="text-amber-300" title={en.specs_inferred ? t("Fuel, size and power read from the name, not checked") : t("Unverified")} aria-label={t("Mark {name} as verified", { name: en.name })} onClick={() => {
+                if (window.confirm(t("Mark {name} as verified? Fuel, size and power will count as checked.", { name: en.name }))) {
+                  run(() => api.patch(`/api/v1/admin/vehicles/engines/${en.id}`, { verification: "verified" }));
+                }
+              }}>?</button>
+            )}
             <button type="button" aria-label={t("Rename {name}", { name: en.name })} className="ms-1 text-blue-300" onClick={() => {
               const name = window.prompt(t("Engine name"), en.name);
               if (name && name.trim() && name.trim() !== en.name) run(() => api.patch(`/api/v1/admin/vehicles/engines/${en.id}`, { name: name.trim() }));
@@ -199,6 +233,9 @@ export default function VehiclesPage() {
         <h1 className="text-3xl font-bold sm:text-5xl">{t("Vehicle catalog")}</h1>
         <p className="mt-3 max-w-3xl text-sm text-gray-300 sm:text-base">
           {t("Makes, models, generations and engines that sellers choose from when they say which vehicles a part fits.")}
+        </p>
+        <p className="mt-2 max-w-3xl text-xs text-amber-200">
+          {t("The initial list was compiled by PartHub and is not verified yet. Check generations and engines against a reliable source, then mark them verified.")}
         </p>
       </div>
 

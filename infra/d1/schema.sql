@@ -47,7 +47,9 @@ CREATE TABLE IF NOT EXISTS vehicle_makes (
   id        INTEGER PRIMARY KEY AUTOINCREMENT,
   slug      TEXT NOT NULL UNIQUE,
   name      TEXT NOT NULL,
-  logo_url  TEXT
+  logo_url  TEXT,
+  source      TEXT,                       -- see migrations/0018
+  verification TEXT NOT NULL DEFAULT 'unverified'
 );
 
 -- ── Vehicle Models ────────────────────────────────────────────
@@ -56,6 +58,8 @@ CREATE TABLE IF NOT EXISTS vehicle_models (
   make_id  INTEGER NOT NULL REFERENCES vehicle_makes(id) ON DELETE CASCADE,
   slug     TEXT NOT NULL,
   name     TEXT NOT NULL,
+  source      TEXT,                       -- see migrations/0018
+  verification TEXT NOT NULL DEFAULT 'unverified',
   UNIQUE (make_id, slug)
 );
 
@@ -72,7 +76,9 @@ CREATE TABLE IF NOT EXISTS brands (
   id        INTEGER PRIMARY KEY AUTOINCREMENT,
   slug      TEXT NOT NULL UNIQUE,
   name      TEXT NOT NULL,
-  logo_url  TEXT
+  logo_url  TEXT,
+  source      TEXT,                       -- see migrations/0018
+  verification TEXT NOT NULL DEFAULT 'unverified'
 );
 
 -- ── Categories ────────────────────────────────────────────────
@@ -141,8 +147,9 @@ CREATE TABLE IF NOT EXISTS part_compatibility (
   engine      TEXT,
   trim        TEXT,
   notes       TEXT,
-  generation_id INTEGER,                  -- vehicle catalog links (see migrations/0016)
-  engine_id   INTEGER
+  generation_id INTEGER REFERENCES vehicle_generations(id), -- catalog links (see migrations/0016)
+  engine_id   INTEGER REFERENCES vehicle_engines(id),
+  engine_scope TEXT NOT NULL DEFAULT 'unspecified' -- specific | all | unspecified (see migrations/0018)
 );
 
 -- ── Orders ────────────────────────────────────────────────────
@@ -380,6 +387,8 @@ CREATE TABLE IF NOT EXISTS vehicle_generations (
   year_start  INTEGER NOT NULL,
   year_end    INTEGER,                  -- NULL = still sold
   sort_order  INTEGER NOT NULL DEFAULT 0,
+  source      TEXT,                       -- see migrations/0018
+  verification TEXT NOT NULL DEFAULT 'unverified',
   UNIQUE (model_id, slug)
 );
 
@@ -392,6 +401,9 @@ CREATE TABLE IF NOT EXISTS vehicle_engines (
   displacement_cc INTEGER,
   power_hp        INTEGER,
   code            TEXT,                 -- maker's engine code, e.g. K9K (optional)
+  source      TEXT,                       -- see migrations/0018
+  verification TEXT NOT NULL DEFAULT 'unverified',
+  specs_inferred INTEGER NOT NULL DEFAULT 1,
   UNIQUE (generation_id, slug)
 );
 
@@ -418,3 +430,6 @@ CREATE TABLE IF NOT EXISTS catalog_suggestions (
 CREATE INDEX IF NOT EXISTS idx_vehicle_generations_model ON vehicle_generations(model_id, year_start);
 CREATE INDEX IF NOT EXISTS idx_vehicle_engines_generation ON vehicle_engines(generation_id);
 CREATE INDEX IF NOT EXISTS idx_catalog_suggestions_status ON catalog_suggestions(status, created_at);
+CREATE INDEX IF NOT EXISTS idx_part_compat_generation ON part_compatibility(generation_id);
+CREATE INDEX IF NOT EXISTS idx_part_compat_engine ON part_compatibility(engine_id);
+CREATE INDEX IF NOT EXISTS idx_catalog_suggestions_kind_status ON catalog_suggestions(kind, status);

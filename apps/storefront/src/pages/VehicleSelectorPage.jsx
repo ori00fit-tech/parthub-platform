@@ -20,6 +20,9 @@ export default function VehicleSelectorPage() {
   const [selectedMake, setSelectedMake] = useState(selectedVehicle?.make || "");
   const [selectedModel, setSelectedModel] = useState(selectedVehicle?.model || "");
   const [selectedYear, setSelectedYear] = useState(selectedVehicle?.year || "");
+  // Optional engine: makes "fits your car" exact for engine-specific parts.
+  const [engines, setEngines] = useState([]);
+  const [selectedEngine, setSelectedEngine] = useState(selectedVehicle?.engine_id ? String(selectedVehicle.engine_id) : "");
 
   const [loadingMakes, setLoadingMakes] = useState(true);
   const [loadingModels, setLoadingModels] = useState(false);
@@ -123,7 +126,7 @@ export default function VehicleSelectorPage() {
       try {
         setLoadingYears(true);
         setError("");
-        const res = await apiGet("/api/v1/vehicles/years", { model: selectedModel });
+        const res = await apiGet("/api/v1/vehicles/years", { make: selectedMake, model: selectedModel });
         if (!active) return;
 
         const nextYears = Array.isArray(res?.data) ? res.data : [];
@@ -146,6 +149,26 @@ export default function VehicleSelectorPage() {
       active = false;
     };
   }, [selectedModel, selectedYear]);
+
+  // Engines of the generations sold that year.
+  useEffect(() => {
+    if (!selectedMake || !selectedModel || !selectedYear) {
+      setEngines([]);
+      return undefined;
+    }
+    let active = true;
+    apiGet("/api/v1/vehicles/engines-for", { make: selectedMake, model: selectedModel, year: selectedYear })
+      .then((res) => {
+        if (!active) return;
+        const list = Array.isArray(res?.data) ? res.data : [];
+        setEngines(list);
+        setSelectedEngine((cur) => (list.some((e) => String(e.id) === String(cur)) ? cur : ""));
+      })
+      .catch(() => active && setEngines([]));
+    return () => {
+      active = false;
+    };
+  }, [selectedMake, selectedModel, selectedYear]);
 
   function handleMakeChange(e) {
     setError("");
@@ -172,12 +195,16 @@ export default function VehicleSelectorPage() {
     }
 
     setError("");
+    const engine = engines.find((e) => String(e.id) === String(selectedEngine));
     setSelectedVehicle({
       make: selectedMake,
       make_name: selectedMakeName,
       model: selectedModel,
       model_name: selectedModelName,
       year: String(selectedYear),
+      ...(engine
+        ? { engine_id: engine.id, engine_name: engine.name, generation_id: engine.generation_id, generation_name: engine.generation }
+        : {}),
     });
 
     setSaved(true);
@@ -190,8 +217,10 @@ export default function VehicleSelectorPage() {
     setSelectedMake("");
     setSelectedModel("");
     setSelectedYear("");
+    setSelectedEngine("");
     setModels([]);
     setYears([]);
+    setEngines([]);
     clearVehicle();
   }
 
@@ -313,6 +342,27 @@ export default function VehicleSelectorPage() {
                 </select>
               </label>
             </div>
+
+            {engines.length ? (
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-ink-2">{t("Engine (optional)")}</span>
+                <select
+                  value={selectedEngine}
+                  onChange={(e) => (setSelectedEngine(e.target.value), setSaved(false))}
+                  className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none"
+                >
+                  <option value="">{t("I don't know / skip")}</option>
+                  {engines.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.generation} · {e.name}
+                    </option>
+                  ))}
+                </select>
+                <span className="block text-xs text-muted">
+                  {t("With the engine, parts made for your engine are confirmed, and parts for other engines are hidden.")}
+                </span>
+              </label>
+            ) : null}
 
             <div className="flex flex-wrap gap-3">
               <button

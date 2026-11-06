@@ -1410,6 +1410,10 @@ marketplaceRoutes.post("/me/catalog-suggestions", authMiddleware, async (c) => {
     if (!brand) return c.json(failure("BRAND_REQUIRED", "Give the brand name"), 400);
     const exists = await c.env.DB.prepare("select id from brands where lower(name) = lower(?1)").bind(brand).first();
     if (exists) return c.json(failure("ALREADY_EXISTS", "This brand is already in the list"), 409);
+    const waiting = await c.env.DB.prepare(
+      "select id from catalog_suggestions where kind = 'brand' and status = 'pending' and lower(brand) = lower(?1) limit 1"
+    ).bind(brand).first();
+    if (waiting) return c.json(failure("ALREADY_SUGGESTED", "This suggestion is already waiting for review"), 409);
     const res = await c.env.DB.prepare(
       "insert into catalog_suggestions (user_id, seller_id, kind, brand, note) values (?1, ?2, 'brand', ?3, ?4)"
     ).bind(userId, seller?.id ?? null, brand, note).run();
@@ -1418,6 +1422,15 @@ marketplaceRoutes.post("/me/catalog-suggestions", authMiddleware, async (c) => {
 
   const entry = readVehicleEntry(body);
   if (typeof entry === "string") return c.json(failure("INVALID_SUGGESTION", entry), 400);
+  // The same vehicle already waiting for review (from any seller).
+  const waiting = await c.env.DB.prepare(
+    `select id from catalog_suggestions
+     where kind = 'vehicle' and status = 'pending'
+       and lower(make) = lower(?1) and lower(model) = lower(?2)
+       and lower(coalesce(generation, '')) = lower(?3) and lower(coalesce(engine, '')) = lower(?4)
+     limit 1`
+  ).bind(entry.make, entry.model, entry.generation || "", entry.engine || "").first();
+  if (waiting) return c.json(failure("ALREADY_SUGGESTED", "This suggestion is already waiting for review"), 409);
   const res = await c.env.DB.prepare(
     `insert into catalog_suggestions (user_id, seller_id, kind, make, model, generation, year_start, year_end, engine, note)
      values (?1, ?2, 'vehicle', ?3, ?4, ?5, ?6, ?7, ?8, ?9)`
@@ -1620,6 +1633,7 @@ marketplaceRoutes.get("/me/parts/:id/compatibility", authMiddleware, async (c) =
         notes,
         generation_id,
         engine_id,
+        engine_scope,
         (select g.name from vehicle_generations g where g.id = part_compatibility.generation_id) as generation
       from part_compatibility
       where part_id = ?1
@@ -1700,6 +1714,10 @@ marketplaceRoutes.post("/me/parts/:id/compatibility", authMiddleware, async (c) 
       return c.json(failure("GENERATION_REQUIRED", "Choose the generation before the engine"), 400);
     }
 
+    // A row without an engine is "unspecified" unless the seller confirmed
+    // that the part fits every engine (engine_scope: "all").
+    const engineScope = engine ? "specific" : body.engine_scope === "all" ? "all" : "unspecified";
+
     if (!make) {
       return c.json(failure("MAKE_REQUIRED", "make is required"), 400);
     }
@@ -1743,11 +1761,11 @@ marketplaceRoutes.post("/me/parts/:id/compatibility", authMiddleware, async (c) 
     const inserted = await c.env.DB.prepare(
       `
       insert into part_compatibility (
-        part_id, make, model, year_start, year_end, engine, trim, notes, generation_id, engine_id
-      ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+        part_id, make, model, year_start, year_end, engine, trim, notes, generation_id, engine_id, engine_scope
+      ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
       `
     )
-      .bind(partId, make, model, yearStart, yearEnd, engine, trim, notes, generationId, engineId)
+      .bind(partId, make, model, yearStart, yearEnd, engine, trim, notes, generationId, engineId, engineScope)
       .run();
 
     const compatibilityId = Number(inserted.meta.last_row_id);
@@ -1766,6 +1784,7 @@ marketplaceRoutes.post("/me/parts/:id/compatibility", authMiddleware, async (c) 
         notes,
         generation_id,
         engine_id,
+        engine_scope,
         (select g.name from vehicle_generations g where g.id = part_compatibility.generation_id) as generation
       from part_compatibility
       where id = ?1

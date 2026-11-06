@@ -46,7 +46,7 @@ export default function CompatibilityEditor({ partId }) {
         ...fitmentPayload(vehicle),
         ...(notes.trim() ? { notes: notes.trim() } : {}),
       });
-      setSuccess(t("Vehicle added: {vehicle}", { vehicle: fitmentLabel(vehicle) }));
+      setSuccess(t("Vehicle added: {vehicle}", { vehicle: fitmentLabel(vehicle, t) }));
       // Keep make and model for the next row (often another generation or engine).
       setVehicle({ ...EMPTY_FITMENT, make: vehicle.make, make_slug: vehicle.make_slug, model: vehicle.model, model_slug: vehicle.model_slug });
       setNotes("");
@@ -85,10 +85,12 @@ export default function CompatibilityEditor({ partId }) {
               <li key={row.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-900">
-                    {fitmentLabel(row)}
-                    {!row.engine && row.generation_id ? <span className="ms-2 text-xs font-normal text-gray-500">{t("all engines")}</span> : null}
+                    {fitmentLabel(row, t)}
                   </p>
                   {row.notes ? <p className="text-xs text-gray-500">{row.notes}</p> : null}
+                  {!row.engine && row.engine_scope !== "all" ? (
+                    <p className="text-xs text-amber-700">{t("Buyers will be asked to check the engine. Choose it, or confirm all engines.")}</p>
+                  ) : null}
                 </div>
                 <button type="button" onClick={() => deleteRow(row.id)} className="h-9 flex-none rounded-xl px-3 text-sm font-semibold text-red-700 hover:bg-red-50">
                   {t("Remove")}

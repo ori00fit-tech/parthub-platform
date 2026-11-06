@@ -380,6 +380,13 @@ adminRoutes.post("/issues/:id/decide", async (c) => {
 
 // ── Vehicle catalog ───────────────────────────────────────────
 
+const VERIFICATION = ["unverified", "admin_approved", "verified"];
+// undefined → leave as is; "invalid" → refuse.
+function readVerification(value: unknown): string | null | "invalid" {
+  if (value === undefined || value === null || value === "") return null;
+  return VERIFICATION.includes(String(value)) ? String(value) : "invalid";
+}
+
 // GET /api/v1/admin/catalog-suggestions?status=pending|all
 adminRoutes.get("/catalog-suggestions", async (c) => {
   const all = c.req.query("status") === "all";
@@ -405,22 +412,30 @@ adminRoutes.post("/catalog-suggestions/:id/approve", async (c) => {
   if (sug.status !== "pending") return fail(c, "This suggestion was already reviewed", 409);
   const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
   const fields = { ...sug, ...Object.fromEntries(Object.entries(body).filter(([, v]) => v !== undefined)) };
-  let created: unknown;
-  if (sug.kind === "brand") {
-    const name = typeof fields.brand === "string" ? fields.brand.trim().slice(0, 80) : "";
-    if (!name) return fail(c, "Give the brand name");
-    created = await ensureBrand(c.env.DB, name);
-  } else {
-    const entry = readVehicleEntry(fields);
-    if (typeof entry === "string") return fail(c, entry);
-    created = await ensureVehicle(c.env.DB, entry);
-  }
-  await dbRun(
+
+  // Check the fields before claiming the suggestion.
+  const brandName = sug.kind === "brand" && typeof fields.brand === "string" ? fields.brand.trim().slice(0, 80) : "";
+  const entry = sug.kind === "brand" ? null : readVehicleEntry(fields);
+  if (sug.kind === "brand" && !brandName) return fail(c, "Give the brand name");
+  if (typeof entry === "string") return fail(c, entry);
+
+  // Claim it atomically: of two admins approving at once, only one goes on.
+  const claim = await dbRun(
     c.env.DB,
-    "UPDATE catalog_suggestions SET status = 'approved', admin_note = ?, decided_at = datetime('now') WHERE id = ?",
+    "UPDATE catalog_suggestions SET status = 'approved', admin_note = ?, decided_at = datetime('now') WHERE id = ? AND status = 'pending'",
     [cleanNote(body.admin_note, 500), id]
   );
-  return ok(c, { id, status: "approved", created });
+  if (!claim.changes) return fail(c, "This suggestion was already reviewed", 409);
+
+  const prov = { source: "seller_suggestion", verification: "admin_approved" } as const;
+  try {
+    const created = entry ? await ensureVehicle(c.env.DB, entry, prov) : await ensureBrand(c.env.DB, brandName, prov);
+    return ok(c, { id, status: "approved", created });
+  } catch (err) {
+    // Give it back to the queue if the catalog could not be updated.
+    await dbRun(c.env.DB, "UPDATE catalog_suggestions SET status = 'pending', decided_at = NULL WHERE id = ?", [id]);
+    throw err;
+  }
 });
 
 // POST /api/v1/admin/catalog-suggestions/:id/reject { admin_note }
@@ -441,7 +456,7 @@ adminRoutes.post("/vehicles/catalog", async (c) => {
   const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
   const entry = readVehicleEntry(body);
   if (typeof entry === "string") return fail(c, entry);
-  return ok(c, await ensureVehicle(c.env.DB, entry));
+  return ok(c, await ensureVehicle(c.env.DB, entry, { source: "admin", verification: "admin_approved" }));
 });
 
 // GET /api/v1/admin/vehicles/generations?model_id= — generations with their engines.
@@ -474,7 +489,13 @@ adminRoutes.patch("/vehicles/generations/:id", async (c) => {
   const ys = body.year_start !== undefined ? Number(body.year_start) : gen.year_start;
   const ye = body.year_end === null || body.year_end === "" ? null : body.year_end !== undefined ? Number(body.year_end) : gen.year_end;
   if (!Number.isInteger(ys) || ys < 1950 || (ye != null && (!Number.isInteger(ye) || ye < ys))) return fail(c, "Check the years");
-  await dbRun(c.env.DB, "UPDATE vehicle_generations SET name = ?, year_start = ?, year_end = ? WHERE id = ?", [name, ys, ye, id]);
+  const verification = readVerification(body.verification);
+  if (verification === "invalid") return fail(c, "Unknown verification status");
+  await dbRun(
+    c.env.DB,
+    "UPDATE vehicle_generations SET name = ?, year_start = ?, year_end = ?, verification = coalesce(?, verification) WHERE id = ?",
+    [name, ys, ye, verification, id]
+  );
   return ok(c, await dbFirst(c.env.DB, "SELECT * FROM vehicle_generations WHERE id = ?", [id]));
 });
 
@@ -489,19 +510,31 @@ adminRoutes.delete("/vehicles/generations/:id", async (c) => {
   return ok(c, { id, deleted: true });
 });
 
-// PATCH /api/v1/admin/vehicles/engines/:id { name }
+// PATCH /api/v1/admin/vehicles/engines/:id { name?, verification? }
+// Marking an engine "verified" also marks its fuel / cc / hp as checked.
 adminRoutes.patch("/vehicles/engines/:id", async (c) => {
   const id = Number(c.req.param("id"));
-  const body = await c.req.json<{ name?: unknown }>().catch(() => ({} as { name?: unknown }));
-  const name = typeof body.name === "string" ? body.name.trim().slice(0, 80) : "";
-  if (!name) return fail(c, "Give the engine name");
+  const body = await c.req.json<{ name?: unknown; verification?: unknown }>().catch(() => ({} as { name?: unknown; verification?: unknown }));
+  const verification = readVerification(body.verification);
+  if (verification === "invalid") return fail(c, "Unknown verification status");
+  const engine = await dbFirst<{ id: number; name: string }>(c.env.DB, "SELECT id, name FROM vehicle_engines WHERE id = ?", [id]);
+  if (!engine) return fail(c, "Engine not found", 404);
+  const name = typeof body.name === "string" && body.name.trim() ? body.name.trim().slice(0, 80) : engine.name;
+  if (body.name !== undefined && !name) return fail(c, "Give the engine name");
+  if (verification && body.name === undefined) {
+    await dbRun(
+      c.env.DB,
+      "UPDATE vehicle_engines SET verification = ?, specs_inferred = CASE WHEN ? = 'verified' THEN 0 ELSE specs_inferred END WHERE id = ?",
+      [verification, verification, id]
+    );
+    return ok(c, await dbFirst(c.env.DB, "SELECT * FROM vehicle_engines WHERE id = ?", [id]));
+  }
   const info = engineInfo(name);
-  const res = await dbRun(
+  await dbRun(
     c.env.DB,
-    "UPDATE vehicle_engines SET name = ?, fuel = ?, displacement_cc = ?, power_hp = ? WHERE id = ?",
-    [name, info.fuel, info.cc, info.hp, id]
+    "UPDATE vehicle_engines SET name = ?, fuel = ?, displacement_cc = ?, power_hp = ?, specs_inferred = 1, verification = coalesce(?, verification) WHERE id = ?",
+    [name, info.fuel, info.cc, info.hp, verification, id]
   );
-  if (!res.changes) return fail(c, "Engine not found", 404);
   // Fitment rows linked to this engine show the corrected name.
   await dbRun(c.env.DB, "UPDATE part_compatibility SET engine = ? WHERE engine_id = ?", [name, id]);
   return ok(c, await dbFirst(c.env.DB, "SELECT * FROM vehicle_engines WHERE id = ?", [id]));
