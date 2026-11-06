@@ -11,7 +11,7 @@ export function notifyPendingChanged() {
 }
 
 export function usePendingCounts(pathname) {
-  const [counts, setCounts] = useState({ sellers: 0, parts: 0, reviews: 0, issues: 0, catalog: 0 });
+  const [counts, setCounts] = useState({ sellers: 0, parts: 0, reviews: 0, issues: 0, catalog: 0, numbers: 0 });
 
   useEffect(() => {
     let active = true;

@@ -979,4 +979,14 @@ export default {
   "Engine (optional)": "المحرك (اختياري)",
   "I don't know / skip": "لا أعرف / تخطَّ",
   "With the engine, parts made for your engine are confirmed, and parts for other engines are hidden.": "مع تحديد المحرك، تُؤكَّد القطع المخصصة لمحركك وتُخفى قطع المحركات الأخرى.",
+  // Part numbers
+  "Replaces original number": "يعوّض الرقم الأصلي",
+  "Original (OEM) number": "الرقم الأصلي (OEM)",
+  "{brand} number": "رقم {brand}",
+  "Maker's number": "رقم الصانع",
+  "according to the seller": "حسب البائع",
+  "Part numbers": "أرقام القطعة",
+  "Check the number on your old part: it is the surest way to get the right one.": "قارن مع الرقم المكتوب على قطعتك القديمة: هذه أضمن طريقة للحصول على القطعة الصحيحة.",
+  "Other offers for this reference": "عروض أخرى لنفس الرقم",
+  "Same part number from other sellers: compare price, condition and stock.": "نفس رقم القطعة عند بائعين آخرين: قارن السعر والحالة والمخزون.",
 };

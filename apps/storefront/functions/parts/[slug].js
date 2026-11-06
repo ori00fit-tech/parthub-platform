@@ -56,7 +56,12 @@ export async function onRequestGet(context) {
       description: clip(part.description || description, 500),
       url,
       ...(uniqueImages.length ? { image: uniqueImages } : {}),
-      ...(part.sku ? { sku: part.sku, mpn: part.sku } : {}),
+      // mpn: the part's own number (OEM or maker's), else the seller's code.
+      ...(() => {
+        const own = (part.part_numbers || []).find((n) => n.role === "own");
+        const mpn = own?.number || part.sku;
+        return { ...(part.sku ? { sku: part.sku } : {}), ...(mpn ? { mpn } : {}) };
+      })(),
       ...(part.brand_name ? { brand: { "@type": "Brand", name: part.brand_name } } : {}),
       ...(part.category_name ? { category: part.category_name } : {}),
       offers: {

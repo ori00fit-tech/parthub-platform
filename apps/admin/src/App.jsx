@@ -12,6 +12,7 @@ import CategoriesPage from "./pages/CategoriesPage";
 import VehiclesPage from "./pages/VehiclesPage";
 import OrdersPage from "./pages/OrdersPage";
 import IssuesPage from "./pages/IssuesPage";
+import PartNumbersPage from "./pages/PartNumbersPage";
 import ReviewsPage from "./pages/ReviewsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -41,6 +42,7 @@ function AppRoutes() {
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/reviews" element={<ReviewsPage />} />
         <Route path="/issues" element={<IssuesPage />} />
+        <Route path="/part-numbers" element={<PartNumbersPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>

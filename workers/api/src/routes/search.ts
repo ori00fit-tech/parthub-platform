@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { Env, HonoVariables } from "../types";
+import { normalizeNumber } from "../utils/part-numbers";
 
 export const searchRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -48,20 +49,50 @@ searchRoutes.get("/", async (c) => {
     const limit = 20;
     const offset = (page - 1) * limit;
 
-    const where: string[] = ["p.status = 'active'"];
+    // Public listings: active parts of approved (active) stores only.
+    const where: string[] = ["p.status = 'active'", "s.status = 'active'"];
     const params: unknown[] = [];
 
+    // A query that looks like a part number ("7701 208-174") also finds the
+    // listings carrying that number, or a number linked to it by a verified
+    // link, whatever the spaces / dashes / dots.
+    const qNorm = normalizeNumber(q);
+    let numberMatchSql = "0";
     if (q) {
       const like = `%${q}%`;
+      const n = params.length;
+      const numberCond = qNorm.length >= 4
+        ? `
+        or exists (
+          select 1 from part_listing_numbers pln
+          where pln.part_id = p.id and pln.part_number_id in (
+            select pn.id from part_numbers pn where pn.number_norm = ?${n + 7}
+            union select l.to_id from part_number_links l join part_numbers pn on pn.id = l.from_id
+              where pn.number_norm = ?${n + 7} and l.verification in ('admin_approved','verified')
+            union select l.from_id from part_number_links l join part_numbers pn on pn.id = l.to_id
+              where pn.number_norm = ?${n + 7} and l.verification in ('admin_approved','verified')
+          )
+        )
+        or replace(replace(replace(replace(upper(coalesce(p.sku, '')), ' ', ''), '-', ''), '.', ''), '/', '') = ?${n + 7}`
+        : "";
       where.push(`(
-        p.title like ?${params.length + 1}
-        or p.slug like ?${params.length + 2}
-        or p.sku like ?${params.length + 3}
-        or p.description like ?${params.length + 4}
-        or b.name like ?${params.length + 5}
-        or c.name like ?${params.length + 6}
+        p.title like ?${n + 1}
+        or p.slug like ?${n + 2}
+        or p.sku like ?${n + 3}
+        or p.description like ?${n + 4}
+        or b.name like ?${n + 5}
+        or c.name like ?${n + 6}
+        ${numberCond}
       )`);
       params.push(like, like, like, like, like, like);
+      if (qNorm.length >= 4) {
+        params.push(qNorm);
+        numberMatchSql = `(case when exists (
+          select 1 from part_listing_numbers pln join part_numbers pn on pn.id = pln.part_number_id
+          where pln.part_id = p.id and pn.number_norm = ?${n + 7}
+        ) or replace(replace(replace(replace(upper(coalesce(p.sku, '')), ' ', ''), '-', ''), '.', ''), '/', '') = ?${n + 7}
+        then 1 else 0 end)`;
+      }
     }
 
     if (category) {
@@ -215,6 +246,7 @@ searchRoutes.get("/", async (c) => {
 
     const rankingScoreSql = `
       (
+        (${numberMatchSql}) * 300 +
         (${exactVehicleMatchSql}) * 120 +
         (${engineCheckMatchSql}) * 90 +
         (${partialVehicleMatchSql}) * 45 +
@@ -289,6 +321,7 @@ searchRoutes.get("/", async (c) => {
           from part_compatibility pc
           where pc.part_id = p.id
         ) as compatibility_count,
+        ${numberMatchSql} as number_match,
         ${exactVehicleMatchSql} as exact_vehicle_match,
         ${engineCheckMatchSql} as engine_check_match,
         ${partialVehicleMatchSql} as partial_vehicle_match,
@@ -390,6 +423,7 @@ searchRoutes.get("/suggestions", async (c) => {
         p.title
       from parts p
       where p.status = 'active'
+        and exists (select 1 from sellers st where st.id = p.seller_id and st.status = 'active')
         and (
           p.title like ?1
           or p.sku like ?1

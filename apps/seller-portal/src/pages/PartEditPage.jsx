@@ -5,6 +5,7 @@ import { centimesToInput, parseMoneyInput } from "@parthub/shared";
 import { t, useT } from "../i18n";
 import PartPhotos from "../components/parts/PartPhotos";
 import CompatibilityEditor from "../components/parts/CompatibilityEditor";
+import { PartNumbersEditor } from "../components/parts/PartNumbersFields";
 
 function slugify(value) {
   return String(value || "")
@@ -550,12 +551,13 @@ export default function PartEditPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                {t("SKU")}
+                {t("Your stock code (optional)")}
               </label>
               <input
                 value={form.sku}
                 onChange={setField("sku")}
-                placeholder={t("BOSCH-FBP-001")}
+                dir="ltr"
+                placeholder="A-12"
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
             </div>
@@ -883,7 +885,13 @@ export default function PartEditPage() {
       {id ? (
         <div className="grid gap-6 xl:grid-cols-2">
           <PartPhotos partId={id} />
-          <div id="fitment">
+          <div id="fitment" className="space-y-6">
+            <PartNumbersEditor
+              partId={id}
+              origin={form.part_origin}
+              brandId={form.brand_id}
+              brandName={brands.find((b) => String(b.id) === String(form.brand_id))?.name || ""}
+            />
             <CompatibilityEditor partId={id} />
           </div>
         </div>
