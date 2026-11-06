@@ -11,7 +11,10 @@ import site from "./site.json";
 
 // Addresses: written into site.json by the "Deploy Pages" workflow from the
 // repository variables API_BASE_URL and SITE_URL (empty = defaults below).
-const DEFAULT_API = "https://parthub-api.ori00fit-c96.workers.dev";
+const DEFAULT_API = "https://api.parthub.autos";
+// Canonical address: the same page reached on *.pages.dev or a preview
+// deployment counts as one page on the main domain for Google.
+const DEFAULT_SITE = "https://parthub.autos";
 export const SITE_NAME = "PartHub";
 
 export function apiBase(env) {
@@ -91,7 +94,10 @@ export async function renderShell(context, meta) {
 // Canonical address of the site (custom domain once SITE_URL is set), so
 // the same page reached on *.pages.dev counts as one page for Google.
 export function origin(request) {
-  return String(site.siteUrl || new URL(request.url).origin).replace(/\/$/, "");
+  const host = new URL(request.url);
+  // Local development keeps its own address.
+  if (host.hostname === "localhost" || host.hostname === "127.0.0.1") return String(site.siteUrl || host.origin).replace(/\/$/, "");
+  return String(site.siteUrl || DEFAULT_SITE).replace(/\/$/, "");
 }
 
 // Plain index.html (the app shows its own "not found" / error state).

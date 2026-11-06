@@ -33,9 +33,9 @@ env:
   #   SITE_URL           e.g. https://parthub.autos  (canonical address for
   #                      Google: canonical links, sitemap, robots.txt)
   #   SELLER_PORTAL_URL  e.g. https://seller.parthub.autos
-  API_BASE_URL: ${{ vars.API_BASE_URL || 'https://parthub-api.ori00fit-c96.workers.dev' }}
+  API_BASE_URL: ${{ vars.API_BASE_URL || 'https://api.parthub.autos' }}
   SITE_URL: ${{ vars.SITE_URL || '' }}
-  SELLER_PORTAL_URL: ${{ vars.SELLER_PORTAL_URL || 'https://parthub-platform-seller.pages.dev' }}
+  SELLER_PORTAL_URL: ${{ vars.SELLER_PORTAL_URL || 'https://seller.parthub.autos' }}
 
 jobs:
   deploy:

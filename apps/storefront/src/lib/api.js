@@ -1,6 +1,6 @@
 import { serverMessage } from "../i18n";
 
-export const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+export const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "https://api.parthub.autos").replace(/\/$/, "");
 
 function buildUrl(path, params) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
