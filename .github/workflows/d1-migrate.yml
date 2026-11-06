@@ -77,6 +77,18 @@ jobs:
       - name: 0012 stock alerts (create table if missing)
         run: ../../.github/scripts/d1-exec-retry.sh --file="$MIGRATIONS/0012_stock_alerts.sql"
 
+      # Several columns in one file: each ADD COLUMN is applied on its own
+      # (already there = done), then the rest of the file, which is safe to
+      # run again.
+      - name: 0013 legal acceptance (add columns if missing)
+        run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0013_legal_acceptance.sql"
+
+      - name: 0014 order fulfilment by sellers (add columns, backfill, indexes)
+        run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0014_order_fulfillment.sql"
+
+      - name: 0015 returns and claims (create table if missing)
+        run: ../../.github/scripts/d1-exec-retry.sh --file="$MIGRATIONS/0015_order_issues.sql"
+
       # Read query: fails while the daily read limit is exceeded, which
       # doesn't mean the migrations failed.
       - name: Verify
@@ -84,10 +96,14 @@ jobs:
         run: |
           npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --command \
             "SELECT
-               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('part_requests','request_offers','whatsapp_notifications','part_search_logs','stock_alerts')) AS tables_of_5,
+               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('part_requests','request_offers','whatsapp_notifications','part_search_logs','stock_alerts','order_issues')) AS tables_of_6,
                (SELECT CASE WHEN instr(sql, 'images') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='part_requests') AS images_column,
                (SELECT CASE WHEN instr(sql, 'seller_type') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='sellers') AS seller_type_column,
                (SELECT CASE WHEN instr(sql, 'part_origin') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='parts') AS part_origin_column,
                (SELECT CASE WHEN instr(sql, 'moderation_note') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='parts') AS parts_note_column,
                (SELECT CASE WHEN instr(sql, 'moderation_note') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='sellers') AS sellers_note_column,
-               (SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name IN ('idx_part_images_part','idx_compat_part_id','idx_parts_seller_id','idx_parts_status')) AS key_indexes_of_4"
+               (SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name IN ('idx_part_images_part','idx_compat_part_id','idx_parts_seller_id','idx_parts_status')) AS key_indexes_of_4,
+               (SELECT CASE WHEN instr(sql, 'terms_accepted_at') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='users') AS users_terms_column,
+               (SELECT CASE WHEN instr(sql, 'agreement_accepted_at') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='sellers') AS sellers_agreement_column,
+               (SELECT CASE WHEN instr(sql, 'delivered_at') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='order_items') AS order_items_fulfilment_columns,
+               (SELECT CASE WHEN instr(sql, 'delivered_at') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='orders') AS orders_delivered_column"
