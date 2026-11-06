@@ -11,6 +11,7 @@ import SavedSearchesPanel, { saveSearchItem } from "../features/search/SavedSear
 import { conditionLabel, t, useT } from "../i18n";
 import StockBadge from "../features/stock/StockBadge";
 import { Icon } from "@parthub/shared/icons";
+import { usePageMeta } from "../lib/pageMeta";
 
 function normalizeList(payload, fallbackKey) {
   const list =
@@ -240,6 +241,9 @@ function vehicleMatchesCard(part, vehicle) {
 
 export default function PartsPage() {
   const t = useT();
+  const [metaParams] = useSearchParams();
+  const metaQuery = (metaParams.get("q") || "").trim();
+  usePageMeta(metaQuery ? t("Parts for “{q}”", { q: metaQuery }) : t("All auto parts"), t("Find the right part for your vehicle from verified sellers in Morocco."));
   const vehicleCtx = normalizeVehicleContext(useSelectedVehicle());
   const { selectedVehicle, hasVehicle, clearVehicle } = vehicleCtx;
   const { items: cartItems, addItem } = useCart();

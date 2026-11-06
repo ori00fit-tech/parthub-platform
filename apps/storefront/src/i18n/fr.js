@@ -962,4 +962,8 @@ export default {
   "Cash on delivery": "Paiement à la livraison",
   "Pay the seller in cash when you receive your parts. No card needed.": "Payez le vendeur en espèces à la réception de vos pièces. Pas besoin de carte.",
   "To pay the seller on delivery: {amount}": "À payer au vendeur à la livraison : {amount}",
+  // Page titles
+  "Find the right part for your vehicle from verified sellers in Morocco.": "Trouvez la bonne pièce pour votre véhicule chez des vendeurs vérifiés au Maroc.",
+  "Parts for “{q}”": "Pièces « {q} »",
+  "All auto parts": "Toutes les pièces auto",
 };

@@ -964,4 +964,8 @@ export default {
   "Cash on delivery": "الدفع عند الاستلام",
   "Pay the seller in cash when you receive your parts. No card needed.": "ادفع للبائع نقداً عند استلام قطعك. لا حاجة لبطاقة بنكية.",
   "To pay the seller on delivery: {amount}": "المبلغ الذي تدفعه للبائع عند الاستلام: {amount}",
+  // Page titles
+  "Find the right part for your vehicle from verified sellers in Morocco.": "اعثر على القطعة المناسبة لسيارتك من بائعين موثوقين في المغرب.",
+  "Parts for “{q}”": "قطع «{q}»",
+  "All auto parts": "كل قطع غيار السيارات",
 };
