@@ -184,8 +184,16 @@ commerceRoutes.get("/orders/:reference", authMiddleware, async (c) => {
     [buyerId, (order as any).id]
   );
   const address = await dbFirst(c.env.DB, "SELECT * FROM order_addresses WHERE order_id = ?", [(order as any).id]);
+  // History shown to the buyer: what changed, by whom (seller / PartHub) and why.
+  const events = await dbAll(
+    c.env.DB,
+    `SELECT event, note, created_at,
+            CASE WHEN created_by LIKE 'seller%' THEN 'seller' WHEN created_by = 'buyer' THEN 'buyer' ELSE 'parthub' END AS actor
+     FROM order_events WHERE order_id = ? ORDER BY created_at ASC, id ASC`,
+    [(order as any).id]
+  );
 
-  return ok(c, { ...order, items, shipping_address: address });
+  return ok(c, { ...order, items, shipping_address: address, events });
 });
 
 // POST /api/v1/commerce/reviews
@@ -208,7 +216,7 @@ commerceRoutes.post("/reviews", authMiddleware, async (c) => {
     c.env.DB,
     `SELECT oi.id FROM order_items oi
      JOIN orders o ON o.id = oi.order_id
-     WHERE oi.part_id = ? AND o.buyer_id = ? AND o.status = 'delivered'
+     WHERE oi.part_id = ? AND o.buyer_id = ? AND oi.status = 'delivered'
      ORDER BY o.created_at DESC LIMIT 1`,
     [partId, buyerId]
   );

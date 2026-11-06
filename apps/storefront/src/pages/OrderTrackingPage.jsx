@@ -84,6 +84,10 @@ export default function OrderTrackingPage() {
   const cancelled = order.status === "cancelled";
   const current = STEP_INDEX[order.status] ?? 0;
   const items = Array.isArray(order.items) ? order.items : [];
+  const events = Array.isArray(order.events) ? order.events : [];
+  // Messages left with a status change (e.g. why a seller cancelled).
+  const notes = events.filter((e) => e.note);
+  const cancelNote = [...events].reverse().find((e) => e.event === "cancelled" && e.note)?.note || "";
   const address = order.shipping_address;
 
   return (
@@ -103,6 +107,7 @@ export default function OrderTrackingPage() {
         {cancelled ? (
           <p className="mt-5 rounded-2xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-800">
             {t("This order was cancelled.")}
+            {cancelNote ? <span className="mt-1 block">{t("Reason: {note}", { note: cancelNote })}</span> : null}
           </p>
         ) : (
           <ol className="mt-6 grid gap-3 sm:grid-cols-4">
@@ -157,12 +162,31 @@ export default function OrderTrackingPage() {
                       {t("{price} each", { price: formatPrice(item.price) })} × {item.quantity}
                     </p>
                   </div>
-                  <p className="font-mono text-sm font-semibold text-ink">{formatPrice(item.subtotal)}</p>
+                  <div className="text-end">
+                    <p className={["font-mono text-sm font-semibold", item.status === "cancelled" ? "text-faint line-through" : "text-ink"].join(" ")}>
+                      {formatPrice(item.subtotal)}
+                    </p>
+                    {item.status && item.status !== order.status ? (
+                      <div className="mt-1">
+                        <OrderStatusBadge status={item.status} />
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
-                {order.status === "delivered" && item.part_id ? <ItemReview item={item} /> : null}
+                {(item.status || order.status) === "delivered" && item.part_id ? <ItemReview item={item} /> : null}
               </li>
             ))}
           </ul>
+          {notes.length && !cancelled ? (
+            <div className="mt-3 space-y-2 border-t border-line pt-3">
+              <h3 className="text-sm font-semibold text-ink">{t("Messages from the seller")}</h3>
+              {notes.map((e, i) => (
+                <p key={i} className="rounded-xl bg-surface-2 px-3 py-2 text-sm text-ink-2">
+                  <span className="font-semibold">{statusLabel(e.event)}:</span> {e.note}
+                </p>
+              ))}
+            </div>
+          ) : null}
           <dl className="mt-3 grid grid-cols-[1fr_auto] gap-y-1.5 border-t border-line pt-3 text-sm">
             <dt className="text-muted">{t("Subtotal")}</dt>
             <dd className="text-end font-mono">{formatPrice(order.subtotal)}</dd>

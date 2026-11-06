@@ -8,6 +8,7 @@ import { dbAll, dbRun, dbFirst, dbCount } from "../utils/db";
 import { parsePagination } from "../utils/pagination";
 import { notifyBackInStock } from "../utils/stock-alerts";
 import { runInBackground } from "../utils/whatsapp";
+import { type LineStatus, logOrderEvent, refreshOrderStatus, setLineStatus } from "../utils/fulfillment";
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -301,7 +302,18 @@ adminRoutes.patch("/orders/:id/status", async (c) => {
   const { status } = await c.req.json<{ status: string }>();
   const allowed = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
   if (!allowed.includes(status)) return fail(c, "Invalid status");
-  await dbRun(c.env.DB, "UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", [status, id]);
+  const orderId = Number(id);
+  // Admin override: every line that is still open takes the new status.
+  const lines = await dbAll<{ id: number }>(
+    c.env.DB,
+    "SELECT id FROM order_items WHERE order_id = ? AND status != 'cancelled'",
+    [orderId]
+  );
+  if (!lines.length) return fail(c, "Order not found", 404);
+  const restocked = await setLineStatus(c.env.DB, lines.map((l) => l.id), status as LineStatus);
+  await logOrderEvent(c.env.DB, orderId, status, "admin");
+  await refreshOrderStatus(c.env.DB, orderId);
+  for (const partId of restocked) runInBackground(c, notifyBackInStock(c.env, partId));
   return ok(c, { message: "Order updated" });
 });
 

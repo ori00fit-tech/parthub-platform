@@ -125,6 +125,8 @@ export const SERVER_MESSAGES: Record<"ar" | "fr", Record<string, string>> = {
     "You can rate a part once your order is delivered": "Vous pourrez noter une pièce une fois votre commande livrée",
     "Please accept the seller agreement to open your store": "Veuillez accepter le contrat vendeur pour ouvrir votre boutique",
     "Seller agreement accepted": "Contrat vendeur accepté",
+    "This order cannot move to that status": "Cette commande ne peut pas passer à ce statut",
+    "Tell the buyer why the order is cancelled": "Indiquez à l'acheteur pourquoi la commande est annulée",
   },
   ar: {
     "Select between 1 and {MAX} items": "حدّد بين 1 و{MAX} عنصراً",
@@ -249,6 +251,8 @@ export const SERVER_MESSAGES: Record<"ar" | "fr", Record<string, string>> = {
     "You can rate a part once your order is delivered": "يمكنك تقييم القطعة بعد تسليم طلبك",
     "Please accept the seller agreement to open your store": "يرجى قبول اتفاقية البائع لفتح متجرك",
     "Seller agreement accepted": "تم قبول اتفاقية البائع",
+    "This order cannot move to that status": "لا يمكن نقل هذا الطلب إلى هذه الحالة",
+    "Tell the buyer why the order is cancelled": "أخبر المشتري بسبب إلغاء الطلب",
   },
 };
 

@@ -7,6 +7,7 @@ import { signToken } from "../utils/auth";
 import { loadReadiness } from "../utils/seller-readiness";
 import { LEGAL_VERSION } from "../utils/legal";
 import { notifyBackInStock } from "../utils/stock-alerts";
+import { type LineStatus, SELLER_NEXT, logOrderEvent, refreshOrderStatus, rollupStatus, setLineStatus } from "../utils/fulfillment";
 import { runInBackground } from "../utils/whatsapp";
 
 export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
@@ -634,12 +635,11 @@ marketplaceRoutes.get("/dashboard", authMiddleware, async (c) => {
       where p.seller_id = ?1
     `).bind(sellerId).first<{ n: number }>(),
 
+    // Orders waiting for this seller to confirm their own lines.
     c.env.DB.prepare(`
-      select count(distinct o.id) as n
-      from orders o
-      join order_items oi on oi.order_id = o.id
-      join parts p on p.id = oi.part_id
-      where p.seller_id = ?1 and o.status = 'pending'
+      select count(distinct oi.order_id) as n
+      from order_items oi
+      where oi.seller_id = ?1 and oi.status = 'pending'
     `).bind(sellerId).first<{ n: number }>(),
 
     c.env.DB.prepare(`
@@ -1280,52 +1280,138 @@ marketplaceRoutes.get("/me/parts", authMiddleware, async (c) => {
   return c.json(success(parts.results || []));
 });
 
+// The seller's own store id, checked against the signed-in user.
+async function ownSellerId(c: { env: Env; get: (k: "user_id" | "seller_id") => unknown }): Promise<number | null> {
+  const sellerId = Number(c.get("seller_id"));
+  const userId = Number(c.get("user_id"));
+  if (!sellerId || !userId) return null;
+  const row = await c.env.DB.prepare("select id from sellers where id = ?1 and user_id = ?2 limit 1")
+    .bind(sellerId, userId)
+    .first<{ id: number }>();
+  return row ? row.id : null;
+}
+
+// GET /api/v1/marketplace/me/orders — orders with at least one of the
+// seller's parts. status / subtotal cover the seller's own lines only.
 marketplaceRoutes.get("/me/orders", authMiddleware, async (c) => {
-  try {
-    const sellerId = c.get("seller_id");
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
 
-    if (!sellerId) {
-      return c.json(failure("NOT_SELLER", "Seller account required"), 403);
-    }
+  const rows = await c.env.DB.prepare(`
+    select
+      o.id,
+      o.reference,
+      cast(o.id as text) as order_number,
+      o.payment_status,
+      o.created_at,
+      coalesce(u.name, 'Buyer') as buyer_name,
+      u.email as buyer_email,
+      sum(oi.subtotal) as total,
+      sum(oi.quantity) as item_count,
+      group_concat(oi.status) as line_statuses
+    from orders o
+    join order_items oi on oi.order_id = o.id and oi.seller_id = ?1
+    left join users u on u.id = o.buyer_id
+    group by o.id
+    order by o.created_at desc
+  `).bind(sellerId).all<Record<string, unknown> & { line_statuses: string | null }>();
 
-    const orders = await c.env.DB.prepare(`
-      select
-        o.id,
-        cast(o.id as text) as order_number,
-        o.status,
-        o.payment_status,
-        o.shipping_status,
-        o.total,
-        o.created_at,
-        coalesce(u.name, 'Buyer') as buyer_name,
-        u.email as buyer_email
-      from orders o
-      join order_items oi on oi.order_id = o.id
-      join parts p on p.id = oi.part_id
-      left join users u on u.id = o.buyer_id
-      where p.seller_id = ?1
-      group by
-        o.id,
-        o.status,
-        o.payment_status,
-        o.shipping_status,
-        o.total,
-        o.created_at,
-        u.name,
-        u.email
-      order by o.created_at desc
-    `).bind(sellerId).all();
+  const orders = (rows.results || []).map(({ line_statuses, ...o }) => ({
+    ...o,
+    status: rollupStatus(String(line_statuses || "").split(",").filter(Boolean)),
+  }));
+  return c.json(success(orders));
+});
 
-    return c.json(success(orders.results || []));
-  } catch (error) {
-    return c.json(
-      failure(
-        "GET_SELLER_ORDERS_FAILED",
-        error instanceof Error ? error.message : "Unknown seller orders error"
-      ),
-      500
-    );
+async function loadSellerOrder(DB: D1Database, sellerId: number, orderId: number) {
+  const order = await DB.prepare(`
+    select o.id, o.reference, cast(o.id as text) as order_number, o.status as order_status,
+           o.payment_status, o.notes, o.created_at,
+           coalesce(u.name, 'Buyer') as buyer_name, u.email as buyer_email,
+           a.full_name as ship_name, a.phone as buyer_phone, a.address_line1, a.address_line2,
+           a.city as buyer_city, a.state, a.postal_code, a.country
+    from orders o
+    left join users u on u.id = o.buyer_id
+    left join order_addresses a on a.order_id = o.id
+    where o.id = ?1 and exists (select 1 from order_items oi where oi.order_id = o.id and oi.seller_id = ?2)
+    limit 1
+  `).bind(orderId, sellerId).first<Record<string, unknown>>();
+  if (!order) return null;
+
+  const items = await DB.prepare(`
+    select oi.id, oi.part_id, oi.title, oi.sku, oi.price, oi.quantity, oi.subtotal, oi.status,
+           oi.status_updated_at, oi.delivered_at, p.slug as part_slug,
+           (select pi.url from part_images pi where pi.part_id = oi.part_id
+            order by pi.is_featured desc, pi.sort_order asc, pi.id asc limit 1) as image_url
+    from order_items oi
+    left join parts p on p.id = oi.part_id
+    where oi.order_id = ?1 and oi.seller_id = ?2
+    order by oi.id
+  `).bind(orderId, sellerId).all<{ id: number; status: string; subtotal: number }>();
+  const lines = items.results || [];
+
+  const events = await DB.prepare(
+    "select event, note, created_by, created_at from order_events where order_id = ?1 order by created_at asc, id asc"
+  ).bind(orderId).all();
+
+  const others = await DB.prepare(
+    "select count(*) as n from order_items where order_id = ?1 and seller_id != ?2"
+  ).bind(orderId, sellerId).first<{ n: number }>();
+
+  const status = rollupStatus(lines.map((l) => l.status));
+  return {
+    ...order,
+    status,
+    total: lines.reduce((sum, l) => sum + Number(l.subtotal || 0), 0),
+    next_statuses: SELLER_NEXT[status] ?? [],
+    has_other_sellers: Number(others?.n || 0) > 0,
+    items: lines,
+    events: events.results || [],
+  };
+}
+
+// GET /api/v1/marketplace/me/orders/:id — the seller's lines of one order,
+// the delivery details and the order history.
+marketplaceRoutes.get("/me/orders/:id", authMiddleware, async (c) => {
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const orderId = Number(c.req.param("id"));
+  if (!Number.isInteger(orderId) || orderId <= 0) return c.json(failure("NOT_FOUND", "Order not found"), 404);
+  const order = await loadSellerOrder(c.env.DB, sellerId, orderId);
+  if (!order) return c.json(failure("NOT_FOUND", "Order not found"), 404);
+  return c.json(success(order));
+});
+
+// PATCH /api/v1/marketplace/me/orders/:id/status { status, note? }
+// Moves all of the seller's open lines of the order one step:
+// pending → confirmed → shipped → delivered, or cancelled before shipping.
+marketplaceRoutes.patch("/me/orders/:id/status", authMiddleware, async (c) => {
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const orderId = Number(c.req.param("id"));
+  const body = await c.req.json<{ status?: unknown; note?: unknown }>().catch(() => ({} as { status?: unknown; note?: unknown }));
+  const next = String(body.status || "") as LineStatus;
+  const note = typeof body.note === "string" ? body.note.trim().slice(0, 500) || null : null;
+
+  const order = Number.isInteger(orderId) && orderId > 0 ? await loadSellerOrder(c.env.DB, sellerId, orderId) : null;
+  if (!order) return c.json(failure("NOT_FOUND", "Order not found"), 404);
+  if (!(order.next_statuses as string[]).includes(next)) {
+    return c.json(failure("INVALID_STATUS", "This order cannot move to that status"), 409);
   }
+  if (next === "cancelled" && !note) {
+    return c.json(failure("NOTE_REQUIRED", "Tell the buyer why the order is cancelled"), 400);
+  }
+
+  const lineIds = order.items
+    .filter((l) => l.status !== "cancelled" && l.status !== "delivered")
+    .map((l) => l.id);
+  const restocked = await setLineStatus(c.env.DB, lineIds, next);
+  await logOrderEvent(c.env.DB, orderId, next, `seller:${sellerId}`, note);
+  await refreshOrderStatus(c.env.DB, orderId);
+  for (const partId of restocked) runInBackground(c, notifyBackInStock(c.env, partId));
+
+  const updated = await loadSellerOrder(c.env.DB, sellerId, orderId);
+  return c.json(success(updated, { message: "Order updated" }));
 });
 
 marketplaceRoutes.get("/me/reviews", authMiddleware, async (c) => {

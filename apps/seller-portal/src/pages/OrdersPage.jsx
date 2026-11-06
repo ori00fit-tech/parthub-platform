@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { statusLabel, useT } from "../i18n";
 import { Icon } from "@parthub/shared/icons";
+import { formatMoney } from "@parthub/shared";
+import { formatOrderDate as formatDate } from "./OrderDetailsPage";
 
 function normalizeOrders(payload) {
   const list =
@@ -88,6 +90,7 @@ export default function OrdersPage() {
     return orders.filter((order) => {
       const haystack = [
         order.order_number,
+        order.reference,
         order.buyer_name,
         order.buyer_email,
         order.status,
@@ -245,7 +248,7 @@ export default function OrdersPage() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-xl font-bold text-gray-900">
-                      {order.order_number || order.id || t("Order")}
+                      {order.reference || order.order_number || order.id || t("Order")}
                     </h3>
 
                     <span
@@ -272,8 +275,8 @@ export default function OrdersPage() {
                   <div className="mt-3 grid gap-2 text-sm text-gray-600 sm:grid-cols-2 xl:grid-cols-3">
                     <p>{t("Buyer: {name}", { name: order.buyer_name || "—" })}</p>
                     <p>{t("Email: {email}", { email: order.buyer_email || "—" })}</p>
-                    <p>{t("Shipping: {status}", { status: statusLabel(order.shipping_status) || "—" })}</p>
-                    <p>{t("Created: {date}", { date: order.created_at || "—" })}</p>
+                    <p>{t("{n} item(s)", { n: order.item_count || 0 })}</p>
+                    <p>{t("Created: {date}", { date: formatDate(order.created_at) })}</p>
                   </div>
                 </div>
 
@@ -281,7 +284,7 @@ export default function OrdersPage() {
                   <div className="rounded-2xl bg-gray-50 px-4 py-3 text-end">
                     <p className="text-xs uppercase tracking-wide text-gray-400">{t("Total")}</p>
                     <p className="mt-1 text-lg font-bold text-gray-900">
-                      {order.total || "—"}
+                      {formatMoney(order.total)}
                     </p>
                   </div>
 

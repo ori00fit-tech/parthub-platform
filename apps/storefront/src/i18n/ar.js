@@ -920,4 +920,7 @@ export default {
   "Version of {date}": "نسخة {date}",
   "Returns:": "الإرجاع:",
   "7 days after delivery": "خلال 7 أيام من الاستلام",
+  // Order fulfilment
+  "Reason: {note}": "السبب: {note}",
+  "Messages from the seller": "رسائل البائع",
 };

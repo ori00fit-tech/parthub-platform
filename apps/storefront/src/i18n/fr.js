@@ -918,4 +918,7 @@ export default {
   "Version of {date}": "Version du {date}",
   "Returns:": "Retours :",
   "7 days after delivery": "7 jours après la livraison",
+  // Order fulfilment
+  "Reason: {note}": "Motif : {note}",
+  "Messages from the seller": "Messages du vendeur",
 };
