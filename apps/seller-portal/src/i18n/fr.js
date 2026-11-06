@@ -757,4 +757,7 @@ export default {
   "PartHub decided for the buyer": "PartHub a donné raison à l'acheteur",
   "PartHub decided for the seller": "PartHub a donné raison au vendeur",
   "Claim withdrawn": "Réclamation retirée",
+  "Cash on delivery": "Paiement à la livraison",
+  "Collect {amount} for your parts": "Encaissez {amount} pour vos pièces",
+  "Collect {amount} (shipping included)": "Encaissez {amount} (livraison comprise)",
 };

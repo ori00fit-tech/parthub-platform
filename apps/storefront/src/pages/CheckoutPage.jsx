@@ -460,6 +460,19 @@ export default function CheckoutPage() {
             </div>
           </div>
 
+          <fieldset className="mt-6 rounded-2xl border border-line p-4">
+            <legend className="px-1 text-sm font-semibold text-ink">{t("Payment")}</legend>
+            <label className="flex items-start gap-3 rounded-xl border border-sky-400 bg-surface-2 p-3">
+              <input type="radio" name="payment_method" checked readOnly className="mt-1" />
+              <span>
+                <span className="block text-sm font-semibold text-ink">{t("Cash on delivery")}</span>
+                <span className="block text-xs text-muted">
+                  {t("Pay the seller in cash when you receive your parts. No card needed.")}
+                </span>
+              </span>
+            </label>
+          </fieldset>
+
           <div className="mt-6">
             <button
               type="submit"

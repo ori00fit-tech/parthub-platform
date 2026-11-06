@@ -961,4 +961,7 @@ export default {
   "Cancel": "إلغاء",
   "Problem with this part?": "مشكلة في هذه القطعة؟",
   "until {date}": "حتى {date}",
+  "Cash on delivery": "الدفع عند الاستلام",
+  "Pay the seller in cash when you receive your parts. No card needed.": "ادفع للبائع نقداً عند استلام قطعك. لا حاجة لبطاقة بنكية.",
+  "To pay the seller on delivery: {amount}": "المبلغ الذي تدفعه للبائع عند الاستلام: {amount}",
 };

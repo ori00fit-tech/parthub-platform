@@ -350,6 +350,16 @@ export default function OrderDetailsPage() {
                 <dt className="text-xs uppercase tracking-wide text-gray-400">{t("Address")}</dt>
                 <dd className="text-gray-900">{address || "—"}</dd>
               </div>
+              {order.status !== "cancelled" && order.payment_status !== "paid" ? (
+                <div className="rounded-2xl bg-amber-50 px-3 py-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-amber-800">{t("Cash on delivery")}</dt>
+                  <dd className="font-semibold text-gray-900">
+                    {order.has_other_sellers
+                      ? t("Collect {amount} for your parts", { amount: formatMoney(order.total) })
+                      : t("Collect {amount} (shipping included)", { amount: formatMoney(order.order_total) })}
+                  </dd>
+                </div>
+              ) : null}
             </dl>
           </div>
 
