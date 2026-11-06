@@ -159,6 +159,7 @@ CREATE TABLE IF NOT EXISTS orders (
   discount         INTEGER NOT NULL DEFAULT 0,
   total            INTEGER NOT NULL DEFAULT 0,
   notes            TEXT,
+  delivered_at     TEXT,                     -- all lines delivered (see migrations/0014)
   created_at       TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -175,6 +176,9 @@ CREATE TABLE IF NOT EXISTS order_items (
   quantity   INTEGER NOT NULL DEFAULT 1,
   subtotal   INTEGER NOT NULL,
   thumbnail  TEXT,
+  status     TEXT NOT NULL DEFAULT 'pending',  -- per-seller fulfilment (see migrations/0014)
+  status_updated_at TEXT,
+  delivered_at TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -336,3 +340,31 @@ CREATE TABLE IF NOT EXISTS stock_alerts (
 
 CREATE INDEX IF NOT EXISTS idx_stock_alerts_part_status ON stock_alerts(part_id, status);
 CREATE INDEX IF NOT EXISTS idx_stock_alerts_user ON stock_alerts(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_order_items_seller_status ON order_items(seller_id, status);
+CREATE INDEX IF NOT EXISTS idx_order_events_order ON order_events(order_id, created_at);
+
+-- ── Returns and complaints (see migrations/0015) ───────────────
+CREATE TABLE IF NOT EXISTS order_issues (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id         INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  order_item_id    INTEGER NOT NULL REFERENCES order_items(id) ON DELETE CASCADE,
+  buyer_id         INTEGER NOT NULL REFERENCES users(id),
+  seller_id        INTEGER NOT NULL REFERENCES sellers(id),
+  reason           TEXT NOT NULL,
+  details          TEXT NOT NULL,
+  status           TEXT NOT NULL DEFAULT 'open'
+                   CHECK (status IN ('open','accepted','refused','escalated','closed')),
+  outcome          TEXT CHECK (outcome IN ('buyer','seller','withdrawn')),
+  return_paid_by   TEXT CHECK (return_paid_by IN ('seller','buyer')),
+  seller_note      TEXT,
+  admin_note       TEXT,
+  created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at       TEXT NOT NULL DEFAULT (datetime('now')),
+  seller_replied_at TEXT,
+  escalated_at     TEXT,
+  closed_at        TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_order_issues_item ON order_issues(order_item_id);
+CREATE INDEX IF NOT EXISTS idx_order_issues_seller_status ON order_issues(seller_id, status);
+CREATE INDEX IF NOT EXISTS idx_order_issues_status ON order_issues(status, created_at);

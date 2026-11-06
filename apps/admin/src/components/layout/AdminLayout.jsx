@@ -7,7 +7,7 @@ import { usePendingCounts } from "../../lib/pending";
 import { Icon } from "@parthub/shared/icons";
 
 // Nav items whose badge shows how many items wait for moderation.
-const PENDING_KEY = { "/sellers": "sellers", "/parts": "parts", "/reviews": "reviews" };
+const PENDING_KEY = { "/sellers": "sellers", "/parts": "parts", "/reviews": "reviews", "/issues": "issues" };
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: "dashboard" },
@@ -16,6 +16,7 @@ const navItems = [
   { to: "/categories", label: "Categories", icon: "categories" },
   { to: "/vehicles", label: "Vehicles", icon: "vehicles" },
   { to: "/orders", label: "Orders", icon: "orders" },
+  { to: "/issues", label: "Returns", icon: "warning" },
   { to: "/reviews", label: "Reviews", icon: "messages" },
   { to: "/analytics", label: "Analytics", icon: "insights" },
 ];

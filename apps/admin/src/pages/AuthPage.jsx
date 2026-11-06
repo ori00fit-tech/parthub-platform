@@ -21,7 +21,8 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function submit() {
+  async function submit(e) {
+    e?.preventDefault();
     setError("");
     setLoading(true);
 
@@ -127,7 +128,7 @@ export default function AuthPage() {
             <p className="text-gray-500 text-sm">{t("Admin Panel")}</p>
           </div>
 
-          <div className="space-y-4">
+          <form onSubmit={submit} className="space-y-4">
             <div>
               <label className="block text-sm text-gray-400 mb-1.5">{t("Email")}</label>
               <input
@@ -158,7 +159,7 @@ export default function AuthPage() {
             ) : null}
 
             <button
-              onClick={submit}
+              type="submit"
               disabled={loading}
               className="w-full rounded-xl bg-blue-600 text-white font-semibold py-3 transition hover:bg-blue-500 disabled:opacity-50"
             >
@@ -168,7 +169,7 @@ export default function AuthPage() {
             <div className="rounded-2xl bg-gray-950 p-4 text-xs text-gray-500">
               {t("Admin-only access. Non-admin accounts will be rejected during authentication.")}
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>
