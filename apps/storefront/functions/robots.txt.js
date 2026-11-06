@@ -1,6 +1,8 @@
 // /robots.txt — let crawlers in, keep private pages out, point to the sitemap.
+import { origin } from "./_lib/seo.js";
+
 export function onRequestGet({ request }) {
-  const base = new URL(request.url).origin;
+  const base = origin(request);
   const body = [
     "User-agent: *",
     "Allow: /",

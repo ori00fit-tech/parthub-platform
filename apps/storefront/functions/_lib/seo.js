@@ -7,11 +7,15 @@
 // robots.txt and sitemap.xml. Text is in French, the usual language of
 // Moroccan e-commerce search.
 
+import site from "./site.json";
+
+// Addresses: written into site.json by the "Deploy Pages" workflow from the
+// repository variables API_BASE_URL and SITE_URL (empty = defaults below).
 const DEFAULT_API = "https://parthub-api.ori00fit-c96.workers.dev";
 export const SITE_NAME = "PartHub";
 
 export function apiBase(env) {
-  return String(env?.API_BASE_URL || DEFAULT_API).replace(/\/$/, "");
+  return String(env?.API_BASE_URL || site.apiBase || DEFAULT_API).replace(/\/$/, "");
 }
 
 // GET an API path; { status, data } (data null when missing or on error).
@@ -84,8 +88,10 @@ export async function renderShell(context, meta) {
   return new Response(rewritten.body, { status, headers });
 }
 
+// Canonical address of the site (custom domain once SITE_URL is set), so
+// the same page reached on *.pages.dev counts as one page for Google.
 export function origin(request) {
-  return new URL(request.url).origin;
+  return String(site.siteUrl || new URL(request.url).origin).replace(/\/$/, "");
 }
 
 // Plain index.html (the app shows its own "not found" / error state).

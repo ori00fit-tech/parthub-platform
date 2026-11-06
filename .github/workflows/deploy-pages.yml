@@ -26,8 +26,16 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # The API every app talks to (same Worker that "Deploy API" ships).
-  API_BASE_URL: https://parthub-api.ori00fit-c96.workers.dev
+  # Public addresses. Set them as repository variables (Settings → Secrets
+  # and variables → Actions → Variables) once the custom domains answer;
+  # until then the Cloudflare default addresses are used.
+  #   API_BASE_URL       e.g. https://api.parthub.autos
+  #   SITE_URL           e.g. https://parthub.autos  (canonical address for
+  #                      Google: canonical links, sitemap, robots.txt)
+  #   SELLER_PORTAL_URL  e.g. https://seller.parthub.autos
+  API_BASE_URL: ${{ vars.API_BASE_URL || 'https://parthub-api.ori00fit-c96.workers.dev' }}
+  SITE_URL: ${{ vars.SITE_URL || '' }}
+  SELLER_PORTAL_URL: ${{ vars.SELLER_PORTAL_URL || 'https://parthub-platform-seller.pages.dev' }}
 
 jobs:
   deploy:
@@ -41,15 +49,15 @@ jobs:
           # (see .github/scripts/find-pages-project.mjs).
           - app: storefront
             package: "@parthub/storefront"
-            domain: parthub.site
+            domain: parthub.autos
             project: parthub-platform
           - app: seller-portal
             package: "@parthub/seller-portal"
-            domain: seller.parthub.site
+            domain: seller.parthub.autos
             project: parthub-platform-seller
           - app: admin
             package: "@parthub/admin"
-            domain: admin.parthub.site
+            domain: admin.parthub.autos
             project: parthub-platform-admin
 
     steps:
@@ -89,7 +97,17 @@ jobs:
           VITE_API_BASE_URL: ${{ env.API_BASE_URL }}
           VITE_SELLER_API_BASE_URL: ${{ env.API_BASE_URL }}
           VITE_ADMIN_API_BASE_URL: ${{ env.API_BASE_URL }}
+          VITE_SELLER_PORTAL_URL: ${{ env.SELLER_PORTAL_URL }}
         run: pnpm --filter "${{ matrix.package }}" build
+
+      # The storefront's Pages Functions (SEO) read the API and canonical
+      # addresses from functions/_lib/site.json.
+      - name: Site addresses for the storefront functions
+        if: steps.pick.outputs.run == 'true' && matrix.app == 'storefront'
+        working-directory: apps/storefront
+        run: |
+          node -e 'require("fs").writeFileSync("functions/_lib/site.json", JSON.stringify({ apiBase: process.env.API_BASE_URL || "", siteUrl: process.env.SITE_URL || "" }, null, 2) + "\n")'
+          cat functions/_lib/site.json
 
       - name: Check the build
         if: steps.pick.outputs.run == 'true'
