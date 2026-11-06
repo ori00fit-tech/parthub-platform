@@ -4,7 +4,7 @@ import { useT } from "../../i18n";
 
 // Seller portal (separate app). Override with VITE_SELLER_PORTAL_URL when a
 // custom domain is set up.
-const SELLER_PORTAL_URL = (import.meta.env.VITE_SELLER_PORTAL_URL || "https://parthub-platform-seller.pages.dev").replace(/\/$/, "");
+const SELLER_PORTAL_URL = (import.meta.env.VITE_SELLER_PORTAL_URL || "https://seller.parthub.autos").replace(/\/$/, "");
 
 function FooterColumn({ title, children }) {
   return (

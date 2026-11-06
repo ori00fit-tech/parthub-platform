@@ -3,7 +3,7 @@ import { createApiClient, SELLER_TOKEN_KEY } from "@parthub/shared";
 
 export const BASE_URL =
   import.meta.env.VITE_SELLER_API_BASE_URL ||
-  "https://parthub-api.ori00fit-c96.workers.dev";
+  "https://api.parthub.autos";
 
 export const api = createApiClient({
   baseUrl: BASE_URL,

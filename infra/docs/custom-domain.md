@@ -19,6 +19,26 @@ As in the table above. Cloudflare creates the DNS records and certificates.
 to `parthub.autos` (Rules → Redirect Rules).
 
 ## 3. Switch the apps to the new addresses
+The code now defaults to `https://api.parthub.autos`,
+`https://seller.parthub.autos` and the canonical `https://parthub.autos`, so
+nothing is needed unless a variable overrides them.
+
+**The three Pages projects are connected to GitHub** (Cloudflare builds them on
+every push; the "Deploy Pages" workflow then skips its own upload). Their
+build variables live in Cloudflare, not GitHub: Workers & Pages → project →
+Settings → Variables and Secrets. If one of these is set there with an old
+address, change it (or delete it to use the default) and retry the latest
+deployment:
+
+| Project | Variable |
+|---|---|
+| `parthub-platform` | `VITE_API_BASE_URL`, `VITE_SELLER_PORTAL_URL`, `API_BASE_URL` |
+| `parthub-platform-seller` | `VITE_SELLER_API_BASE_URL` |
+| `parthub-platform-admin` | `VITE_ADMIN_API_BASE_URL` |
+
+The repository variables below are only used when a project is a direct
+upload (not connected to GitHub).
+
 Only once `https://api.parthub.autos/api/v1/catalog/categories` answers.
 GitHub → Settings → Secrets and variables → Actions → **Variables**:
 
