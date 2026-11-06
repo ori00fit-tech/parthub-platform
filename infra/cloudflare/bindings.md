@@ -20,9 +20,9 @@ wrangler secret put WHATSAPP_PHONE_NUMBER_ID
 
 | Project | Domain |
 |---------|--------|
-| parthub-storefront | parthub.site |
-| parthub-seller | seller.parthub.site |
-| parthub-admin | admin.parthub.site |
+| parthub-platform | parthub.autos |
+| parthub-platform-seller | seller.parthub.autos |
+| parthub-platform-admin | admin.parthub.autos |
 
 ## D1 Setup
 

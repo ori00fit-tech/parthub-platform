@@ -1,7 +1,7 @@
 # PartHub R2 Bucket Structure
 
 Bucket name: `parthub-media`
-Public domain: `https://media.parthub.site`
+Public domain: `https://media.parthub.autos`
 
 ## Folder Layout
 
@@ -34,5 +34,5 @@ parthub-media/
 
 1. Create bucket: `parthub-media`
 2. Enable public access
-3. Set custom domain: `media.parthub.site`
+3. Set custom domain: `media.parthub.autos`
 4. Add CORS policy for your app domains

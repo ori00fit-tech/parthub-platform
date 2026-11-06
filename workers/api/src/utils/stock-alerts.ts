@@ -15,7 +15,7 @@ export const BACK_IN_STOCK_TEMPLATE = "parthub_back_in_stock";
 const MAX_ALERTS_PER_RUN = 200;
 
 function storefrontUrl(env: Env) {
-  return (env.STOREFRONT_URL || "https://parthub.site").replace(/\/$/, "");
+  return (env.STOREFRONT_URL || "https://parthub.autos").replace(/\/$/, "");
 }
 
 function formatMAD(cents: number) {

@@ -25,10 +25,10 @@ const MAX_SELLER_ALERTS_PER_DAY = 10;
 type Kind = "new_request" | "new_offer" | "offer_accepted";
 
 function storefrontUrl(env: Env) {
-  return (env.STOREFRONT_URL || "https://parthub.site").replace(/\/$/, "");
+  return (env.STOREFRONT_URL || "https://parthub.autos").replace(/\/$/, "");
 }
 function sellerPortalUrl(env: Env) {
-  return (env.SELLER_PORTAL_URL || "https://seller.parthub.site").replace(/\/$/, "");
+  return (env.SELLER_PORTAL_URL || "https://seller.parthub.autos").replace(/\/$/, "");
 }
 
 function formatMAD(cents: number) {
