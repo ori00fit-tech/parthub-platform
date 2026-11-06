@@ -968,4 +968,6 @@ export default {
   "Find the right part for your vehicle from verified sellers in Morocco.": "اعثر على القطعة المناسبة لسيارتك من بائعين موثوقين في المغرب.",
   "Parts for “{q}”": "قطع «{q}»",
   "All auto parts": "كل قطع غيار السيارات",
+  // Vehicle catalog
+  "all engines": "كل المحركات",
 };

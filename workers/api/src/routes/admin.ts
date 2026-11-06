@@ -9,6 +9,7 @@ import { parsePagination } from "../utils/pagination";
 import { notifyBackInStock } from "../utils/stock-alerts";
 import { runInBackground } from "../utils/whatsapp";
 import { type LineStatus, logOrderEvent, refreshOrderStatus, setLineStatus } from "../utils/fulfillment";
+import { ensureBrand, ensureVehicle, engineInfo, readVehicleEntry } from "../utils/vehicle-catalog";
 import { type IssueRow, cleanNote, loadIssue, nowText, publicIssue, updateIssue } from "../utils/issues";
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
@@ -39,17 +40,19 @@ adminRoutes.get("/dashboard", async (c) => {
 
 // GET /api/v1/admin/pending-counts — what is waiting for moderation (sidebar badges).
 adminRoutes.get("/pending-counts", async (c) => {
-  const [sellers, parts, reviews, issues] = await Promise.all([
+  const [sellers, parts, reviews, issues, catalog] = await Promise.all([
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM sellers WHERE status = 'pending'"),
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM parts WHERE status = 'pending'"),
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM reviews WHERE status = 'pending'"),
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM order_issues WHERE status = 'escalated'"),
+    dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM catalog_suggestions WHERE status = 'pending'"),
   ]);
   return ok(c, {
     sellers: sellers?.n ?? 0,
     parts: parts?.n ?? 0,
     reviews: reviews?.n ?? 0,
     issues: issues?.n ?? 0,
+    catalog: catalog?.n ?? 0,
   });
 });
 
@@ -373,6 +376,144 @@ adminRoutes.post("/issues/:id/decide", async (c) => {
     c.env.DB, issue, fields, outcome === "buyer" ? "issue_decided_buyer" : "issue_decided_seller", "admin", note
   );
   return ok(c, publicIssue(updated));
+});
+
+// ── Vehicle catalog ───────────────────────────────────────────
+
+// GET /api/v1/admin/catalog-suggestions?status=pending|all
+adminRoutes.get("/catalog-suggestions", async (c) => {
+  const all = c.req.query("status") === "all";
+  const rows = await dbAll(
+    c.env.DB,
+    `SELECT cs.*, u.name AS user_name, u.email AS user_email, s.name AS seller_name
+     FROM catalog_suggestions cs
+     JOIN users u ON u.id = cs.user_id
+     LEFT JOIN sellers s ON s.id = cs.seller_id
+     ${all ? "" : "WHERE cs.status = 'pending'"}
+     ORDER BY CASE cs.status WHEN 'pending' THEN 0 ELSE 1 END, cs.created_at DESC
+     LIMIT 200`
+  );
+  return ok(c, rows);
+});
+
+// POST /api/v1/admin/catalog-suggestions/:id/approve { make, model, generation, year_start, year_end, engine | brand }
+// The admin may correct the fields first; what is missing is added to the catalog.
+adminRoutes.post("/catalog-suggestions/:id/approve", async (c) => {
+  const id = Number(c.req.param("id"));
+  const sug = await dbFirst<Record<string, unknown>>(c.env.DB, "SELECT * FROM catalog_suggestions WHERE id = ?", [id]);
+  if (!sug) return fail(c, "Suggestion not found", 404);
+  if (sug.status !== "pending") return fail(c, "This suggestion was already reviewed", 409);
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const fields = { ...sug, ...Object.fromEntries(Object.entries(body).filter(([, v]) => v !== undefined)) };
+  let created: unknown;
+  if (sug.kind === "brand") {
+    const name = typeof fields.brand === "string" ? fields.brand.trim().slice(0, 80) : "";
+    if (!name) return fail(c, "Give the brand name");
+    created = await ensureBrand(c.env.DB, name);
+  } else {
+    const entry = readVehicleEntry(fields);
+    if (typeof entry === "string") return fail(c, entry);
+    created = await ensureVehicle(c.env.DB, entry);
+  }
+  await dbRun(
+    c.env.DB,
+    "UPDATE catalog_suggestions SET status = 'approved', admin_note = ?, decided_at = datetime('now') WHERE id = ?",
+    [cleanNote(body.admin_note, 500), id]
+  );
+  return ok(c, { id, status: "approved", created });
+});
+
+// POST /api/v1/admin/catalog-suggestions/:id/reject { admin_note }
+adminRoutes.post("/catalog-suggestions/:id/reject", async (c) => {
+  const id = Number(c.req.param("id"));
+  const body = await c.req.json<{ admin_note?: unknown }>().catch(() => ({} as { admin_note?: unknown }));
+  const res = await dbRun(
+    c.env.DB,
+    "UPDATE catalog_suggestions SET status = 'rejected', admin_note = ?, decided_at = datetime('now') WHERE id = ? AND status = 'pending'",
+    [cleanNote(body.admin_note, 500), id]
+  );
+  if (!res.changes) return fail(c, "Suggestion not found", 404);
+  return ok(c, { id, status: "rejected" });
+});
+
+// POST /api/v1/admin/vehicles/catalog { make, model, generation?, year_start?, year_end?, engine? }
+adminRoutes.post("/vehicles/catalog", async (c) => {
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const entry = readVehicleEntry(body);
+  if (typeof entry === "string") return fail(c, entry);
+  return ok(c, await ensureVehicle(c.env.DB, entry));
+});
+
+// GET /api/v1/admin/vehicles/generations?model_id= — generations with their engines.
+adminRoutes.get("/vehicles/generations", async (c) => {
+  const modelId = Number(c.req.query("model_id"));
+  const gens = await dbAll<{ id: number }>(
+    c.env.DB,
+    `SELECT g.*, (SELECT COUNT(*) FROM part_compatibility pc WHERE pc.generation_id = g.id) AS fitment_count
+     FROM vehicle_generations g WHERE g.model_id = ? ORDER BY g.year_start, g.sort_order`,
+    [modelId]
+  );
+  const engines = gens.length
+    ? await dbAll<{ generation_id: number }>(
+        c.env.DB,
+        `SELECT e.*, (SELECT COUNT(*) FROM part_compatibility pc WHERE pc.engine_id = e.id) AS fitment_count
+         FROM vehicle_engines e WHERE e.generation_id IN (${gens.map(() => "?").join(",")}) ORDER BY e.fuel, e.displacement_cc, e.power_hp`,
+        gens.map((g) => g.id)
+      )
+    : [];
+  return ok(c, gens.map((g) => ({ ...g, engines: engines.filter((e) => e.generation_id === g.id) })));
+});
+
+// PATCH /api/v1/admin/vehicles/generations/:id { name?, year_start?, year_end? }
+adminRoutes.patch("/vehicles/generations/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  const gen = await dbFirst<{ id: number; name: string; year_start: number; year_end: number | null }>(c.env.DB, "SELECT * FROM vehicle_generations WHERE id = ?", [id]);
+  if (!gen) return fail(c, "Generation not found", 404);
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const name = typeof body.name === "string" && body.name.trim() ? body.name.trim().slice(0, 80) : gen.name;
+  const ys = body.year_start !== undefined ? Number(body.year_start) : gen.year_start;
+  const ye = body.year_end === null || body.year_end === "" ? null : body.year_end !== undefined ? Number(body.year_end) : gen.year_end;
+  if (!Number.isInteger(ys) || ys < 1950 || (ye != null && (!Number.isInteger(ye) || ye < ys))) return fail(c, "Check the years");
+  await dbRun(c.env.DB, "UPDATE vehicle_generations SET name = ?, year_start = ?, year_end = ? WHERE id = ?", [name, ys, ye, id]);
+  return ok(c, await dbFirst(c.env.DB, "SELECT * FROM vehicle_generations WHERE id = ?", [id]));
+});
+
+// DELETE /api/v1/admin/vehicles/generations/:id — fitment rows keep their text.
+adminRoutes.delete("/vehicles/generations/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  await dbRun(c.env.DB, "UPDATE part_compatibility SET engine_id = NULL WHERE engine_id IN (SELECT id FROM vehicle_engines WHERE generation_id = ?)", [id]);
+  await dbRun(c.env.DB, "UPDATE part_compatibility SET generation_id = NULL WHERE generation_id = ?", [id]);
+  await dbRun(c.env.DB, "DELETE FROM vehicle_engines WHERE generation_id = ?", [id]);
+  const res = await dbRun(c.env.DB, "DELETE FROM vehicle_generations WHERE id = ?", [id]);
+  if (!res.changes) return fail(c, "Generation not found", 404);
+  return ok(c, { id, deleted: true });
+});
+
+// PATCH /api/v1/admin/vehicles/engines/:id { name }
+adminRoutes.patch("/vehicles/engines/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  const body = await c.req.json<{ name?: unknown }>().catch(() => ({} as { name?: unknown }));
+  const name = typeof body.name === "string" ? body.name.trim().slice(0, 80) : "";
+  if (!name) return fail(c, "Give the engine name");
+  const info = engineInfo(name);
+  const res = await dbRun(
+    c.env.DB,
+    "UPDATE vehicle_engines SET name = ?, fuel = ?, displacement_cc = ?, power_hp = ? WHERE id = ?",
+    [name, info.fuel, info.cc, info.hp, id]
+  );
+  if (!res.changes) return fail(c, "Engine not found", 404);
+  // Fitment rows linked to this engine show the corrected name.
+  await dbRun(c.env.DB, "UPDATE part_compatibility SET engine = ? WHERE engine_id = ?", [name, id]);
+  return ok(c, await dbFirst(c.env.DB, "SELECT * FROM vehicle_engines WHERE id = ?", [id]));
+});
+
+// DELETE /api/v1/admin/vehicles/engines/:id
+adminRoutes.delete("/vehicles/engines/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  await dbRun(c.env.DB, "UPDATE part_compatibility SET engine_id = NULL WHERE engine_id = ?", [id]);
+  const res = await dbRun(c.env.DB, "DELETE FROM vehicle_engines WHERE id = ?", [id]);
+  if (!res.changes) return fail(c, "Engine not found", 404);
+  return ok(c, { id, deleted: true });
 });
 
 // GET /api/v1/admin/reviews

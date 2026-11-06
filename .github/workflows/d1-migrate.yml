@@ -89,6 +89,13 @@ jobs:
       - name: 0015 returns and claims (create table if missing)
         run: ../../.github/scripts/d1-exec-retry.sh --file="$MIGRATIONS/0015_order_issues.sql"
 
+      - name: 0016 vehicle catalog (generations, engines, suggestions)
+        run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0016_vehicle_catalog.sql"
+
+      # Morocco catalog data: INSERT OR IGNORE only, safe to run again.
+      - name: 0017 vehicle catalog data (Morocco) and part brands
+        run: ../../.github/scripts/d1-exec-retry.sh --file="$MIGRATIONS/0017_seed_vehicle_catalog.sql"
+
       # Read query: fails while the daily read limit is exceeded, which
       # doesn't mean the migrations failed.
       - name: Verify
@@ -106,4 +113,6 @@ jobs:
                (SELECT CASE WHEN instr(sql, 'terms_accepted_at') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='users') AS users_terms_column,
                (SELECT CASE WHEN instr(sql, 'agreement_accepted_at') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='sellers') AS sellers_agreement_column,
                (SELECT CASE WHEN instr(sql, 'delivered_at') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='order_items') AS order_items_fulfilment_columns,
-               (SELECT CASE WHEN instr(sql, 'delivered_at') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='orders') AS orders_delivered_column"
+               (SELECT CASE WHEN instr(sql, 'delivered_at') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='orders') AS orders_delivered_column,
+               (SELECT COUNT(*) FROM vehicle_generations) AS vehicle_generations,
+               (SELECT COUNT(*) FROM vehicle_engines) AS vehicle_engines"

@@ -214,7 +214,8 @@ catalogRoutes.get("/parts/:slug", async (c) => {
     `).bind(part.id).all(),
 
     c.env.DB.prepare(`
-      select * from part_compatibility where part_id = ?1
+      select pc.*, (select g.name from vehicle_generations g where g.id = pc.generation_id) as generation
+      from part_compatibility pc where pc.part_id = ?1
     `).bind(part.id).all(),
 
     c.env.DB.prepare(`
