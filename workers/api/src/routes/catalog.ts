@@ -23,7 +23,8 @@ catalogRoutes.get("/parts", async (c) => {
   const yearRaw = c.req.query("year")?.trim() || "";
   const year = yearRaw ? Number(yearRaw) : null;
 
-  const conditions: string[] = ["p.status = 'active'"];
+  // Public listings: active parts of approved (active) stores only.
+  const conditions: string[] = ["p.status = 'active'", "s.status = 'active'"];
   const bindings: unknown[] = [];
 
   if (search) {
@@ -182,6 +183,7 @@ catalogRoutes.get("/parts/:slug", async (c) => {
     left join sellers s on s.id = p.seller_id
     where p.slug = ?1
       and p.status = 'active'
+      and s.status = 'active'
     limit 1
     `
   )
@@ -223,10 +225,12 @@ catalogRoutes.get("/parts/:slug", async (c) => {
       select rp.*, 
         (select url from part_images pi where pi.part_id = rp.id limit 1) as image_url
       from parts rp
-      where rp.status='active'
+      where rp.status = 'active'
         and rp.id != ?1
+        and exists (select 1 from sellers st where st.id = rp.seller_id and st.status = 'active')
+      order by (rp.category_id = ?2) desc, (rp.brand_id is not null and rp.brand_id = ?3) desc, rp.featured desc, rp.created_at desc
       limit 4
-    `).bind(part.id).all()
+    `).bind(part.id, part.category_id ?? null, part.brand_id ?? null).all()
   ]);
 
   const compatibilityResults = compatibility.results ?? [];

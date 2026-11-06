@@ -49,7 +49,8 @@ searchRoutes.get("/", async (c) => {
     const limit = 20;
     const offset = (page - 1) * limit;
 
-    const where: string[] = ["p.status = 'active'"];
+    // Public listings: active parts of approved (active) stores only.
+    const where: string[] = ["p.status = 'active'", "s.status = 'active'"];
     const params: unknown[] = [];
 
     // A query that looks like a part number ("7701 208-174") also finds the
@@ -422,6 +423,7 @@ searchRoutes.get("/suggestions", async (c) => {
         p.title
       from parts p
       where p.status = 'active'
+        and exists (select 1 from sellers st where st.id = p.seller_id and st.status = 'active')
         and (
           p.title like ?1
           or p.sku like ?1

@@ -49,6 +49,7 @@ marketplacePartsRoutes.get("/:slug", async (c) => {
     left join sellers s on s.id = p.seller_id
     where p.slug = ?1
       and p.status = 'active'
+      and s.status = 'active'
     limit 1
     `
   )
@@ -126,6 +127,7 @@ marketplacePartsRoutes.get("/:slug", async (c) => {
       left join categories c on c.id = rp.category_id
       where rp.status = 'active'
         and rp.id != ?1
+        and exists (select 1 from sellers st where st.id = rp.seller_id and st.status = 'active')
         and (
           rp.category_id = ?2
           or (rp.brand_id is not null and rp.brand_id = ?3)

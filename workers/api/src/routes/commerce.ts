@@ -82,7 +82,13 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
   for (const [partId, quantity] of requested) {
     const part = await dbFirst<{
       id: number; seller_id: number; title: string; price: number; quantity: number; status: string;
-    }>(c.env.DB, "SELECT id, seller_id, title, price, quantity, status FROM parts WHERE id = ?", [partId]);
+    }>(
+      c.env.DB,
+      `SELECT p.id, p.seller_id, p.title, p.price, p.quantity,
+              CASE WHEN s.status = 'active' THEN p.status ELSE 'store_inactive' END AS status
+       FROM parts p JOIN sellers s ON s.id = p.seller_id WHERE p.id = ?`,
+      [partId]
+    );
 
     if (!part || part.status !== "active") return fail(c, `Part ${partId} not available`);
     if (part.quantity < quantity) return fail(c, `Insufficient stock for: ${part.title}`);
