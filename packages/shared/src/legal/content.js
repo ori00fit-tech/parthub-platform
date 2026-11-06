@@ -10,7 +10,7 @@
 // "{email}" is replaced with LEGAL_CONTACT_EMAIL when rendered.
 
 export const LEGAL_VERSION = "2026-11-06";
-export const LEGAL_CONTACT_EMAIL = "support@parthub.com";
+export const LEGAL_CONTACT_EMAIL = "support@parthub.autos";
 
 export const LEGAL_DOC_IDS = ["terms", "seller", "returns", "privacy"];
 

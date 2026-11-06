@@ -9,6 +9,7 @@ import { conditionLabel, statusLabel, t, useT } from "../i18n";
 import StockBadge from "../features/stock/StockBadge";
 import NotifyWhenAvailable from "../features/stock/NotifyWhenAvailable";
 import { RatingSummary, ReviewList } from "../features/reviews/Reviews";
+import { usePageMeta } from "../lib/pageMeta";
 
 function normalizeGallery(part) {
   const candidates = [
@@ -297,6 +298,11 @@ export default function PartDetailsPage() {
       setAdding(false);
     }
   }
+
+  usePageMeta(
+    part ? `${part.title} – ${formatPrice(part.price)}` : "",
+    part ? part.description || `${part.title}${part.seller_name ? ` · ${part.seller_name}` : ""}` : ""
+  );
 
   if (loading) {
     return (

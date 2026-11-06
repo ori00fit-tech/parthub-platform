@@ -8,6 +8,7 @@ import { mediaUrl } from "../lib/media";
 import StockBadge from "../features/stock/StockBadge";
 import { t, useT } from "../i18n";
 import { Icon } from "@parthub/shared/icons";
+import { usePageMeta } from "../lib/pageMeta";
 
 function getVehicleLabel(vehicle) {
   if (!vehicle) return t("No vehicle selected");
@@ -57,6 +58,7 @@ function CategoryCard({ icon, title, to }) {
 
 export default function HomePage() {
   const t = useT();
+  usePageMeta("PartHub – Pièces auto au Maroc | قطع غيار السيارات", t("Find the right part for your vehicle from verified sellers in Morocco."));
   const navigate = useNavigate();
   const vehicleCtx = useSelectedVehicle();
   const selectedVehicle = vehicleCtx?.selectedVehicle || null;

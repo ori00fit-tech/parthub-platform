@@ -261,6 +261,25 @@ catalogRoutes.get("/parts/:slug", async (c) => {
   );
 }); 
 
+// GET /api/v1/catalog/sitemap — what search engines may list: active parts
+// of active stores, and active stores. Used by the storefront's sitemap.xml.
+catalogRoutes.get("/sitemap", async (c) => {
+  const [parts, sellers] = await Promise.all([
+    c.env.DB.prepare(
+      `select p.slug, coalesce(p.updated_at, p.created_at) as updated_at
+       from parts p join sellers s on s.id = p.seller_id
+       where p.status = 'active' and s.status = 'active'
+       order by p.updated_at desc limit 45000`
+    ).all<{ slug: string; updated_at: string }>(),
+    c.env.DB.prepare(
+      `select s.slug, coalesce(s.updated_at, s.created_at) as updated_at
+       from sellers s where s.status = 'active' order by s.updated_at desc limit 5000`
+    ).all<{ slug: string; updated_at: string }>(),
+  ]);
+  c.header("Cache-Control", "public, max-age=3600");
+  return c.json(ok({ parts: parts.results || [], sellers: sellers.results || [] }));
+});
+
 catalogRoutes.get("/categories", async (c) => {
   const sql = `
     select id, name, slug

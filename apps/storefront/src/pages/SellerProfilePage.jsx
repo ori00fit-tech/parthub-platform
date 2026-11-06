@@ -4,6 +4,7 @@ import { apiGet } from "../lib/api";
 import { formatPrice } from "../lib/formatters";
 import { t, useT } from "../i18n";
 import { RatingSummary, ReviewList } from "../features/reviews/Reviews";
+import { usePageMeta } from "../lib/pageMeta";
 
 function getSellerBadges(seller) {
   const badges = [];
@@ -119,6 +120,11 @@ export default function SellerProfilePage() {
   const sellerBadges = useMemo(
     () => getSellerBadges(seller || {}),
     [seller]
+  );
+
+  usePageMeta(
+    seller ? `${seller.name}${seller.location ? ` – ${seller.location}` : ""}` : "",
+    seller?.description || ""
   );
 
   if (loading) {
