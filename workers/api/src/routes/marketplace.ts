@@ -7,6 +7,7 @@ import { signToken } from "../utils/auth";
 import { loadReadiness } from "../utils/seller-readiness";
 import { LEGAL_VERSION } from "../utils/legal";
 import { notifyBackInStock } from "../utils/stock-alerts";
+import { readVehicleEntry } from "../utils/vehicle-catalog";
 import { type IssueRow, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, updateIssue } from "../utils/issues";
 import { type LineStatus, SELLER_NEXT, logOrderEvent, refreshOrderStatus, rollupStatus, setLineStatus } from "../utils/fulfillment";
 import { runInBackground } from "../utils/whatsapp";
@@ -1385,6 +1386,53 @@ marketplaceRoutes.get("/me/orders/:id", authMiddleware, async (c) => {
   return c.json(success(order));
 });
 
+// POST /api/v1/marketplace/me/catalog-suggestions — a seller asks PartHub to
+// add a missing vehicle (make / model / generation / engine) or part brand.
+// It becomes selectable once an admin approves it.
+marketplaceRoutes.post("/me/catalog-suggestions", authMiddleware, async (c) => {
+  const userId = Number(c.get("user_id"));
+  const role = c.get("user_role");
+  if (role !== "seller" && role !== "admin") return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const kind = body.kind === "brand" ? "brand" : "vehicle";
+  const note = cleanNote(body.note, 500);
+
+  const pending = await c.env.DB.prepare(
+    "select count(*) as n from catalog_suggestions where user_id = ?1 and status = 'pending'"
+  ).bind(userId).first<{ n: number }>();
+  if (Number(pending?.n || 0) >= 20) {
+    return c.json(failure("TOO_MANY_SUGGESTIONS", "You already have 20 suggestions waiting for review"), 429);
+  }
+  const seller = await c.env.DB.prepare("select id from sellers where user_id = ?1").bind(userId).first<{ id: number }>();
+
+  if (kind === "brand") {
+    const brand = typeof body.brand === "string" ? body.brand.trim().replace(/\s+/g, " ").slice(0, 80) : "";
+    if (!brand) return c.json(failure("BRAND_REQUIRED", "Give the brand name"), 400);
+    const exists = await c.env.DB.prepare("select id from brands where lower(name) = lower(?1)").bind(brand).first();
+    if (exists) return c.json(failure("ALREADY_EXISTS", "This brand is already in the list"), 409);
+    const res = await c.env.DB.prepare(
+      "insert into catalog_suggestions (user_id, seller_id, kind, brand, note) values (?1, ?2, 'brand', ?3, ?4)"
+    ).bind(userId, seller?.id ?? null, brand, note).run();
+    return c.json(success({ id: Number(res.meta.last_row_id), status: "pending" }, { message: "Suggestion sent to PartHub" }), 201);
+  }
+
+  const entry = readVehicleEntry(body);
+  if (typeof entry === "string") return c.json(failure("INVALID_SUGGESTION", entry), 400);
+  const res = await c.env.DB.prepare(
+    `insert into catalog_suggestions (user_id, seller_id, kind, make, model, generation, year_start, year_end, engine, note)
+     values (?1, ?2, 'vehicle', ?3, ?4, ?5, ?6, ?7, ?8, ?9)`
+  ).bind(userId, seller?.id ?? null, entry.make, entry.model, entry.generation || null, entry.year_start ?? null, entry.year_end ?? null, entry.engine || null, note).run();
+  return c.json(success({ id: Number(res.meta.last_row_id), status: "pending" }, { message: "Suggestion sent to PartHub" }), 201);
+});
+
+// GET /api/v1/marketplace/me/catalog-suggestions — the seller's suggestions.
+marketplaceRoutes.get("/me/catalog-suggestions", authMiddleware, async (c) => {
+  const rows = await c.env.DB.prepare(
+    "select * from catalog_suggestions where user_id = ?1 order by created_at desc limit 50"
+  ).bind(Number(c.get("user_id"))).all();
+  return c.json(success(rows.results || []));
+});
+
 // GET /api/v1/marketplace/me/issues?status=active|all — returns and complaints
 // on the seller's parts. "active" (default) = open, accepted, refused, escalated.
 marketplaceRoutes.get("/me/issues", authMiddleware, async (c) => {
@@ -1569,7 +1617,10 @@ marketplaceRoutes.get("/me/parts/:id/compatibility", authMiddleware, async (c) =
         year_end,
         engine,
         trim,
-        notes
+        notes,
+        generation_id,
+        engine_id,
+        (select g.name from vehicle_generations g where g.id = part_compatibility.generation_id) as generation
       from part_compatibility
       where part_id = ?1
       order by lower(make) asc, lower(model) asc, year_start desc, id desc
@@ -1610,16 +1661,44 @@ marketplaceRoutes.post("/me/parts/:id/compatibility", authMiddleware, async (c) 
     }
 
     const body = await c.req.json<Record<string, unknown>>();
-    const make = String(body.make || "").trim();
-    const model = String(body.model || "").trim();
+    let make = String(body.make || "").trim();
+    let model = String(body.model || "").trim();
     const yearStartRaw = body.year_start;
     const yearEndRaw = body.year_end;
-    const engine = body.engine ? String(body.engine).trim() : null;
+    let engine = body.engine ? String(body.engine).trim() : null;
     const trim = body.trim ? String(body.trim).trim() : null;
     const notes = body.notes ? String(body.notes).trim() : null;
 
-    const yearStart = yearStartRaw != null && yearStartRaw !== "" ? Number(yearStartRaw) : null;
-    const yearEnd = yearEndRaw != null && yearEndRaw !== "" ? Number(yearEndRaw) : null;
+    let yearStart = yearStartRaw != null && yearStartRaw !== "" ? Number(yearStartRaw) : null;
+    let yearEnd = yearEndRaw != null && yearEndRaw !== "" ? Number(yearEndRaw) : null;
+
+    // Picked from the vehicle catalog: names and default years come from it,
+    // so every seller writes "Renault Clio" the same way.
+    const generationId = body.generation_id != null && body.generation_id !== "" ? Number(body.generation_id) : null;
+    const engineId = body.engine_id != null && body.engine_id !== "" ? Number(body.engine_id) : null;
+    if (generationId != null) {
+      const gen = await c.env.DB.prepare(
+        `select g.id, g.year_start, g.year_end, vm.name as model, mk.name as make
+         from vehicle_generations g
+         join vehicle_models vm on vm.id = g.model_id
+         join vehicle_makes mk on mk.id = vm.make_id
+         where g.id = ?1`
+      ).bind(generationId).first<{ id: number; year_start: number; year_end: number | null; model: string; make: string }>();
+      if (!gen) return c.json(failure("GENERATION_NOT_FOUND", "Vehicle generation not found"), 400);
+      make = gen.make;
+      model = gen.model;
+      if (yearStart == null) yearStart = gen.year_start;
+      if (yearEnd == null) yearEnd = gen.year_end ?? new Date().getUTCFullYear();
+      if (engineId != null) {
+        const eng = await c.env.DB.prepare("select id, name from vehicle_engines where id = ?1 and generation_id = ?2")
+          .bind(engineId, generationId)
+          .first<{ id: number; name: string }>();
+        if (!eng) return c.json(failure("ENGINE_NOT_FOUND", "This engine does not belong to the chosen generation"), 400);
+        engine = eng.name;
+      }
+    } else if (engineId != null) {
+      return c.json(failure("GENERATION_REQUIRED", "Choose the generation before the engine"), 400);
+    }
 
     if (!make) {
       return c.json(failure("MAKE_REQUIRED", "make is required"), 400);
@@ -1650,10 +1729,11 @@ marketplaceRoutes.post("/me/parts/:id/compatibility", authMiddleware, async (c) 
         and lower(model) = lower(?3)
         and year_start = ?4
         and coalesce(year_end, -1) = coalesce(?5, -1)
+        and lower(coalesce(engine, '')) = lower(coalesce(?6, ''))
       limit 1
       `
     )
-      .bind(partId, make, model, yearStart, yearEnd)
+      .bind(partId, make, model, yearStart, yearEnd, engine)
       .first();
 
     if (duplicate) {
@@ -1663,11 +1743,11 @@ marketplaceRoutes.post("/me/parts/:id/compatibility", authMiddleware, async (c) 
     const inserted = await c.env.DB.prepare(
       `
       insert into part_compatibility (
-        part_id, make, model, year_start, year_end, engine, trim, notes
-      ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+        part_id, make, model, year_start, year_end, engine, trim, notes, generation_id, engine_id
+      ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
       `
     )
-      .bind(partId, make, model, yearStart, yearEnd, engine, trim, notes)
+      .bind(partId, make, model, yearStart, yearEnd, engine, trim, notes, generationId, engineId)
       .run();
 
     const compatibilityId = Number(inserted.meta.last_row_id);
@@ -1683,7 +1763,10 @@ marketplaceRoutes.post("/me/parts/:id/compatibility", authMiddleware, async (c) 
         year_end,
         engine,
         trim,
-        notes
+        notes,
+        generation_id,
+        engine_id,
+        (select g.name from vehicle_generations g where g.id = part_compatibility.generation_id) as generation
       from part_compatibility
       where id = ?1
       limit 1

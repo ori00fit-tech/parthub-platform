@@ -966,4 +966,6 @@ export default {
   "Find the right part for your vehicle from verified sellers in Morocco.": "Trouvez la bonne pièce pour votre véhicule chez des vendeurs vérifiés au Maroc.",
   "Parts for “{q}”": "Pièces « {q} »",
   "All auto parts": "Toutes les pièces auto",
+  // Vehicle catalog
+  "all engines": "tous moteurs",
 };

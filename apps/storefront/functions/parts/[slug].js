@@ -7,7 +7,7 @@ import {
 function fitmentText(rows) {
   const list = (Array.isArray(rows) ? rows : [])
     .slice(0, 3)
-    .map((r) => [r.make, r.model, r.year_start ? (r.year_end && r.year_end !== r.year_start ? `${r.year_start}–${r.year_end}` : r.year_start) : ""].filter(Boolean).join(" "))
+    .map((r) => [r.make, r.generation || r.model, r.year_start ? (r.year_end && r.year_end !== r.year_start ? `${r.year_start}–${r.year_end}` : r.year_start) : ""].filter(Boolean).join(" "))
     .filter(Boolean);
   return list.length ? `Compatible : ${list.join(", ")}${rows.length > 3 ? "…" : ""}.` : "";
 }

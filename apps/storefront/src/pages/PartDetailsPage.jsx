@@ -651,7 +651,7 @@ export default function PartDetailsPage() {
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold text-ink">
-                          {row.make} • {row.model}
+                          {row.make} • {row.generation || row.model}
                         </p>
                         {rowMatch ? (
                           <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-700">
@@ -663,7 +663,7 @@ export default function PartDetailsPage() {
                       <p className="mt-2 text-sm text-muted">
                         {row.year_start}
                         {row.year_end ? ` → ${row.year_end}` : ""}
-                        {row.engine ? ` • ${row.engine}` : ""}
+                        {row.engine ? ` • ${row.engine}` : row.generation_id ? ` • ${t("all engines")}` : ""}
                         {row.trim ? ` • ${row.trim}` : ""}
                       </p>
 

@@ -6,6 +6,7 @@ import { mediaUrl } from "../lib/requests";
 import { uploadPartPhoto } from "../lib/photos";
 import { useT } from "../i18n";
 import { Icon } from "@parthub/shared/icons";
+import VehicleFitmentFields, { EMPTY_FITMENT, SuggestCatalogEntry, fitmentLabel, fitmentPayload } from "../components/parts/VehicleFitmentFields";
 
 // Add a part in five short steps instead of one long form. The draft is kept
 // on this device, so a seller on a phone can stop and come back.
@@ -25,7 +26,7 @@ const EMPTY = {
   compare_price: "",
   quantity: 1,
   description: "",
-  fitment: [], // [{ make, model, year_start, year_end }]
+  fitment: [], // VehicleFitmentFields rows (catalog ids + names + years)
 };
 
 // Keyword → category name pattern (production names, e.g. "Brakes & Rotors").
@@ -53,10 +54,18 @@ function slugify(value) {
     .slice(0, 70);
 }
 
+// Drafts saved before the vehicle catalog have rows with names only.
+const toSlug = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+function upgradeFitment(row) {
+  return { ...EMPTY_FITMENT, ...row, make_slug: row.make_slug || toSlug(row.make), model_slug: row.model_slug || toSlug(row.model) };
+}
+
 function readDraft() {
   try {
     const raw = localStorage.getItem(DRAFT_KEY);
-    return raw ? { ...EMPTY, ...JSON.parse(raw) } : EMPTY;
+    if (!raw) return EMPTY;
+    const draft = { ...EMPTY, ...JSON.parse(raw) };
+    return { ...draft, fitment: Array.isArray(draft.fitment) ? draft.fitment.map(upgradeFitment) : [] };
   } catch {
     return EMPTY;
   }
@@ -107,8 +116,6 @@ export default function PartWizardPage() {
   const [error, setError] = useState("");
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
-  const [makes, setMakes] = useState([]);
-  const [models, setModels] = useState({}); // make slug -> [{name, slug}]
   const [uploads, setUploads] = useState([]); // in-progress: [{ id, name, status, error }]
   const [publishing, setPublishing] = useState(false);
   const [done, setDone] = useState(null); // { id, title, status, warnings }
@@ -129,12 +136,10 @@ export default function PartWizardPage() {
     Promise.all([
       api.get("/api/v1/catalog/categories").catch(() => null),
       api.get("/api/v1/catalog/brands").catch(() => null),
-      api.get("/api/v1/vehicles/makes").catch(() => null),
-    ]).then(([c, b, m]) => {
+    ]).then(([c, b]) => {
       if (!active) return;
       setCategories(Array.isArray(c?.data) ? c.data : []);
       setBrands(Array.isArray(b?.data) ? b.data : []);
-      setMakes(Array.isArray(m?.data) ? m.data : []);
     });
     return () => {
       active = false;
@@ -165,22 +170,6 @@ export default function PartWizardPage() {
   function categoryName(id) {
     const c = categories.find((x) => String(x.id) === String(id));
     return c ? t(c.name) : "";
-  }
-
-  async function loadModels(makeName) {
-    const make = makes.find((m) => m.name === makeName);
-    if (!make || models[make.slug]) return;
-    try {
-      const res = await api.get(`/api/v1/vehicles/models?make=${encodeURIComponent(make.slug)}`);
-      setModels((prev) => ({ ...prev, [make.slug]: Array.isArray(res?.data) ? res.data : [] }));
-    } catch {
-      setModels((prev) => ({ ...prev, [make.slug]: [] }));
-    }
-  }
-
-  function modelsFor(makeName) {
-    const make = makes.find((m) => m.name === makeName);
-    return make ? models[make.slug] || [] : [];
   }
 
   // ---------- photos ----------
@@ -216,14 +205,11 @@ export default function PartWizardPage() {
 
   // ---------- fitment ----------
   function addFitment() {
-    setForm((prev) => ({ ...prev, fitment: [...prev.fitment, { make: "", model: "", year_start: "", year_end: "" }] }));
+    setForm((prev) => ({ ...prev, fitment: [...prev.fitment, { ...EMPTY_FITMENT }] }));
   }
-  function setFitment(i, key, value) {
-    setForm((prev) => ({
-      ...prev,
-      fitment: prev.fitment.map((row, idx) => (idx === i ? { ...row, [key]: value, ...(key === "make" ? { model: "" } : {}) } : row)),
-    }));
-    if (key === "make") loadModels(value);
+  function setFitmentRow(i, row) {
+    setError("");
+    setForm((prev) => ({ ...prev, fitment: prev.fitment.map((r, idx) => (idx === i ? row : r)) }));
   }
   function removeFitment(i) {
     setForm((prev) => ({ ...prev, fitment: prev.fitment.filter((_, idx) => idx !== i) }));
@@ -249,7 +235,7 @@ export default function PartWizardPage() {
     }
     if (s === 3) {
       for (const row of form.fitment) {
-        if (!row.make && !row.model && !row.year_start && !row.year_end) continue;
+        if (!row.make_slug && !row.model && !row.year_start && !row.year_end) continue;
         if (!row.make || !row.model) return t("Each vehicle needs a make and a model, or remove the row.");
         const ys = Number(row.year_start);
         const ye = row.year_end ? Number(row.year_end) : ys;
@@ -320,14 +306,9 @@ export default function PartWizardPage() {
       for (const row of form.fitment) {
         if (!row.make || !row.model) continue;
         try {
-          await api.post(`/api/v1/marketplace/me/parts/${partId}/compatibility`, {
-            make: row.make,
-            model: row.model,
-            year_start: Number(row.year_start),
-            year_end: row.year_end ? Number(row.year_end) : Number(row.year_start),
-          });
+          await api.post(`/api/v1/marketplace/me/parts/${partId}/compatibility`, fitmentPayload(row));
         } catch (err) {
-          warnings.push(`${row.make} ${row.model}: ${err.message}`);
+          warnings.push(`${fitmentLabel(row)}: ${err.message}`);
         }
       }
       try {
@@ -475,6 +456,9 @@ export default function PartWizardPage() {
                   <Icon name="suggestion" className="h-3.5 w-3.5" /> {t("Suggested: {name}", { name: suggestedBrand.name })}
                 </button>
               ) : null}
+              <div className="mt-2">
+                <SuggestCatalogEntry kind="brand" />
+              </div>
             </Field>
 
             <Field label={t("Condition")}>
@@ -618,42 +602,20 @@ export default function PartWizardPage() {
               </p>
             </div>
             {form.fitment.map((row, i) => (
-              <div key={i} className="grid gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-3 sm:grid-cols-[1fr_1fr_90px_90px_auto] sm:items-end">
-                <Field label={t("Make")}>
-                  <select value={row.make} onChange={(e) => setFitment(i, "make", e.target.value)} className={inputCls}>
-                    <option value="">{t("Select make")}</option>
-                    {makes.map((m) => (
-                      <option key={m.id} value={m.name}>
-                        {m.name}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label={t("Model")}>
-                  <select value={row.model} onChange={(e) => setFitment(i, "model", e.target.value)} disabled={!row.make} className={inputCls}>
-                    <option value="">{row.make ? t("Select model") : t("Choose make first")}</option>
-                    {modelsFor(row.make).map((m) => (
-                      <option key={m.id} value={m.name}>
-                        {m.name}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label={t("From")}>
-                  <input inputMode="numeric" dir="ltr" value={row.year_start} onChange={(e) => setFitment(i, "year_start", e.target.value.replace(/\D/g, "").slice(0, 4))} className={inputCls} placeholder="2013" />
-                </Field>
-                <Field label={t("To")}>
-                  <input inputMode="numeric" dir="ltr" value={row.year_end} onChange={(e) => setFitment(i, "year_end", e.target.value.replace(/\D/g, "").slice(0, 4))} className={inputCls} placeholder="2019" />
-                </Field>
-                <button type="button" onClick={() => removeFitment(i)} className="h-12 rounded-2xl px-3 text-sm font-semibold text-red-700 hover:bg-red-50">
-                  {t("Remove")}
-                </button>
+              <div key={i} className="space-y-2 rounded-2xl border border-gray-200 bg-gray-50 p-3">
+                <VehicleFitmentFields value={row} onChange={(next) => setFitmentRow(i, next)} idPrefix={`fit-${i}`} />
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-gray-500">{row.make && row.model ? fitmentLabel(row) : ""}</p>
+                  <button type="button" onClick={() => removeFitment(i)} className="h-9 rounded-xl px-3 text-sm font-semibold text-red-700 hover:bg-red-50">
+                    {t("Remove")}
+                  </button>
+                </div>
               </div>
             ))}
             <button type="button" onClick={addFitment} className="h-12 rounded-2xl border-2 border-dashed border-blue-300 px-5 text-sm font-semibold text-blue-700 hover:bg-blue-50">
               {t("+ Add a vehicle")}
             </button>
-            <p className="text-xs text-gray-500">{t("You can add more details (engine, trim) later from the edit page.")}</p>
+            <SuggestCatalogEntry kind="vehicle" />
           </div>
         ) : null}
 
@@ -676,7 +638,7 @@ export default function PartWizardPage() {
                 [t("Origin"), t(form.part_origin === "oem" ? "OEM" : form.part_origin === "used" ? "Used Part" : "Aftermarket"), 0],
                 [t("Photos"), String(form.photos.length), 1],
                 [t("Quantity in stock"), String(form.quantity), 2],
-                [t("Vehicles"), form.fitment.filter((r) => r.make && r.model).map((r) => `${r.make} ${r.model} ${r.year_start}${r.year_end && r.year_end !== r.year_start ? `–${r.year_end}` : ""}`).join(", ") || t("None"), 3],
+                [t("Vehicles"), form.fitment.filter((r) => r.make && r.model).map(fitmentLabel).join(", ") || t("None"), 3],
               ].map(([k, v, s]) => (
                 <div key={k} className="flex items-center justify-between gap-3 px-4 py-3">
                   <dt className="text-gray-500">{k}</dt>
