@@ -87,33 +87,41 @@ function getVehicleLabel(vehicle) {
   );
 }
 
-function doesVehicleMatch(row, vehicle) {
+// How a fitment row matches the buyer's car:
+//   "exact" → same make, model and year, and the engine is confirmed (the
+//             row names the buyer's engine, or the seller confirmed every engine)
+//   "check" → same make, model and year, but the engine must be checked
+//             (the row names no engine, or the buyer did not choose theirs)
+//   false   → no match (or only for another engine)
+// A row without an engine is NOT treated as "fits every engine".
+function vehicleMatch(row, vehicle) {
   if (!row || !vehicle) return false;
-
-  const vehicleMake = String(
-    vehicle?.makeName || vehicle?.make_name || vehicle?.make || ""
-  ).toLowerCase();
-
-  const vehicleModel = String(
-    vehicle?.modelName || vehicle?.model_name || vehicle?.model || ""
-  ).toLowerCase();
-
+  const vehicleMake = String(vehicle?.makeName || vehicle?.make_name || vehicle?.make || "").toLowerCase();
+  const vehicleModel = String(vehicle?.modelName || vehicle?.model_name || vehicle?.model || "").toLowerCase();
   const vehicleYear = Number(vehicle?.year || 0);
-
-  const rowMake = String(row?.make || "").toLowerCase();
-  const rowModel = String(row?.model || "").toLowerCase();
-  const rowYearStart = Number(row?.year_start || 0);
-  const rowYearEnd = row?.year_end != null ? Number(row.year_end) : null;
-
   if (!vehicleMake || !vehicleModel || !vehicleYear) return false;
 
-  const makeMatches = rowMake === vehicleMake;
-  const modelMatches = rowModel === vehicleModel;
-  const yearMatches =
+  const rowYearStart = Number(row?.year_start || 0);
+  const rowYearEnd = row?.year_end != null ? Number(row.year_end) : null;
+  const sameCar =
+    String(row?.make || "").toLowerCase() === vehicleMake &&
+    String(row?.model || "").toLowerCase() === vehicleModel &&
     vehicleYear >= rowYearStart &&
     (rowYearEnd == null || vehicleYear <= rowYearEnd);
+  if (!sameCar) return false;
 
-  return makeMatches && modelMatches && yearMatches;
+  const scope = row.engine_scope || (row.engine ? "specific" : "unspecified");
+  if (scope === "all") return "exact";
+  if (scope === "unspecified") return "check";
+  const engineId = vehicle?.engine_id ? Number(vehicle.engine_id) : null;
+  const engineName = String(vehicle?.engine_name || vehicle?.engineName || "").toLowerCase();
+  if (!engineId && !engineName) return "check";
+  const same = (engineId && Number(row.engine_id) === engineId) || (engineName && String(row.engine || "").toLowerCase() === engineName);
+  return same ? "exact" : false;
+}
+
+function doesVehicleMatch(row, vehicle) {
+  return vehicleMatch(row, vehicle) === "exact";
 }
 
 function detectFitmentStatus(compatibility, selectedVehicle) {
@@ -136,6 +144,17 @@ function detectFitmentStatus(compatibility, selectedVehicle) {
       title: t("Fits your {vehicle}", { vehicle: getVehicleLabel(selectedVehicle) }),
       description:
         t("This part has a compatibility row that matches your selected vehicle."),
+    };
+  }
+
+  if (compatibility.some((row) => vehicleMatch(row, selectedVehicle) === "check")) {
+    const buyerKnowsEngine = Boolean(selectedVehicle?.engine_id || selectedVehicle?.engine_name);
+    return {
+      tone: "warning",
+      title: t("Your model and year match: check the engine"),
+      description: buyerKnowsEngine
+        ? t("The seller did not say which engines this part fits. Ask the seller before ordering.")
+        : t("This part depends on the engine. Choose your engine in My Garage, or ask the seller."),
     };
   }
 
@@ -266,6 +285,7 @@ export default function PartDetailsPage() {
   const selectedVehicleMatch = compatibility.some((row) =>
     doesVehicleMatch(row, selectedVehicle)
   );
+  const selectedVehicleCheck = !selectedVehicleMatch && compatibility.some((row) => vehicleMatch(row, selectedVehicle) === "check");
 
   function handleQuantityChange(nextValue) {
     const normalized = Math.max(1, Math.min(99, Number(nextValue || 1)));
@@ -324,7 +344,7 @@ export default function PartDetailsPage() {
     <section className="space-y-6 pb-24">
       <VehicleContextBar />
 
-      <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.08fr_0.92fr]">
         <div className="space-y-4">
           <div className="overflow-hidden rounded-3xl border border-line bg-surface shadow-sm">
             {activeImage ? (
@@ -618,7 +638,7 @@ export default function PartDetailsPage() {
               <div className="rounded-2xl bg-surface-2 p-4">
                 <p className="text-xs uppercase tracking-wide text-faint">{t("Match status")}</p>
                 <p className="mt-1 text-sm font-semibold text-ink">
-                  {selectedVehicleMatch ? t("Confirmed match") : t("Not confirmed")}
+                  {selectedVehicleMatch ? t("Confirmed match") : fitment.tone === "warning" && selectedVehicleCheck ? t("Check the engine") : t("Not confirmed")}
                 </p>
               </div>
             </div>
@@ -637,7 +657,8 @@ export default function PartDetailsPage() {
             ) : (
               <div className="mt-5 space-y-3">
                 {compatibility.map((row) => {
-                  const rowMatch = doesVehicleMatch(row, selectedVehicle);
+                  const match = vehicleMatch(row, selectedVehicle);
+                  const rowMatch = match === "exact";
 
                   return (
                     <div
@@ -646,7 +667,9 @@ export default function PartDetailsPage() {
                         "rounded-2xl border p-4",
                         rowMatch
                           ? "border-emerald-400/30 bg-emerald-400/10"
-                          : "border-line bg-surface-2",
+                          : match === "check"
+                            ? "border-amber-400/30 bg-amber-400/10"
+                            : "border-line bg-surface-2",
                       ].join(" ")}
                     >
                       <div className="flex flex-wrap items-center gap-2">
@@ -657,13 +680,17 @@ export default function PartDetailsPage() {
                           <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-700">
                             {t("Your selected vehicle matches")}
                           </span>
+                        ) : match === "check" ? (
+                          <span className="rounded-full bg-amber-400/15 px-3 py-1 text-xs font-semibold text-amber-800">
+                            {t("Check the engine")}
+                          </span>
                         ) : null}
                       </div>
 
                       <p className="mt-2 text-sm text-muted">
                         {row.year_start}
                         {row.year_end ? ` → ${row.year_end}` : ""}
-                        {row.engine ? ` • ${row.engine}` : row.generation_id ? ` • ${t("all engines")}` : ""}
+                        {row.engine ? ` • ${row.engine}` : row.engine_scope === "all" ? ` • ${t("all engines")}` : ` • ${t("engine not specified")}`}
                         {row.trim ? ` • ${row.trim}` : ""}
                       </p>
 

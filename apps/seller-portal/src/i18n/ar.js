@@ -791,4 +791,9 @@ export default {
   "Note for PartHub (optional)": "ملاحظة لـ PartHub (اختياري)",
   "Sending…": "جارٍ الإرسال…",
   "Send suggestion": "إرسال الاقتراح",
+  // Catalog quality
+  "engine not specified": "المحرك غير محدد",
+  "Buyers will be asked to check the engine. Choose it, or confirm all engines.": "سيُطلب من المشترين التحقق من المحرك. اختره، أو أكّد أنها تناسب كل المحركات.",
+  "Engine not specified": "المحرك غير محدد",
+  "All engines (confirmed)": "كل المحركات (مؤكَّد)",
 };

@@ -968,4 +968,13 @@ export default {
   "All auto parts": "Toutes les pièces auto",
   // Vehicle catalog
   "all engines": "tous moteurs",
+  // Catalog quality
+  "Your model and year match: check the engine": "Modèle et année correspondent : vérifiez le moteur",
+  "The seller did not say which engines this part fits. Ask the seller before ordering.": "Le vendeur n'a pas indiqué les moteurs compatibles. Demandez-lui avant de commander.",
+  "This part depends on the engine. Choose your engine in My Garage, or ask the seller.": "Cette pièce dépend du moteur. Choisissez votre moteur dans « Mon garage » ou demandez au vendeur.",
+  "Check the engine": "Vérifiez le moteur",
+  "engine not specified": "moteur non précisé",
+  "Engine (optional)": "Moteur (facultatif)",
+  "I don't know / skip": "Je ne sais pas / passer",
+  "With the engine, parts made for your engine are confirmed, and parts for other engines are hidden.": "Avec le moteur, les pièces prévues pour votre moteur sont confirmées et celles des autres moteurs sont masquées.",
 };

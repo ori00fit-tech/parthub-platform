@@ -1323,7 +1323,6 @@ INSERT OR IGNORE INTO brands (slug, name) VALUES ('liqui-moly', 'Liqui Moly');
 INSERT OR IGNORE INTO brands (slug, name) VALUES ('michelin', 'Michelin');
 INSERT OR IGNORE INTO brands (slug, name) VALUES ('bridgestone', 'Bridgestone');
 INSERT OR IGNORE INTO brands (slug, name) VALUES ('hankook', 'Hankook');
-INSERT OR IGNORE INTO brands (slug, name) VALUES ('continental-tyres', 'Continental Tyres');
 INSERT OR IGNORE INTO brands (slug, name) VALUES ('renault-origine', 'Renault (origine)');
 INSERT OR IGNORE INTO brands (slug, name) VALUES ('psa-origine', 'PSA (origine)');
 INSERT OR IGNORE INTO brands (slug, name) VALUES ('toyota-origine', 'Toyota (origine)');

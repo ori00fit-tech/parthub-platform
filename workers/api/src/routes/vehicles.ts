@@ -64,13 +64,18 @@ vehiclesRoutes.get("/years", async (c) => {
     }, 400);
   }
 
+  // Several makes share model slugs (Opel/Vauxhall Astra, SEAT/Cupra Leon):
+  // with ?make= the years are those of that make's model only.
+  const make = c.req.query("make")?.trim() || "";
   const result = await c.env.DB.prepare(`
     SELECT vy.id, vy.year
     FROM vehicle_years vy
     JOIN vehicle_models vm ON vm.id = vy.model_id
-    WHERE lower(vm.slug) = lower(?1)
+    JOIN vehicle_makes mk ON mk.id = vm.make_id
+    WHERE lower(vm.slug) = lower(?1) AND (?2 = '' OR lower(mk.slug) = lower(?2))
+    GROUP BY vy.year
     ORDER BY vy.year DESC
-  `).bind(model).all();
+  `).bind(model, make).all();
 
   return c.json({
     ok: true,
@@ -112,5 +117,28 @@ vehiclesRoutes.get("/engines", async (c) => {
     WHERE generation_id = ?1
     ORDER BY CASE fuel WHEN 'petrol' THEN 0 WHEN 'diesel' THEN 1 WHEN 'hybrid' THEN 2 ELSE 3 END, displacement_cc, power_hp, name
   `).bind(generationId).all();
+  return c.json({ ok: true, data: result.results || [], meta: null, error: null });
+});
+
+// GET /api/v1/vehicles/engines-for?make=renault&model=clio&year=2015
+// Engines a buyer can pick for their car: those of every generation sold that
+// year ("Clio III · 1.5 dCi 85", "Clio IV · 1.5 dCi 90"...).
+vehiclesRoutes.get("/engines-for", async (c) => {
+  const make = c.req.query("make")?.trim() || "";
+  const model = c.req.query("model")?.trim() || "";
+  const year = Number(c.req.query("year"));
+  if (!make || !model || !Number.isInteger(year)) {
+    return c.json({ ok: false, data: null, meta: null, error: { code: "VEHICLE_REQUIRED", message: "make, model and year are required" } }, 400);
+  }
+  const result = await c.env.DB.prepare(`
+    SELECT e.id, e.name, e.fuel, g.id AS generation_id, g.name AS generation
+    FROM vehicle_engines e
+    JOIN vehicle_generations g ON g.id = e.generation_id
+    JOIN vehicle_models vm ON vm.id = g.model_id
+    JOIN vehicle_makes mk ON mk.id = vm.make_id
+    WHERE lower(mk.slug) = lower(?1) AND (lower(vm.slug) = lower(?2) OR lower(vm.name) = lower(?2))
+      AND g.year_start <= ?3 AND (g.year_end IS NULL OR g.year_end >= ?3)
+    ORDER BY g.year_start, CASE e.fuel WHEN 'petrol' THEN 0 WHEN 'diesel' THEN 1 WHEN 'hybrid' THEN 2 ELSE 3 END, e.displacement_cc, e.power_hp
+  `).bind(make, model, year).all();
   return c.json({ ok: true, data: result.results || [], meta: null, error: null });
 });

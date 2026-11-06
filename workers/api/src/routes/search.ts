@@ -90,61 +90,69 @@ searchRoutes.get("/", async (c) => {
     }
 
     let exactVehicleMatchSql = "0";
+    let engineCheckMatchSql = "0";
     let partialVehicleMatchSql = "0";
     let compatibilityWhereSql = "";
     // Params pushed from here on belong to the vehicle match expressions
     // (select list) and, with fit=only, the vehicle filter.
     const vehicleParamsStart = params.length;
 
+    // Engine of the buyer's car (optional): catalog id and/or name.
+    const engineIdRaw = Number(c.req.query("engine_id"));
+    const engineId = Number.isInteger(engineIdRaw) && engineIdRaw > 0 ? engineIdRaw : null;
+    const engineName = c.req.query("engine")?.trim() || "";
+
     if (make && model && year != null && !Number.isNaN(year)) {
       const start = params.length;
+      const M = start + 1, MO = start + 2, Y = start + 3, EI = start + 4, EN = start + 5;
+      const vehicleRow = `
+        pc.part_id = p.id
+        and lower(pc.make) = lower(?${M})
+        and lower(pc.model) = lower(?${MO})
+        and pc.year_start <= ?${Y}
+        and (pc.year_end is null or pc.year_end >= ?${Y})`;
+      const engineKnown = `(?${EI} is not null or ?${EN} <> '')`;
+      const sameEngine = `(pc.engine_id = ?${EI} or (?${EN} <> '' and lower(coalesce(pc.engine, '')) = lower(?${EN})))`;
 
+      // Fits for sure: the seller confirmed every engine, or named the
+      // buyer's engine. A row without an engine is NOT "every engine".
       exactVehicleMatchSql = `
-        case
-          when exists (
-            select 1
-            from part_compatibility pc
-            where pc.part_id = p.id
-              and lower(pc.make) = lower(?${start + 1})
-              and lower(pc.model) = lower(?${start + 2})
-              and pc.year_start <= ?${start + 3}
-              and (pc.year_end is null or pc.year_end >= ?${start + 4})
-          ) then 1
-          else 0
-        end
+        case when exists (
+          select 1 from part_compatibility pc
+          where ${vehicleRow}
+            and (pc.engine_scope = 'all' or (pc.engine_scope = 'specific' and ${engineKnown} and ${sameEngine}))
+        ) then 1 else 0 end
+      `;
+
+      // Same model and year, but the engine must be checked: the row does
+      // not say which engine, or the buyer did not say theirs.
+      engineCheckMatchSql = `
+        case when exists (
+          select 1 from part_compatibility pc
+          where ${vehicleRow}
+            and (pc.engine_scope = 'unspecified' or (pc.engine_scope = 'specific' and not ${engineKnown}))
+        ) then 1 else 0 end
       `;
 
       partialVehicleMatchSql = `
-        case
-          when exists (
-            select 1
-            from part_compatibility pc
-            where pc.part_id = p.id
-              and lower(pc.make) = lower(?${start + 5})
-              and lower(pc.model) = lower(?${start + 6})
-          ) then 1
-          else 0
-        end
+        case when exists (
+          select 1 from part_compatibility pc
+          where pc.part_id = p.id
+            and lower(pc.make) = lower(?${M})
+            and lower(pc.model) = lower(?${MO})
+        ) then 1 else 0 end
       `;
 
+      // fit=only: model and year match, and not only for another engine.
       compatibilityWhereSql = !fitOnly ? "" : `
         and exists (
-          select 1
-          from part_compatibility pc
-          where pc.part_id = p.id
-            and lower(pc.make) = lower(?${start + 7})
-            and lower(pc.model) = lower(?${start + 8})
-            and pc.year_start <= ?${start + 9}
-            and (pc.year_end is null or pc.year_end >= ?${start + 10})
+          select 1 from part_compatibility pc
+          where ${vehicleRow}
+            and not (pc.engine_scope = 'specific' and ${engineKnown} and not ${sameEngine})
         )
       `;
 
-      params.push(
-        make, model, year, year,
-        make, model
-      );
-      // The filter's params come last so they can be left out with it.
-      if (fitOnly) params.push(make, model, year, year);
+      params.push(make, model, year, engineId, engineName);
     } else if (make && model) {
       const start = params.length;
 
@@ -208,6 +216,7 @@ searchRoutes.get("/", async (c) => {
     const rankingScoreSql = `
       (
         (${exactVehicleMatchSql}) * 120 +
+        (${engineCheckMatchSql}) * 90 +
         (${partialVehicleMatchSql}) * 45 +
         (case when p.quantity > 0 then 30 else 0 end) +
         (case when p.featured = 1 then 20 else 0 end) +
@@ -281,6 +290,7 @@ searchRoutes.get("/", async (c) => {
           where pc.part_id = p.id
         ) as compatibility_count,
         ${exactVehicleMatchSql} as exact_vehicle_match,
+        ${engineCheckMatchSql} as engine_check_match,
         ${partialVehicleMatchSql} as partial_vehicle_match,
         case when p.quantity > 0 then 1 else 0 end as in_stock_score,
         ${rankingScoreSql} as ranking_score

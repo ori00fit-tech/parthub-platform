@@ -970,4 +970,13 @@ export default {
   "All auto parts": "كل قطع غيار السيارات",
   // Vehicle catalog
   "all engines": "كل المحركات",
+  // Catalog quality
+  "Your model and year match: check the engine": "الطراز والسنة متطابقان: تحقق من المحرك",
+  "The seller did not say which engines this part fits. Ask the seller before ordering.": "لم يحدد البائع المحركات التي تناسبها هذه القطعة. اسأل البائع قبل الطلب.",
+  "This part depends on the engine. Choose your engine in My Garage, or ask the seller.": "هذه القطعة تختلف حسب المحرك. اختر محركك في «سيارتي» أو اسأل البائع.",
+  "Check the engine": "تحقق من المحرك",
+  "engine not specified": "المحرك غير محدد",
+  "Engine (optional)": "المحرك (اختياري)",
+  "I don't know / skip": "لا أعرف / تخطَّ",
+  "With the engine, parts made for your engine are confirmed, and parts for other engines are hidden.": "مع تحديد المحرك، تُؤكَّد القطع المخصصة لمحركك وتُخفى قطع المحركات الأخرى.",
 };
