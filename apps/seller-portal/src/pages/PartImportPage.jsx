@@ -30,7 +30,7 @@ const COLUMN_HELP = [
   ["Marque", "Brand of the part (Bosch, Valeo…), as in the catalog.", false],
   ["Référence", "Your own code. Import the file again later: rows with a known reference update price and stock instead of creating a new part.", false],
   ["Numéros OEM", "Original numbers, separated by ;", false],
-  ["Véhicules", "Make, model (or generation) and years, separated by ; e.g. Dacia Logan 2012-2020; Renault Clio IV", false],
+  ["Véhicules", "Make, model (or generation) and years, separated by ; e.g. Dacia Logan 2012-2020; Sandero 1.5 dCi; Renault Clio III/IV. The make can be left out after the first vehicle. Write Universel for a part that fits any car.", false],
   ["Description", "Details for the buyer.", false],
   ["Photo", "Link to a photo (https://…). You can also add photos later.", false],
 ];

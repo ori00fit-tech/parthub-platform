@@ -63,6 +63,15 @@ gen | Trafic III | 2014 | | 1.6 dCi 120; 2.0 Blue dCi 130
 model | master | Master
 gen | Master II | 1998 | 2010 | 2.5 dCi 120; 2.8 dTi 115
 gen | Master III | 2010 | | 2.3 dCi 125; 2.3 dCi 150
+model | twingo | Twingo
+gen | Twingo I | 1993 | 2007 | 1.2 60; 1.2 16V 75
+gen | Twingo II | 2007 | 2014 | 1.2 60; 1.2 16V 75; 1.5 dCi 65
+gen | Twingo III | 2014 | | 1.0 SCe 70; 0.9 TCe 90
+model | scenic | Scénic
+gen | Scénic II | 2003 | 2009 | 1.6 16V 110; 1.5 dCi 85; 1.5 dCi 105; 1.9 dCi 120
+gen | Scénic III | 2009 | 2016 | 1.6 16V 110; 1.5 dCi 110; 1.9 dCi 130
+model | modus | Modus
+gen | Modus | 2004 | 2012 | 1.2 16V 75; 1.4 16V 98; 1.5 dCi 86
 
 make | peugeot | Peugeot
 model | 205 | 205
@@ -122,6 +131,10 @@ gen | Berlingo II | 2008 | 2018 | 1.6 VTi 98; 1.6 HDi 75; 1.6 HDi 90; 1.6 BlueHD
 gen | Berlingo III | 2018 | | 1.2 PureTech 110; 1.5 BlueHDi 75; 1.5 BlueHDi 100; 1.5 BlueHDi 130
 model | jumper | Jumper
 gen | Jumper II | 2006 | | 2.2 HDi 100; 2.2 HDi 120; 2.2 BlueHDi 140; 3.0 HDi 160
+model | c2 | C2
+gen | C2 | 2003 | 2009 | 1.1 60; 1.4 75; 1.4 HDi 70
+model | c3-picasso | C3 Picasso
+gen | C3 Picasso | 2009 | 2017 | 1.4 VTi 95; 1.6 VTi 120; 1.6 HDi 90; 1.6 HDi 110
 
 make | hyundai | Hyundai
 model | accent | Accent
@@ -201,6 +214,9 @@ gen | Caddy V | 2020 | | 1.5 TSI 114; 2.0 TDI 102; 2.0 TDI 122
 model | transporter | Transporter
 gen | Transporter T5 | 2003 | 2015 | 1.9 TDI 102; 2.5 TDI 130; 2.0 TDI 140
 gen | Transporter T6 | 2015 | | 2.0 TDI 102; 2.0 TDI 150
+model | jetta | Jetta
+gen | Jetta V | 2005 | 2010 | 1.6 102; 1.9 TDI 105; 2.0 TDI 140
+gen | Jetta VI | 2010 | 2018 | 1.2 TSI 105; 1.4 TSI 122; 1.6 TDI 105; 2.0 TDI 140
 
 make | fiat | Fiat
 model | uno | Uno
