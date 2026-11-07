@@ -6,6 +6,7 @@ import { t, useT } from "../i18n";
 import PartPhotos from "../components/parts/PartPhotos";
 import CompatibilityEditor from "../components/parts/CompatibilityEditor";
 import { PartNumbersEditor } from "../components/parts/PartNumbersFields";
+import PickupOnlyToggle from "../components/parts/PickupOnlyToggle";
 
 function slugify(value) {
   return String(value || "")
@@ -893,6 +894,7 @@ export default function PartEditPage() {
               brandName={brands.find((b) => String(b.id) === String(form.brand_id))?.name || ""}
             />
             <CompatibilityEditor partId={id} />
+            <PickupOnlyToggle partId={id} />
           </div>
         </div>
       ) : null}

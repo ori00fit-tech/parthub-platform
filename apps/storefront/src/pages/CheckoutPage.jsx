@@ -45,6 +45,37 @@ export default function CheckoutPage() {
     };
   }, []);
 
+  // How the buyer gets each seller's parts: delivery, pickup at the store,
+  // or someone they send (API: GET /api/v1/commerce/fulfillment-options).
+  const partIds = items.map((item) => item.part_id || item.id).filter(Boolean).join(",");
+  const [groups, setGroups] = useState(null);
+  const [choice, setChoice] = useState({}); // seller_id → method
+  const [collector, setCollector] = useState({}); // seller_id → { name, phone }
+  useEffect(() => {
+    if (!partIds) return undefined;
+    let active = true;
+    apiGet(`/api/v1/commerce/fulfillment-options?parts=${partIds}`)
+      .then((res) => {
+        if (!active) return;
+        const list = Array.isArray(res?.data?.groups) ? res.data.groups : [];
+        setGroups(list);
+        setChoice((prev) => {
+          const next = { ...prev };
+          for (const g of list) if (!g.methods.includes(next[g.seller_id])) next[g.seller_id] = g.methods[0];
+          return next;
+        });
+      })
+      .catch(() => active && setGroups(null));
+    return () => {
+      active = false;
+    };
+  }, [partIds]);
+  // Until the options load, assume delivery (the address is asked).
+  const needsAddress = !groups || groups.some((g) => choice[g.seller_id] === "delivery");
+  const hasPickup = Boolean(groups?.some((g) => ["pickup", "courier"].includes(choice[g.seller_id])));
+  const blocked = groups?.find((g) => !g.methods.length) || null;
+  const fee = needsAddress ? shippingFee : 0;
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -157,12 +188,17 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!form.address_line1.trim()) {
+    if (blocked) {
+      setError(t("{seller} can't send these parts and doesn't offer pickup. Remove them from your cart.", { seller: blocked.seller_name }));
+      return;
+    }
+
+    if (needsAddress && !form.address_line1.trim()) {
       setError(t("Address line 1 is required."));
       return;
     }
 
-    if (!form.city.trim()) {
+    if (needsAddress && !form.city.trim()) {
       setError(t("City is required."));
       return;
     }
@@ -177,8 +213,8 @@ export default function CheckoutPage() {
         shipping_address: {
           full_name: form.buyer_name.trim(),
           phone: form.buyer_phone.trim(),
-          address_line1: form.address_line1.trim(),
-          address_line2: form.address_line2.trim() || null,
+          address_line1: needsAddress ? form.address_line1.trim() : "",
+          address_line2: needsAddress ? form.address_line2.trim() || null : null,
           city: form.city.trim(),
           state: form.state.trim() || null,
           postal_code: form.postal_code.trim() || null,
@@ -190,6 +226,17 @@ export default function CheckoutPage() {
         ]
           .filter(Boolean)
           .join("\n"),
+        fulfillment: Object.fromEntries(
+          (groups || []).map((g) => [
+            g.seller_id,
+            {
+              method: choice[g.seller_id],
+              ...(choice[g.seller_id] === "courier"
+                ? { collector_name: collector[g.seller_id]?.name?.trim() || null, collector_phone: collector[g.seller_id]?.phone?.trim() || null }
+                : {}),
+            },
+          ])
+        ),
         items: items.map((item) => ({
           part_id: item.part_id || item.id,
           quantity: Number(item.quantity || 1),
@@ -353,9 +400,98 @@ export default function CheckoutPage() {
             </fieldset>
           ) : null}
 
-          <h2 className="text-2xl font-bold text-ink">{t("Delivery details")}</h2>
+          {groups?.length ? (
+            <section className="mb-8" aria-labelledby="get-parts">
+              <h2 id="get-parts" className="text-2xl font-bold text-ink">{t("How do you want to get your parts?")}</h2>
+              <div className="mt-4 space-y-5">
+                {groups.map((g) => (
+                  <fieldset key={g.seller_id} className="rounded-2xl border border-line p-4">
+                    <legend className="px-1 text-sm font-semibold text-ink">
+                      {t("From {seller}", { seller: g.seller_name })}
+                      {g.city ? <span className="font-normal text-muted"> · {g.city}</span> : null}
+                    </legend>
+                    {!g.methods.length ? (
+                      <p className="text-sm text-red-700" role="alert">
+                        {t("{seller} can't send these parts and doesn't offer pickup. Remove them from your cart.", { seller: g.seller_name })}
+                      </p>
+                    ) : (
+                      <div className="grid gap-2">
+                        {g.methods.map((m) => (
+                          <label
+                            key={m}
+                            className={[
+                              "flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition",
+                              choice[g.seller_id] === m ? "border-sky-400 bg-surface-2" : "border-line hover:bg-surface-2",
+                            ].join(" ")}
+                          >
+                            <input
+                              type="radio"
+                              name={`fulfil-${g.seller_id}`}
+                              value={m}
+                              checked={choice[g.seller_id] === m}
+                              onChange={() => setChoice((prev) => ({ ...prev, [g.seller_id]: m }))}
+                              className="mt-1"
+                            />
+                            <span className="min-w-0">
+                              <span className="block text-sm font-semibold text-ink">
+                                {m === "delivery" ? t("Delivery to my address") : m === "pickup" ? t("I pick it up at the store") : t("I send someone to collect it")}
+                              </span>
+                              <span className="mt-0.5 block text-xs leading-5 text-muted">
+                                {m === "delivery"
+                                  ? t("The seller ships it to you. You pay cash on delivery.")
+                                  : m === "pickup"
+                                    ? t("The part is kept for you 3 days. Inspect it at the store and pay only if it's right.")
+                                    : t("A driver or a relative collects it with your pickup code.")}
+                              </span>
+                              {m !== "delivery" && g.pickup ? (
+                                <span className="mt-1 block text-xs text-ink-2">
+                                  {g.pickup.address}
+                                  {g.pickup.hours ? ` · ${g.pickup.hours}` : ""}
+                                </span>
+                              ) : null}
+                            </span>
+                          </label>
+                        ))}
+                        {g.pickup_only_parts?.length && g.methods.length ? (
+                          <p className="text-xs text-muted">{t("Some of these parts are too big to ship: pickup only.")}</p>
+                        ) : null}
+                        {choice[g.seller_id] === "courier" ? (
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <label htmlFor={`collector-name-${g.seller_id}`} className="mb-1 block text-xs font-medium text-ink-2">{t("Who collects it? (optional)")}</label>
+                              <input
+                                id={`collector-name-${g.seller_id}`}
+                                value={collector[g.seller_id]?.name || ""}
+                                onChange={(e) => setCollector((prev) => ({ ...prev, [g.seller_id]: { ...prev[g.seller_id], name: e.target.value } }))}
+                                maxLength={100}
+                                className="h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm text-ink outline-none focus:border-sky-400"
+                              />
+                            </div>
+                            <div>
+                              <label htmlFor={`collector-phone-${g.seller_id}`} className="mb-1 block text-xs font-medium text-ink-2">{t("Their phone (optional)")}</label>
+                              <input
+                                id={`collector-phone-${g.seller_id}`}
+                                type="tel"
+                                dir="ltr"
+                                value={collector[g.seller_id]?.phone || ""}
+                                onChange={(e) => setCollector((prev) => ({ ...prev, [g.seller_id]: { ...prev[g.seller_id], phone: e.target.value } }))}
+                                maxLength={30}
+                                className="h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm text-ink outline-none focus:border-sky-400"
+                              />
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+                  </fieldset>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <h2 className="text-2xl font-bold text-ink">{needsAddress ? t("Delivery details") : t("Your contact details")}</h2>
           <p className="mt-1 text-sm text-muted">
-            {t("Where should the seller deliver your parts?")}
+            {needsAddress ? t("Where should the seller deliver your parts?") : t("The seller calls you if needed. You'll get a pickup code after ordering.")}
           </p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -382,6 +518,8 @@ export default function CheckoutPage() {
               />
             </div>
 
+            {needsAddress ? (
+              <>
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Address line 1")}</label>
               <input
@@ -448,6 +586,9 @@ export default function CheckoutPage() {
               />
             </div>
 
+              </>
+            ) : null}
+
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Order notes (optional)")}</label>
               <textarea
@@ -465,9 +606,13 @@ export default function CheckoutPage() {
             <label className="flex items-start gap-3 rounded-xl border border-sky-400 bg-surface-2 p-3">
               <input type="radio" name="payment_method" checked readOnly className="mt-1" />
               <span>
-                <span className="block text-sm font-semibold text-ink">{t("Cash on delivery")}</span>
+                <span className="block text-sm font-semibold text-ink">
+                  {needsAddress && hasPickup ? t("Cash, on delivery or at the store") : needsAddress ? t("Cash on delivery") : t("Cash at the store")}
+                </span>
                 <span className="block text-xs text-muted">
-                  {t("Pay the seller in cash when you receive your parts. No card needed.")}
+                  {needsAddress
+                    ? t("Pay the seller in cash when you receive your parts. No card needed.")
+                    : t("Pay the seller when you collect the parts, after checking them.")}
                 </span>
               </span>
             </label>
@@ -476,7 +621,7 @@ export default function CheckoutPage() {
           <div className="mt-6">
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || Boolean(blocked)}
               className="btn-cta h-12 rounded-2xl px-6 text-sm"
             >
               {saving
@@ -516,14 +661,14 @@ export default function CheckoutPage() {
             </div>
 
             <div className="flex items-center justify-between text-sm text-muted">
-              <span>{t("Delivery (flat rate)")}</span>
-              <span className="font-mono">{shippingFee == null ? "—" : formatPrice(shippingFee)}</span>
+              <span>{needsAddress ? t("Delivery (flat rate)") : t("Pickup at the store")}</span>
+              <span className="font-mono">{fee == null ? "—" : fee === 0 ? t("Free") : formatPrice(fee)}</span>
             </div>
 
             <div className="flex items-center justify-between border-t border-line pt-3">
               <span className="text-base font-semibold text-ink">{t("Total")}</span>
               <span className="font-mono text-xl font-bold text-ink">
-                {formatPrice(subtotal + (shippingFee || 0))}
+                {formatPrice(subtotal + (fee || 0))}
               </span>
             </div>
           </div>

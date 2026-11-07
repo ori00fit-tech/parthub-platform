@@ -37,6 +37,10 @@ CREATE TABLE IF NOT EXISTS sellers (
   moderation_note TEXT,                     -- why rejected/suspended (see migrations/0011)
   agreement_accepted_at TEXT,               -- seller agreement (see migrations/0013)
   agreement_version TEXT,
+  delivery_enabled INTEGER NOT NULL DEFAULT 1, -- fulfilment methods (see migrations/0020)
+  pickup_enabled INTEGER NOT NULL DEFAULT 0,
+  pickup_address TEXT,
+  pickup_hours TEXT,
   status      TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','active','suspended','rejected')),
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
@@ -109,6 +113,7 @@ CREATE TABLE IF NOT EXISTS parts (
   weight_kg      REAL,
   part_origin    TEXT DEFAULT 'aftermarket',  -- oem | aftermarket | used (see migrations/0008)
   moderation_note TEXT,                      -- why rejected/archived (see migrations/0010)
+  delivery_available INTEGER NOT NULL DEFAULT 1, -- 0 = pickup only (see migrations/0020)
   status         TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('draft','pending','active','rejected','archived')),
   featured       INTEGER NOT NULL DEFAULT 0,
   view_count     INTEGER NOT NULL DEFAULT 0,
@@ -188,6 +193,12 @@ CREATE TABLE IF NOT EXISTS order_items (
   status     TEXT NOT NULL DEFAULT 'pending',  -- per-seller fulfilment (see migrations/0014)
   status_updated_at TEXT,
   delivered_at TEXT,
+  fulfillment TEXT NOT NULL DEFAULT 'delivery', -- delivery | pickup | courier (see migrations/0020)
+  pickup_code TEXT,
+  pickup_until TEXT,
+  pickup_attempts INTEGER NOT NULL DEFAULT 0,
+  collector_name TEXT,
+  collector_phone TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

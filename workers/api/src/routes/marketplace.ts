@@ -13,6 +13,7 @@ import { type IssueRow, cleanNote, issuesForOrder, loadIssue, nowText, publicIss
 import { type LineStatus, SELLER_NEXT, logOrderEvent, refreshOrderStatus, rollupStatus, setLineStatus } from "../utils/fulfillment";
 import { runInBackground } from "../utils/whatsapp";
 import { MAX_IMPORT_ROWS, applyImport, planImport } from "../utils/part-import";
+import { MAX_CODE_ATTEMPTS, holdUntil, isPickup, nextStatuses, sameCode } from "../utils/pickup";
 
 export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -930,6 +931,40 @@ marketplaceRoutes.put("/onboarding", authMiddleware, async (c) => {
 
 
 
+// PUT /api/v1/marketplace/me/fulfillment — how buyers can get this store's
+// parts: { delivery_enabled, pickup_enabled, pickup_address, pickup_hours }.
+// At least one way; pickup needs the address buyers go to (utils/pickup.ts).
+marketplaceRoutes.put("/me/fulfillment", authMiddleware, async (c) => {
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const delivery = body.delivery_enabled === true || body.delivery_enabled === 1;
+  const pickup = body.pickup_enabled === true || body.pickup_enabled === 1;
+  const address = typeof body.pickup_address === "string" ? body.pickup_address.trim().replace(/\s+/g, " ").slice(0, 300) : "";
+  const hours = typeof body.pickup_hours === "string" ? body.pickup_hours.trim().slice(0, 200) : "";
+  if (!delivery && !pickup) return c.json(failure("NO_METHOD", "Offer delivery, pickup at your store, or both"), 400);
+  if (pickup && address.length < 8) return c.json(failure("PICKUP_ADDRESS_REQUIRED", "Give the address where buyers collect their parts"), 400);
+  await c.env.DB.prepare(
+    `update sellers set delivery_enabled = ?1, pickup_enabled = ?2, pickup_address = ?3, pickup_hours = ?4, updated_at = datetime('now') where id = ?5`
+  ).bind(delivery ? 1 : 0, pickup ? 1 : 0, address || null, hours || null, sellerId).run();
+  const row = await c.env.DB.prepare("select delivery_enabled, pickup_enabled, pickup_address, pickup_hours from sellers where id = ?1").bind(sellerId).first();
+  return c.json(success(row, { message: "Fulfilment options saved" }));
+});
+
+// PUT /api/v1/marketplace/me/parts/:id/fulfillment { delivery_available } —
+// false = pickup only (engines, gearboxes, body panels...).
+marketplaceRoutes.put("/me/parts/:id/fulfillment", authMiddleware, async (c) => {
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const partId = Number(c.req.param("id"));
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const deliverable = body.delivery_available === false || body.delivery_available === 0 ? 0 : 1;
+  const res = await c.env.DB.prepare("update parts set delivery_available = ?1, updated_at = datetime('now') where id = ?2 and seller_id = ?3")
+    .bind(deliverable, partId, sellerId).run();
+  if (!res.meta.changes) return c.json(failure("PART_NOT_FOUND", "Part not found for this seller"), 404);
+  return c.json(success({ id: partId, delivery_available: deliverable }));
+});
+
 marketplaceRoutes.post("/me/parts", authMiddleware, async (c) => {
   try {
     const sellerId = c.get("seller_id");
@@ -1093,6 +1128,7 @@ marketplaceRoutes.get("/me/parts/:id", authMiddleware, async (c) => {
         p.moderation_note,
         p.featured,
         p.part_origin,
+        p.delivery_available,
         p.created_at,
         p.updated_at,
         (
@@ -1376,14 +1412,21 @@ async function loadSellerOrder(DB: D1Database, sellerId: number, orderId: number
   const items = await DB.prepare(`
     select oi.id, oi.part_id, oi.title, oi.sku, oi.price, oi.quantity, oi.subtotal, oi.status,
            oi.status_updated_at, oi.delivered_at, p.slug as part_slug,
+           oi.fulfillment, oi.pickup_until, oi.pickup_attempts, oi.collector_name, oi.collector_phone,
            (select pi.url from part_images pi where pi.part_id = oi.part_id
             order by pi.is_featured desc, pi.sort_order asc, pi.id asc limit 1) as image_url
     from order_items oi
     left join parts p on p.id = oi.part_id
     where oi.order_id = ?1 and oi.seller_id = ?2
     order by oi.id
-  `).bind(orderId, sellerId).all<{ id: number; status: string; subtotal: number }>();
+  `).bind(orderId, sellerId).all<{
+    id: number; status: string; subtotal: number; fulfillment: string; pickup_until: string | null;
+    pickup_attempts: number; collector_name: string | null; collector_phone: string | null;
+  }>();
   const lines = items.results || [];
+  // One method per seller and order (see utils/pickup.ts).
+  const first = lines[0];
+  const fulfillment = first?.fulfillment || "delivery";
 
   const events = await DB.prepare(
     "select event, note, created_by, created_at from order_events where order_id = ?1 order by created_at asc, id asc"
@@ -1400,7 +1443,12 @@ async function loadSellerOrder(DB: D1Database, sellerId: number, orderId: number
     issues,
     status,
     total: lines.reduce((sum, l) => sum + Number(l.subtotal || 0), 0),
-    next_statuses: SELLER_NEXT[status] ?? [],
+    next_statuses: nextStatuses(status, fulfillment, SELLER_NEXT),
+    fulfillment,
+    pickup_until: isPickup(fulfillment) ? first?.pickup_until ?? null : null,
+    pickup_code_locked: isPickup(fulfillment) && Math.max(0, ...lines.map((l) => Number(l.pickup_attempts || 0))) >= MAX_CODE_ATTEMPTS,
+    collector_name: first?.collector_name ?? null,
+    collector_phone: first?.collector_phone ?? null,
     has_other_sellers: Number(others?.n || 0) > 0,
     items: lines,
     events: events.results || [],
@@ -1554,7 +1602,7 @@ marketplaceRoutes.patch("/me/orders/:id/status", authMiddleware, async (c) => {
   const sellerId = await ownSellerId(c);
   if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
   const orderId = Number(c.req.param("id"));
-  const body = await c.req.json<{ status?: unknown; note?: unknown }>().catch(() => ({} as { status?: unknown; note?: unknown }));
+  const body = await c.req.json<{ status?: unknown; note?: unknown; code?: unknown }>().catch(() => ({} as { status?: unknown; note?: unknown; code?: unknown }));
   const next = String(body.status || "") as LineStatus;
   const note = typeof body.note === "string" ? body.note.trim().slice(0, 500) || null : null;
 
@@ -1570,7 +1618,27 @@ marketplaceRoutes.patch("/me/orders/:id/status", authMiddleware, async (c) => {
   const lineIds = order.items
     .filter((l) => l.status !== "cancelled" && l.status !== "delivered")
     .map((l) => l.id);
+
+  // Pickup / courier: "collected" only with the buyer's code.
+  if (isPickup(order.fulfillment) && next === "delivered") {
+    if (order.pickup_code_locked) {
+      return c.json(failure("CODE_LOCKED", "Too many wrong codes. Contact PartHub to close this order."), 423);
+    }
+    const marks = lineIds.map((_, i) => `?${i + 1}`).join(",");
+    const row = await c.env.DB.prepare(`select pickup_code from order_items where id in (${marks}) and pickup_code is not null limit 1`)
+      .bind(...lineIds).first<{ pickup_code: string }>();
+    if (!row || !sameCode(String(body.code ?? ""), row.pickup_code)) {
+      await c.env.DB.prepare(`update order_items set pickup_attempts = pickup_attempts + 1 where id in (${marks})`).bind(...lineIds).run();
+      return c.json(failure("WRONG_CODE", "Wrong pickup code. Ask the buyer for the 6-digit code shown on their order."), 400);
+    }
+  }
+
   const restocked = await setLineStatus(c.env.DB, lineIds, next);
+  // Pickup confirmed = the part is kept for the buyer for a few days.
+  if (isPickup(order.fulfillment) && next === "confirmed" && lineIds.length) {
+    await c.env.DB.prepare(`update order_items set pickup_until = ?1 where id in (${lineIds.map((_, i) => `?${i + 2}`).join(",")})`)
+      .bind(holdUntil(), ...lineIds).run();
+  }
   await logOrderEvent(c.env.DB, orderId, next, `seller:${sellerId}`, note);
   await refreshOrderStatus(c.env.DB, orderId);
   for (const partId of restocked) runInBackground(c, notifyBackInStock(c.env, partId));

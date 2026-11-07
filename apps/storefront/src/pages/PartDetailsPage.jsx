@@ -11,6 +11,7 @@ import NotifyWhenAvailable from "../features/stock/NotifyWhenAvailable";
 import { RatingSummary, ReviewList } from "../features/reviews/Reviews";
 import { usePageMeta } from "../lib/pageMeta";
 import { OtherOffers, PartNumbersList } from "../features/parts/PartNumbers";
+import { Icon } from "@parthub/shared/icons";
 
 function normalizeGallery(part) {
   const candidates = [
@@ -475,6 +476,25 @@ export default function PartDetailsPage() {
                 </p>
               </div>
             </div>
+
+            {part.can_deliver != null ? (
+              <ul className="mt-4 flex flex-wrap gap-2 text-xs font-semibold" aria-label={t("How to get it")}>
+                {Number(part.can_deliver) ? (
+                  <li className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-ink-2">
+                    <Icon name="delivery" className="h-4 w-4" />
+                    {t("Delivery across Morocco, cash on delivery")}
+                  </li>
+                ) : null}
+                {Number(part.can_pickup) ? (
+                  <li className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1.5 text-emerald-800">
+                    <Icon name="store" className="h-4 w-4" />
+                    {part.seller_location
+                      ? t("Pickup in {city}: inspect before you pay", { city: part.seller_location })
+                      : t("Pickup at the store: inspect before you pay")}
+                  </li>
+                ) : null}
+              </ul>
+            ) : null}
 
             <div className={["mt-6 rounded-2xl border px-4 py-4", toneClasses(fitment.tone)].join(" ")}>
               <p className="font-semibold">{fitment.title}</p>

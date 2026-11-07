@@ -171,6 +171,9 @@ catalogRoutes.get("/parts/:slug", async (c) => {
       s.name as seller_name,
       s.slug as seller_slug,
       s.location as seller_location,
+      -- how the buyer can get it (utils/pickup.ts)
+      case when s.delivery_enabled = 1 and p.delivery_available = 1 then 1 else 0 end as can_deliver,
+      case when s.pickup_enabled = 1 and coalesce(s.pickup_address, '') != '' then 1 else 0 end as can_pickup,
       (
         select pi.url
         from part_images pi

@@ -7,6 +7,7 @@ import { mediaUrl } from "../lib/requests";
 import StoreChecklist, { StoreStatusBanner } from "../components/store/StoreChecklist";
 import { useT } from "../i18n";
 import { LinkedText } from "../components/legal/LegalDocument";
+import FulfillmentSettings from "../components/store/FulfillmentSettings";
 
 function slugify(value) {
   return String(value || "")
@@ -210,6 +211,7 @@ export default function StoreSettingsPage() {
       {hasStore ? <StoreStatusBanner readiness={readiness} /> : null}
 
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="space-y-6">
         <form onSubmit={handleSubmit} className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{t("Store profile")}</h2>
@@ -358,6 +360,8 @@ export default function StoreSettingsPage() {
             </button>
           </div>
         </form>
+        {hasStore ? <FulfillmentSettings /> : null}
+        </div>
 
         <div className="space-y-4">
           <StoreChecklist
