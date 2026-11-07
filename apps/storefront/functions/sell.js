@@ -11,6 +11,11 @@ export async function onRequestGet(context) {
         "Magasins, importateurs et casses : publiez vos pièces auto gratuitement et recevez des commandes et des demandes de pièces d'acheteurs partout au Maroc.",
       url: `${base}/sell`,
       image: `${base}/og-image.png`,
+      content: [
+        "<h2>Comment ça marche</h2>",
+        "<ol><li>Créez votre compte vendeur.</li><li>Configurez votre magasin : nom, ville, WhatsApp.</li><li>Ajoutez vos pièces : photos, prix, état, références et véhicules compatibles.</li><li>PartHub vérifie votre magasin, puis vos pièces sont visibles partout au Maroc.</li></ol>",
+        '<p><a href="https://seller.parthub.autos/auth?mode=signup">Ouvrir mon magasin gratuitement</a></p>',
+      ].join(""),
     });
   } catch {
     return plainShell(context);

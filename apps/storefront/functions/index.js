@@ -10,6 +10,12 @@ export async function onRequestGet(context) {
         "Trouvez la bonne pièce auto pour votre véhicule au Maroc : neuve, d'origine ou d'occasion, chez des vendeurs vérifiés. Paiement à la livraison.",
       url: `${base}/`,
       image: `${base}/og-image.png`,
+      content: [
+        "<h2>Pièces auto neuves, d'origine et d'occasion</h2>",
+        "<p>Indiquez votre voiture (marque, modèle, génération, moteur) pour voir les pièces compatibles, ou cherchez par référence d'origine (OEM). Les vendeurs sont vérifiés par PartHub et vous payez à la livraison, partout au Maroc.</p>",
+        "<h2>قطع غيار السيارات في المغرب</h2>",
+        '<p dir="rtl" lang="ar">اختر سيارتك لترى القطع المتوافقة معها، أو ابحث برقم القطعة الأصلي. البائعون موثَّقون من PartHub والدفع عند الاستلام في كل المغرب.</p>',
+      ].join(""),
       jsonLd: [
         {
           "@context": "https://schema.org",

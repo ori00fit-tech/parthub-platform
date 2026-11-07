@@ -1,7 +1,7 @@
 // /parts/:slug — part page with its title, description, photo and schema.org
 // Product data in the HTML (search results, WhatsApp/Facebook previews).
 import {
-  absoluteMedia, api, clip, conditionFr, conditionSchema, origin, plainShell, priceText, ratingSchema, renderShell, SITE_NAME,
+  absoluteMedia, api, clip, conditionFr, conditionSchema, escapeHtml, origin, plainShell, priceText, ratingSchema, renderShell, SITE_NAME,
 } from "../_lib/seo.js";
 
 function fitmentText(rows) {
@@ -104,6 +104,16 @@ export async function onRequestGet(context) {
       image: uniqueImages[0] || `${origin(request)}/og-image.png`,
       type: "product",
       jsonLd: [product, breadcrumb],
+      content: [
+        uniqueImages[0] ? `<img src="${escapeHtml(uniqueImages[0])}" alt="${escapeHtml(part.title)}" width="320" style="max-width:100%;height:auto;border-radius:12px" />` : "",
+        price ? `<p><strong>${escapeHtml(price)}</strong> · ${inStock ? "En stock" : "Rupture de stock"}</p>` : "",
+        part.description ? `<h2>Description</h2><p>${escapeHtml(clip(part.description, 1000))}</p>` : "",
+        Array.isArray(part.compatibility) && part.compatibility.length
+          ? `<h2>Véhicules compatibles</h2><ul>${part.compatibility.slice(0, 20).map((r) => `<li>${escapeHtml([r.make, r.model, r.generation, r.engine, r.year_start ? (r.year_end && r.year_end !== r.year_start ? `${r.year_start}–${r.year_end}` : r.year_start) : ""].filter(Boolean).join(" "))}</li>`).join("")}</ul>`
+          : "",
+        (part.part_numbers || []).length ? `<h2>Références</h2><p>${part.part_numbers.map((n) => escapeHtml(n.number)).join(", ")}</p>` : "",
+        part.seller_name && part.seller_slug ? `<p>Vendu par <a href="/sellers/${encodeURIComponent(part.seller_slug)}">${escapeHtml(part.seller_name)}</a></p>` : "",
+      ].join(""),
     });
   } catch {
     return plainShell(context);

@@ -63,7 +63,7 @@ function jsonLdTag(data) {
 export async function renderShell(context, meta) {
   const { request, env } = context;
   const shell = await env.ASSETS.fetch(new URL("/", request.url));
-  const { title, description, url, image, type = "website", jsonLd = [], noindex = false, status = 200 } = meta;
+  const { title, description, url, image, type = "website", jsonLd = [], noindex = false, status = 200, content = "" } = meta;
 
   const tags = [
     `<link rel="canonical" href="${escapeHtml(url)}" />`,
@@ -82,13 +82,37 @@ export async function renderShell(context, meta) {
   const rewritten = new HTMLRewriter()
     .on("title", { element: (el) => el.setInnerContent(title) })
     .on('meta[name="description"]', { element: (el) => el.setAttribute("content", description) })
+    .on("html", { element: (el) => el.setAttribute("lang", "fr") })
     .on("head", { element: (el) => el.append(`    ${tags}\n`, { html: true }) })
+    // Readable page (heading, text, links) for crawlers and previews that
+    // don't run JavaScript; React replaces it when the app starts.
+    .on("div#root", { element: (el) => el.setInnerContent(fallbackHtml(title, description, content), { html: true }) })
     .transform(shell);
 
   const headers = new Headers(rewritten.headers);
   headers.set("content-type", "text/html; charset=utf-8");
   headers.set("cache-control", "public, max-age=300");
   return new Response(rewritten.body, { status, headers });
+}
+
+// The page as plain HTML inside #root: an <h1>, the description, any extra
+// HTML the page passes (already escaped), and links to the main pages.
+export function fallbackHtml(title, description, content = "") {
+  const heading = String(title).split(" | ")[0];
+  return [
+    `<main style="max-width:960px;margin:0 auto;padding:24px 16px;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#0f172a">`,
+    `<h1 style="font-size:28px;line-height:1.25;margin:0 0 12px">${escapeHtml(heading)}</h1>`,
+    `<p style="margin:0 0 16px;color:#475569">${escapeHtml(description)}</p>`,
+    content,
+    `<nav aria-label="PartHub"><ul style="display:flex;flex-wrap:wrap;gap:16px;list-style:none;padding:0;margin:16px 0 0">`,
+    `<li><a href="/parts">Toutes les pièces auto</a></li>`,
+    `<li><a href="/vehicle-selector">Chercher par véhicule</a></li>`,
+    `<li><a href="/request-part">Demander une pièce</a></li>`,
+    `<li><a href="/sell">Vendre sur PartHub</a></li>`,
+    `<li><a href="/legal">Conditions et confidentialité</a></li>`,
+    `</ul></nav>`,
+    `</main>`,
+  ].join("");
 }
 
 // Canonical address of the site (custom domain once SITE_URL is set), so

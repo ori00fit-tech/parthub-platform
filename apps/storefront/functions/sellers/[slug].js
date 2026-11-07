@@ -1,6 +1,6 @@
 // /sellers/:slug — public store page with its name, city, rating and
 // schema.org AutoPartsStore data in the HTML.
-import { api, clip, origin, plainShell, ratingSchema, renderShell, SITE_NAME } from "../_lib/seo.js";
+import { api, clip, escapeHtml, origin, plainShell, ratingSchema, renderShell, SITE_NAME } from "../_lib/seo.js";
 
 export async function onRequestGet(context) {
   const { request, env, params } = context;
@@ -42,7 +42,8 @@ export async function onRequestGet(context) {
     const aggregate = ratingSchema(seller.rating);
     if (aggregate) store.aggregateRating = aggregate;
 
-    return renderShell(context, { title, description, url, image: logo || `${origin(request)}/og-image.png`, type: "profile", jsonLd: [store] });
+    return renderShell(context, { title, description, url, image: logo || `${origin(request)}/og-image.png`, type: "profile", jsonLd: [store],
+      content: `<p>${count} pièce${count > 1 ? "s" : ""} en ligne${seller.location ? ` · ${escapeHtml(seller.location)}` : ""}</p>` });
   } catch {
     return plainShell(context);
   }
