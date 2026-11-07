@@ -53,10 +53,10 @@ const admin = await tok({ user_id: 9, role: "admin" });
 const buyer = await tok({ user_id: 1, role: "buyer" });
 
 let [st, b] = await call("GET", "/api/v1/vehicles/generations?make=renault&model=clio", null);
-check("generations", st === 200 && b.data.map((g) => g.name).join() === "Clio II,Clio III,Clio IV,Clio V", b.data);
+check("generations", st === 200 && b.data.map((g) => g.name).join() === "Clio I,Clio II,Clio III,Clio IV,Clio V", b.data);
 const clio4 = b.data.find((g) => g.name === "Clio IV");
 [st, b] = await call("GET", "/api/v1/vehicles/generations?make=renault&model=Mégane", null);
-check("generations_by_model_name", b.data.length === 3, b.data);
+check("generations_by_model_name", b.data.length === 4, b.data); // Mégane I-IV
 [st, b] = await call("GET", `/api/v1/vehicles/engines?generation_id=${clio4.id}`, null);
 check("engines_sorted", b.data.map((e) => e.name).join() === "0.9 TCe 90,1.2 16V 75,1.5 dCi 75,1.5 dCi 90" && b.data[2].fuel === "diesel", b.data.map((e) => e.name));
 const dci90 = b.data.find((e) => e.name === "1.5 dCi 90");
@@ -115,7 +115,7 @@ check("admin_only", st === 401 || st === 403, st);
 
 // Admin corrections
 [st, b] = await call("POST", "/api/v1/admin/vehicles/catalog", admin, { make: "Renault", model: "Clio", generation: "Clio IV", year_start: 2012, engine: "1.5 dCi 110" });
-check("admin_adds_engine_no_dup", st === 200 && b.data.generation.id === clio4.id && sql.prepare("select count(*) n from vehicle_generations where model_id = (select model_id from vehicle_generations where id = ?)").get(clio4.id).n === 4, [st, b.data]);
+check("admin_adds_engine_no_dup", st === 200 && b.data.generation.id === clio4.id && sql.prepare("select count(*) n from vehicle_generations where model_id = (select model_id from vehicle_generations where id = ?)").get(clio4.id).n === 5, [st, b.data]);
 const clioModel = sql.prepare("select model_id from vehicle_generations where id = ?").get(clio4.id).model_id;
 [st, b] = await call("GET", `/api/v1/admin/vehicles/generations?model_id=${clioModel}`, admin);
 const g4 = b.data.find((g) => g.id === clio4.id);

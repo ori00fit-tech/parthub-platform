@@ -45,6 +45,8 @@ const check = (name, cond, extra = "") => { results[name] = cond ? "PASS" : `FAI
 sql.exec(`
   INSERT INTO users (id,name,email,password_hash,role) VALUES (2,'S1','s1@x','x','seller');
   INSERT INTO sellers (id,user_id,name,slug,status) VALUES (1,2,'Shop','shop','active');
+  -- production also has the old seed's Mercedes-Benz (slug "mercedes", no models)
+  INSERT INTO vehicle_makes (slug, name) VALUES ('mercedes', 'Mercedes-Benz');
   INSERT INTO categories (id,name,slug) VALUES (1,'Brakes & Rotors','brakes'),(2,'Filters & Fluids','filters'),(3,'Interior & Accessories','interior'),(4,'Electrical & Lighting','electrical');
 `);
 const s1 = await tok({ user_id: 2, role: "seller", seller_id: 1 });
@@ -59,6 +61,10 @@ const cells = {
   modelOnly: "Peugeot 208",
   noModel: "Renault; Dacia",
   notVehicle: "Sièges avant standards",
+  classe: "Mercedes Classe C 2010; Classe A W176",
+  serie: "BMW Série 3 E90",
+  newMakes: "MG ZS 2021; Chery Tiggo 7 Pro 2023; Land Rover Range Rover Evoque 2.2 TD4",
+  dieselOnly: "Toyota Hilux 2.5 D-4D",
 };
 const rows = Object.entries(cells).map(([k, v], i) => ({ "Titre": `Part ${k}`, "Catégorie": "Freinage", "Prix": "100", "Référence": `R-${i}`, "Véhicules": v }));
 rows.push({ "Titre": "Huile moteur 5W40", "Catégorie": "Lubrifiants", "Prix": "280", "Marque": "Total", "Véhicules": "Universel" });
@@ -83,6 +89,10 @@ check("universal_no_warning", fit("universal").length === 0 && !warn("Part unive
 check("model_only_all_gens", names("modelOnly").join(",") === "208 I,208 II" && /no year or generation/.test(warn("Part modelOnly")), [names("modelOnly"), warn("Part modelOnly")]);
 check("make_only_msg", /give the model after the make/.test(warn("Part noModel")), warn("Part noModel"));
 check("not_vehicle_msg", /not a make and model/.test(warn("Part notVehicle")), warn("Part notVehicle"));
+check("classe_c_duplicate_make", JSON.stringify(names("classe")) === JSON.stringify(["A-Class W176", "C-Class W204"]), [names("classe"), warn("Part classe")]);
+check("serie_3", JSON.stringify(names("serie")) === JSON.stringify(["3 Series E90"]), names("serie"));
+check("new_makes", JSON.stringify(fit("newMakes").map((f) => f.make)) === JSON.stringify(["Chery", "Land Rover", "MG"]) && !warn("Part newMakes"), [fit("newMakes"), warn("Part newMakes")]);
+check("engine_generations", JSON.stringify(names("dieselOnly")) === JSON.stringify(["Hilux VI", "Hilux VII"]), names("dieselOnly"));
 check("lubrifiants_category", by["Huile moteur 5W40"].action === "create", by["Huile moteur 5W40"]);
 const part = (t) => sql.prepare("select p.*, b.name as brand from parts p left join brands b on b.id = p.brand_id where p.id = ?").get(by[t].part_id);
 check("lubrifiants_in_filters", part("Huile moteur 5W40").category_id === 2 && part("Huile moteur 5W40").brand === "Total", part("Huile moteur 5W40"));
