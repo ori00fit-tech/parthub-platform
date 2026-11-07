@@ -12,7 +12,8 @@ export const SELLER_NEXT: Record<string, LineStatus[]> = {
   pending: ["confirmed", "cancelled"],
   confirmed: ["shipped", "cancelled"],
   processing: ["shipped", "cancelled"],
-  shipped: ["delivered"],
+  // cancelled after shipping = the delivery failed (part back to the seller)
+  shipped: ["delivered", "cancelled"],
   delivered: [],
   cancelled: [],
 };

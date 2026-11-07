@@ -12,7 +12,10 @@ import { type LineStatus, logOrderEvent, refreshOrderStatus, setLineStatus } fro
 import { readNumbersInput } from "../utils/part-numbers";
 import { ensureBrand, ensureVehicle, engineInfo, readVehicleEntry } from "../utils/vehicle-catalog";
 import { type IssueRow, cleanNote, loadIssue, nowText, publicIssue, updateIssue } from "../utils/issues";
-import { MAX_RATE_BPS, accrueCommissions, commissionRateBps, currentPeriod, lastPeriods, readPeriod, setCommissionRateBps } from "../utils/commissions";
+import {
+  RATE_NOTICE_DAYS, accrueCommissions, cancelRate, commissionRateBps, currentPeriod, lastPeriods, rateHistory, readEffectiveFrom,
+  readPeriod, readRatePercent, scheduleRate, upcomingRates, waiveCommission,
+} from "../utils/commissions";
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -764,16 +767,47 @@ adminRoutes.get("/revenue", async (c) => {
      GROUP BY s.id ORDER BY gmv DESC LIMIT 50`,
     [month, month]
   );
-  return ok(c, { month, rate_bps: await commissionRateBps(c.env.DB), months, sellers });
+  return ok(c, {
+    month,
+    rate_bps: await commissionRateBps(c.env.DB),
+    upcoming: await upcomingRates(c.env.DB),
+    rates: await rateHistory(c.env.DB),
+    notice_days: RATE_NOTICE_DAYS,
+    months,
+    sellers,
+  });
 });
 
-// PUT /api/v1/admin/settings/commission { rate_percent } — applies to sales
-// recorded from now on (never to past ones). 0 = free.
-adminRoutes.put("/settings/commission", async (c) => {
-  const body = await c.req.json<{ rate_percent?: unknown }>().catch(() => ({}) as { rate_percent?: unknown });
-  const pct = Number(String(body.rate_percent ?? "").replace(",", "."));
-  const bps = Math.round(pct * 100);
-  if (!Number.isFinite(pct) || bps < 0 || bps > MAX_RATE_BPS) return fail(c, "The commission must be between 0% and 20%");
-  await setCommissionRateBps(c.env.DB, bps, Number(c.get("user_id")));
-  return ok(c, { rate_bps: bps });
+// Commission rates (utils/commissions.ts): dated, never edited.
+// POST /api/v1/admin/commission-rates { rate_percent, effective_from: YYYY-MM-DD, note? }
+// A higher rate must start at least RATE_NOTICE_DAYS from today (the
+// sellers see it on their statement from now on). 0 = free.
+adminRoutes.post("/commission-rates", async (c) => {
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({}) as Record<string, unknown>);
+  const bps = readRatePercent(body.rate_percent);
+  if (bps === null) return fail(c, "The commission must be between 0% and 20%");
+  const from = readEffectiveFrom(body.effective_from);
+  if (!from) return fail(c, "Choose the date the rate starts");
+  const res = await scheduleRate(c.env.DB, bps, from, Number(c.get("user_id")), cleanNote(body.note, 300));
+  if (!res.ok) return fail(c, res.error, res.code === "NOTICE_REQUIRED" ? 422 : 400);
+  return ok(c, { id: res.id, rate_bps: bps, effective_from: from, history: await rateHistory(c.env.DB) });
+});
+
+// DELETE /api/v1/admin/commission-rates/:id — only before it starts.
+adminRoutes.delete("/commission-rates/:id", async (c) => {
+  const res = await cancelRate(c.env.DB, Number(c.req.param("id")), Number(c.get("user_id")));
+  if (!res.ok) return fail(c, res.error, res.code === "NOT_FOUND" ? 404 : 409);
+  return ok(c, { history: await rateHistory(c.env.DB) });
+});
+
+// POST /api/v1/admin/commissions/:id/waive { note } — no commission on
+// that sale (before it is invoiced). Kept in commission_events.
+adminRoutes.post("/commissions/:id/waive", async (c) => {
+  const body = await c.req.json<{ note?: unknown }>().catch(() => ({}) as { note?: unknown });
+  const note = cleanNote(body.note, 500);
+  if (!note) return fail(c, "Write the reason");
+  const res = await waiveCommission(c.env.DB, Number(c.req.param("id")), `admin:${Number(c.get("user_id"))}`, note);
+  if (res === "not_found") return fail(c, "Commission not found", 404);
+  if (res === "locked") return fail(c, "Only a recorded, not yet invoiced commission can be waived", 409);
+  return ok(c, { id: Number(c.req.param("id")), status: "waived" });
 });

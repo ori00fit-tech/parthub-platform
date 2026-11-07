@@ -924,6 +924,8 @@ export default {
   // Returns and claims
   "The part is different from its description": "La pièce est différente de sa description",
   "The part was damaged on arrival": "La pièce est arrivée endommagée",
+  "Delivery failed": "Livraison échouée",
+  "I did not receive the part, although it is marked delivered": "Je n'ai pas reçu la pièce, alors qu'elle est indiquée livrée",
   "It does not fit, although the listing said it would": "Elle ne convient pas, alors que l'annonce l'indiquait",
   "Used part with a hidden defect": "Pièce d'occasion avec un vice caché",
   "I ordered the wrong part": "J'ai commandé la mauvaise pièce",

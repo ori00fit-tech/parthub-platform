@@ -16,6 +16,9 @@ export const ISSUE_REASONS: Record<string, "seller" | "buyer" | null> = {
   damaged: "seller",
   not_compatible: "seller",
   hidden_defect: "seller",
+  // Marked delivered, but the buyer has nothing: blocks the commission and
+  // goes to the seller, then PartHub.
+  not_received: "seller",
   wrong_part_ordered: "buyer",
   changed_mind: "buyer",
   other: null,
@@ -32,6 +35,7 @@ export type IssueRow = {
   status: "open" | "accepted" | "refused" | "escalated" | "closed";
   outcome: "buyer" | "seller" | "withdrawn" | null;
   return_paid_by: "seller" | "buyer" | null;
+  refund_amount: number | null; // centimes, NULL = the whole line (migrations/0024)
   seller_note: string | null;
   admin_note: string | null;
   created_at: string;

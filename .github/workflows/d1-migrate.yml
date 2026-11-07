@@ -1,12 +1,14 @@
 name: D1 migrations
 
 # Run manually: GitHub → Actions → "D1 migrations" → Run workflow.
+# Also runs before every API deploy (deploy-api.yml calls it).
 # Applies the database migrations the API needs, against the production
 # D1 database (parthub-db), using the same Cloudflare secrets as "Deploy API".
 # Safe to run more than once: each migration is skipped if already applied.
 
 on:
   workflow_dispatch:
+  workflow_call:
 
 concurrency:
   group: d1-migrate
@@ -114,6 +116,9 @@ jobs:
       - name: 0023 commission ledger and platform settings
         run: ../../.github/scripts/d1-exec-retry.sh --file="$MIGRATIONS/0023_commissions.sql"
 
+      - name: 0024 commission rules (dated rates, audit log, partial refunds)
+        run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0024_commission_rules.sql"
+
       # Read query: fails while the daily read limit is exceeded, which
       # doesn't mean the migrations failed.
       - name: Verify
@@ -136,4 +141,8 @@ jobs:
                (SELECT COUNT(*) FROM vehicle_engines) AS vehicle_engines,
                (SELECT CASE WHEN instr(sql, 'engine_scope') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='part_compatibility') AS engine_scope_column,
                (SELECT COUNT(*) FROM vehicle_engines WHERE source IS NULL) AS engines_without_source,
-               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('part_numbers','part_listing_numbers','part_number_links')) AS part_number_tables_of_3"
+               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('part_numbers','part_listing_numbers','part_number_links')) AS part_number_tables_of_3,
+               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('order_shipments','commissions','platform_settings','commission_rates','commission_events')) AS revenue_tables_of_5,
+               (SELECT CASE WHEN instr(sql, 'delivery_fee_local') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='sellers') AS sellers_fee_columns,
+               (SELECT CASE WHEN instr(sql, 'refund_amount') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='order_issues') AS issues_refund_column,
+               (SELECT rate_bps FROM commission_rates WHERE cancelled_at IS NULL AND effective_from <= datetime('now') ORDER BY effective_from DESC, id DESC LIMIT 1) AS commission_rate_now_bps"

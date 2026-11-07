@@ -926,6 +926,8 @@ export default {
   // Returns and claims
   "The part is different from its description": "القطعة مختلفة عن الوصف",
   "The part was damaged on arrival": "القطعة وصلت تالفة",
+  "Delivery failed": "فشل التسليم",
+  "I did not receive the part, although it is marked delivered": "لم أستلم القطعة رغم أنها مسجّلة كمسلَّمة",
   "It does not fit, although the listing said it would": "غير مناسبة رغم أن العرض قال إنها متوافقة",
   "Used part with a hidden defect": "قطعة مستعملة بها عيب خفي",
   "I ordered the wrong part": "طلبت قطعة خاطئة",

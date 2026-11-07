@@ -53,7 +53,7 @@ export function conditionLabel(value) {
 // Stored status values (pending, shipped, active…) shown in the user's language.
 const STATUS_LABELS = {
   pending: "Pending", confirmed: "Confirmed", processing: "Processing", shipped: "Shipped",
-  delivered: "Delivered", cancelled: "Cancelled", paid: "Paid", unpaid: "Unpaid", failed: "Failed",
+  delivered: "Delivered", cancelled: "Cancelled", delivery_failed: "Delivery failed", paid: "Paid", unpaid: "Unpaid", failed: "Failed",
   refunded: "Refunded", active: "Active", draft: "Draft", archived: "Archived", rejected: "Rejected",
   suspended: "Suspended", approved: "Approved", open: "Open for offers", closed: "Closed",
   fulfilled: "Fulfilled", expired: "Expired", accepted: "Accepted", declined: "Declined",

@@ -53,6 +53,11 @@ const ACTIONS = {
   delivered: { label: "Mark as delivered", hint: "The buyer received the parts. The 7-day returns window starts now.", tone: "primary" },
   cancelled: { label: "Cancel order", hint: "The quantities go back to your stock.", tone: "danger" },
 };
+// After shipping, "cancelled" = the delivery failed (API: SELLER_NEXT).
+const FAILED = {
+  label: "Delivery failed",
+  hint: "The buyer refused or could not be reached, and the part came back to you. The order is closed, the quantities go back to your stock, and the buyer pays nothing.",
+};
 // Pickup at the store / buyer's courier (API: utils/pickup.ts).
 const PICKUP_ACTIONS = {
   ...ACTIONS,
@@ -87,6 +92,7 @@ const EVENT_LABELS = {
   issue_decided_seller: "PartHub decided for the seller",
   issue_refunded: "Refund done",
   issue_withdrawn: "Claim withdrawn",
+  delivery_failed: "Delivery failed",
 };
 
 function Badge({ status }) {
@@ -193,6 +199,8 @@ export default function OrderDetailsPage() {
   const canShip = !pickupOrder && next.includes("shipped");
   const collect = pickupOrder && next.includes("delivered");
   const canCancel = next.includes("cancelled");
+  const failedDelivery = canCancel && order.status === "shipped";
+  const cancelText = failedDelivery ? FAILED : ACTIONS.cancelled;
   const wa = whatsappNumber(order.buyer_phone);
   const address = [order.address_line1, order.address_line2, order.buyer_city, order.postal_code].filter(Boolean).join(", ");
 
@@ -260,7 +268,7 @@ export default function OrderDetailsPage() {
                   onClick={() => setCancelOpen(true)}
                   className="inline-flex h-11 items-center justify-center rounded-2xl border border-red-200 px-5 text-sm font-semibold text-red-700 hover:bg-red-50"
                 >
-                  {t(ACTIONS.cancelled.label)}
+                  {t(cancelText.label)}
                 </button>
               ) : null}
             </div>
@@ -346,7 +354,7 @@ export default function OrderDetailsPage() {
             {cancelOpen ? (
               <div className="mt-4 space-y-3 rounded-2xl border border-red-200 bg-red-50/50 p-4">
                 <label htmlFor="cancel-note" className="block text-sm font-semibold text-gray-900">
-                  {t("Why are you cancelling? The buyer sees this message.")}
+                  {failedDelivery ? t("What happened with the delivery? The buyer sees this message.") : t("Why are you cancelling? The buyer sees this message.")}
                 </label>
                 <textarea
                   id="cancel-note"
@@ -355,9 +363,11 @@ export default function OrderDetailsPage() {
                   maxLength={500}
                   rows={2}
                   className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-red-400"
-                  placeholder={pickupOrder ? t("e.g. The buyer didn't come within 3 days") : t("e.g. The part was sold in the store")}
+                  placeholder={
+                    failedDelivery ? t("e.g. The buyer refused the parcel") : pickupOrder ? t("e.g. The buyer didn't come within 3 days") : t("e.g. The part was sold in the store")
+                  }
                 />
-                <p className="text-xs text-gray-500">{t(ACTIONS.cancelled.hint)}</p>
+                <p className="text-xs text-gray-500">{t(cancelText.hint)}</p>
                 <div className="flex flex-wrap gap-3">
                   <button
                     type="button"

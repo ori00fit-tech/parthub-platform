@@ -19,6 +19,15 @@ Delivery / pickup / courier choice: see `fulfillment-methods.md`.
 - "Mark as shipped" asks the carrier (own driver, Amana, CTM, Sendit,
   Forcelog, Olivraison, other) and an optional tracking number; the buyer
   sees both.
+- Sending "shipped" again without a carrier keeps the carrier and
+  tracking number already saved.
+- **Delivery failed** (buyer refused, unreachable, parcel back): from
+  "shipped" the seller can close the order with a reason. Quantities go
+  back to stock, the seller's fee leaves the total, the history shows
+  `delivery_failed` with the reason (the buyer sees it).
+- **Not received**: if a seller marks a line delivered but the buyer has
+  nothing, the buyer opens a claim "I did not receive the part" (within
+  the 7 days). An open claim blocks the commission until it is resolved.
 - Orders placed before 0022 keep their flat fee (moved to the first
   shipment row when a seller ships).
 

@@ -12,6 +12,10 @@ WHATSAPP_TEMPLATE_LANG = "fr"
 # Flat delivery fee added to every order, in centimes (3500 = 35 MAD).
 SHIPPING_FEE_CENTIMES = "3500"
 
+# Daily jobs (src/index.ts "scheduled"): commission ledger. 03:17 UTC.
+[triggers]
+crons = ["17 3 * * *"]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "parthub-db"

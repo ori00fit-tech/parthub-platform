@@ -15,7 +15,7 @@ import { runInBackground } from "../utils/whatsapp";
 import { MAX_IMPORT_ROWS, applyImport, planImport } from "../utils/part-import";
 import { MAX_CODE_ATTEMPTS, holdUntil, isPickup, nextStatuses, sameCode } from "../utils/pickup";
 import { cleanCarrier, cleanTracking, readFeeMad } from "../utils/shipping";
-import { accrueCommissions, commissionRateBps, currentPeriod, readPeriod } from "../utils/commissions";
+import { RATE_NOTICE_DAYS, accrueCommissions, commissionRateBps, currentPeriod, readPeriod, upcomingRates } from "../utils/commissions";
 import { RETURN_WINDOW_DAYS } from "../utils/issues";
 
 export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
@@ -978,11 +978,12 @@ marketplaceRoutes.put("/me/parts/:id/fulfillment", authMiddleware, async (c) => 
 
 // GET /api/v1/marketplace/me/statement?month=YYYY-MM — the seller's sales
 // delivered that month and the commission on each (utils/commissions.ts):
-// "pending" while the returns window is open, then accrued or waived.
+// "pending" while the returns window is open, then accrued or waived; and
+// any commission change announced for later (the 30-day notice).
 marketplaceRoutes.get("/me/statement", authMiddleware, async (c) => {
   const sellerId = await ownSellerId(c);
   if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
-  await accrueCommissions(c.env.DB);
+  await accrueCommissions(c.env.DB, new Date(), sellerId);
   const month = readPeriod(c.req.query("month")) || currentPeriod();
   const res = await c.env.DB.prepare(
     `select oi.id, o.reference, oi.title, oi.quantity, oi.subtotal, oi.delivered_at,
@@ -1006,6 +1007,8 @@ marketplaceRoutes.get("/me/statement", authMiddleware, async (c) => {
     success({
       month,
       rate_bps: await commissionRateBps(c.env.DB),
+      upcoming: (await upcomingRates(c.env.DB)).map((r) => ({ rate_bps: r.rate_bps, effective_from: r.effective_from, announced_at: r.created_at })),
+      notice_days: RATE_NOTICE_DAYS,
       months: (months.results || []).map((m) => m.period),
       totals: {
         sales: sum((l) => Number(l.subtotal || 0)),
@@ -1650,16 +1653,32 @@ marketplaceRoutes.post("/me/issues/:id/resolve", authMiddleware, async (c) => {
   if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
   if (!issue) return c.json(failure("NOT_FOUND", "Claim not found"), 404);
   if (issue.status !== "accepted") return c.json(failure("NOT_ACCEPTED", "Accept the claim before marking it refunded"), 409);
-  const body = await c.req.json<{ note?: unknown }>().catch(() => ({} as { note?: unknown }));
+  const body = await c.req.json<{ note?: unknown; refund_amount?: unknown }>().catch(() => ({} as { note?: unknown; refund_amount?: unknown }));
+  // Partial refund (e.g. 1 part of 3 returned), in MAD; empty = the whole line.
+  // The commission is then charged on what the buyer kept (utils/commissions.ts).
+  const line = await c.env.DB.prepare("select subtotal from order_items where id = ?1").bind(issue.order_item_id).first<{ subtotal: number }>();
+  const lineTotal = Number(line?.subtotal || 0);
+  let refund: number | null = null;
+  if (body.refund_amount !== undefined && body.refund_amount !== null && String(body.refund_amount).trim() !== "") {
+    const mad = Number(String(body.refund_amount).replace(",", ".").trim());
+    refund = Number.isFinite(mad) ? Math.round(mad * 100) : NaN;
+    if (!Number.isInteger(refund) || refund <= 0 || refund > lineTotal) {
+      return c.json(failure("INVALID_REFUND", "The refund must be more than 0 and at most the price paid for this line"), 400);
+    }
+    if (refund === lineTotal) refund = null;
+  }
   const updated = await updateIssue(
-    c.env.DB, issue, { status: "closed", outcome: "buyer", closed_at: nowText() }, "issue_refunded", `seller:${sellerId}`, cleanNote(body.note)
+    c.env.DB, issue, { status: "closed", outcome: "buyer", closed_at: nowText(), refund_amount: refund }, "issue_refunded", `seller:${sellerId}`,
+    cleanNote(body.note) ?? (refund !== null ? `Partial refund: ${(refund / 100).toFixed(2)} MAD` : null)
   );
   return c.json(success(publicIssue(updated), { message: "Claim closed" }));
 });
 
 // PATCH /api/v1/marketplace/me/orders/:id/status { status, note? }
 // Moves all of the seller's open lines of the order one step:
-// pending → confirmed → shipped → delivered, or cancelled before shipping.
+// pending → confirmed → shipped → delivered, or cancelled: before shipping,
+// or after when the delivery failed (refused, unreachable, returned to the
+// seller). A reason is required either way.
 marketplaceRoutes.patch("/me/orders/:id/status", authMiddleware, async (c) => {
   const sellerId = await ownSellerId(c);
   if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
@@ -1678,6 +1697,7 @@ marketplaceRoutes.patch("/me/orders/:id/status", authMiddleware, async (c) => {
   if (next === "cancelled" && !note) {
     return c.json(failure("NOTE_REQUIRED", "Tell the buyer why the order is cancelled"), 400);
   }
+  const deliveryFailed = next === "cancelled" && order.status === "shipped";
 
   const lineIds = order.items
     .filter((l) => l.status !== "cancelled" && l.status !== "delivered")
@@ -1710,7 +1730,8 @@ marketplaceRoutes.patch("/me/orders/:id/status", authMiddleware, async (c) => {
                case when exists (select 1 from order_shipments where order_id = ?1) then 0
                     else (select shipping_fee from orders where id = ?1) end,
                ?3, ?4, datetime('now'))
-       on conflict(order_id, seller_id) do update set carrier = excluded.carrier, tracking_number = excluded.tracking_number, shipped_at = excluded.shipped_at`
+       on conflict(order_id, seller_id) do update set carrier = coalesce(excluded.carrier, carrier),
+         tracking_number = coalesce(excluded.tracking_number, tracking_number), shipped_at = excluded.shipped_at`
     ).bind(orderId, sellerId, carrier, tracking).run();
   }
   // Pickup confirmed = the part is kept for the buyer for a few days.
@@ -1718,7 +1739,7 @@ marketplaceRoutes.patch("/me/orders/:id/status", authMiddleware, async (c) => {
     await c.env.DB.prepare(`update order_items set pickup_until = ?1 where id in (${lineIds.map((_, i) => `?${i + 2}`).join(",")})`)
       .bind(holdUntil(), ...lineIds).run();
   }
-  await logOrderEvent(c.env.DB, orderId, next, `seller:${sellerId}`, note);
+  await logOrderEvent(c.env.DB, orderId, deliveryFailed ? "delivery_failed" : next, `seller:${sellerId}`, note);
   await refreshOrderStatus(c.env.DB, orderId);
   for (const partId of restocked) runInBackground(c, notifyBackInStock(c.env, partId));
 
