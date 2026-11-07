@@ -82,6 +82,7 @@ check("accept_endpoint", st === 200 && b.data.agreement_version === "2026-11-06"
 check("old_store_item_done", b.data.items.find((i) => i.id === "agreement").done === true);
 
 // No store / not signed in.
+sql.exec("INSERT INTO users (id,name,email,password_hash,role) VALUES (77,'Loner','loner@x','x','seller')");
 const loner = await tok({ user_id: 77, role: "seller" });
 [st, b] = await call("POST", "/api/v1/marketplace/me/agreement", loner, {});
 check("accept_without_store_404", st === 404, [st, b]);

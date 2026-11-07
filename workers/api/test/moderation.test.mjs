@@ -23,6 +23,7 @@ sql.exec(`
   INSERT INTO categories (id,name,slug) VALUES (1,'Brakes','brakes');
   INSERT INTO parts (id,seller_id,category_id,slug,title,price,quantity,status) VALUES (1,1,1,'pads','Pads',38000,2,'pending');
 `);
+sql.exec("INSERT INTO users (id,name,email,password_hash,role) VALUES (9,'Admin','admin9@x','x','admin')");
 const admin = await signToken({ user_id: 9, role: "admin" }, "s");
 const seller = await signToken({ user_id: 1, role: "seller", seller_id: 1 }, "s");
 const note = (t, id) => sql.prepare(`SELECT status, moderation_note FROM ${t} WHERE id=?`).get(id);

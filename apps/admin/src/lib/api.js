@@ -1,7 +1,7 @@
 import { serverMessage } from "../i18n";
 import { createApiClient, ADMIN_TOKEN_KEY } from "@parthub/shared";
 
-const BASE_URL =
+export const BASE_URL =
   import.meta.env.VITE_ADMIN_API_BASE_URL ||
   "https://api.parthub.autos";
 

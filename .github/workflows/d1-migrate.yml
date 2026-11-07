@@ -105,6 +105,9 @@ jobs:
       - name: 0020 fulfilment methods (delivery, store pickup, courier)
         run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0020_fulfillment_methods.sql"
 
+      - name: 0021 session security (token version, sign-in attempts)
+        run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0021_session_security.sql"
+
       # Read query: fails while the daily read limit is exceeded, which
       # doesn't mean the migrations failed.
       - name: Verify

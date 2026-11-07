@@ -82,6 +82,7 @@ sql.exec(`
 const buyer = await tok({ user_id: 1, role: "buyer" });
 const s1 = await tok({ user_id: 2, role: "seller", seller_id: 1 });
 const s2 = await tok({ user_id: 3, role: "seller", seller_id: 2 });
+sql.exec("INSERT INTO users (id,name,email,password_hash,role) VALUES (99,'Admin','admin99@x','x','admin')");
 const admin = await tok({ user_id: 99, role: "admin" });
 const base = { make: "Renault", model: "Clio", year: 2015, part_name: "Alternator", category_id: 2, city: "Casablanca", phone: "06 12 34 56 78" };
 

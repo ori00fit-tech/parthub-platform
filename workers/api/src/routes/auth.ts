@@ -5,6 +5,9 @@ import { ok, fail, created } from "../utils/response";
 import { hashPassword, verifyPassword, needsRehash, signToken } from "../utils/auth";
 import { dbFirst, dbRun } from "../utils/db";
 import { LEGAL_VERSION } from "../utils/legal";
+import { LIMITS, blockedFor, clearAttempts, clientIp, pruneAttempts, recordAttempt } from "../utils/rate-limit";
+
+const TOO_MANY = "Too many attempts. Try again in a few minutes.";
 
 export const authRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -21,6 +24,15 @@ authRoutes.post("/register", async (c) => {
   if (!body.name || !body.email || !body.password) {
     return fail(c, "name, email and password are required");
   }
+
+  // Sign-up spam: at most LIMITS.registerIp attempts per network per hour.
+  const ipKey = `register:ip:${clientIp(c.req.raw.headers)}`;
+  const wait = await blockedFor(c.env.DB, [ipKey]);
+  if (wait) {
+    c.header("Retry-After", String(wait * 60));
+    return fail(c, TOO_MANY, 429);
+  }
+  await recordAttempt(c.env.DB, ipKey, LIMITS.registerIp);
   if (body.password.length < 8) {
     return fail(c, "password must be at least 8 characters");
   }
@@ -56,6 +68,21 @@ authRoutes.post("/login", async (c) => {
     return fail(c, "email and password are required");
   }
 
+  // Password guessing: failures count per account and per network.
+  const emailKey = `login:email:${String(body.email).trim().toLowerCase()}`;
+  const ipKey = `login:ip:${clientIp(c.req.raw.headers)}`;
+  const wait = await blockedFor(c.env.DB, [emailKey, ipKey]);
+  if (wait) {
+    c.header("Retry-After", String(wait * 60));
+    return fail(c, TOO_MANY, 429);
+  }
+  const failed = async () => {
+    await recordAttempt(c.env.DB, emailKey, LIMITS.loginEmail);
+    await recordAttempt(c.env.DB, ipKey, LIMITS.loginIp);
+    await pruneAttempts(c.env.DB);
+    return fail(c, "Invalid credentials", 401);
+  };
+
   const user = await dbFirst<{
     id: number;
     name: string;
@@ -64,10 +91,11 @@ authRoutes.post("/login", async (c) => {
     role: "buyer" | "seller" | "admin";
     password_hash: string;
     is_active: number;
+    token_version: number;
     seller_id: number | null;
   }>(
     c.env.DB,
-    `SELECT u.id, u.name, u.email, u.phone, u.role, u.password_hash, u.is_active,
+    `SELECT u.id, u.name, u.email, u.phone, u.role, u.password_hash, u.is_active, u.token_version,
             s.id as seller_id
      FROM users u
      LEFT JOIN sellers s ON s.user_id = u.id
@@ -75,11 +103,12 @@ authRoutes.post("/login", async (c) => {
     [body.email]
   );
 
-  if (!user) return fail(c, "Invalid credentials", 401);
-  if (!user.is_active) return fail(c, "Account suspended", 403);
+  if (!user) return failed();
 
   const valid = await verifyPassword(body.password, user.password_hash);
-  if (!valid) return fail(c, "Invalid credentials", 401);
+  if (!valid) return failed();
+  await clearAttempts(c.env.DB, emailKey);
+  if (!user.is_active) return fail(c, "Account suspended", 403);
 
   // Transparently upgrade legacy (unsalted SHA-256) hashes to PBKDF2.
   if (needsRehash(user.password_hash)) {
@@ -89,10 +118,11 @@ authRoutes.post("/login", async (c) => {
     ]);
   }
 
+  const tv = Number(user.token_version || 0);
   const payload =
     user.seller_id != null
-      ? { user_id: user.id, role: user.role, seller_id: user.seller_id }
-      : { user_id: user.id, role: user.role };
+      ? { user_id: user.id, role: user.role, seller_id: user.seller_id, tv }
+      : { user_id: user.id, role: user.role, tv };
 
   if (!c.env.JWT_SECRET) {
     return fail(c, "JWT_SECRET is not configured", 500);
@@ -124,6 +154,9 @@ authRoutes.get("/me", authMiddleware, async (c) => {
   return ok(c, user);
 });
 
-authRoutes.post("/logout", authMiddleware, (c) => {
+// Signing out ends every session of this account (all devices): the
+// tokens issued before carry the old token_version.
+authRoutes.post("/logout", authMiddleware, async (c) => {
+  await dbRun(c.env.DB, "UPDATE users SET token_version = token_version + 1, updated_at = datetime('now') WHERE id = ?", [c.get("user_id")]);
   return ok(c, { message: "Logged out" });
 });

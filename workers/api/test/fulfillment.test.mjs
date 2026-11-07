@@ -62,8 +62,10 @@ check("detail_own_lines_only", st === 200 && b.data.items.length === 1 && b.data
 check("detail_next", JSON.stringify(b.data.next_statuses) === '["confirmed","cancelled"]', b.data.next_statuses);
 [st] = await call("GET", "/api/v1/marketplace/me/orders/2", s2);
 check("other_seller_404", st === 404, st);
-[st] = await call("GET", "/api/v1/marketplace/me/orders/1", forged);
-check("forged_seller_403", st === 403, st);
+// A token claiming another store: the claim is ignored, the store comes
+// from the account (user 3 = store 2), so only store 2's lines are shown.
+[st, b] = await call("GET", "/api/v1/marketplace/me/orders/1", forged);
+check("forged_claim_ignored", st === 200 && b.data.items.length === 1 && b.data.items[0].title === "Discs", [st, b.data?.items]);
 
 [st, b] = await call("PATCH", "/api/v1/marketplace/me/orders/1/status", s1, { status: "shipped" });
 check("skip_step_refused", st === 409, [st, b]);

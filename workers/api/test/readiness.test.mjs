@@ -47,9 +47,10 @@ const payload = fresh ? await verifyToken(fresh, "s") : {};
 check("store_created_with_token", st === 201 && payload.seller_id === body.data.id && payload.role === "seller", [st, payload]);
 check("starts_pending", body.data.status === "pending", body.data.status);
 
-// Old token (no seller_id) gets a refreshed token from readiness; new token doesn't need one.
+// A token issued before the store existed keeps working: the store comes
+// from the account on each request, so no new token is needed.
 r = await statusOf(sellerNoStore);
-check("stale_token_refreshed", typeof r.access_token === "string" && (await verifyToken(r.access_token, "s")).seller_id === body.data.id, r.access_token);
+check("old_token_sees_store", r.seller?.id === body.data.id && r.access_token == null, r);
 r = await statusOf(fresh);
 check("fresh_token_no_refresh", r.access_token === null, r.access_token);
 check("setup_after_create", r.status === "setup" && r.items.find((i) => i.id === "store").done && !r.items.find((i) => i.id === "contact").done, r.items);
