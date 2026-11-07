@@ -57,10 +57,35 @@ Migrations `0023_commissions.sql` (ledger) and `0024_commission_rules.sql`
 2. Update the seller agreement (`packages/shared/src/legal/content.js`,
    bump `LEGAL_VERSION`), tell sellers, and schedule the rate at least 30
    days ahead (the statement shows it to every seller).
-3. **Invoices / payments — not built yet**: the ledger has `invoiced` and
-   `paid` statuses but no `invoices` / `payments` tables (amount due,
-   paid, balance, transfer date). Build these before the first non-zero
-   rate starts.
-4. Sellers decide when a line is "delivered" (cash on delivery). With a
-   non-zero rate, plan a buyer confirmation or carrier tracking so lines
-   cannot stay "shipped" forever.
+3. Invoice each month (Admin › **Invoices**) once it is over, then record
+   the bank transfers as they arrive.
+
+## Invoices and payments (migration 0025, `utils/invoices.ts`)
+- One invoice per seller and delivery month (partial unique index: a
+  second live invoice is refused, even under concurrent requests). It can
+  be issued only when the month is over and every delivered sale of the
+  month is final (window closed, no open claim), and only if something is
+  due. It covers the seller's `accrued` commissions of the month
+  (`commissions.invoice_id`, status `invoiced`); its amount is their sum,
+  fixed at issue. Due in 15 days. Number `PH-C-YYYY-MM-<seller>-<n>`.
+- Payments: amount, transfer date (not in the future, not before the
+  invoice), method (bank transfer, cash, cheque, other), bank reference.
+  Never more than the balance (checked again inside the transaction).
+  Fully paid → invoice `paid`, its commissions `paid`.
+- An invoice with no payment can be cancelled (reason required): its
+  commissions go back to `accrued` and the month can be invoiced again.
+  Invoiced or paid commissions cannot be waived.
+- Reconciliation: each invoice shows amount, paid, balance, last transfer
+  date, overdue, and a check that its amount equals the sum of its
+  commission lines. Totals: recorded not invoiced, invoiced, paid,
+  outstanding. Every issue / payment / cancellation is in
+  `commission_events`.
+- Sellers see their invoices, payments and balance on their Statement.
+
+## Delivery confirmation
+- The buyer can confirm receipt of a shipped delivery ("I received my
+  parts", `POST /commerce/orders/:reference/received`): the lines become
+  delivered at once (`order_items.received_by_buyer_at`) and the returns
+  window starts. The seller can still mark them delivered themselves.
+- Admin › Revenue warns about lines shipped more than 10 days ago and
+  still not delivered.

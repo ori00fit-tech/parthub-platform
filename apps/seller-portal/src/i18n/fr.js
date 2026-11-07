@@ -717,6 +717,12 @@ export default {
   // Returns and claims
   "The part is different from its description": "La pièce est différente de sa description",
   "The part was damaged on arrival": "La pièce est arrivée endommagée",
+  "The buyer confirmed receipt": "L'acheteur a confirmé la réception",
+  "PartHub invoices": "Factures PartHub",
+  "Outstanding: {amount}": "Reste dû : {amount}",
+  "Overdue": "En retard",
+  "To pay by {date}": "À payer avant le {date}",
+  "Amount {amount} · paid {paid} · balance {balance}": "Montant {amount} · payé {paid} · reste {balance}",
   "I did not receive the part, although it is marked delivered": "Je n'ai pas reçu la pièce, alors qu'elle est indiquée livrée",
   "Delivery failed": "Livraison échouée",
   "The buyer refused or could not be reached, and the part came back to you. The order is closed, the quantities go back to your stock, and the buyer pays nothing.": "L'acheteur a refusé ou était injoignable, et la pièce vous est revenue. La commande est close, les quantités reviennent dans votre stock et l'acheteur ne paie rien.",

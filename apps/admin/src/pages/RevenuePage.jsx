@@ -173,6 +173,26 @@ export default function RevenuePage() {
         <div className="h-40 animate-pulse rounded-3xl bg-white" />
       ) : (
         <>
+          {data.stuck_shipments?.lines ? (
+            <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="status">
+              {t("{n} line(s) shipped more than {days} days ago are still not delivered ({value}). Check with the sellers: the buyer can also confirm receipt.", {
+                n: data.stuck_shipments.lines,
+                days: data.stuck_shipments.days,
+                value: formatMoney(data.stuck_shipments.value),
+              })}{" "}
+              <Link to="/orders" className="font-semibold underline">{t("Orders")}</Link>
+            </p>
+          ) : null}
+          {data.ledger ? (
+            <p className="text-sm text-gray-600">
+              {t("Commission ledger: {to_invoice} to invoice · {outstanding} outstanding · {paid} paid.", {
+                to_invoice: formatMoney(data.ledger.to_invoice),
+                outstanding: formatMoney(data.ledger.outstanding),
+                paid: formatMoney(data.ledger.paid),
+              })}{" "}
+              <Link to="/invoices" className="font-semibold text-blue-700 hover:underline">{t("Invoices")}</Link>
+            </p>
+          ) : null}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Kpi label={t("Delivered sales (GMV)")} value={formatMoney(cur?.gmv || 0)} hint={t("{n} orders delivered", { n: cur?.orders_delivered || 0 })} />
             <Kpi

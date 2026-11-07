@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
-import { apiGet } from "../lib/api";
+import { apiGet, apiPost } from "../lib/api";
 import { formatPrice } from "../lib/formatters";
 import { mediaUrl } from "../lib/media";
 import { statusLabel, useT } from "../i18n";
@@ -82,6 +82,52 @@ function PickupCard({ pickup, lines, t }) {
 
 // Real order details and status for the signed-in buyer
 // (GET /api/v1/commerce/orders/:reference).
+// "I received my parts": a shipped delivery becomes delivered as soon as
+// the buyer says so (API: POST /commerce/orders/:reference/received). One
+// button per seller whose parts are on the way.
+function ReceivedCard({ order, onDone }) {
+  const t = useT();
+  const [busy, setBusy] = useState(0);
+  const [error, setError] = useState("");
+  const items = Array.isArray(order.items) ? order.items : [];
+  const onTheWay = [...new Map(items.filter((i) => i.status === "shipped" && i.fulfillment === "delivery").map((i) => [i.seller_id, i])).values()];
+  if (!onTheWay.length) return null;
+  const names = new Map((order.shipments || []).map((s) => [s.seller_id, s.seller_name]));
+
+  async function confirm(sellerId) {
+    if (!window.confirm(t("Confirm you received these parts? The 7-day returns window starts now."))) return;
+    setBusy(sellerId);
+    setError("");
+    try {
+      await apiPost(`/api/v1/commerce/orders/${encodeURIComponent(order.reference)}/received`, { seller_id: sellerId }, { auth: true });
+      onDone();
+    } catch (err) {
+      setError(err?.message || t("Something went wrong. Please try again."));
+    } finally {
+      setBusy(0);
+    }
+  }
+
+  return (
+    <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
+      <h2 className="text-lg font-bold text-ink">{t("Did you receive your parts?")}</h2>
+      <p className="mt-1 text-sm text-muted">{t("Confirm when the parcel is in your hands. If something is wrong with a part, you can still report it for 7 days.")}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {onTheWay.map((i) => (
+          <button key={i.seller_id} type="button" disabled={Boolean(busy)} onClick={() => confirm(i.seller_id)} className="btn-cta h-10 rounded-xl px-4 text-sm">
+            {busy === i.seller_id
+              ? t("Saving…")
+              : onTheWay.length > 1
+                ? t("I received the parts from {seller}", { seller: names.get(i.seller_id) || i.seller_name || "" })
+                : t("I received my parts")}
+          </button>
+        ))}
+      </div>
+      {error ? <p className="mt-2 text-sm text-red-700" role="alert">{error}</p> : null}
+    </div>
+  );
+}
+
 export default function OrderTrackingPage() {
   const t = useT();
   const { orderNumber } = useParams();
@@ -287,6 +333,7 @@ export default function OrderTrackingPage() {
               </div>
             </div>
           ) : null}
+          <ReceivedCard order={order} onDone={load} />
           {tracked.length ? (
             <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
               <h2 className="text-lg font-bold text-ink">{t("Shipping")}</h2>

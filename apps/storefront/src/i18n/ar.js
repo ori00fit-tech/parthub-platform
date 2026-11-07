@@ -926,6 +926,11 @@ export default {
   // Returns and claims
   "The part is different from its description": "القطعة مختلفة عن الوصف",
   "The part was damaged on arrival": "القطعة وصلت تالفة",
+  "Confirm you received these parts? The 7-day returns window starts now.": "هل تؤكد أنك استلمت هذه القطع؟ تبدأ نافذة الإرجاع (7 أيام) الآن.",
+  "Did you receive your parts?": "هل استلمت قطعك؟",
+  "Confirm when the parcel is in your hands. If something is wrong with a part, you can still report it for 7 days.": "أكّد عندما يصلك الطرد. إذا كانت هناك مشكلة في قطعة، يمكنك الإبلاغ عنها خلال 7 أيام.",
+  "I received the parts from {seller}": "استلمت القطع من {seller}",
+  "I received my parts": "استلمت قطعي",
   "Delivery failed": "فشل التسليم",
   "I did not receive the part, although it is marked delivered": "لم أستلم القطعة رغم أنها مسجّلة كمسلَّمة",
   "It does not fit, although the listing said it would": "غير مناسبة رغم أن العرض قال إنها متوافقة",

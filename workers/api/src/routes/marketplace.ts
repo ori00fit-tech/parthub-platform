@@ -16,6 +16,7 @@ import { MAX_IMPORT_ROWS, applyImport, planImport } from "../utils/part-import";
 import { MAX_CODE_ATTEMPTS, holdUntil, isPickup, nextStatuses, sameCode } from "../utils/pickup";
 import { cleanCarrier, cleanTracking, readFeeMad } from "../utils/shipping";
 import { RATE_NOTICE_DAYS, accrueCommissions, commissionRateBps, currentPeriod, readPeriod, upcomingRates } from "../utils/commissions";
+import { invoicePayments, ledgerTotals, listInvoices } from "../utils/invoices";
 import { RETURN_WINDOW_DAYS } from "../utils/issues";
 
 export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
@@ -1017,6 +1018,24 @@ marketplaceRoutes.get("/me/statement", authMiddleware, async (c) => {
         waived: lines.filter((l) => l.status === "waived").length,
       },
       lines,
+    })
+  );
+});
+
+// GET /api/v1/marketplace/me/invoices — the seller's commission invoices,
+// payments recorded and balance (utils/invoices.ts).
+marketplaceRoutes.get("/me/invoices", authMiddleware, async (c) => {
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const invoices = (await listInvoices(c.env.DB, { sellerId })).filter((i) => i.status !== "cancelled");
+  const payments = await invoicePayments(c.env.DB, invoices.map((i) => i.id));
+  return c.json(
+    success({
+      invoices: invoices.map(({ issued_by: _by, note: _note, lines_amount: _la, reconciled: _r, ...i }) => ({
+        ...i,
+        payments: payments.filter((p) => p.invoice_id === i.id).map(({ id, amount, paid_on, method, reference }) => ({ id, amount, paid_on, method, reference })),
+      })),
+      totals: await ledgerTotals(c.env.DB, sellerId),
     })
   );
 });
