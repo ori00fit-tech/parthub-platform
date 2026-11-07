@@ -10,7 +10,7 @@
 //
 // Directional icons (arrows, chevrons) mirror automatically in RTL.
 import {
-  Archive, ArrowLeft, ArrowRight, BadgeCheck, Battery, Bell, Bookmark, Box, Camera, Car, CarFront,
+  Archive, ArrowLeft, ArrowRight, Banknote, Receipt, BadgeCheck, Battery, Bell, Bookmark, Box, Camera, Car, CarFront,
   ChartColumn, Check, ChevronLeft, ChevronRight, CircleAlert, CircleCheck, CircleX, Clock, Cog, Columns2,
   Compass, Disc, Droplets, Fan, Filter, FolderTree, Hash, Hourglass, ImagePlus, Inbox, LayoutDashboard,
   LayoutGrid, Lightbulb, MapPin, Menu, MessageCircle, MessageSquare, MessageSquarePlus, Package,
@@ -110,6 +110,8 @@ export const ICONS = {
   requests: Inbox,
   reviews: Star,
   insights: ChartColumn,
+  revenue: Banknote,
+  statement: Receipt,
   store: Store,
   sellers: Users,
   parts: Wrench,

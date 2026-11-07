@@ -508,3 +508,28 @@ CREATE TABLE IF NOT EXISTS order_shipments (
   UNIQUE (order_id, seller_id)
 );
 CREATE INDEX IF NOT EXISTS idx_order_shipments_seller ON order_shipments(seller_id);
+
+-- ── Commission ledger (see migrations/0023) ───────────────────
+CREATE TABLE IF NOT EXISTS platform_settings (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,
+  updated_by INTEGER REFERENCES users(id),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+INSERT OR IGNORE INTO platform_settings (key, value) VALUES ('commission_rate_bps', '0');
+
+CREATE TABLE IF NOT EXISTS commissions (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_item_id INTEGER NOT NULL UNIQUE REFERENCES order_items(id) ON DELETE CASCADE,
+  order_id      INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  seller_id     INTEGER NOT NULL REFERENCES sellers(id),
+  base          INTEGER NOT NULL,                 -- line subtotal, centimes (delivery fee excluded)
+  rate_bps      INTEGER NOT NULL,
+  amount        INTEGER NOT NULL,                 -- commission, centimes
+  status        TEXT NOT NULL DEFAULT 'accrued' CHECK (status IN ('accrued','waived','invoiced','paid')),
+  period        TEXT NOT NULL,                    -- YYYY-MM of the delivery
+  delivered_at  TEXT NOT NULL,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_commissions_seller_period ON commissions(seller_id, period);
+CREATE INDEX IF NOT EXISTS idx_commissions_period ON commissions(period);

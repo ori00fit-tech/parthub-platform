@@ -111,6 +111,9 @@ jobs:
       - name: 0022 delivery fees per seller, shipments with tracking
         run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0022_shipping_fees.sql"
 
+      - name: 0023 commission ledger and platform settings
+        run: ../../.github/scripts/d1-exec-retry.sh --file="$MIGRATIONS/0023_commissions.sql"
+
       # Read query: fails while the daily read limit is exceeded, which
       # doesn't mean the migrations failed.
       - name: Verify

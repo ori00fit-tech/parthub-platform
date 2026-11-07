@@ -16,6 +16,7 @@ import PartNumbersPage from "./pages/PartNumbersPage";
 import ReviewsPage from "./pages/ReviewsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import RevenuePage from "./pages/RevenuePage";
 
 function PrivateRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -44,6 +45,7 @@ function AppRoutes() {
         <Route path="/issues" element={<IssuesPage />} />
         <Route path="/part-numbers" element={<PartNumbersPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/revenue" element={<RevenuePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

@@ -15,6 +15,8 @@ import { runInBackground } from "../utils/whatsapp";
 import { MAX_IMPORT_ROWS, applyImport, planImport } from "../utils/part-import";
 import { MAX_CODE_ATTEMPTS, holdUntil, isPickup, nextStatuses, sameCode } from "../utils/pickup";
 import { cleanCarrier, cleanTracking, readFeeMad } from "../utils/shipping";
+import { accrueCommissions, commissionRateBps, currentPeriod, readPeriod } from "../utils/commissions";
+import { RETURN_WINDOW_DAYS } from "../utils/issues";
 
 export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -972,6 +974,48 @@ marketplaceRoutes.put("/me/parts/:id/fulfillment", authMiddleware, async (c) => 
     .bind(deliverable, partId, sellerId).run();
   if (!res.meta.changes) return c.json(failure("PART_NOT_FOUND", "Part not found for this seller"), 404);
   return c.json(success({ id: partId, delivery_available: deliverable }));
+});
+
+// GET /api/v1/marketplace/me/statement?month=YYYY-MM — the seller's sales
+// delivered that month and the commission on each (utils/commissions.ts):
+// "pending" while the returns window is open, then accrued or waived.
+marketplaceRoutes.get("/me/statement", authMiddleware, async (c) => {
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  await accrueCommissions(c.env.DB);
+  const month = readPeriod(c.req.query("month")) || currentPeriod();
+  const res = await c.env.DB.prepare(
+    `select oi.id, o.reference, oi.title, oi.quantity, oi.subtotal, oi.delivered_at,
+            cm.base, cm.rate_bps, cm.amount, cm.status as commission_status
+     from order_items oi
+     join orders o on o.id = oi.order_id
+     left join commissions cm on cm.order_item_id = oi.id
+     where oi.seller_id = ?1 and oi.status = 'delivered' and substr(oi.delivered_at, 1, 7) = ?2
+     order by oi.delivered_at desc`
+  ).bind(sellerId, month).all<Record<string, unknown> & { subtotal: number; amount: number | null; commission_status: string | null; delivered_at: string }>();
+  const lines = (res.results || []).map((l) => {
+    const until = new Date(Date.parse(`${String(l.delivered_at).replace(" ", "T")}Z`) + RETURN_WINDOW_DAYS * 86_400_000);
+    return { ...l, status: l.commission_status || "pending", returns_until: until.toISOString().slice(0, 19).replace("T", " ") };
+  });
+  const months = await c.env.DB.prepare(
+    `select distinct substr(delivered_at, 1, 7) as period from order_items
+     where seller_id = ?1 and status = 'delivered' and delivered_at is not null order by period desc limit 24`
+  ).bind(sellerId).all<{ period: string }>();
+  const sum = (f: (l: (typeof lines)[number]) => number) => lines.reduce((a, l) => a + f(l), 0);
+  return c.json(
+    success({
+      month,
+      rate_bps: await commissionRateBps(c.env.DB),
+      months: (months.results || []).map((m) => m.period),
+      totals: {
+        sales: sum((l) => Number(l.subtotal || 0)),
+        commission: sum((l) => (l.status === "accrued" || l.status === "invoiced" || l.status === "paid" ? Number(l.amount || 0) : 0)),
+        pending_sales: sum((l) => (l.status === "pending" ? Number(l.subtotal || 0) : 0)),
+        waived: lines.filter((l) => l.status === "waived").length,
+      },
+      lines,
+    })
+  );
 });
 
 marketplaceRoutes.post("/me/parts", authMiddleware, async (c) => {

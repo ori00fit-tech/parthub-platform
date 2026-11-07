@@ -19,6 +19,7 @@ import AgreementPage from "./pages/AgreementPage";
 import IssuesPage from "./pages/IssuesPage";
 import LegalPage from "./pages/LegalPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import StatementPage from "./pages/StatementPage";
 
 function ProtectedShell({ children }) {
   return (
@@ -76,6 +77,15 @@ export default function App() {
         element={
           <ProtectedShell>
             <PartWizardPage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
+        path="/statement"
+        element={
+          <ProtectedShell>
+            <StatementPage />
           </ProtectedShell>
         }
       />

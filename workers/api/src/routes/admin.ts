@@ -12,6 +12,7 @@ import { type LineStatus, logOrderEvent, refreshOrderStatus, setLineStatus } fro
 import { readNumbersInput } from "../utils/part-numbers";
 import { ensureBrand, ensureVehicle, engineInfo, readVehicleEntry } from "../utils/vehicle-catalog";
 import { type IssueRow, cleanNote, loadIssue, nowText, publicIssue, updateIssue } from "../utils/issues";
+import { MAX_RATE_BPS, accrueCommissions, commissionRateBps, currentPeriod, lastPeriods, readPeriod, setCommissionRateBps } from "../utils/commissions";
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -700,4 +701,79 @@ adminRoutes.post("/categories", async (c) => {
     [body.name, body.slug, body.parent_id ?? null, body.icon ?? null]
   );
   return ok(c, { id: result.lastRowId });
+});
+
+// ── Revenue (utils/commissions.ts) ─────────────────────────────────────
+// GET /api/v1/admin/revenue?month=YYYY-MM — sales delivered per month
+// (GMV), orders, cancellations, returns resolved for the buyer, and the
+// commission ledger, for the 6 months up to `month`; per-seller figures for
+// `month`. Records newly eligible commissions first.
+adminRoutes.get("/revenue", async (c) => {
+  await accrueCommissions(c.env.DB);
+  const month = readPeriod(c.req.query("month")) || currentPeriod();
+  const periods = lastPeriods(month, 6);
+  const first = periods[0]!;
+  const delivered = await dbAll<{ period: string; gmv: number; orders: number; lines: number }>(
+    c.env.DB,
+    `SELECT substr(delivered_at, 1, 7) AS period, COALESCE(SUM(subtotal), 0) AS gmv,
+            COUNT(DISTINCT order_id) AS orders, COUNT(*) AS lines
+     FROM order_items WHERE status = 'delivered' AND delivered_at IS NOT NULL
+       AND substr(delivered_at, 1, 7) BETWEEN ? AND ? GROUP BY period`,
+    [first, month]
+  );
+  const cancelled = await dbAll<{ period: string; lines: number; value: number }>(
+    c.env.DB,
+    `SELECT substr(COALESCE(status_updated_at, created_at), 1, 7) AS period, COUNT(*) AS lines, COALESCE(SUM(subtotal), 0) AS value
+     FROM order_items WHERE status = 'cancelled' AND substr(COALESCE(status_updated_at, created_at), 1, 7) BETWEEN ? AND ? GROUP BY period`,
+    [first, month]
+  );
+  const returns = await dbAll<{ period: string; n: number }>(
+    c.env.DB,
+    `SELECT substr(closed_at, 1, 7) AS period, COUNT(*) AS n FROM order_issues
+     WHERE status = 'closed' AND outcome = 'buyer' AND closed_at IS NOT NULL AND substr(closed_at, 1, 7) BETWEEN ? AND ? GROUP BY period`,
+    [first, month]
+  );
+  const ledger = await dbAll<{ period: string; accrued: number; recorded_base: number; waived: number }>(
+    c.env.DB,
+    `SELECT period, COALESCE(SUM(CASE WHEN status != 'waived' THEN amount ELSE 0 END), 0) AS accrued,
+            COALESCE(SUM(CASE WHEN status != 'waived' THEN base ELSE 0 END), 0) AS recorded_base,
+            SUM(CASE WHEN status = 'waived' THEN 1 ELSE 0 END) AS waived
+     FROM commissions WHERE period BETWEEN ? AND ? GROUP BY period`,
+    [first, month]
+  );
+  const by = <T extends { period: string }>(rows: T[], p: string) => rows.find((r) => r.period === p);
+  const months = periods.map((p) => ({
+    period: p,
+    gmv: Number(by(delivered, p)?.gmv || 0),
+    orders_delivered: Number(by(delivered, p)?.orders || 0),
+    lines_delivered: Number(by(delivered, p)?.lines || 0),
+    lines_cancelled: Number(by(cancelled, p)?.lines || 0),
+    cancelled_value: Number(by(cancelled, p)?.value || 0),
+    returns: Number(by(returns, p)?.n || 0),
+    commission: Number(by(ledger, p)?.accrued || 0),
+    commission_base: Number(by(ledger, p)?.recorded_base || 0), // sales already past the returns window
+    waived: Number(by(ledger, p)?.waived || 0),
+  }));
+  const sellers = await dbAll(
+    c.env.DB,
+    `SELECT s.id AS seller_id, s.name, s.slug,
+            COALESCE(SUM(oi.subtotal), 0) AS gmv, COUNT(DISTINCT oi.order_id) AS orders,
+            COALESCE((SELECT SUM(cm.amount) FROM commissions cm WHERE cm.seller_id = s.id AND cm.period = ? AND cm.status != 'waived'), 0) AS commission
+     FROM order_items oi JOIN sellers s ON s.id = oi.seller_id
+     WHERE oi.status = 'delivered' AND substr(oi.delivered_at, 1, 7) = ?
+     GROUP BY s.id ORDER BY gmv DESC LIMIT 50`,
+    [month, month]
+  );
+  return ok(c, { month, rate_bps: await commissionRateBps(c.env.DB), months, sellers });
+});
+
+// PUT /api/v1/admin/settings/commission { rate_percent } — applies to sales
+// recorded from now on (never to past ones). 0 = free.
+adminRoutes.put("/settings/commission", async (c) => {
+  const body = await c.req.json<{ rate_percent?: unknown }>().catch(() => ({}) as { rate_percent?: unknown });
+  const pct = Number(String(body.rate_percent ?? "").replace(",", "."));
+  const bps = Math.round(pct * 100);
+  if (!Number.isFinite(pct) || bps < 0 || bps > MAX_RATE_BPS) return fail(c, "The commission must be between 0% and 20%");
+  await setCommissionRateBps(c.env.DB, bps, Number(c.get("user_id")));
+  return ok(c, { rate_bps: bps });
 });
