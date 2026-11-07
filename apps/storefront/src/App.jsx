@@ -19,6 +19,7 @@ import MyRequestsPage from "./pages/MyRequestsPage";
 import RequestDetailsPage from "./pages/RequestDetailsPage";
 import LegalPage from "./pages/LegalPage";
 import SellPage from "./pages/SellPage";
+import LandingPage from "./pages/LandingPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 export default function App() {
@@ -29,6 +30,10 @@ export default function App() {
         <Route path="/parts" element={<PartsPage />} />
         <Route path="/parts/:slug" element={<PartDetailsPage />} />
         <Route path="/sell" element={<SellPage />} />
+        <Route path="/pieces/:category" element={<LandingPage />} />
+        <Route path="/voiture/:make" element={<LandingPage />} />
+        <Route path="/voiture/:make/:model" element={<LandingPage />} />
+        <Route path="/voiture/:make/:model/:category" element={<LandingPage />} />
         <Route path="/legal" element={<LegalPage />} />
         <Route path="/legal/:doc" element={<LegalPage />} />
 

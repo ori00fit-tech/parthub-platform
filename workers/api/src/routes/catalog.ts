@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { Env, HonoVariables } from "../types";
 import { partRating, partReviews, sellerRating } from "../utils/reviews";
 import { listingNumbers, otherOffers } from "../utils/part-numbers";
+import { landingData, landingIndex, resolveLanding } from "../utils/landing";
 
 export const catalogRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -217,7 +218,11 @@ catalogRoutes.get("/parts/:slug", async (c) => {
     `).bind(part.id).all(),
 
     c.env.DB.prepare(`
-      select pc.*, (select g.name from vehicle_generations g where g.id = pc.generation_id) as generation
+      select pc.*, (select g.name from vehicle_generations g where g.id = pc.generation_id) as generation,
+        -- catalog slugs, for links to the /voiture/:make/:model pages
+        (select mk.slug from vehicle_makes mk where lower(mk.name) = lower(pc.make)) as make_slug,
+        (select vm.slug from vehicle_models vm join vehicle_makes mk on mk.id = vm.make_id
+          where lower(mk.name) = lower(pc.make) and lower(vm.name) = lower(pc.model) limit 1) as model_slug
       from part_compatibility pc where pc.part_id = ?1
     `).bind(part.id).all(),
 
@@ -287,8 +292,25 @@ catalogRoutes.get("/sitemap", async (c) => {
        from sellers s where s.status = 'active' order by s.updated_at desc limit 5000`
     ).all<{ slug: string; updated_at: string }>(),
   ]);
+  const landings = await landingIndex(c.env.DB);
   c.header("Cache-Control", "public, max-age=3600");
-  return c.json(ok({ parts: parts.results || [], sellers: sellers.results || [] }));
+  return c.json(ok({ parts: parts.results || [], sellers: sellers.results || [], landings }));
+});
+
+// GET /api/v1/catalog/landing?category=filters&make=dacia&model=logan — a
+// landing page's names, part count, first parts and links to narrower
+// pages (see utils/landing.ts). 404 when a slug is unknown.
+catalogRoutes.get("/landing", async (c) => {
+  const scope = await resolveLanding(c.env.DB, {
+    category: c.req.query("category")?.trim() || "",
+    make: c.req.query("make")?.trim() || "",
+    model: c.req.query("model")?.trim() || "",
+  });
+  if (!scope) {
+    return c.json({ ok: false, data: null, meta: null, error: { code: "NOT_FOUND", message: "Page not found" } }, 404);
+  }
+  c.header("Cache-Control", "public, max-age=300");
+  return c.json(ok(await landingData(c.env.DB, scope)));
 });
 
 catalogRoutes.get("/categories", async (c) => {
