@@ -96,6 +96,7 @@ export default function SellerLayout({ children }) {
             <NavLink to="/requests" className={navClass} data-tour="requests">{t("Requests")}</NavLink>
             <NavLink to="/reviews" className={navClass}>{t("Reviews")}</NavLink>
             <NavLink to="/insights" className={navClass}>{t("Insights")}</NavLink>
+            <NavLink to="/statement" className={navClass}>{t("Statement")}</NavLink>
             <NavLink to="/store-settings" className={navClass}>{t("Store")}</NavLink>
           </nav>
         </div>

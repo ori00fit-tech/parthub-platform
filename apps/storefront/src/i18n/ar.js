@@ -1095,4 +1095,12 @@ export default {
   "Delivery across Morocco, cash on delivery": "توصيل في كل المغرب، الدفع عند الاستلام",
   "Pickup in {city}: inspect before you pay": "استلام في {city}: عاين قبل أن تدفع",
   "Pickup at the store: inspect before you pay": "استلام من المحل: عاين قبل أن تدفع",
+  // Delivery fees per seller, tracking
+  "{local} in {city}, {national} elsewhere": "{local} في {city}، و{national} لباقي المدن",
+  "Delivery": "التوصيل",
+  "Tracking number:": "رقم التتبع:",
+  "To {seller}": "لـ {seller}",
+  "Amana (Barid Al-Maghrib)": "أمانة (بريد المغرب)",
+  "Seller's own driver": "سائق البائع",
+  "Other carrier": "شركة نقل أخرى",
 };

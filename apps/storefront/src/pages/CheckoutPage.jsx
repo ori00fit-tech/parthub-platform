@@ -51,10 +51,12 @@ export default function CheckoutPage() {
   const [groups, setGroups] = useState(null);
   const [choice, setChoice] = useState({}); // seller_id → method
   const [collector, setCollector] = useState({}); // seller_id → { name, phone }
+  // The city decides each seller's delivery fee (their city / elsewhere).
+  const [feeCity, setFeeCity] = useState("");
   useEffect(() => {
     if (!partIds) return undefined;
     let active = true;
-    apiGet(`/api/v1/commerce/fulfillment-options?parts=${partIds}`)
+    apiGet(`/api/v1/commerce/fulfillment-options?parts=${partIds}&city=${encodeURIComponent(feeCity)}`)
       .then((res) => {
         if (!active) return;
         const list = Array.isArray(res?.data?.groups) ? res.data.groups : [];
@@ -69,12 +71,16 @@ export default function CheckoutPage() {
     return () => {
       active = false;
     };
-  }, [partIds]);
+  }, [partIds, feeCity]);
   // Until the options load, assume delivery (the address is asked).
   const needsAddress = !groups || groups.some((g) => choice[g.seller_id] === "delivery");
   const hasPickup = Boolean(groups?.some((g) => ["pickup", "courier"].includes(choice[g.seller_id])));
   const blocked = groups?.find((g) => !g.methods.length) || null;
-  const fee = needsAddress ? shippingFee : 0;
+  // Sum of the delivering sellers' fees (flat fee until the options load).
+  const fee = groups
+    ? groups.reduce((sum, g) => sum + (choice[g.seller_id] === "delivery" ? Number(g.delivery_fee || 0) : 0), 0)
+    : shippingFee;
+  const deliveringGroups = groups ? groups.filter((g) => choice[g.seller_id] === "delivery") : [];
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -94,6 +100,11 @@ export default function CheckoutPage() {
   });
 
   const vehicleLabel = useMemo(() => getVehicleLabel(selectedVehicle), [selectedVehicle]);
+
+  useEffect(() => {
+    const id = setTimeout(() => setFeeCity(form.city.trim()), 500);
+    return () => clearTimeout(id);
+  }, [form.city]);
 
   // Signed-out buyers check out in one step: create an account (or sign in)
   // with the same form, then the order is placed.
@@ -435,6 +446,13 @@ export default function CheckoutPage() {
                             <span className="min-w-0">
                               <span className="block text-sm font-semibold text-ink">
                                 {m === "delivery" ? t("Delivery to my address") : m === "pickup" ? t("I pick it up at the store") : t("I send someone to collect it")}
+                                <span className="ms-2 font-mono text-xs font-semibold text-muted">
+                                  {m === "delivery"
+                                    ? Number(g.delivery_fee) === 0
+                                      ? t("Free")
+                                      : formatPrice(g.delivery_fee)
+                                    : t("Free")}
+                                </span>
                               </span>
                               <span className="mt-0.5 block text-xs leading-5 text-muted">
                                 {m === "delivery"
@@ -443,6 +461,15 @@ export default function CheckoutPage() {
                                     ? t("The part is kept for you 3 days. Inspect it at the store and pay only if it's right.")
                                     : t("A driver or a relative collects it with your pickup code.")}
                               </span>
+                              {m === "delivery" && g.city && Number(g.delivery_fee_local) !== Number(g.delivery_fee_national) ? (
+                                <span className="mt-1 block text-xs text-ink-2">
+                                  {t("{local} in {city}, {national} elsewhere", {
+                                    local: formatPrice(g.delivery_fee_local),
+                                    national: formatPrice(g.delivery_fee_national),
+                                    city: String(g.city).split(",")[0],
+                                  })}
+                                </span>
+                              ) : null}
                               {m !== "delivery" && g.pickup ? (
                                 <span className="mt-1 block text-xs text-ink-2">
                                   {g.pickup.address}
@@ -661,9 +688,19 @@ export default function CheckoutPage() {
             </div>
 
             <div className="flex items-center justify-between text-sm text-muted">
-              <span>{needsAddress ? t("Delivery (flat rate)") : t("Pickup at the store")}</span>
+              <span>{needsAddress ? t("Delivery") : t("Pickup at the store")}</span>
               <span className="font-mono">{fee == null ? "—" : fee === 0 ? t("Free") : formatPrice(fee)}</span>
             </div>
+            {deliveringGroups.length > 1 ? (
+              <ul className="-mt-1 space-y-1 text-xs text-muted">
+                {deliveringGroups.map((g) => (
+                  <li key={g.seller_id} className="flex justify-between gap-3">
+                    <span className="truncate">{g.seller_name}</span>
+                    <span className="font-mono">{formatPrice(g.delivery_fee)}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
 
             <div className="flex items-center justify-between border-t border-line pt-3">
               <span className="text-base font-semibold text-ink">{t("Total")}</span>

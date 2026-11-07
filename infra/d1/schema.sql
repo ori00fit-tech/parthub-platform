@@ -42,6 +42,8 @@ CREATE TABLE IF NOT EXISTS sellers (
   pickup_enabled INTEGER NOT NULL DEFAULT 0,
   pickup_address TEXT,
   pickup_hours TEXT,
+  delivery_fee_local INTEGER,     -- centimes, NULL = platform fee (see migrations/0022)
+  delivery_fee_national INTEGER,
   status      TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','active','suspended','rejected')),
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
@@ -491,3 +493,43 @@ CREATE TABLE IF NOT EXISTS auth_attempts (
   window_start TEXT NOT NULL,
   blocked_until TEXT
 );
+
+-- ── Shipments: one per seller and order (see migrations/0022) ──
+CREATE TABLE IF NOT EXISTS order_shipments (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id        INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  seller_id       INTEGER NOT NULL REFERENCES sellers(id),
+  method          TEXT NOT NULL DEFAULT 'delivery',
+  fee             INTEGER NOT NULL DEFAULT 0,
+  carrier         TEXT,
+  tracking_number TEXT,
+  shipped_at      TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (order_id, seller_id)
+);
+CREATE INDEX IF NOT EXISTS idx_order_shipments_seller ON order_shipments(seller_id);
+
+-- ── Commission ledger (see migrations/0023) ───────────────────
+CREATE TABLE IF NOT EXISTS platform_settings (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,
+  updated_by INTEGER REFERENCES users(id),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+INSERT OR IGNORE INTO platform_settings (key, value) VALUES ('commission_rate_bps', '0');
+
+CREATE TABLE IF NOT EXISTS commissions (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_item_id INTEGER NOT NULL UNIQUE REFERENCES order_items(id) ON DELETE CASCADE,
+  order_id      INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  seller_id     INTEGER NOT NULL REFERENCES sellers(id),
+  base          INTEGER NOT NULL,                 -- line subtotal, centimes (delivery fee excluded)
+  rate_bps      INTEGER NOT NULL,
+  amount        INTEGER NOT NULL,                 -- commission, centimes
+  status        TEXT NOT NULL DEFAULT 'accrued' CHECK (status IN ('accrued','waived','invoiced','paid')),
+  period        TEXT NOT NULL,                    -- YYYY-MM of the delivery
+  delivered_at  TEXT NOT NULL,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_commissions_seller_period ON commissions(seller_id, period);
+CREATE INDEX IF NOT EXISTS idx_commissions_period ON commissions(period);

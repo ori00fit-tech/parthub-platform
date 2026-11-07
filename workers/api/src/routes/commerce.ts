@@ -5,6 +5,7 @@ import { ok, created, fail, notFound } from "../utils/response";
 import { dbFirst, dbAll, dbRun } from "../utils/db";
 import { logOrderEvent } from "../utils/fulfillment";
 import { type Fulfillment, FULFILLMENTS, allowedMethods, generatePickupCode, isPickup, loadSellerFulfillment } from "../utils/pickup";
+import { deliveryFee } from "../utils/shipping";
 import { ISSUE_REASONS, type IssueRow, canEscalate, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, reportWindow, updateIssue } from "../utils/issues";
 
 const MAX_REVIEW_LENGTH = 1000;
@@ -38,9 +39,10 @@ commerceRoutes.get("/shipping", (c) =>
   ok(c, { flat_fee: shippingFee(c.env), currency: "MAD" })
 );
 
-// GET /api/v1/commerce/fulfillment-options?parts=12,15 — for checkout: the
-// cart's parts grouped by seller, with the ways the buyer can get them
-// (delivery, pickup at the store, courier sent by the buyer).
+// GET /api/v1/commerce/fulfillment-options?parts=12,15&city=Rabat — for
+// checkout: the cart's parts grouped by seller, the ways the buyer can get
+// them (delivery, pickup at the store, courier sent by the buyer) and each
+// seller's delivery fee to that city (utils/shipping.ts).
 commerceRoutes.get("/fulfillment-options", async (c) => {
   const ids = [...new Set(String(c.req.query("parts") || "").split(",").map(Number).filter((n) => Number.isInteger(n) && n > 0))].slice(0, MAX_ORDER_LINES);
   if (!ids.length) return ok(c, []);
@@ -50,9 +52,14 @@ commerceRoutes.get("/fulfillment-options", async (c) => {
     ids
   );
   const sellers = await loadSellerFulfillment(c.env.DB, parts.map((p) => p.seller_id));
+  const city = String(c.req.query("city") || "").slice(0, 80);
+  const flat = shippingFee(c.env);
   const groups = [...sellers.values()].map((s) => {
     const mine = parts.filter((p) => p.seller_id === s.id);
     return {
+      delivery_fee: deliveryFee(s, city, flat),
+      delivery_fee_local: s.delivery_fee_local ?? flat,
+      delivery_fee_national: s.delivery_fee_national ?? flat,
       seller_id: s.id,
       seller_name: s.name,
       city: s.location,
@@ -159,7 +166,13 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
     }
   }
 
-  const shipping_fee = delivers ? shippingFee(c.env) : 0;
+  // Each delivering seller charges their own fee (their city / elsewhere).
+  const flat = shippingFee(c.env);
+  const fees = new Map<number, number>();
+  for (const [sellerId, p] of plan) {
+    fees.set(sellerId, p.method === "delivery" ? deliveryFee(sellers.get(sellerId)!, typeof addr.city === "string" ? addr.city : "", flat) : 0);
+  }
+  const shipping_fee = [...fees.values()].reduce((a, b) => a + b, 0);
   const total = subtotal + shipping_fee;
   const ref = generateOrderReference();
   const orderIdSql = "(SELECT id FROM orders WHERE reference = ?)";
@@ -203,6 +216,12 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
         plan.get(item.seller_id)!.method, plan.get(item.seller_id)!.code,
         plan.get(item.seller_id)!.collector_name, plan.get(item.seller_id)!.collector_phone
       )
+    ),
+    // One shipment per seller: method and the fee that seller collects.
+    ...[...plan].map(([sellerId, p]) =>
+      db.prepare(
+        `INSERT INTO order_shipments (order_id, seller_id, method, fee) VALUES (${orderIdSql}, ?, ?, ?)`
+      ).bind(ref, sellerId, p.method, fees.get(sellerId) ?? 0)
     ),
   ];
 
@@ -282,7 +301,21 @@ commerceRoutes.get("/orders/:reference", authMiddleware, async (c) => {
       )
     : [];
 
-  return ok(c, { ...order, items: withIssues, shipping_address: address, events, pickups });
+  // Per seller: method, delivery fee, carrier / tracking, and what to pay
+  // that seller (their open lines + their fee).
+  const shipments = (
+    await dbAll<Record<string, any>>(
+      c.env.DB,
+      `SELECT sh.seller_id, s.name AS seller_name, sh.method, sh.fee, sh.carrier, sh.tracking_number, sh.shipped_at
+       FROM order_shipments sh JOIN sellers s ON s.id = sh.seller_id WHERE sh.order_id = ? ORDER BY sh.id`,
+      [(order as any).id]
+    )
+  ).map((sh) => {
+    const open = (items as Array<Record<string, any>>).filter((i) => Number(i.seller_id) === Number(sh.seller_id) && i.status !== "cancelled");
+    return { ...sh, amount_due: open.length ? open.reduce((sum, i) => sum + Number(i.subtotal || 0), 0) + Number(sh.fee || 0) : 0 };
+  });
+
+  return ok(c, { ...order, items: withIssues, shipping_address: address, events, pickups, shipments });
 });
 
 // POST /api/v1/commerce/orders/:reference/issues { order_item_id, reason, details }

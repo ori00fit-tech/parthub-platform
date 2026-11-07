@@ -60,6 +60,17 @@ const PICKUP_ACTIONS = {
   delivered: { label: "Mark as collected", hint: "After the buyer checked the part and paid, enter the 6-digit code they show you.", tone: "primary" },
 };
 
+// Carrier picked when shipping (API: utils/shipping.ts).
+const CARRIERS = [
+  ["own", "My own driver"],
+  ["amana", "Amana (Barid Al-Maghrib)"],
+  ["ctm", "CTM Messagerie"],
+  ["sendit", "Sendit"],
+  ["forcelog", "Forcelog"],
+  ["olivraison", "Olivraison"],
+  ["other", "Other carrier"],
+];
+
 function formatUntil(value) {
   if (!value) return "";
   const d = new Date(`${String(value).replace(" ", "T")}Z`);
@@ -105,6 +116,8 @@ export default function OrderDetailsPage() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelNote, setCancelNote] = useState("");
   const [code, setCode] = useState("");
+  const [carrier, setCarrier] = useState("own");
+  const [tracking, setTracking] = useState("");
 
   const load = useCallback(
     () =>
@@ -139,6 +152,7 @@ export default function OrderDetailsPage() {
         status,
         ...(status === "cancelled" ? { note: cancelNote.trim() } : {}),
         ...(status === "delivered" && pickupOrder ? { code: code.trim() } : {}),
+        ...(status === "shipped" ? { carrier, tracking_number: tracking.trim() } : {}),
       });
       setOrder(res?.data || order);
       setCancelOpen(false);
@@ -175,7 +189,8 @@ export default function OrderDetailsPage() {
   const events = Array.isArray(order.events) ? order.events : [];
   const actions = pickupOrder ? PICKUP_ACTIONS : ACTIONS;
   const next = (order.next_statuses || []).filter((s) => actions[s]);
-  const forward = next.filter((s) => s !== "cancelled" && !(pickupOrder && s === "delivered"));
+  const forward = next.filter((s) => s !== "cancelled" && s !== "shipped" && !(pickupOrder && s === "delivered"));
+  const canShip = !pickupOrder && next.includes("shipped");
   const collect = pickupOrder && next.includes("delivered");
   const canCancel = next.includes("cancelled");
   const wa = whatsappNumber(order.buyer_phone);
@@ -252,6 +267,48 @@ export default function OrderDetailsPage() {
             {forward.map((s) => (
               <p key={s} className="mt-2 text-xs text-gray-500">{t(actions[s].hint)}</p>
             ))}
+            {canShip ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  move("shipped");
+                }}
+                className="mt-4 grid gap-3 rounded-2xl border border-blue-200 bg-blue-50/50 p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
+              >
+                <div>
+                  <label htmlFor="ship-carrier" className="block text-sm font-semibold text-gray-900">{t("Carrier")}</label>
+                  <select
+                    id="ship-carrier"
+                    value={carrier}
+                    onChange={(e) => setCarrier(e.target.value)}
+                    className="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
+                  >
+                    {CARRIERS.map(([value, label]) => (
+                      <option key={value} value={value}>{t(label)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="ship-tracking" className="block text-sm font-semibold text-gray-900">{t("Tracking number (optional)")}</label>
+                  <input
+                    id="ship-tracking"
+                    value={tracking}
+                    onChange={(e) => setTracking(e.target.value)}
+                    maxLength={60}
+                    dir="ltr"
+                    className="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 font-mono text-sm outline-none focus:border-blue-500"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={Boolean(saving)}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300"
+                >
+                  {saving === "shipped" ? t("Saving…") : t(actions.shipped.label)}
+                </button>
+                <p className="text-xs text-gray-500 sm:col-span-3">{t("The buyer sees the carrier and the tracking number on their order.")}</p>
+              </form>
+            ) : null}
             {collect ? (
               <form
                 onSubmit={(e) => {
@@ -425,13 +482,26 @@ export default function OrderDetailsPage() {
                   <dd className="text-gray-900">{address || "—"}</dd>
                 </div>
               ) : null}
+              {order.shipment?.carrier || order.shipment?.tracking_number ? (
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-gray-400">{t("Shipping")}</dt>
+                  <dd className="text-gray-900">
+                    {order.shipment.carrier ? t(CARRIERS.find(([v]) => v === order.shipment.carrier)?.[1] || order.shipment.carrier) : null}
+                    {order.shipment.tracking_number ? <span className="ms-2 font-mono" dir="ltr">{order.shipment.tracking_number}</span> : null}
+                  </dd>
+                </div>
+              ) : null}
               {order.status !== "cancelled" && order.payment_status !== "paid" ? (
                 <div className="rounded-2xl bg-amber-50 px-3 py-2">
                   <dt className="text-xs font-semibold uppercase tracking-wide text-amber-800">{pickupOrder ? t("Cash at pickup") : t("Cash on delivery")}</dt>
                   <dd className="font-semibold text-gray-900">
-                    {pickupOrder || order.has_other_sellers
-                      ? t("Collect {amount} for your parts", { amount: formatMoney(order.total) })
-                      : t("Collect {amount} (shipping included)", { amount: formatMoney(order.order_total) })}
+                    {order.amount_to_collect != null
+                      ? Number(order.shipment?.fee || 0) > 0
+                        ? t("Collect {amount} (your delivery fee {fee} included)", { amount: formatMoney(order.amount_to_collect), fee: formatMoney(order.shipment.fee) })
+                        : t("Collect {amount} for your parts", { amount: formatMoney(order.amount_to_collect) })
+                      : pickupOrder || order.has_other_sellers
+                        ? t("Collect {amount} for your parts", { amount: formatMoney(order.total) })
+                        : t("Collect {amount} (shipping included)", { amount: formatMoney(order.order_total) })}
                   </dd>
                 </div>
               ) : null}
