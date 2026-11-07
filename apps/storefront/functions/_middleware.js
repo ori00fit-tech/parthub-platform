@@ -8,5 +8,9 @@ export async function onRequest(context) {
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     if (!out.headers.has(name)) out.headers.set(name, value);
   }
+  // Built files have a content hash in their name: cache them for a year.
+  if (out.ok && new URL(context.request.url).pathname.startsWith("/assets/")) {
+    out.headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  }
   return out;
 }

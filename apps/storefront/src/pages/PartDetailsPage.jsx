@@ -496,7 +496,7 @@ export default function PartDetailsPage() {
                 ) : null}
               </div>
 
-              <p className="mt-3 text-xs opacity-80">
+              <p className="mt-3 text-xs">
                 {t("Final purchase confidence should still confirm SKU, OEM reference, and seller guidance.")}
               </p>
             </div>

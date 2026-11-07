@@ -14,10 +14,10 @@ export default {
         line: { DEFAULT: "#E1E6EE", strong: "#C9D2E0" },
         ink: { DEFAULT: "#0F172A", 2: "#334155" }, // primary / secondary text
         muted: "#586477",
-        faint: "#7B8698",
+        faint: "#5F6B7E", // ≥4.5:1 on canvas and surface (WCAG AA)
         link: "#1D4ED8",
         navy: { DEFAULT: "#1E40AF", deep: "#172F7E", ink: "#DBE4FF", night: "#0E1B3D" },
-        cta: { DEFAULT: "#EA580C", hover: "#C2410C", ink: "#FFFFFF" },
+        cta: { DEFAULT: "#C2410C", hover: "#9A3412", ink: "#FFFFFF" }, // white text 5.2:1
         brand: { 600: "#1E40AF", 700: "#172F7E" },
       },
       fontFamily: {
@@ -28,7 +28,7 @@ export default {
       boxShadow: {
         panel: "0 1px 2px rgba(15,23,42,.05), 0 6px 18px -10px rgba(15,23,42,.14)",
         lift: "0 2px 4px rgba(15,23,42,.06), 0 18px 32px -16px rgba(15,23,42,.22)",
-        cta: "0 6px 16px -8px rgba(234,88,12,.55)",
+        cta: "0 6px 16px -8px rgba(194,65,12,.55)",
       },
     },
   },

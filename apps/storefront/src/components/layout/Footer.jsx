@@ -10,7 +10,7 @@ function FooterColumn({ title, children }) {
   return (
     <div>
       <div className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-white">{title}</div>
-      <div className="space-y-3 text-sm text-faint">{children}</div>
+      <div className="space-y-3 text-sm text-[#A9B4C8]">{children}</div>
     </div>
   );
 }
@@ -28,7 +28,7 @@ export default function Footer() {
             <Wordmark />
           </div>
 
-          <p className="mt-4 max-w-xs text-sm leading-7 text-faint">
+          <p className="mt-4 max-w-xs text-sm leading-7 text-[#A9B4C8]">
             {t("Auto parts marketplace for Morocco. Search by vehicle, compare listings and buy from sellers reviewed by PartHub.")}
           </p>
         </div>
@@ -62,7 +62,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-slate-800">
-        <div className="mx-auto max-w-[1380px] px-4 py-5 text-xs text-faint sm:px-6 lg:px-6">
+        <div className="mx-auto max-w-[1380px] px-4 py-5 text-xs text-[#A9B4C8] sm:px-6 lg:px-6">
           {t("© {year} PartHub. All rights reserved.", { year: new Date().getFullYear() })}
         </div>
       </div>

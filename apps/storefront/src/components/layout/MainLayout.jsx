@@ -112,7 +112,7 @@ export default function MainLayout() {
       {/* Paints the phone status-bar band in the header color. */}
       <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] bg-navy-deep" style={{ height: "env(safe-area-inset-top, 0px)" }} />
 
-      <div className="border-b border-line bg-[#0B1222] text-[12.5px] text-muted">
+      <div className="border-b border-line bg-[#0B1222] text-[12.5px] text-[#A9B4C8]">
         <div className="mx-auto flex min-h-[34px] max-w-[1380px] flex-wrap items-center gap-x-5 gap-y-1 px-4 py-1.5 lg:px-6">
           <span>
             <strong className="font-semibold text-white">{t("Vehicle-checked parts")}</strong> {t("from verified sellers")}
@@ -123,7 +123,7 @@ export default function MainLayout() {
           <Link to="/sell" className="font-semibold text-white hover:text-navy-ink">
             {t("Sell on PartHub")}
           </Link>
-          <Link to="/orders" className="hidden hover:text-ink sm:inline">
+          <Link to="/orders" className="hidden hover:text-white sm:inline">
             {t("Track order")}
           </Link>
           <LanguageSwitcher />
@@ -190,6 +190,7 @@ export default function MainLayout() {
 
             <Link
               to={isAuthenticated ? "/account" : "/auth"}
+              aria-label={isAuthenticated ? t("Account") : t("Sign in")}
               className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 transition hover:bg-white/10"
             >
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
