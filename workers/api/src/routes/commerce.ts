@@ -4,6 +4,7 @@ import { authMiddleware } from "../middlewares/auth";
 import { ok, created, fail, notFound } from "../utils/response";
 import { dbFirst, dbAll, dbRun } from "../utils/db";
 import { logOrderEvent } from "../utils/fulfillment";
+import { type Fulfillment, FULFILLMENTS, allowedMethods, generatePickupCode, isPickup, loadSellerFulfillment } from "../utils/pickup";
 import { ISSUE_REASONS, type IssueRow, canEscalate, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, reportWindow, updateIssue } from "../utils/issues";
 
 const MAX_REVIEW_LENGTH = 1000;
@@ -37,7 +38,37 @@ commerceRoutes.get("/shipping", (c) =>
   ok(c, { flat_fee: shippingFee(c.env), currency: "MAD" })
 );
 
+// GET /api/v1/commerce/fulfillment-options?parts=12,15 — for checkout: the
+// cart's parts grouped by seller, with the ways the buyer can get them
+// (delivery, pickup at the store, courier sent by the buyer).
+commerceRoutes.get("/fulfillment-options", async (c) => {
+  const ids = [...new Set(String(c.req.query("parts") || "").split(",").map(Number).filter((n) => Number.isInteger(n) && n > 0))].slice(0, MAX_ORDER_LINES);
+  if (!ids.length) return ok(c, []);
+  const parts = await dbAll<{ id: number; seller_id: number; delivery_available: number }>(
+    c.env.DB,
+    `SELECT id, seller_id, delivery_available FROM parts WHERE id IN (${ids.map(() => "?").join(",")})`,
+    ids
+  );
+  const sellers = await loadSellerFulfillment(c.env.DB, parts.map((p) => p.seller_id));
+  const groups = [...sellers.values()].map((s) => {
+    const mine = parts.filter((p) => p.seller_id === s.id);
+    return {
+      seller_id: s.id,
+      seller_name: s.name,
+      city: s.location,
+      part_ids: mine.map((p) => p.id),
+      methods: allowedMethods(s, mine),
+      pickup: Number(s.pickup_enabled) && s.pickup_address ? { address: s.pickup_address, hours: s.pickup_hours, city: s.location } : null,
+      pickup_only_parts: mine.filter((p) => !Number(p.delivery_available ?? 1)).map((p) => p.id),
+    };
+  });
+  return ok(c, { groups, flat_fee: shippingFee(c.env) });
+});
+
 // POST /api/v1/commerce/orders
+// fulfillment: { [seller_id]: { method: delivery | pickup | courier,
+// collector_name?, collector_phone? } } — default delivery. The address is
+// needed only when something is delivered; so is the delivery fee.
 commerceRoutes.post("/orders", authMiddleware, async (c) => {
   const buyerId = c.get("user_id");
   const body = await c.req.json<{
@@ -48,6 +79,7 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
       address_line2?: string | null; state?: string | null; postal_code?: string | null;
     };
     notes?: string;
+    fulfillment?: Record<string, { method?: string; collector_name?: string; collector_phone?: string }>;
   }>();
 
   if (!Array.isArray(body.items) || !body.items.length) return fail(c, "items are required");
@@ -55,7 +87,7 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
 
   const addr = body.shipping_address;
   if (!addr) return fail(c, "shipping_address is required");
-  for (const field of ["full_name", "phone", "address_line1", "city", "country"] as const) {
+  for (const field of ["full_name", "phone"] as const) {
     if (typeof addr[field] !== "string" || !addr[field].trim()) {
       return fail(c, `shipping_address.${field} is required`);
     }
@@ -76,15 +108,15 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
   let subtotal = 0;
   const resolvedItems: Array<{
     part_id: number; seller_id: number; title: string;
-    price: number; quantity: number; subtotal: number;
+    price: number; quantity: number; subtotal: number; delivery_available: number;
   }> = [];
 
   for (const [partId, quantity] of requested) {
     const part = await dbFirst<{
-      id: number; seller_id: number; title: string; price: number; quantity: number; status: string;
+      id: number; seller_id: number; title: string; price: number; quantity: number; status: string; delivery_available: number;
     }>(
       c.env.DB,
-      `SELECT p.id, p.seller_id, p.title, p.price, p.quantity,
+      `SELECT p.id, p.seller_id, p.title, p.price, p.quantity, p.delivery_available,
               CASE WHEN s.status = 'active' THEN p.status ELSE 'store_inactive' END AS status
        FROM parts p JOIN sellers s ON s.id = p.seller_id WHERE p.id = ?`,
       [partId]
@@ -98,11 +130,36 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
     resolvedItems.push({
       part_id: part.id, seller_id: part.seller_id,
       title: part.title, price: part.price,
-      quantity, subtotal: lineTotal,
+      quantity, subtotal: lineTotal, delivery_available: part.delivery_available,
     });
   }
 
-  const shipping_fee = shippingFee(c.env);
+  // How each seller's parts reach the buyer.
+  const sellers = await loadSellerFulfillment(c.env.DB, resolvedItems.map((i) => i.seller_id));
+  const plan = new Map<number, { method: Fulfillment; code: string | null; collector_name: string | null; collector_phone: string | null }>();
+  for (const [sellerId, seller] of sellers) {
+    const allowed = allowedMethods(seller, resolvedItems.filter((i) => i.seller_id === sellerId));
+    const choice = body.fulfillment?.[String(sellerId)] || {};
+    const wanted = (FULFILLMENTS as readonly string[]).includes(String(choice.method)) ? (choice.method as Fulfillment) : "delivery";
+    if (!allowed.length) return fail(c, `${seller.name} can't deliver these parts and doesn't offer pickup`, 409);
+    if (!allowed.includes(wanted)) return fail(c, `Choose how to get the parts from ${seller.name}`, 409);
+    plan.set(sellerId, {
+      method: wanted,
+      code: isPickup(wanted) ? generatePickupCode() : null,
+      collector_name: wanted === "courier" ? optionalText(choice.collector_name, 100) : null,
+      collector_phone: wanted === "courier" ? optionalText(choice.collector_phone, 30) : null,
+    });
+  }
+  const delivers = [...plan.values()].some((p) => p.method === "delivery");
+  if (delivers) {
+    for (const field of ["address_line1", "city"] as const) {
+      if (typeof addr[field] !== "string" || !addr[field].trim()) {
+        return fail(c, `shipping_address.${field} is required`);
+      }
+    }
+  }
+
+  const shipping_fee = delivers ? shippingFee(c.env) : 0;
   const total = subtotal + shipping_fee;
   const ref = generateOrderReference();
   const orderIdSql = "(SELECT id FROM orders WHERE reference = ?)";
@@ -130,18 +187,22 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
       ref,
       addr.full_name.trim(),
       addr.phone.trim(),
-      addr.address_line1.trim(),
-      optionalText(addr.address_line2),
-      addr.city.trim(),
+      delivers ? addr.address_line1.trim() : "",
+      delivers ? optionalText(addr.address_line2) : null,
+      typeof addr.city === "string" ? addr.city.trim() : "",
       optionalText(addr.state),
       optionalText(addr.postal_code),
-      addr.country.trim()
+      (typeof addr.country === "string" && addr.country.trim()) || "MA"
     ),
     ...resolvedItems.map((item) =>
       db.prepare(
-        `INSERT INTO order_items (order_id, part_id, seller_id, title, price, quantity, subtotal)
-         VALUES (${orderIdSql}, ?, ?, ?, ?, ?, ?)`
-      ).bind(ref, item.part_id, item.seller_id, item.title, item.price, item.quantity, item.subtotal)
+        `INSERT INTO order_items (order_id, part_id, seller_id, title, price, quantity, subtotal, fulfillment, pickup_code, collector_name, collector_phone)
+         VALUES (${orderIdSql}, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        ref, item.part_id, item.seller_id, item.title, item.price, item.quantity, item.subtotal,
+        plan.get(item.seller_id)!.method, plan.get(item.seller_id)!.code,
+        plan.get(item.seller_id)!.collector_name, plan.get(item.seller_id)!.collector_phone
+      )
     ),
   ];
 
@@ -210,7 +271,18 @@ commerceRoutes.get("/orders/:reference", authMiddleware, async (c) => {
     return { ...item, issue, report_until: window.until, can_report: window.open && reopenable };
   });
 
-  return ok(c, { ...order, items: withIssues, shipping_address: address, events });
+  // Pickup / courier: where and when to collect, per seller.
+  const pickupSellers = [...new Set((items as Array<Record<string, any>>).filter((i) => isPickup(i.fulfillment)).map((i) => Number(i.seller_id)))];
+  const pickups = pickupSellers.length
+    ? await dbAll(
+        c.env.DB,
+        `SELECT id as seller_id, name, slug, location, phone, whatsapp, pickup_address, pickup_hours
+         FROM sellers WHERE id IN (${pickupSellers.map(() => "?").join(",")})`,
+        pickupSellers
+      )
+    : [];
+
+  return ok(c, { ...order, items: withIssues, shipping_address: address, events, pickups });
 });
 
 // POST /api/v1/commerce/orders/:reference/issues { order_item_id, reason, details }

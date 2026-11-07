@@ -53,6 +53,18 @@ const ACTIONS = {
   delivered: { label: "Mark as delivered", hint: "The buyer received the parts. The 7-day returns window starts now.", tone: "primary" },
   cancelled: { label: "Cancel order", hint: "The quantities go back to your stock.", tone: "danger" },
 };
+// Pickup at the store / buyer's courier (API: utils/pickup.ts).
+const PICKUP_ACTIONS = {
+  ...ACTIONS,
+  confirmed: { label: "Confirm and reserve", hint: "You keep the part for the buyer for 3 days.", tone: "primary" },
+  delivered: { label: "Mark as collected", hint: "After the buyer checked the part and paid, enter the 6-digit code they show you.", tone: "primary" },
+};
+
+function formatUntil(value) {
+  if (!value) return "";
+  const d = new Date(`${String(value).replace(" ", "T")}Z`);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleString(undefined, { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+}
 
 // Claim steps recorded in the order history (see utils/issues.ts in the API).
 const EVENT_LABELS = {
@@ -92,6 +104,7 @@ export default function OrderDetailsPage() {
   const [actionError, setActionError] = useState("");
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelNote, setCancelNote] = useState("");
+  const [code, setCode] = useState("");
 
   const load = useCallback(
     () =>
@@ -108,8 +121,14 @@ export default function OrderDetailsPage() {
     load();
   }, [load]);
 
+  const pickupOrder = order?.fulfillment === "pickup" || order?.fulfillment === "courier";
+
   async function move(status) {
     setActionError("");
+    if (status === "delivered" && pickupOrder && !/^\d{6}$/.test(code.trim())) {
+      setActionError(t("Enter the buyer's 6-digit pickup code."));
+      return;
+    }
     if (status === "cancelled" && !cancelNote.trim()) {
       setActionError(t("Tell the buyer why the order is cancelled"));
       return;
@@ -119,10 +138,12 @@ export default function OrderDetailsPage() {
       const res = await api.patch(`/api/v1/marketplace/me/orders/${id}/status`, {
         status,
         ...(status === "cancelled" ? { note: cancelNote.trim() } : {}),
+        ...(status === "delivered" && pickupOrder ? { code: code.trim() } : {}),
       });
       setOrder(res?.data || order);
       setCancelOpen(false);
       setCancelNote("");
+      setCode("");
     } catch (err) {
       setActionError(err?.message || t("Something went wrong. Please try again."));
     } finally {
@@ -152,8 +173,10 @@ export default function OrderDetailsPage() {
 
   const items = Array.isArray(order.items) ? order.items : [];
   const events = Array.isArray(order.events) ? order.events : [];
-  const next = (order.next_statuses || []).filter((s) => ACTIONS[s]);
-  const forward = next.filter((s) => s !== "cancelled");
+  const actions = pickupOrder ? PICKUP_ACTIONS : ACTIONS;
+  const next = (order.next_statuses || []).filter((s) => actions[s]);
+  const forward = next.filter((s) => s !== "cancelled" && !(pickupOrder && s === "delivered"));
+  const collect = pickupOrder && next.includes("delivered");
   const canCancel = next.includes("cancelled");
   const wa = whatsappNumber(order.buyer_phone);
   const address = [order.address_line1, order.address_line2, order.buyer_city, order.postal_code].filter(Boolean).join(", ");
@@ -176,6 +199,22 @@ export default function OrderDetailsPage() {
             <p className="mt-2 text-lg font-bold text-gray-900">{formatMoney(order.total)}</p>
           </div>
         </div>
+        {pickupOrder ? (
+          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+            <p className="font-semibold">
+              {order.fulfillment === "courier" ? t("Collected at your store by someone the buyer sends") : t("The buyer collects at your store")}
+            </p>
+            {order.fulfillment === "courier" && (order.collector_name || order.collector_phone) ? (
+              <p className="mt-1">
+                {t("Collector:")} {[order.collector_name, order.collector_phone].filter(Boolean).join(" · ")}
+              </p>
+            ) : null}
+            {order.pickup_until && order.status !== "delivered" && order.status !== "cancelled" ? (
+              <p className="mt-1">{t("Keep the part until {date}. After that you may cancel if nobody came.", { date: formatUntil(order.pickup_until) })}</p>
+            ) : null}
+            <p className="mt-1">{t("The buyer may inspect the part and refuse it: then cancel the order with the reason.")}</p>
+          </div>
+        ) : null}
         {order.has_other_sellers ? (
           <p className="mt-4 rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-600">
             {t("This order also has parts from other sellers. You only see and manage your parts.")}
@@ -197,7 +236,7 @@ export default function OrderDetailsPage() {
                   disabled={Boolean(saving)}
                   className="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300"
                 >
-                  {saving === s ? t("Saving…") : t(ACTIONS[s].label)}
+                  {saving === s ? t("Saving…") : t(actions[s].label)}
                 </button>
               ))}
               {canCancel && !cancelOpen ? (
@@ -211,8 +250,42 @@ export default function OrderDetailsPage() {
               ) : null}
             </div>
             {forward.map((s) => (
-              <p key={s} className="mt-2 text-xs text-gray-500">{t(ACTIONS[s].hint)}</p>
+              <p key={s} className="mt-2 text-xs text-gray-500">{t(actions[s].hint)}</p>
             ))}
+            {collect ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  move("delivered");
+                }}
+                className="mt-4 flex flex-wrap items-end gap-3 rounded-2xl border border-blue-200 bg-blue-50/50 p-4"
+              >
+                <div>
+                  <label htmlFor="pickup-code" className="block text-sm font-semibold text-gray-900">{t("Buyer's pickup code")}</label>
+                  <input
+                    id="pickup-code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    dir="ltr"
+                    placeholder="000000"
+                    disabled={order.pickup_code_locked}
+                    className="mt-1 h-11 w-40 rounded-xl border border-gray-200 bg-white px-3 text-center font-mono text-lg tracking-[0.3em] outline-none focus:border-blue-500"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={Boolean(saving) || order.pickup_code_locked}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300"
+                >
+                  {saving === "delivered" ? t("Saving…") : t(actions.delivered.label)}
+                </button>
+                <p className="basis-full text-xs text-gray-500">
+                  {order.pickup_code_locked ? t("Too many wrong codes. Contact PartHub to close this order.") : t(actions.delivered.hint)}
+                </p>
+              </form>
+            ) : null}
             {cancelOpen ? (
               <div className="mt-4 space-y-3 rounded-2xl border border-red-200 bg-red-50/50 p-4">
                 <label htmlFor="cancel-note" className="block text-sm font-semibold text-gray-900">
@@ -225,7 +298,7 @@ export default function OrderDetailsPage() {
                   maxLength={500}
                   rows={2}
                   className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-red-400"
-                  placeholder={t("e.g. The part was sold in the store")}
+                  placeholder={pickupOrder ? t("e.g. The buyer didn't come within 3 days") : t("e.g. The part was sold in the store")}
                 />
                 <p className="text-xs text-gray-500">{t(ACTIONS.cancelled.hint)}</p>
                 <div className="flex flex-wrap gap-3">
@@ -321,7 +394,7 @@ export default function OrderDetailsPage() {
 
         <aside className="space-y-6">
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-900">{t("Delivery")}</h2>
+            <h2 className="text-lg font-bold text-gray-900">{pickupOrder ? t("Pickup at your store") : t("Delivery")}</h2>
             <dl className="mt-4 space-y-3 text-sm">
               <div>
                 <dt className="text-xs uppercase tracking-wide text-gray-400">{t("Buyer")}</dt>
@@ -346,15 +419,17 @@ export default function OrderDetailsPage() {
                   </dd>
                 </div>
               ) : null}
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-gray-400">{t("Address")}</dt>
-                <dd className="text-gray-900">{address || "—"}</dd>
-              </div>
+              {!pickupOrder ? (
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-gray-400">{t("Address")}</dt>
+                  <dd className="text-gray-900">{address || "—"}</dd>
+                </div>
+              ) : null}
               {order.status !== "cancelled" && order.payment_status !== "paid" ? (
                 <div className="rounded-2xl bg-amber-50 px-3 py-2">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-amber-800">{t("Cash on delivery")}</dt>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-amber-800">{pickupOrder ? t("Cash at pickup") : t("Cash on delivery")}</dt>
                   <dd className="font-semibold text-gray-900">
-                    {order.has_other_sellers
+                    {pickupOrder || order.has_other_sellers
                       ? t("Collect {amount} for your parts", { amount: formatMoney(order.total) })
                       : t("Collect {amount} (shipping included)", { amount: formatMoney(order.order_total) })}
                   </dd>

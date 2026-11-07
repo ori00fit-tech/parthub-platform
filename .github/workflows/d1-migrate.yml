@@ -102,6 +102,9 @@ jobs:
       - name: 0019 part numbers (OEM / aftermarket references)
         run: ../../.github/scripts/d1-exec-retry.sh --file="$MIGRATIONS/0019_part_numbers.sql"
 
+      - name: 0020 fulfilment methods (delivery, store pickup, courier)
+        run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0020_fulfillment_methods.sql"
+
       # Read query: fails while the daily read limit is exceeded, which
       # doesn't mean the migrations failed.
       - name: Verify
