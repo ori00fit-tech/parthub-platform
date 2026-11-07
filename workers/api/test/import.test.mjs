@@ -66,11 +66,12 @@ check("dry run 200", st === 200 && r.meta.dry_run === true, r);
 const res = r.data;
 check("row numbers", res[0].row === 2 && res[5].row === 7, res.map(x => x.row));
 check("actions", JSON.stringify(res.map(x => x.action)) === JSON.stringify(["create", "update", "error", "create", "error", "create"]), res.map(x => [x.action, x.errors]));
-check("row1 warnings", res[0].warnings.some(w => /unknown make/.test(w.text) && w.params.value === "Peugeot 208 2015"), res[0].warnings);
+check("row1 warnings", res[0].warnings.some(w => /not a make and model/.test(w.text) && w.params.value === "Peugeot 208 2015"), res[0].warnings);
 check("row3 errors", res[2].errors.length === 2, res[2].errors);
 check("brand warning", res[3].warnings.some(w => /Brand/.test(w.text)), res[3].warnings);
 check("dup", res[4].errors[0].text.includes("twice"), res[4].errors);
-check("year missing warn", res[5].warnings.some(w => /year missing/.test(w.text)), res[5].warnings);
+// Model only: saved for every generation of it, with a warning.
+check("model only warn", res[5].warnings.some(w => /no year or generation/.test(w.text) && w.params.model === "Renault Clio"), res[5].warnings);
 check("dry run wrote nothing", sql.prepare("select count(*) n from parts").get().n === 2);
 
 [st, r] = await call("POST", "/api/v1/marketplace/me/parts/import", s1, { rows, first_row: 2 });

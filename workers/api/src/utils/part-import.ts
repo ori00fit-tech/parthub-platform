@@ -12,7 +12,8 @@ import { normalizeNumber } from "./part-numbers";
 
 export const MAX_IMPORT_ROWS = 50;
 const MAX_OEM = 6;
-const MAX_VEHICLES = 10;
+const MAX_VEHICLES = 10; // vehicles written in the cell
+const MAX_FITMENTS = 20; // rows saved ("Clio III/IV" = 2)
 
 type Raw = Record<string, unknown>;
 
@@ -56,7 +57,7 @@ export function canonicalRow(raw: Raw): Record<string, string> {
 }
 
 const fold = (s: string) =>
-  String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9؀-ۿ]+/g, " ").trim();
+  String(s || "").replace(/\+/g, " plus ").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9؀-ۿ]+/g, " ").trim();
 
 // Category names a seller may write, besides the slug and English name.
 const CATEGORY_ALIASES: Record<string, string[]> = {
@@ -66,7 +67,10 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
   electrical: ["electricite", "electricite et eclairage", "eclairage", "الكهرباء والإنارة", "الكهرباء"],
   "engine-parts": ["moteur", "pieces moteur", "قطع المحرك", "المحرك"],
   exhaust: ["echappement", "العادم والانبعاثات", "العادم"],
-  filters: ["filtres", "filtre", "filtres et fluides", "huiles", "الفلاتر والسوائل", "الفلاتر"],
+  filters: [
+    "filtres", "filtre", "filtres et fluides", "huiles", "huile", "huile moteur", "lubrifiants", "lubrifiant", "fluides", "liquides",
+    "lubricants", "oils", "fluids", "الفلاتر والسوائل", "الفلاتر", "الزيوت", "زيوت", "الزيوت والسوائل",
+  ],
   interior: ["interieur", "accessoires", "interieur et accessoires", "الداخلية والإكسسوارات", "الداخلية"],
   suspension: ["suspension et direction", "direction", "amortisseurs", "التعليق والمقود", "التعليق"],
   "tires-wheels": ["pneus", "jantes", "pneus et jantes", "الإطارات والعجلات", "الإطارات"],
@@ -111,15 +115,17 @@ type Catalog = {
   makes: Array<{ id: number; slug: string; name: string }>;
   models: Array<{ id: number; make_id: number; slug: string; name: string }>;
   generations: Array<{ id: number; model_id: number; name: string; year_start: number; year_end: number | null }>;
+  engines: Array<{ generation_id: number; name: string; fuel: string | null }>;
 };
 
 export async function loadCatalog(DB: D1Database): Promise<Catalog> {
-  const [categories, brands, makes, models, generations] = await Promise.all([
+  const [categories, brands, makes, models, generations, engines] = await Promise.all([
     DB.prepare("select id, slug, name from categories").all<Catalog["categories"][number]>(),
     DB.prepare("select id, slug, name from brands").all<Catalog["brands"][number]>(),
     DB.prepare("select id, slug, name from vehicle_makes").all<Catalog["makes"][number]>(),
     DB.prepare("select id, make_id, slug, name from vehicle_models").all<Catalog["models"][number]>(),
     DB.prepare("select id, model_id, name, year_start, year_end from vehicle_generations").all<Catalog["generations"][number]>(),
+    DB.prepare("select generation_id, name, fuel from vehicle_engines").all<Catalog["engines"][number]>(),
   ]);
   return {
     categories: categories.results || [],
@@ -127,6 +133,7 @@ export async function loadCatalog(DB: D1Database): Promise<Catalog> {
     makes: makes.results || [],
     models: models.results || [],
     generations: generations.results || [],
+    engines: engines.results || [],
   };
 }
 
@@ -144,36 +151,202 @@ function findCategory(cat: Catalog, value: string) {
 
 export type Fitment = { make: string; model: string; year_start: number; year_end: number; generation_id: number | null };
 
-// "Dacia Logan 2012-2020", "Renault Clio IV", "Peugeot 208 2015" → a
-// compatibility row from the vehicle catalog. A Message = why it was skipped.
-export function parseVehicle(cat: Catalog, text: string): Fitment | Message {
-  const v = fold(text);
-  if (!v) return msg("Vehicle skipped: empty");
-  const startsWith = (s: string, prefix: string) => s === prefix || s.startsWith(`${prefix} `);
-  const make = [...cat.makes]
-    .sort((a, b) => fold(b.name).length - fold(a.name).length)
-    .find((m) => startsWith(v, fold(m.name)) || startsWith(v, fold(m.slug)));
-  if (!make) return msg("Vehicle skipped: unknown make in \"{value}\"", { value: text });
-  let rest = v.slice((startsWith(v, fold(make.name)) ? fold(make.name) : fold(make.slug)).length).trim();
+type Make = Catalog["makes"][number];
+type Model = Catalog["models"][number];
+type Gen = Catalog["generations"][number];
 
-  const models = cat.models.filter((m) => m.make_id === make.id);
-  const gens = cat.generations.filter((g) => models.some((m) => m.id === g.model_id));
-  // A generation name ("Clio IV") before the model name ("Clio").
-  const gen = [...gens].sort((a, b) => fold(b.name).length - fold(a.name).length).find((g) => startsWith(rest, fold(g.name)));
-  const model = gen
-    ? models.find((m) => m.id === gen.model_id)
-    : [...models].sort((a, b) => fold(b.name).length - fold(a.name).length).find((m) => startsWith(rest, fold(m.name)) || startsWith(rest, fold(m.slug)));
-  if (!model) return msg("Vehicle skipped: unknown model in \"{value}\"", { value: text });
-  rest = rest.slice(gen ? fold(gen.name).length : startsWith(rest, fold(model.name)) ? fold(model.name).length : fold(model.slug).length).trim();
+// Short names sellers use for a make.
+const MAKE_ALIASES: Record<string, string> = { vw: "volkswagen", merco: "mercedes benz", mercedes: "mercedes benz", chevy: "chevrolet" };
+// "Universel", "Tous véhicules…": a part with no vehicle list.
+const UNIVERSAL = /^(universel|universelle|universal|tous|toutes|tout|all|la plupart|most|obligatoire|عام|جميع|كل)\b/;
+const startsWith = (s: string, prefix: string) => Boolean(prefix) && (s === prefix || s.startsWith(`${prefix} `));
+const longestFirst = <T,>(list: T[], name: (x: T) => string) => [...list].sort((a, b) => fold(name(b)).length - fold(name(a)).length);
+
+export type VehicleParse = { fitments: Fitment[]; messages: Message[]; universal: boolean };
+
+// The "Véhicules" cell: "Dacia Logan 2004-2012; Sandero 2008-2012; Renault
+// Clio III/IV 1.5 dCi; Citroën C3 / C4; Universel". A vehicle without its
+// make takes the make of the one before it (or the only make that has that
+// model); "Clio III/IV" gives both generations; a model with no year nor
+// generation covers all its generations (with a warning).
+export function parseVehicles(cat: Catalog, cell: string): VehicleParse {
+  const out: VehicleParse = { fitments: [], messages: [], universal: false };
+  let lastMake: Make | null = null;
+  for (const raw of splitList(cell).slice(0, MAX_VEHICLES)) {
+    const text = raw.replace(/\([^)]*\)/g, " ").split(/\s+[-–]\s+/)[0]!.trim();
+    if (UNIVERSAL.test(fold(text))) {
+      out.universal = true;
+      continue;
+    }
+    // "Citroën C3 / C4" = two vehicles of one make (but "Symbol / Thalia" is one model).
+    const whole = parseOne(cat, text, lastMake);
+    const parts = "fitments" in whole && whole.model.name.includes("/")
+      ? [text]
+      : text.split(/\s+\/\s+/).reduce<string[]>((acc, x) => {
+          // "206 1.4 / 1.6": the second one is an engine, not a vehicle.
+          if (acc.length && /^\d[.,]\d/.test(x)) acc[acc.length - 1] += ` ${x}`;
+          else acc.push(x);
+          return acc;
+        }, []);
+    for (const part of parts) {
+      const r: One = parts.length === 1 ? whole : parseOne(cat, part, lastMake);
+      if (!("fitments" in r)) {
+        out.messages.push(r);
+        continue;
+      }
+      lastMake = r.make;
+      if (r.note) out.messages.push(r.note);
+      for (const f of r.fitments) {
+        if (out.fitments.length >= MAX_FITMENTS) break;
+        if (!out.fitments.some((x) => x.model === f.model && x.make === f.make && x.year_start === f.year_start && x.year_end === f.year_end)) {
+          out.fitments.push(f);
+        }
+      }
+    }
+  }
+  return out;
+}
+
+type One = { make: Make; model: Model; fitments: Fitment[]; note?: Message } | Message;
+
+function parseOne(cat: Catalog, text: string, lastMake: Make | null): One {
+  let v = fold(text);
+  if (!v) return msg("Vehicle skipped: empty");
+  const findMake = (t: string) => longestFirst(cat.makes, (m) => m.name).find((m) => startsWith(t, fold(m.name)) || startsWith(t, fold(m.slug))) || null;
+  let make = findMake(v);
+  const first = v.split(" ")[0]!;
+  // "VW Golf" → "volkswagen golf" (only when the text does not start with a real make).
+  if (!make && MAKE_ALIASES[first]) {
+    v = `${MAKE_ALIASES[first]}${v.slice(first.length)}`;
+    make = findMake(v);
+  }
+  let rest = v;
+  if (make) rest = v.slice((startsWith(v, fold(make.name)) ? fold(make.name) : fold(make.slug)).length).trim();
+
+  const modelOf = (mk: Make, s: string) => {
+    const models = cat.models.filter((m) => m.make_id === mk.id);
+    const gens = cat.generations.filter((g) => models.some((m) => m.id === g.model_id));
+    const gen = longestFirst(gens, (g) => g.name).find((g) => startsWith(s, fold(g.name)));
+    const model = gen
+      ? models.find((m) => m.id === gen.model_id)
+      : longestFirst(models, (m) => m.name).find((m) => startsWith(s, fold(m.name)) || startsWith(s, fold(m.slug)));
+    return model ? { model, gen: gen ?? null } : null;
+  };
+
+  let found = make ? modelOf(make, rest) : null;
+  if (!make) {
+    // No make written: the previous vehicle's make, else the only make with that model.
+    if (lastMake) found = modelOf(lastMake, v);
+    if (found) make = lastMake;
+    else {
+      const hits = cat.makes.flatMap((mk) => {
+        const f = modelOf(mk, v);
+        return f ? [{ mk, f }] : [];
+      });
+      if (hits.length === 1) {
+        make = hits[0]!.mk;
+        found = hits[0]!.f;
+      }
+    }
+    rest = v;
+    if (!make) return msg("Vehicle skipped: \"{value}\" is not a make and model (e.g. Dacia Logan 2012-2020, or Universel)", { value: text });
+  }
+  if (!found) {
+    return rest
+      ? msg("Vehicle skipped: unknown model in \"{value}\"", { value: text })
+      : msg("Vehicle skipped: give the model after the make in \"{value}\"", { value: text });
+  }
+  const { model } = found;
+  const allGens = cat.generations.filter((g) => g.model_id === model.id).sort((a, b) => a.year_start - b.year_start);
+  const name = found.gen ? fold(found.gen.name) : startsWith(rest, fold(model.name)) ? fold(model.name) : fold(model.slug);
+  rest = rest.slice(name.length).trim();
+
+  // Several generations: "Clio III/IV", "Clio II / III" (fold turns the
+  // separator into a space): the tokens after the first one.
+  const gens: Gen[] = found.gen ? [found.gen] : [];
+  const toks = rest ? rest.split(" ") : [];
+  while (toks.length && /^([ivx]+|\d)$/.test(toks[0]!)) {
+    const g = allGens.find((x) => fold(x.name) === `${fold(model.name)} ${toks[0]}`);
+    if (!g) break;
+    if (!gens.includes(g)) gens.push(g);
+    toks.shift();
+  }
+  rest = toks.join(" ");
 
   const maxYear = new Date().getUTCFullYear() + 1;
   const years = rest.match(/(19[5-9]\d|20\d\d)(?:\D+(19[5-9]\d|20\d\d))?/);
-  let ys = years ? Number(years[1]) : gen?.year_start ?? null;
-  let ye = years ? Number(years[2] || years[1]) : gen ? gen.year_end ?? maxYear : null;
-  if (ys == null || ye == null) return msg("Vehicle skipped: year missing in \"{value}\" (e.g. {example})", { value: text, example: `${make.name} ${model.name} 2012-2020` });
-  if (ye < ys) [ys, ye] = [ye, ys];
-  if (ys < 1950 || ye > maxYear) return msg("Vehicle skipped: years out of range in \"{value}\"", { value: text });
-  return { make: make.name, model: model.name, year_start: ys, year_end: ye, generation_id: gen?.id ?? null };
+  const mk = make!;
+  if (years) {
+    let ys = Number(years[1]);
+    let ye = Number(years[2] || years[1]);
+    if (ye < ys) [ys, ye] = [ye, ys];
+    if (ys < 1950 || ye > maxYear) return msg("Vehicle skipped: years out of range in \"{value}\"", { value: text });
+    // Years written: one row; linked to the generation when only one matches.
+    const within = (gens.length ? gens : allGens).filter((g) => g.year_start <= ye && (g.year_end ?? maxYear) >= ys);
+    return { make: mk, model, fitments: [{ make: mk.name, model: model.name, year_start: ys, year_end: ye, generation_id: within.length === 1 ? within[0]!.id : null }] };
+  }
+  if (gens.length) {
+    return {
+      make: mk,
+      model,
+      fitments: gens.map((g) => ({ make: mk.name, model: model.name, year_start: g.year_start, year_end: g.year_end ?? maxYear, generation_id: g.id })),
+    };
+  }
+  if (!allGens.length) {
+    return msg("Vehicle skipped: year missing in \"{value}\" (e.g. {example})", { value: text, example: `${mk.name} ${model.name} 2012-2020` });
+  }
+  // Model + engine ("Logan 1.5 dCi", "Captur TCe", "Logan essence"): the
+  // generations that have such an engine in the catalog.
+  const fuelWord: Record<string, string> = { essence: "petrol", petrol: "petrol", benzine: "petrol", diesel: "diesel", gasoil: "diesel", hybride: "hybrid", hybrid: "hybrid" };
+  const hint = rest.replace(/\b(phase \d|ph\d)\b/g, "").trim();
+  if (hint) {
+    const engineMatch = (e: { name: string; fuel: string | null }) => {
+      const n = fold(e.name);
+      return hint.split(" ").every((w) => (fuelWord[w] ? e.fuel === fuelWord[w] : n === w || n.startsWith(`${w} `) || n.includes(` ${w} `) || n.endsWith(` ${w}`)))
+        && (startsWith(n, hint) || !/^\d/.test(hint) || hint.split(" ").some((w) => fuelWord[w]));
+    };
+    const withEngine = allGens.filter((g) => cat.engines.some((e) => e.generation_id === g.id && engineMatch(e)));
+    if (withEngine.length) {
+      return {
+        make: mk,
+        model,
+        fitments: withEngine.map((g) => ({ make: mk.name, model: model.name, year_start: g.year_start, year_end: g.year_end ?? maxYear, generation_id: g.id })),
+      };
+    }
+  }
+  // Model only: every generation, flagged so the seller can be precise.
+  const ys = allGens[0]!.year_start;
+  const ye = Math.max(...allGens.map((g) => g.year_end ?? new Date().getUTCFullYear()));
+  return {
+    make: mk,
+    model,
+    fitments: allGens.map((g) => ({ make: mk.name, model: model.name, year_start: g.year_start, year_end: g.year_end ?? maxYear, generation_id: g.id })),
+    note: msg("\"{value}\": no year or generation, saved for every {model} ({from}-{to}). Add the generation (e.g. {example}) if it does not fit them all.", {
+      value: text, model: `${mk.name} ${model.name}`, from: ys, to: ye, example: `${model.name} ${allGens[allGens.length - 1]!.name.split(" ").pop()}`,
+    }),
+  };
+}
+
+// Single vehicle (kept for callers that parse one at a time).
+export function parseVehicle(cat: Catalog, text: string): Fitment | Message {
+  const r = parseVehicles(cat, text);
+  return r.fitments[0] ?? r.messages[0] ?? msg("Vehicle skipped: empty");
+}
+
+// Brands sellers write for unbranded parts: saved with no brand, no warning.
+const NO_BRAND = new Set(["generic", "generique", "sans marque", "no name", "noname", "oem style", "universal fit", "universel", "adaptable", "autre", "other", "بدون", "بدون ماركة"]);
+const BRAND_ALIASES: Record<string, string> = { facets: "facet", mann: "mann filter", autofren: "autofren seinsa", "febi": "febi bilstein", magneti: "magneti marelli" };
+
+export function findBrand(cat: Catalog, value: string): { id: number } | "none" | null {
+  let v = fold(value);
+  if (!v || NO_BRAND.has(v)) return "none";
+  v = BRAND_ALIASES[v] ?? v;
+  const compact = (s: string) => fold(s).replace(/ /g, "");
+  const exact = cat.brands.find((b) => fold(b.name) === v || fold(b.slug) === v || compact(b.name) === v.replace(/ /g, ""));
+  if (exact) return exact;
+  // "Mann" → "Mann-Filter": the only brand starting with that word.
+  const pre = cat.brands.filter((b) => startsWith(fold(b.name), v));
+  return pre.length === 1 ? pre[0]! : null;
 }
 
 export type RowResult = {
@@ -288,10 +461,9 @@ export async function planImport(DB: D1Database, sellerId: number, rows: Raw[], 
 
     let brandId: number | null = null;
     if (r.brand) {
-      const brand = r.brand;
-      const b = cat.brands.find((x) => fold(x.name) === fold(brand) || fold(x.slug) === fold(brand));
-      if (b) brandId = b.id;
-      else warnings.push(msg("Brand \"{value}\" is not in the catalog: left empty (suggest it from the part page)", { value: r.brand ?? "" }));
+      const b = findBrand(cat, r.brand);
+      if (b && b !== "none") brandId = b.id;
+      else if (!b) warnings.push(msg("Brand \"{value}\" is not in the catalog: left empty (suggest it from the part page)", { value: r.brand ?? "" }));
     }
 
     const oem: Array<{ number: string; norm: string }> = [];
@@ -301,15 +473,12 @@ export async function planImport(DB: D1Database, sellerId: number, rows: Raw[], 
       else if (!oem.some((x) => x.norm === norm)) oem.push({ number: n.replace(/\s+/g, " ").slice(0, 40), norm });
     }
 
-    const fitments: Fitment[] = [];
     const vehicles = splitList(r.vehicles || "");
     if (vehicles.length > MAX_VEHICLES) warnings.push(msg("Only the first {n} vehicles are imported", { n: MAX_VEHICLES }));
-    for (const v of vehicles.slice(0, MAX_VEHICLES)) {
-      const f = parseVehicle(cat, v);
-      if (!("make" in f)) warnings.push(f);
-      else fitments.push(f);
-    }
-    if (!vehicles.length) warnings.push(msg("No vehicle: buyers who search by car won't see this part"));
+    const parsed = parseVehicles(cat, r.vehicles || "");
+    const fitments = parsed.fitments;
+    warnings.push(...parsed.messages);
+    if (!fitments.length && !parsed.universal) warnings.push(msg("No vehicle: buyers who search by car won't see this part"));
 
     let image: string | null = null;
     if (r.image_url) {

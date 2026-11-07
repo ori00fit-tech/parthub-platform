@@ -17,6 +17,9 @@ const BRANDS = [
   "Victor Reinz", "Pierburg", "Varta", "Exide", "Castrol", "Total", "Motul", "Shell", "Liqui Moly",
   "Michelin", "Bridgestone", "Hankook", "Renault (origine)", "PSA (origine)",
   "Toyota (origine)", "Hyundai / Kia (origine)", "VAG (origine)", "Mercedes-Benz (origine)",
+  // Added with the first real seller imports.
+  "ATE", "Bendix", "Fram", "Vernet", "TYC", "Nissens", "Spidan", "GSP", "Elf", "Facet", "Autofren Seinsa",
+  "Philips", "Osram", "Meyle", "Metzger", "NRF", "Hengst", "Knecht", "Blue Print", "Saginaw",
 ];
 
 const q = (s) => `'${String(s).replace(/'/g, "''")}'`;
