@@ -49,7 +49,7 @@ export default function Footer() {
         </FooterColumn>
 
         <FooterColumn title={t("Sellers")}>
-          <a href={`${SELLER_PORTAL_URL}/auth`} className={linkClass}>{t("Sell on PartHub")}</a>
+          <Link to="/sell" className={linkClass}>{t("Sell on PartHub")}</Link>
           <a href={SELLER_PORTAL_URL} className={linkClass}>{t("Seller Center")}</a>
           <Link to="/legal/seller" className={linkClass}>{t("Seller agreement")}</Link>
         </FooterColumn>
