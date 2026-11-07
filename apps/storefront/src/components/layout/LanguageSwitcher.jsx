@@ -17,7 +17,7 @@ export default function LanguageSwitcher() {
             title={l.label}
             className={[
               "min-w-[30px] rounded px-1.5 py-0.5 text-[12px] font-semibold transition",
-              active ? "bg-white text-navy-deep" : "text-muted hover:text-white",
+              active ? "bg-white text-navy-deep" : "text-[#A9B4C8] hover:text-white",
             ].join(" ")}
           >
             <span aria-hidden="true">{l.short}</span>

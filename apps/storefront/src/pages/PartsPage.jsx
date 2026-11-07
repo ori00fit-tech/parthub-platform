@@ -502,10 +502,10 @@ export default function PartsPage() {
   const FilterPanel = (
     <div className="space-y-5">
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-ink-2">
+        <label htmlFor="filter-q" className="mb-1.5 block text-sm font-medium text-ink-2">
           {t("Search")}
         </label>
-        <input
+        <input id="filter-q"
           value={filters.q}
           onChange={setField("q")}
           placeholder={t("Search by title, SKU, keyword...")}
@@ -514,10 +514,10 @@ export default function PartsPage() {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-ink-2">
+        <label htmlFor="filter-category" className="mb-1.5 block text-sm font-medium text-ink-2">
           {t("Category")}
         </label>
-        <select
+        <select id="filter-category"
           value={filters.category}
           onChange={setField("category")}
           className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
@@ -532,10 +532,10 @@ export default function PartsPage() {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-ink-2">
+        <label htmlFor="filter-brand" className="mb-1.5 block text-sm font-medium text-ink-2">
           {t("Brand")}
         </label>
-        <select
+        <select id="filter-brand"
           value={filters.brand}
           onChange={setField("brand")}
           className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
@@ -550,10 +550,10 @@ export default function PartsPage() {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-ink-2">
+        <label htmlFor="filter-condition" className="mb-1.5 block text-sm font-medium text-ink-2">
           {t("Condition")}
         </label>
-        <select
+        <select id="filter-condition"
           value={filters.condition}
           onChange={setField("condition")}
           className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"
@@ -567,10 +567,10 @@ export default function PartsPage() {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-ink-2">
+          <label htmlFor="filter-min-price" className="mb-1.5 block text-sm font-medium text-ink-2">
             {t("Min price")}
           </label>
-          <input
+          <input id="filter-min-price"
             value={filters.min_price}
             onChange={setField("min_price")}
             inputMode="numeric"
@@ -580,10 +580,10 @@ export default function PartsPage() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-ink-2">
+          <label htmlFor="filter-max-price" className="mb-1.5 block text-sm font-medium text-ink-2">
             {t("Max price")}
           </label>
-          <input
+          <input id="filter-max-price"
             value={filters.max_price}
             onChange={setField("max_price")}
             inputMode="numeric"
@@ -594,10 +594,10 @@ export default function PartsPage() {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-ink-2">
+        <label htmlFor="filter-sort" className="mb-1.5 block text-sm font-medium text-ink-2">
           {t("Sort")}
         </label>
-        <select
+        <select id="filter-sort"
           value={filters.sort}
           onChange={setField("sort")}
           className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm text-ink outline-none focus:border-sky-400"

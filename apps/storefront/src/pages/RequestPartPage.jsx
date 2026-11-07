@@ -143,7 +143,7 @@ export default function RequestPartPage() {
               <p className="mt-2 text-sm font-bold">
                 {i + 1}. {step.title}
               </p>
-              <p className="mt-1 text-xs text-faint">{step.text}</p>
+              <p className="mt-1 text-xs text-slate-300">{step.text}</p>
             </div>
           ))}
         </div>
