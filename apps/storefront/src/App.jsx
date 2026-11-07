@@ -18,6 +18,7 @@ import RequestPartPage from "./pages/RequestPartPage";
 import MyRequestsPage from "./pages/MyRequestsPage";
 import RequestDetailsPage from "./pages/RequestDetailsPage";
 import LegalPage from "./pages/LegalPage";
+import SellPage from "./pages/SellPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/parts" element={<PartsPage />} />
         <Route path="/parts/:slug" element={<PartDetailsPage />} />
+        <Route path="/sell" element={<SellPage />} />
         <Route path="/legal" element={<LegalPage />} />
         <Route path="/legal/:doc" element={<LegalPage />} />
 

@@ -120,6 +120,9 @@ export default function MainLayout() {
           <span className="hidden sm:inline">{t("Compare listings · Seller trust badges")}</span>
           <span className="hidden md:inline">{t("Can't find it? Sellers reply to part requests")}</span>
           <span className="flex-1" />
+          <Link to="/sell" className="font-semibold text-white hover:text-navy-ink">
+            {t("Sell on PartHub")}
+          </Link>
           <Link to="/orders" className="hidden hover:text-ink sm:inline">
             {t("Track order")}
           </Link>

@@ -1,7 +1,7 @@
 // /sitemap.xml — home, parts list, every active part and store, legal pages.
 import { api, origin } from "./_lib/seo.js";
 
-const STATIC = ["/", "/parts", "/request-part", "/legal/terms", "/legal/returns", "/legal/privacy", "/legal/seller"];
+const STATIC = ["/", "/parts", "/sell", "/request-part", "/legal/terms", "/legal/returns", "/legal/privacy", "/legal/seller"];
 
 const xmlEscape = (s) => String(s).replace(/[<>&'"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" })[c]);
 const day = (value) => {
