@@ -17,11 +17,21 @@ function FooterColumn({ title, children }) {
 
 const linkClass = "block hover:text-blue-300";
 
+// Category pages (/pieces/:slug), for buyers and search engines.
+const POPULAR_CATEGORIES = [
+  ["filters", "Filters & Fluids"],
+  ["brakes", "Brakes & Rotors"],
+  ["engine-parts", "Engine Parts"],
+  ["suspension", "Suspension & Steering"],
+  ["electrical", "Electrical & Lighting"],
+  ["cooling", "Cooling System"],
+];
+
 export default function Footer() {
   const t = useT();
   return (
     <footer className="mt-10 border-t border-line bg-[#0B1222] text-white">
-      <div className="mx-auto grid max-w-[1380px] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-5 lg:px-6">
+      <div className="mx-auto grid max-w-[1380px] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-6 lg:px-6">
         <div>
           <div className="flex items-center gap-2.5">
             <BrandMark className="h-10 w-10" />
@@ -38,6 +48,12 @@ export default function Footer() {
           <Link to="/vehicle-selector" className={linkClass}>{t("Shop by Vehicle")}</Link>
           <Link to="/request-part" className={linkClass}>{t("Request a part")}</Link>
           <Link to="/compare" className={linkClass}>{t("Compare Parts")}</Link>
+        </FooterColumn>
+
+        <FooterColumn title={t("Categories")}>
+          {POPULAR_CATEGORIES.map(([slug, name]) => (
+            <Link key={slug} to={`/pieces/${slug}`} className={linkClass}>{t(name)}</Link>
+          ))}
         </FooterColumn>
 
         <FooterColumn title={t("Account")}>

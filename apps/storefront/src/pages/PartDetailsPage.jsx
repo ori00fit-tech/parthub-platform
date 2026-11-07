@@ -415,9 +415,15 @@ export default function PartDetailsPage() {
               ) : null}
 
               {part.category_name ? (
-                <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-ink-2">
-                  {t(part.category_name)}
-                </span>
+                part.category_slug ? (
+                  <Link to={`/pieces/${part.category_slug}`} className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-ink-2 hover:bg-surface-3 hover:underline">
+                    {t(part.category_name)}
+                  </Link>
+                ) : (
+                  <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-ink-2">
+                    {t(part.category_name)}
+                  </span>
+                )
               ) : null}
 
               <span className="rounded-full bg-navy/[0.06] px-3 py-1 text-xs font-semibold text-link">
@@ -675,7 +681,13 @@ export default function PartDetailsPage() {
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold text-ink">
-                          {row.make} • {row.generation || row.model}
+                          {row.make_slug && row.model_slug ? (
+                            <Link to={`/voiture/${row.make_slug}/${row.model_slug}`} className="hover:underline">
+                              {row.make} • {row.generation || row.model}
+                            </Link>
+                          ) : (
+                            <>{row.make} • {row.generation || row.model}</>
+                          )}
                         </p>
                         {rowMatch ? (
                           <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-700">
