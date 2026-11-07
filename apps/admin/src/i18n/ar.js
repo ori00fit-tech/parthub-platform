@@ -481,4 +481,7 @@ export default {
   "Type of the first number": "نوع الرقم الأول",
   "First number": "الرقم الأول",
   "Save link": "حفظ الربط",
+  "No photo": "بلا صورة",
+  "A part is approved only with at least one photo.": "لا تُقبل القطعة إلا بصورة واحدة على الأقل.",
+  "{n} skipped: no photo yet.": "تُجوهلت {n}: بلا صورة بعد.",
 };

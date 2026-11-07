@@ -198,7 +198,7 @@ export default function PartImportPage() {
               <p className="font-semibold">
                 {t("{created} parts created, {updated} updated, {errors} lines skipped.", done)}
               </p>
-              {done.created ? <p className="mt-1">{t("New parts are waiting for PartHub's check. Add photos to them from your inventory.")}</p> : null}
+              {done.created ? <p className="mt-1">{t("New parts are waiting for PartHub's check. Each part needs at least one photo to be approved: add them from your inventory.")}</p> : null}
               <Link to="/parts" className="mt-3 inline-flex font-semibold text-emerald-900 underline">{t("Go to my inventory")}</Link>
             </div>
           ) : (
