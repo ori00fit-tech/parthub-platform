@@ -29,6 +29,49 @@ const STATUS = {
   waived: ["Returned: no commission", "bg-gray-100 text-gray-700"],
 };
 
+// PartHub's commission invoices to this seller and the payments recorded
+// (API: GET /api/v1/marketplace/me/invoices).
+function Invoices() {
+  const t = useT();
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    api.get("/api/v1/marketplace/me/invoices").then((r) => setData(r?.data || null)).catch(() => setData(null));
+  }, []);
+  if (!data?.invoices?.length) return null;
+  return (
+    <div className="space-y-3">
+      <h2 className="text-xl font-bold text-gray-900">{t("PartHub invoices")}</h2>
+      <p className="text-sm text-gray-600">
+        {t("Outstanding: {amount}", { amount: formatMoney(data.totals?.outstanding || 0) })}
+      </p>
+      <ul className="divide-y divide-gray-100 rounded-2xl border border-gray-200 bg-white">
+        {data.invoices.map((inv) => (
+          <li key={inv.id} className="px-4 py-3 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-mono font-semibold" dir="ltr">{inv.number}</span>
+              <span className={["rounded-full px-2.5 py-1 text-xs font-semibold", inv.status === "paid" ? "bg-emerald-50 text-emerald-700" : inv.overdue ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-800"].join(" ")}>
+                {inv.status === "paid" ? t("Paid") : inv.overdue ? t("Overdue") : t("To pay by {date}", { date: inv.due_date })}
+              </span>
+            </div>
+            <p className="mt-1 font-mono text-gray-700">
+              {monthLabel(inv.period)} · {t("Amount {amount} · paid {paid} · balance {balance}", {
+                amount: formatMoney(inv.amount),
+                paid: formatMoney(inv.paid),
+                balance: formatMoney(inv.balance),
+              })}
+            </p>
+            {inv.payments?.length ? (
+              <p className="mt-1 text-xs text-gray-500">
+                {inv.payments.map((p) => `${p.paid_on} · ${formatMoney(p.amount)}${p.reference ? ` · ${p.reference}` : ""}`).join(" — ")}
+              </p>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function StatementPage() {
   const t = useT();
   const [month, setMonth] = useState(thisMonth());
@@ -157,6 +200,7 @@ export default function StatementPage() {
           )}
         </>
       )}
+      <Invoices />
     </section>
   );
 }

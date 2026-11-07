@@ -16,6 +16,7 @@ import {
   RATE_NOTICE_DAYS, accrueCommissions, cancelRate, commissionRateBps, currentPeriod, lastPeriods, rateHistory, readEffectiveFrom,
   readPeriod, readRatePercent, scheduleRate, upcomingRates, waiveCommission,
 } from "../utils/commissions";
+import { PAYMENT_METHODS, cancelInvoice, invoiceDraft, invoicePayments, issueInvoice, ledgerTotals, listInvoices, readDay, readMad, recordPayment } from "../utils/invoices";
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -707,6 +708,7 @@ adminRoutes.post("/categories", async (c) => {
 });
 
 // ── Revenue (utils/commissions.ts) ─────────────────────────────────────
+const STUCK_DAYS = 10;
 // GET /api/v1/admin/revenue?month=YYYY-MM — sales delivered per month
 // (GMV), orders, cancellations, returns resolved for the buyer, and the
 // commission ledger, for the 6 months up to `month`; per-seller figures for
@@ -767,8 +769,18 @@ adminRoutes.get("/revenue", async (c) => {
      GROUP BY s.id ORDER BY gmv DESC LIMIT 50`,
     [month, month]
   );
+  // Lines shipped more than STUCK_DAYS ago and still not delivered: the
+  // seller may have forgotten (or avoided) "delivered".
+  const stuck = await dbFirst<{ n: number; value: number }>(
+    c.env.DB,
+    `SELECT COUNT(*) AS n, COALESCE(SUM(subtotal), 0) AS value FROM order_items
+     WHERE status = 'shipped' AND fulfillment = 'delivery' AND status_updated_at <= datetime('now', ?)`,
+    [`-${STUCK_DAYS} days`]
+  );
   return ok(c, {
     month,
+    stuck_shipments: { days: STUCK_DAYS, lines: Number(stuck?.n || 0), value: Number(stuck?.value || 0) },
+    ledger: await ledgerTotals(c.env.DB),
     rate_bps: await commissionRateBps(c.env.DB),
     upcoming: await upcomingRates(c.env.DB),
     rates: await rateHistory(c.env.DB),
@@ -810,4 +822,88 @@ adminRoutes.post("/commissions/:id/waive", async (c) => {
   if (res === "not_found") return fail(c, "Commission not found", 404);
   if (res === "locked") return fail(c, "Only a recorded, not yet invoiced commission can be waived", 409);
   return ok(c, { id: Number(c.req.param("id")), status: "waived" });
+});
+
+// GET /api/v1/admin/commissions?seller_id=&month=YYYY-MM — recorded
+// commission lines (to check or waive one).
+adminRoutes.get("/commissions", async (c) => {
+  const sellerId = Number(c.req.query("seller_id"));
+  const month = readPeriod(c.req.query("month"));
+  if (!Number.isInteger(sellerId) || sellerId <= 0 || !month) return fail(c, "Choose a seller and a month");
+  const rows = await dbAll(
+    c.env.DB,
+    `SELECT cm.id, cm.order_item_id, o.reference, oi.title, oi.subtotal, cm.base, cm.rate_bps, cm.amount, cm.status, cm.invoice_id, cm.delivered_at
+     FROM commissions cm JOIN order_items oi ON oi.id = cm.order_item_id JOIN orders o ON o.id = cm.order_id
+     WHERE cm.seller_id = ? AND cm.period = ? ORDER BY cm.delivered_at`,
+    [sellerId, month]
+  );
+  return ok(c, rows);
+});
+
+// ── Commission invoices and payments (utils/invoices.ts) ───────────────
+// GET /api/v1/admin/invoices?status=&seller_id=&month= — invoices with
+// payments, balance, overdue and reconciliation flags, and ledger totals.
+adminRoutes.get("/invoices", async (c) => {
+  const status = ["issued", "paid", "cancelled"].includes(String(c.req.query("status"))) ? String(c.req.query("status")) : undefined;
+  const sellerId = Number(c.req.query("seller_id")) || undefined;
+  const period = readPeriod(c.req.query("month")) || undefined;
+  const invoices = await listInvoices(c.env.DB, { status, sellerId, period });
+  const payments = await invoicePayments(c.env.DB, invoices.map((i) => i.id));
+  return ok(c, {
+    invoices: invoices.map((i) => ({ ...i, payments: payments.filter((p) => p.invoice_id === i.id) })),
+    totals: await ledgerTotals(c.env.DB, sellerId),
+  });
+});
+
+// GET /api/v1/admin/invoices/draft?month=YYYY-MM — per seller with sales
+// delivered that month: what an invoice would cover, and whether it can be
+// issued (month over, every sale final, not invoiced yet).
+adminRoutes.get("/invoices/draft", async (c) => {
+  const month = readPeriod(c.req.query("month"));
+  if (!month) return fail(c, "Choose a month");
+  const sellers = await dbAll<{ seller_id: number; name: string }>(
+    c.env.DB,
+    `SELECT DISTINCT oi.seller_id, s.name FROM order_items oi JOIN sellers s ON s.id = oi.seller_id
+     WHERE oi.status = 'delivered' AND substr(oi.delivered_at, 1, 7) = ? ORDER BY s.name LIMIT 200`,
+    [month]
+  );
+  const out = [];
+  for (const s of sellers) out.push({ ...s, ...(await invoiceDraft(c.env.DB, s.seller_id, month)) });
+  return ok(c, { month, sellers: out });
+});
+
+// POST /api/v1/admin/invoices { seller_id, month, note? }
+adminRoutes.post("/invoices", async (c) => {
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({}) as Record<string, unknown>);
+  const sellerId = Number(body.seller_id);
+  const month = readPeriod(body.month);
+  if (!Number.isInteger(sellerId) || sellerId <= 0 || !month) return fail(c, "Choose a seller and a month");
+  const res = await issueInvoice(c.env.DB, sellerId, month, Number(c.get("user_id")), cleanNote(body.note, 300));
+  if (!res.ok) return fail(c, res.error, 409);
+  return ok(c, res);
+});
+
+// POST /api/v1/admin/invoices/:id/payments { amount (MAD), paid_on: YYYY-MM-DD, method, reference? }
+adminRoutes.post("/invoices/:id/payments", async (c) => {
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({}) as Record<string, unknown>);
+  const amount = readMad(body.amount);
+  const paidOnDay = readDay(body.paid_on);
+  const method = String(body.method || "bank_transfer");
+  if (!amount) return fail(c, "Enter the amount received");
+  if (!paidOnDay) return fail(c, "Enter the transfer date");
+  if (!(PAYMENT_METHODS as readonly string[]).includes(method)) return fail(c, "Choose how it was paid");
+  const reference = typeof body.reference === "string" ? body.reference.trim().slice(0, 80) || null : null;
+  const res = await recordPayment(c.env.DB, Number(c.req.param("id")), { amount, paid_on: paidOnDay, method, reference }, Number(c.get("user_id")));
+  if (!res.ok) return fail(c, res.error, res.code === "NOT_FOUND" ? 404 : res.code === "FUTURE_DATE" || res.code === "BEFORE_INVOICE" ? 400 : 409);
+  return ok(c, res);
+});
+
+// POST /api/v1/admin/invoices/:id/cancel { note } — unpaid invoices only.
+adminRoutes.post("/invoices/:id/cancel", async (c) => {
+  const body = await c.req.json<{ note?: unknown }>().catch(() => ({}) as { note?: unknown });
+  const note = cleanNote(body.note, 500);
+  if (!note) return fail(c, "Write the reason");
+  const res = await cancelInvoice(c.env.DB, Number(c.req.param("id")), Number(c.get("user_id")), note);
+  if (!res.ok) return fail(c, res.error, res.code === "NOT_FOUND" ? 404 : 409);
+  return ok(c, res);
 });

@@ -924,6 +924,11 @@ export default {
   // Returns and claims
   "The part is different from its description": "La pièce est différente de sa description",
   "The part was damaged on arrival": "La pièce est arrivée endommagée",
+  "Confirm you received these parts? The 7-day returns window starts now.": "Confirmer la réception de ces pièces ? Le délai de retour de 7 jours commence maintenant.",
+  "Did you receive your parts?": "Avez-vous reçu vos pièces ?",
+  "Confirm when the parcel is in your hands. If something is wrong with a part, you can still report it for 7 days.": "Confirmez quand le colis est entre vos mains. Si une pièce pose problème, vous pouvez encore le signaler pendant 7 jours.",
+  "I received the parts from {seller}": "J'ai reçu les pièces de {seller}",
+  "I received my parts": "J'ai reçu mes pièces",
   "Delivery failed": "Livraison échouée",
   "I did not receive the part, although it is marked delivered": "Je n'ai pas reçu la pièce, alors qu'elle est indiquée livrée",
   "It does not fit, although the listing said it would": "Elle ne convient pas, alors que l'annonce l'indiquait",

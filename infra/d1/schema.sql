@@ -202,6 +202,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   pickup_attempts INTEGER NOT NULL DEFAULT 0,
   collector_name TEXT,
   collector_phone TEXT,
+  received_by_buyer_at TEXT,                     -- the buyer confirmed receipt (migrations/0025)
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -530,7 +531,8 @@ CREATE TABLE IF NOT EXISTS commissions (
   status        TEXT NOT NULL DEFAULT 'accrued' CHECK (status IN ('accrued','waived','invoiced','paid')),
   period        TEXT NOT NULL,                    -- YYYY-MM of the delivery
   delivered_at  TEXT NOT NULL,
-  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  invoice_id    INTEGER                            -- commission_invoices.id (migrations/0025)
 );
 CREATE INDEX IF NOT EXISTS idx_commissions_seller_period ON commissions(seller_id, period);
 CREATE INDEX IF NOT EXISTS idx_commissions_period ON commissions(period);
@@ -560,6 +562,41 @@ CREATE TABLE IF NOT EXISTS commission_events (
   new_amount    INTEGER,
   actor         TEXT NOT NULL,       -- admin:<user id> | seller:<seller id> | system
   note          TEXT,
-  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  invoice_id    INTEGER                            -- commission_invoices.id (migrations/0025)
 );
 CREATE INDEX IF NOT EXISTS idx_commission_events_commission ON commission_events(commission_id);
+
+-- ── Commission invoices and payments (migrations/0025) ─────────
+CREATE TABLE IF NOT EXISTS commission_invoices (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  number       TEXT NOT NULL UNIQUE,                 -- PH-C-2026-11-0001
+  seller_id    INTEGER NOT NULL REFERENCES sellers(id),
+  period       TEXT NOT NULL,                        -- YYYY-MM (delivery month)
+  amount       INTEGER NOT NULL DEFAULT 0,           -- centimes
+  status       TEXT NOT NULL DEFAULT 'issued' CHECK (status IN ('issued','paid','cancelled')),
+  due_date     TEXT NOT NULL,                        -- YYYY-MM-DD
+  note         TEXT,
+  issued_by    INTEGER REFERENCES users(id),
+  issued_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  paid_at      TEXT,
+  cancelled_at TEXT,
+  cancelled_by INTEGER REFERENCES users(id)
+);
+-- At most one live invoice per seller and month.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_commission_invoices_live
+  ON commission_invoices(seller_id, period) WHERE status != 'cancelled';
+CREATE INDEX IF NOT EXISTS idx_commission_invoices_status ON commission_invoices(status, due_date);
+
+CREATE TABLE IF NOT EXISTS commission_payments (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_id  INTEGER NOT NULL REFERENCES commission_invoices(id),
+  amount      INTEGER NOT NULL CHECK (amount > 0),  -- centimes
+  paid_on     TEXT NOT NULL,                        -- transfer date, YYYY-MM-DD
+  method      TEXT NOT NULL DEFAULT 'bank_transfer' CHECK (method IN ('bank_transfer','cash','cheque','other')),
+  reference   TEXT,                                 -- bank reference
+  recorded_by INTEGER REFERENCES users(id),
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_commission_payments_invoice ON commission_payments(invoice_id);
+CREATE INDEX IF NOT EXISTS idx_commissions_invoice ON commissions(invoice_id);

@@ -93,6 +93,7 @@ const EVENT_LABELS = {
   issue_refunded: "Refund done",
   issue_withdrawn: "Claim withdrawn",
   delivery_failed: "Delivery failed",
+  received_by_buyer: "The buyer confirmed receipt",
 };
 
 function Badge({ status }) {

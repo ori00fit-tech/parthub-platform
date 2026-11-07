@@ -3,7 +3,7 @@ import type { Env, HonoVariables } from "../types";
 import { authMiddleware } from "../middlewares/auth";
 import { ok, created, fail, notFound } from "../utils/response";
 import { dbFirst, dbAll, dbRun } from "../utils/db";
-import { logOrderEvent } from "../utils/fulfillment";
+import { logOrderEvent, refreshOrderStatus, setLineStatus } from "../utils/fulfillment";
 import { type Fulfillment, FULFILLMENTS, allowedMethods, generatePickupCode, isPickup, loadSellerFulfillment } from "../utils/pickup";
 import { deliveryFee } from "../utils/shipping";
 import { ISSUE_REASONS, type IssueRow, canEscalate, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, reportWindow, updateIssue } from "../utils/issues";
@@ -316,6 +316,31 @@ commerceRoutes.get("/orders/:reference", authMiddleware, async (c) => {
   });
 
   return ok(c, { ...order, items: withIssues, shipping_address: address, events, pickups, shipments });
+});
+
+// POST /api/v1/commerce/orders/:reference/received { seller_id? }
+// The buyer confirms they received a delivery: that seller's shipped lines
+// (or all shipped lines) become delivered now, without waiting for the
+// seller. The 7-day returns window starts from this moment.
+commerceRoutes.post("/orders/:reference/received", authMiddleware, async (c) => {
+  const buyerId = Number(c.get("user_id"));
+  const order = await dbFirst<{ id: number }>(c.env.DB, "SELECT id FROM orders WHERE reference = ? AND buyer_id = ?", [c.req.param("reference"), buyerId]);
+  if (!order) return notFound(c, "Order");
+  const body = await c.req.json<{ seller_id?: unknown }>().catch(() => ({}) as { seller_id?: unknown });
+  const sellerId = Number(body.seller_id) || null;
+  const lines = await dbAll<{ id: number }>(
+    c.env.DB,
+    `SELECT id FROM order_items WHERE order_id = ? AND status = 'shipped' AND fulfillment = 'delivery' ${sellerId ? "AND seller_id = ?" : ""}`,
+    sellerId ? [order.id, sellerId] : [order.id]
+  );
+  if (!lines.length) return fail(c, "Nothing on the way to confirm", 409);
+  const ids = lines.map((l) => l.id);
+  await setLineStatus(c.env.DB, ids, "delivered");
+  await c.env.DB.prepare(`UPDATE order_items SET received_by_buyer_at = datetime('now') WHERE id IN (${ids.map((_, i) => `?${i + 1}`).join(",")})`)
+    .bind(...ids).run();
+  await logOrderEvent(c.env.DB, order.id, "received_by_buyer", "buyer", null);
+  await refreshOrderStatus(c.env.DB, order.id);
+  return ok(c, { delivered: ids.length });
 });
 
 // POST /api/v1/commerce/orders/:reference/issues { order_item_id, reason, details }

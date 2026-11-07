@@ -717,6 +717,12 @@ export default {
   // Returns and claims
   "The part is different from its description": "القطعة مختلفة عن الوصف",
   "The part was damaged on arrival": "القطعة وصلت تالفة",
+  "The buyer confirmed receipt": "أكّد المشتري الاستلام",
+  "PartHub invoices": "فواتير PartHub",
+  "Outstanding: {amount}": "المتبقي: {amount}",
+  "Overdue": "متأخرة",
+  "To pay by {date}": "تُدفع قبل {date}",
+  "Amount {amount} · paid {paid} · balance {balance}": "المبلغ {amount} · المدفوع {paid} · المتبقي {balance}",
   "I did not receive the part, although it is marked delivered": "لم أستلم القطعة رغم أنها مسجّلة كمسلَّمة",
   "Delivery failed": "فشل التسليم",
   "The buyer refused or could not be reached, and the part came back to you. The order is closed, the quantities go back to your stock, and the buyer pays nothing.": "رفض المشتري الطرد أو تعذّر الوصول إليه، وعادت القطعة إليك. يُغلق الطلب، وتعود الكميات إلى مخزونك، ولا يدفع المشتري شيئاً.",
