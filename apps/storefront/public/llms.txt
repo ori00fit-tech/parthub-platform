@@ -1,0 +1,26 @@
+# PartHub
+
+> PartHub is an auto parts marketplace for Morocco. Buyers find new, original (OEM) and used car parts from sellers checked by PartHub, check that a part fits their car (make, model, generation, engine), and pay cash on delivery. Prices are in Moroccan dirhams (MAD). The site is in French, Arabic and English.
+
+## Browse
+
+- [All parts](https://parthub.autos/parts): search by name, part number (OEM) or car
+- [Find parts for your car](https://parthub.autos/vehicle-selector): choose make, model, year and engine
+- [Request a part](https://parthub.autos/request-part): sellers reply with offers when a part is not listed
+- [Parts by category](https://parthub.autos/pieces/brakes): one page per category, e.g. brakes, filters, suspension
+- [Parts by car](https://parthub.autos/voiture/dacia): one page per make and model, e.g. /voiture/dacia/logan
+
+## Sellers
+
+- [Sell on PartHub](https://parthub.autos/sell): how shops, importers and dismantlers list their parts
+
+## Policies
+
+- [Terms of use](https://parthub.autos/legal/terms)
+- [Returns policy](https://parthub.autos/legal/returns)
+- [Privacy policy](https://parthub.autos/legal/privacy)
+- [Seller agreement](https://parthub.autos/legal/seller)
+
+## Optional
+
+- [Sitemap](https://parthub.autos/sitemap.xml): every part, store and landing page
