@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   role           TEXT NOT NULL DEFAULT 'buyer' CHECK (role IN ('buyer','seller','admin')),
   avatar_url     TEXT,
   is_active      INTEGER NOT NULL DEFAULT 1,
+  token_version  INTEGER NOT NULL DEFAULT 0,  -- sessions (see migrations/0021)
   terms_accepted_at TEXT,                   -- terms of use (see migrations/0013)
   terms_version  TEXT,
   created_at     TEXT NOT NULL DEFAULT (datetime('now')),
@@ -482,3 +483,11 @@ CREATE TABLE IF NOT EXISTS part_number_links (
 );
 CREATE INDEX IF NOT EXISTS idx_part_number_links_to ON part_number_links(to_id);
 CREATE INDEX IF NOT EXISTS idx_part_number_links_verification ON part_number_links(verification);
+
+-- ── Sign-in attempts (see migrations/0021) ────────────────────
+CREATE TABLE IF NOT EXISTS auth_attempts (
+  key          TEXT PRIMARY KEY,
+  count        INTEGER NOT NULL DEFAULT 0,
+  window_start TEXT NOT NULL,
+  blocked_until TEXT
+);

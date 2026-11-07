@@ -98,7 +98,8 @@ function cleanPhone(value: unknown): string | null | "invalid" {
 // store doesn't have to sign in again.
 async function sellerSessionToken(env: Env, userId: number, sellerId: number) {
   if (!env.JWT_SECRET) return null;
-  return signToken({ user_id: userId, role: "seller", seller_id: sellerId }, env.JWT_SECRET);
+  const row = await env.DB.prepare("select token_version from users where id = ?1").bind(userId).first<{ token_version: number }>();
+  return signToken({ user_id: userId, role: "seller", seller_id: sellerId, tv: Number(row?.token_version || 0) }, env.JWT_SECRET);
 }
 
 async function getPartById(DB: D1Database, id: number) {
@@ -704,11 +705,9 @@ marketplaceRoutes.get("/me/readiness", authMiddleware, async (c) => {
   }
 
   const readiness = await loadReadiness(c.env.DB, userId);
-  const tokenSellerId = c.get("seller_id");
-  const access_token =
-    readiness.seller && Number(tokenSellerId) !== readiness.seller.id && role === "seller"
-      ? await sellerSessionToken(c.env, userId, readiness.seller.id)
-      : null;
+  // The store comes from the database on every request (middlewares/auth.ts),
+  // so a token issued before the store was created keeps working: no refresh.
+  const access_token = null;
 
   return c.json(
     success({

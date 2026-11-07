@@ -1,5 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { apiGet, apiPost } from "../../lib/api";
+import { BASE_URL, apiGet, apiPost } from "../../lib/api";
+
+// Ends the session on the server too (every device of this account), then
+// forgets it here. Best effort: signing out works offline.
+function revokeOnServer(baseUrl, token) {
+  if (!token) return;
+  fetch(`${baseUrl}/api/v1/auth/logout`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, keepalive: true }).catch(() => {});
+}
 
 const TOKEN_KEY = "parthub_buyer_token";
 const USER_KEY = "parthub_buyer_user";
@@ -109,6 +116,7 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    revokeOnServer(BASE_URL, token);
     setToken("");
     setUser(null);
   }
