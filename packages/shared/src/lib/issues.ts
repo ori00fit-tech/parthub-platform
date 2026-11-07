@@ -7,6 +7,7 @@ export const ISSUE_REASONS: ReadonlyArray<{ id: string; label: string; pays: "se
   { id: "damaged", label: "The part was damaged on arrival", pays: "seller" },
   { id: "not_compatible", label: "It does not fit, although the listing said it would", pays: "seller" },
   { id: "hidden_defect", label: "Used part with a hidden defect", pays: "seller" },
+  { id: "not_received", label: "I did not receive the part, although it is marked delivered", pays: "seller" },
   { id: "wrong_part_ordered", label: "I ordered the wrong part", pays: "buyer" },
   { id: "changed_mind", label: "I changed my mind", pays: "buyer" },
   { id: "other", label: "Something else", pays: null },

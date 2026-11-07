@@ -157,7 +157,7 @@ export default function OrderTrackingPage() {
   const events = Array.isArray(order.events) ? order.events : [];
   // Messages left with a status change (e.g. why a seller cancelled).
   const notes = events.filter((e) => e.note && e.actor !== "buyer" && !String(e.event).startsWith("issue_"));
-  const cancelNote = [...events].reverse().find((e) => e.event === "cancelled" && e.note)?.note || "";
+  const cancelNote = [...events].reverse().find((e) => (e.event === "cancelled" || e.event === "delivery_failed") && e.note)?.note || "";
   const address = order.shipping_address;
 
   return (

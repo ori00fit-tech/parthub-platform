@@ -7,7 +7,14 @@ on:
       - 'workers/api/**'
 
 jobs:
+  # The database first: new code may read tables or columns that only the
+  # latest migrations add (every step is safe to run again).
+  migrate:
+    uses: ./.github/workflows/d1-migrate.yml
+    secrets: inherit
+
   deploy:
+    needs: migrate
     runs-on: ubuntu-latest
 
     steps:

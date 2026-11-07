@@ -66,6 +66,23 @@ export default function StatementPage() {
         </p>
       ) : null}
 
+      {data?.upcoming?.length ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="note">
+          <p className="font-semibold">{t("Commission change announced")}</p>
+          <ul className="mt-1 list-disc ps-5">
+            {data.upcoming.map((r) => (
+              <li key={r.effective_from}>
+                {t("{pct}% on sales whose returns window ends from {date} (announced on {announced})", {
+                  pct: Number(r.rate_bps) / 100,
+                  date: day(r.effective_from),
+                  announced: day(r.announced_at),
+                })}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <div>
         <label htmlFor="st-month" className="mb-1 block text-sm font-semibold text-gray-800">{t("Month")}</label>
         <select id="st-month" value={month} onChange={(e) => setMonth(e.target.value)} className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm">
@@ -121,6 +138,9 @@ export default function StatementPage() {
                         <td className="px-4 py-3 text-end font-mono">{formatMoney(l.subtotal)}</td>
                         <td className="px-4 py-3 text-end font-mono">
                           {l.status === "pending" ? "—" : `${formatMoney(l.amount || 0)}${l.rate_bps ? ` (${Number(l.rate_bps) / 100}%)` : ""}`}
+                          {l.status === "accrued" && l.base != null && Number(l.base) < Number(l.subtotal) ? (
+                            <span className="block text-xs text-gray-500">{t("on {amount} kept after a partial refund", { amount: formatMoney(l.base) })}</span>
+                          ) : null}
                         </td>
                         <td className="px-4 py-3">
                           <span className={["rounded-full px-2.5 py-1 text-xs font-semibold", cls].join(" ")}>{t(label)}</span>

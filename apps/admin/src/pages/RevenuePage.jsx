@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 import { useT } from "../i18n";
 
 // Marketplace figures and the commission ledger
-// (API: GET /api/v1/admin/revenue, PUT /api/v1/admin/settings/commission;
+// (API: GET /api/v1/admin/revenue, POST/DELETE /api/v1/admin/commission-rates;
 // rules in workers/api/src/utils/commissions.ts).
 
 const thisMonth = () => new Date().toISOString().slice(0, 7);
@@ -25,51 +25,101 @@ function Kpi({ label, value, hint }) {
   );
 }
 
-function CommissionSetting({ rateBps, onSaved }) {
-  const t = useT();
-  const [value, setValue] = useState(String(rateBps / 100));
-  const [state, setState] = useState({ saving: false, error: "", ok: "" });
-  useEffect(() => setValue(String(rateBps / 100)), [rateBps]);
+const day = (v) => String(v || "").slice(0, 10);
+const inDays = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 
-  async function save(e) {
-    e.preventDefault();
-    const pct = Number(String(value).replace(",", "."));
-    if (pct > 0 && !window.confirm(t("Start charging {pct}% on new sales? The seller agreement promises sellers at least 30 days notice: update it and tell them first.", { pct }))) return;
+// Rates are dated and never edited: schedule a new one, or cancel one that
+// has not started. A higher rate must start 30+ days from today (the
+// sellers see it on their statement as soon as it is scheduled).
+function CommissionSchedule({ data, onChanged }) {
+  const t = useT();
+  const notice = data.notice_days || 30;
+  const [value, setValue] = useState("");
+  const [from, setFrom] = useState(inDays(notice));
+  const [note, setNote] = useState("");
+  const [state, setState] = useState({ saving: false, error: "", ok: "" });
+
+  async function run(promise, okText) {
     setState({ saving: true, error: "", ok: "" });
     try {
-      const res = await api.put("/api/v1/admin/settings/commission", { rate_percent: value });
-      setState({ saving: false, error: "", ok: t("Saved.") });
-      onSaved(res?.data?.rate_bps ?? 0);
+      await promise;
+      setState({ saving: false, error: "", ok: okText });
+      setValue("");
+      setNote("");
+      onChanged();
     } catch (err) {
       setState({ saving: false, error: err?.message || t("Something went wrong. Please try again."), ok: "" });
     }
   }
 
+  function schedule(e) {
+    e.preventDefault();
+    const pct = Number(String(value).replace(",", "."));
+    if (pct > 0 && !window.confirm(t("Schedule {pct}% from {date}? Update the seller agreement and tell the sellers: they see it on their statement from now on.", { pct, date: from }))) return;
+    run(api.post("/api/v1/admin/commission-rates", { rate_percent: value, effective_from: from, note: note.trim() }), t("Scheduled."));
+  }
+
+  function cancel(id) {
+    if (!window.confirm(t("Cancel this scheduled rate?"))) return;
+    run(api.delete(`/api/v1/admin/commission-rates/${id}`), t("Cancelled."));
+  }
+
   return (
-    <form onSubmit={save} className="rounded-3xl border border-gray-200 bg-white p-6 text-gray-900 shadow-sm">
+    <div className="rounded-3xl border border-gray-200 bg-white p-6 text-gray-900 shadow-sm">
       <h2 className="text-xl font-bold text-gray-900">{t("Commission rate")}</h2>
       <p className="mt-1 text-sm text-gray-500">
-        {t("Applies to sales recorded from now on (after their 7-day returns window), never to past ones. 0% = free.")}
+        {t("Each sale uses the rate in force on the day its 7-day returns window ends, whenever it is recorded. A higher rate needs {n} days notice. 0% = free.", { n: notice })}
       </p>
-      <div className="mt-4 flex flex-wrap items-end gap-3">
+      <p className="mt-3 text-sm font-semibold">
+        {t("Rate now: {pct}%", { pct: (data.rate_bps / 100).toLocaleString() })}
+        {data.rate_bps === 0 ? <span className="ms-2 font-normal text-emerald-700">{t("Selling is free: sales are recorded at 0%.")}</span> : null}
+      </p>
+      {data.upcoming?.length ? (
+        <ul className="mt-3 space-y-2">
+          {data.upcoming.map((r) => (
+            <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <span>{t("{pct}% from {date}", { pct: (r.rate_bps / 100).toLocaleString(), date: day(r.effective_from) })}{r.note ? ` · ${r.note}` : ""}</span>
+              <button type="button" onClick={() => cancel(r.id)} disabled={state.saving} className="text-xs font-semibold text-red-700 hover:underline">
+                {t("Cancel")}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <form onSubmit={schedule} className="mt-4 flex flex-wrap items-end gap-3">
         <div>
           <label htmlFor="rate" className="mb-1 block text-sm font-semibold text-gray-800">{t("Rate (%)")}</label>
-          <input
-            id="rate"
-            inputMode="decimal"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            className="h-11 w-28 rounded-xl border border-gray-200 bg-white px-3 font-mono text-sm text-gray-900 outline-none focus:border-blue-500"
-          />
+          <input id="rate" inputMode="decimal" required value={value} onChange={(e) => setValue(e.target.value)} className="h-11 w-24 rounded-xl border border-gray-200 bg-white px-3 font-mono text-sm text-gray-900 outline-none focus:border-blue-500" />
+        </div>
+        <div>
+          <label htmlFor="from" className="mb-1 block text-sm font-semibold text-gray-800">{t("Starts on")}</label>
+          <input id="from" type="date" required min={inDays(0)} value={from} onChange={(e) => setFrom(e.target.value)} className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900" />
+        </div>
+        <div className="min-w-[10rem] flex-1">
+          <label htmlFor="rate-note" className="mb-1 block text-sm font-semibold text-gray-800">{t("Note (optional)")}</label>
+          <input id="rate-note" value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900" />
         </div>
         <button type="submit" disabled={state.saving} className="h-11 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300">
-          {state.saving ? t("Saving…") : t("Save")}
+          {state.saving ? t("Saving…") : t("Schedule")}
         </button>
-      </div>
-      {rateBps === 0 ? <p className="mt-3 text-sm text-emerald-700">{t("Selling is free: sales are recorded at 0%.")}</p> : null}
+      </form>
       {state.error ? <p className="mt-3 text-sm text-red-700" role="alert">{state.error}</p> : null}
       {state.ok ? <p className="mt-3 text-sm text-emerald-700" role="status">{state.ok}</p> : null}
-    </form>
+
+      {data.rates?.length > 1 ? (
+        <details className="mt-4 text-sm">
+          <summary className="cursor-pointer font-semibold text-gray-700">{t("History")}</summary>
+          <ul className="mt-2 space-y-1 text-gray-600">
+            {data.rates.map((r) => (
+              <li key={r.id} className={r.cancelled_at ? "line-through" : ""}>
+                {t("{pct}% from {date}", { pct: (r.rate_bps / 100).toLocaleString(), date: day(r.effective_from) })} · {t("set on {date}", { date: day(r.created_at) })}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+    </div>
   );
 }
 
@@ -79,6 +129,7 @@ export default function RevenuePage() {
   const [what, setWhat] = useState("5"); // simulation: commission at this %
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -90,7 +141,7 @@ export default function RevenuePage() {
     return () => {
       active = false;
     };
-  }, [month]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [month, reload]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cur = data?.months?.find((m) => m.period === month) || null;
   const simPct = Math.max(0, Math.min(20, Number(String(what).replace(",", ".")) || 0));
@@ -184,7 +235,7 @@ export default function RevenuePage() {
                 <p className="mt-4 text-sm text-gray-500">{t("No delivered sales this month.")}</p>
               )}
             </div>
-            <CommissionSetting rateBps={data.rate_bps} onSaved={(bps) => setData((d) => ({ ...d, rate_bps: bps }))} />
+            <CommissionSchedule data={data} onChanged={() => setReload((n) => n + 1)} />
           </div>
         </>
       )}

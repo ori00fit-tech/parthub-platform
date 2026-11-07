@@ -94,6 +94,28 @@ await call("PATCH", `/api/v1/marketplace/me/orders/${r3.data.id}/status`, s1, { 
 [st, r] = await call("PATCH", `/api/v1/marketplace/me/orders/${r3.data.id}/status`, s1, { status: "shipped", carrier: "dhl<script>", tracking_number: "" });
 check("bad_carrier", r.data.shipment.carrier === null && r.data.shipment.tracking_number === null, r.data.shipment);
 
+// Re-sent "shipped" without carrier keeps the tracking number already saved
+// (ON CONFLICT path: a fresh shipment row exists from checkout).
+sql.exec(`UPDATE order_items SET status = 'confirmed' WHERE order_id = ${r3.data.id}`);
+[st, r] = await call("PATCH", `/api/v1/marketplace/me/orders/${r3.data.id}/status`, s1, { status: "shipped", carrier: "sendit", tracking_number: "SD-9" });
+sql.exec(`UPDATE order_items SET status = 'confirmed' WHERE order_id = ${r3.data.id}`);
+[st, r] = await call("PATCH", `/api/v1/marketplace/me/orders/${r3.data.id}/status`, s1, { status: "shipped" });
+check("tracking_kept", r.data.shipment.carrier === "sendit" && r.data.shipment.tracking_number === "SD-9", r.data.shipment);
+
+// Delivery failed: a shipped order can be closed (reason required); stock
+// comes back, the fee leaves the total, the event says why.
+check("shipped_can_fail", r.data.next_statuses.includes("cancelled"), r.data.next_statuses);
+const stockBefore = sql.prepare("select quantity from parts where id = 1").get().quantity;
+[st] = await call("PATCH", `/api/v1/marketplace/me/orders/${r3.data.id}/status`, s1, { status: "cancelled" });
+check("failed_needs_reason", st === 400, st);
+[st, r] = await call("PATCH", `/api/v1/marketplace/me/orders/${r3.data.id}/status`, s1, { status: "cancelled", note: "Buyer refused the parcel" });
+const fo = sql.prepare("select status, shipping_fee, total from orders where id = ?").get(r3.data.id);
+const fev = sql.prepare("select event, note from order_events where order_id = ? order by id desc limit 1").get(r3.data.id);
+check("delivery_failed", st === 200 && fo.status === "cancelled" && fo.total === 0 && fev.event === "delivery_failed" && fev.note === "Buyer refused the parcel", [st, fo, fev]);
+check("failed_restocked", sql.prepare("select quantity from parts where id = 1").get().quantity === stockBefore + 1);
+[st] = await call("PATCH", `/api/v1/marketplace/me/orders/${r3.data.id}/status`, s1, { status: "delivered" });
+check("failed_is_final", st === 409, st);
+
 // Order from before 0022 (no shipments, flat fee): shipping keeps its fee.
 sql.exec(`INSERT INTO orders (id,buyer_id,reference,subtotal,shipping_fee,total,status) VALUES (90,7,'PH-OLD',30000,3500,33500,'confirmed');
   INSERT INTO order_items (order_id,part_id,seller_id,title,price,quantity,subtotal,status) VALUES (90,1,1,'Pads',30000,1,30000,'confirmed');`);

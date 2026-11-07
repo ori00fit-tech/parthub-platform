@@ -24,6 +24,7 @@ export default function IssueCard({ issue, onChange, showOrder = false }) {
   const t = useT();
   const [mode, setMode] = useState("");
   const [note, setNote] = useState("");
+  const [refund, setRefund] = useState(""); // MAD, empty = the whole line
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const status = STATUS[issue.status] || STATUS.closed;
@@ -35,6 +36,7 @@ export default function IssueCard({ issue, onChange, showOrder = false }) {
       const res = await api.post(`/api/v1/marketplace/me/issues/${issue.id}/${path}`, body);
       setMode("");
       setNote("");
+      setRefund("");
       onChange?.(res?.data);
     } catch (err) {
       setError(err?.message || t("Something went wrong. Please try again."));
@@ -45,7 +47,7 @@ export default function IssueCard({ issue, onChange, showOrder = false }) {
 
   function submit() {
     if (mode === "refuse" && !note.trim()) return setError(t("Explain to the buyer why you refuse"));
-    if (mode === "resolve") return send("resolve", { note: note.trim() });
+    if (mode === "resolve") return send("resolve", { note: note.trim(), refund_amount: refund.trim() });
     return send("respond", { decision: mode, note: note.trim() });
   }
 
@@ -117,6 +119,22 @@ export default function IssueCard({ issue, onChange, showOrder = false }) {
                     ? t("Why do you refuse? The buyer and PartHub see this.")
                     : t("How did you refund the buyer? (optional)")}
               </label>
+              {mode === "resolve" ? (
+                <div>
+                  <label htmlFor={`issue-refund-${issue.id}`} className="block text-sm font-semibold text-gray-900">
+                    {t("Amount refunded (MAD)")}
+                  </label>
+                  <input
+                    id={`issue-refund-${issue.id}`}
+                    inputMode="decimal"
+                    value={refund}
+                    onChange={(e) => setRefund(e.target.value)}
+                    placeholder={issue.subtotal ? String(issue.subtotal / 100) : ""}
+                    className="mt-1 h-10 w-36 rounded-xl border border-gray-200 bg-white px-3 font-mono text-sm outline-none focus:border-blue-500"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">{t("Leave empty if you refunded the whole line. For a partial return (1 part of 3), enter what you gave back: commission applies only to what the buyer kept.")}</p>
+                </div>
+              ) : null}
               <textarea
                 id={`issue-note-${issue.id}`}
                 value={note}
