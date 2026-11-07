@@ -8,7 +8,7 @@ on:
 
 jobs:
   ci:
-    name: Lint & Build
+    name: Typecheck, test & build
     runs-on: ubuntu-latest
 
     steps:
@@ -18,7 +18,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # 22.5+: the API tests use node:sqlite
+          node-version: "22"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
@@ -39,8 +40,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build shared packages
-        run: pnpm --filter @parthub/shared build 2>/dev/null || true
+      # @parthub/shared is used from source (no build step).
+      - name: Typecheck API
+        run: pnpm --filter @parthub/api typecheck
+
+      - name: API tests
+        run: pnpm --filter @parthub/api test
 
       - name: Build storefront
         run: pnpm --filter @parthub/storefront build
@@ -56,7 +61,3 @@ jobs:
         run: pnpm --filter @parthub/admin build
         env:
           VITE_ADMIN_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-
-      - name: Typecheck API
-        run: pnpm --filter @parthub/api typecheck
-        continue-on-error: true
