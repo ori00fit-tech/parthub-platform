@@ -1093,4 +1093,12 @@ export default {
   "Delivery across Morocco, cash on delivery": "Livraison partout au Maroc, paiement à la livraison",
   "Pickup in {city}: inspect before you pay": "Retrait à {city} : vérifiez avant de payer",
   "Pickup at the store: inspect before you pay": "Retrait au magasin : vérifiez avant de payer",
+  // Delivery fees per seller, tracking
+  "{local} in {city}, {national} elsewhere": "{local} à {city}, {national} ailleurs",
+  "Delivery": "Livraison",
+  "Tracking number:": "Numéro de suivi :",
+  "To {seller}": "À {seller}",
+  "Amana (Barid Al-Maghrib)": "Amana (Barid Al-Maghrib)",
+  "Seller's own driver": "Livreur du vendeur",
+  "Other carrier": "Autre transporteur",
 };

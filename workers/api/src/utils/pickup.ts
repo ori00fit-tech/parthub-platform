@@ -45,6 +45,8 @@ export type SellerFulfillment = {
   pickup_enabled: number;
   pickup_address: string | null;
   pickup_hours: string | null;
+  delivery_fee_local: number | null; // centimes (see utils/shipping.ts)
+  delivery_fee_national: number | null;
 };
 
 // Methods a buyer may choose for these parts of one seller. Pickup needs
@@ -61,7 +63,8 @@ export async function loadSellerFulfillment(DB: D1Database, sellerIds: number[])
   const map = new Map<number, SellerFulfillment>();
   if (!ids.length) return map;
   const res = await DB.prepare(
-    `select id, name, location, delivery_enabled, pickup_enabled, pickup_address, pickup_hours
+    `select id, name, location, delivery_enabled, pickup_enabled, pickup_address, pickup_hours,
+            delivery_fee_local, delivery_fee_national
      from sellers where id in (${ids.map((_, i) => `?${i + 1}`).join(",")})`
   ).bind(...ids).all<SellerFulfillment>();
   for (const s of res.results || []) map.set(s.id, s);

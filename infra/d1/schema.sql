@@ -42,6 +42,8 @@ CREATE TABLE IF NOT EXISTS sellers (
   pickup_enabled INTEGER NOT NULL DEFAULT 0,
   pickup_address TEXT,
   pickup_hours TEXT,
+  delivery_fee_local INTEGER,     -- centimes, NULL = platform fee (see migrations/0022)
+  delivery_fee_national INTEGER,
   status      TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','active','suspended','rejected')),
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
@@ -491,3 +493,18 @@ CREATE TABLE IF NOT EXISTS auth_attempts (
   window_start TEXT NOT NULL,
   blocked_until TEXT
 );
+
+-- ── Shipments: one per seller and order (see migrations/0022) ──
+CREATE TABLE IF NOT EXISTS order_shipments (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id        INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  seller_id       INTEGER NOT NULL REFERENCES sellers(id),
+  method          TEXT NOT NULL DEFAULT 'delivery',
+  fee             INTEGER NOT NULL DEFAULT 0,
+  carrier         TEXT,
+  tracking_number TEXT,
+  shipped_at      TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (order_id, seller_id)
+);
+CREATE INDEX IF NOT EXISTS idx_order_shipments_seller ON order_shipments(seller_id);

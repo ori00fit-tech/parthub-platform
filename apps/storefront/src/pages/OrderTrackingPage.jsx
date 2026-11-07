@@ -26,6 +26,8 @@ const PICKUP_STEPS = [
 ];
 const PICKUP_STEP_INDEX = { pending: 0, confirmed: 1, processing: 1, shipped: 1, delivered: 2 };
 const isPickup = (item) => item.fulfillment === "pickup" || item.fulfillment === "courier";
+// Carriers a seller can pick when shipping (API: utils/shipping.ts).
+export const CARRIER_LABELS = { amana: "Amana (Barid Al-Maghrib)", ctm: "CTM Messagerie", sendit: "Sendit", forcelog: "Forcelog", olivraison: "Olivraison", own: "Seller's own driver", other: "Other carrier" };
 
 function formatUntil(value) {
   if (!value) return "";
@@ -150,6 +152,8 @@ export default function OrderTrackingPage() {
   const current = (pickupOnly ? PICKUP_STEP_INDEX : STEP_INDEX)[order.status] ?? 0;
   const pickups = Array.isArray(order.pickups) ? order.pickups : [];
   const delivered = items.some((i) => !isPickup(i));
+  const shipments = Array.isArray(order.shipments) ? order.shipments : [];
+  const tracked = shipments.filter((s) => s.method === "delivery" && (s.carrier || s.tracking_number));
   const events = Array.isArray(order.events) ? order.events : [];
   // Messages left with a status change (e.g. why a seller cancelled).
   const notes = events.filter((e) => e.note && e.actor !== "buyer" && !String(e.event).startsWith("issue_"));
@@ -283,6 +287,24 @@ export default function OrderTrackingPage() {
               </div>
             </div>
           ) : null}
+          {tracked.length ? (
+            <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
+              <h2 className="text-lg font-bold text-ink">{t("Shipping")}</h2>
+              <ul className="mt-2 space-y-3 text-sm">
+                {tracked.map((s) => (
+                  <li key={s.seller_id}>
+                    <p className="font-semibold text-ink">{s.seller_name}</p>
+                    {s.carrier ? <p className="text-ink-2">{t(CARRIER_LABELS[s.carrier] || s.carrier)}</p> : null}
+                    {s.tracking_number ? (
+                      <p className="text-muted">
+                        {t("Tracking number:")} <span className="font-mono font-semibold text-ink" dir="ltr">{s.tracking_number}</span>
+                      </p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <div className="rounded-3xl border border-line bg-surface p-5 text-sm text-muted shadow-sm">
             <p className="font-semibold text-ink">{t("Payment")}</p>
             <p className="mt-1 font-semibold text-ink">{pickupOnly ? t("Cash at the store") : t("Cash on delivery")}</p>
@@ -295,6 +317,18 @@ export default function OrderTrackingPage() {
                   : t("To pay the seller on delivery: {amount}", { amount: formatPrice(order.total) })}
               </p>
             )}
+            {shipments.filter((s) => s.amount_due > 0).length > 1 && !cancelled && order.status !== "delivered" ? (
+              <ul className="mt-2 space-y-1">
+                {shipments
+                  .filter((s) => s.amount_due > 0)
+                  .map((s) => (
+                    <li key={s.seller_id} className="flex justify-between gap-3">
+                      <span className="truncate">{t("To {seller}", { seller: s.seller_name })}</span>
+                      <span className="font-mono text-ink">{formatPrice(s.amount_due)}</span>
+                    </li>
+                  ))}
+              </ul>
+            ) : null}
             <p className="mt-3">{t("The seller may call you to confirm the part before shipping.")}</p>
           </div>
         </aside>

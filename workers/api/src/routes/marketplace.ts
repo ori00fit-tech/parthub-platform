@@ -14,6 +14,7 @@ import { type LineStatus, SELLER_NEXT, logOrderEvent, refreshOrderStatus, rollup
 import { runInBackground } from "../utils/whatsapp";
 import { MAX_IMPORT_ROWS, applyImport, planImport } from "../utils/part-import";
 import { MAX_CODE_ATTEMPTS, holdUntil, isPickup, nextStatuses, sameCode } from "../utils/pickup";
+import { cleanCarrier, cleanTracking, readFeeMad } from "../utils/shipping";
 
 export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -942,11 +943,20 @@ marketplaceRoutes.put("/me/fulfillment", authMiddleware, async (c) => {
   const address = typeof body.pickup_address === "string" ? body.pickup_address.trim().replace(/\s+/g, " ").slice(0, 300) : "";
   const hours = typeof body.pickup_hours === "string" ? body.pickup_hours.trim().slice(0, 200) : "";
   if (!delivery && !pickup) return c.json(failure("NO_METHOD", "Offer delivery, pickup at your store, or both"), 400);
+  // Delivery fees in MAD (empty = PartHub's standard fee), utils/shipping.ts.
+  const feeLocal = readFeeMad(body.delivery_fee_local);
+  const feeNational = readFeeMad(body.delivery_fee_national);
+  if (feeLocal === "invalid" || feeNational === "invalid") {
+    return c.json(failure("INVALID_FEE", "Delivery fees must be between 0 and 2000 MAD"), 400);
+  }
   if (pickup && address.length < 8) return c.json(failure("PICKUP_ADDRESS_REQUIRED", "Give the address where buyers collect their parts"), 400);
   await c.env.DB.prepare(
-    `update sellers set delivery_enabled = ?1, pickup_enabled = ?2, pickup_address = ?3, pickup_hours = ?4, updated_at = datetime('now') where id = ?5`
-  ).bind(delivery ? 1 : 0, pickup ? 1 : 0, address || null, hours || null, sellerId).run();
-  const row = await c.env.DB.prepare("select delivery_enabled, pickup_enabled, pickup_address, pickup_hours from sellers where id = ?1").bind(sellerId).first();
+    `update sellers set delivery_enabled = ?1, pickup_enabled = ?2, pickup_address = ?3, pickup_hours = ?4,
+       delivery_fee_local = ?6, delivery_fee_national = ?7, updated_at = datetime('now') where id = ?5`
+  ).bind(delivery ? 1 : 0, pickup ? 1 : 0, address || null, hours || null, sellerId, feeLocal, feeNational).run();
+  const row = await c.env.DB.prepare(
+    "select delivery_enabled, pickup_enabled, pickup_address, pickup_hours, delivery_fee_local, delivery_fee_national from sellers where id = ?1"
+  ).bind(sellerId).first();
   return c.json(success(row, { message: "Fulfilment options saved" }));
 });
 
@@ -1437,10 +1447,19 @@ async function loadSellerOrder(DB: D1Database, sellerId: number, orderId: number
 
   const status = rollupStatus(lines.map((l) => l.status));
   const issues = await issuesForOrder(DB, orderId, sellerId);
+  // This seller's shipment (migrations/0022): their delivery fee, carrier
+  // and tracking number. Older orders have none (flat fee on the order).
+  const shipment = await DB.prepare(
+    "select method, fee, carrier, tracking_number, shipped_at from order_shipments where order_id = ?1 and seller_id = ?2"
+  ).bind(orderId, sellerId).first<{ method: string; fee: number; carrier: string | null; tracking_number: string | null; shipped_at: string | null }>();
+  const openTotal = lines.filter((l) => l.status !== "cancelled").reduce((sum, l) => sum + Number(l.subtotal || 0), 0);
   return {
     ...order,
     issues,
     status,
+    shipment: shipment ?? null,
+    // What this seller collects from the buyer: their open lines + their fee.
+    amount_to_collect: shipment ? (openTotal ? openTotal + Number(shipment.fee || 0) : 0) : null,
     total: lines.reduce((sum, l) => sum + Number(l.subtotal || 0), 0),
     next_statuses: nextStatuses(status, fulfillment, SELLER_NEXT),
     fulfillment,
@@ -1601,7 +1620,9 @@ marketplaceRoutes.patch("/me/orders/:id/status", authMiddleware, async (c) => {
   const sellerId = await ownSellerId(c);
   if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
   const orderId = Number(c.req.param("id"));
-  const body = await c.req.json<{ status?: unknown; note?: unknown; code?: unknown }>().catch(() => ({} as { status?: unknown; note?: unknown; code?: unknown }));
+  const body = await c.req.json<{ status?: unknown; note?: unknown; code?: unknown; carrier?: unknown; tracking_number?: unknown }>().catch(
+    () => ({} as { status?: unknown; note?: unknown; code?: unknown; carrier?: unknown; tracking_number?: unknown })
+  );
   const next = String(body.status || "") as LineStatus;
   const note = typeof body.note === "string" ? body.note.trim().slice(0, 500) || null : null;
 
@@ -1633,6 +1654,21 @@ marketplaceRoutes.patch("/me/orders/:id/status", authMiddleware, async (c) => {
   }
 
   const restocked = await setLineStatus(c.env.DB, lineIds, next);
+  // Shipped: who carries it and the tracking number (both optional).
+  if (next === "shipped") {
+    const carrier = cleanCarrier(body.carrier);
+    const tracking = cleanTracking(body.tracking_number);
+    await c.env.DB.prepare(
+      `insert into order_shipments (order_id, seller_id, method, fee, carrier, tracking_number, shipped_at)
+       values (?1, ?2, 'delivery',
+               -- an order from before 0022 has no shipments: its flat fee moves to this
+               -- first row, so the order's total doesn't change
+               case when exists (select 1 from order_shipments where order_id = ?1) then 0
+                    else (select shipping_fee from orders where id = ?1) end,
+               ?3, ?4, datetime('now'))
+       on conflict(order_id, seller_id) do update set carrier = excluded.carrier, tracking_number = excluded.tracking_number, shipped_at = excluded.shipped_at`
+    ).bind(orderId, sellerId, carrier, tracking).run();
+  }
   // Pickup confirmed = the part is kept for the buyer for a few days.
   if (isPickup(order.fulfillment) && next === "confirmed" && lineIds.length) {
     await c.env.DB.prepare(`update order_items set pickup_until = ?1 where id in (${lineIds.map((_, i) => `?${i + 2}`).join(",")})`)

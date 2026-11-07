@@ -904,4 +904,16 @@ export default {
   "You keep the part for the buyer for 3 days.": "Vous gardez la pièce pour l'acheteur pendant 3 jours.",
   "Mark as collected": "Marquer comme retirée",
   "After the buyer checked the part and paid, enter the 6-digit code they show you.": "Une fois la pièce vérifiée et payée, saisissez le code à 6 chiffres que l'acheteur vous montre.",
+  // Delivery fees per seller, tracking
+  "Delivery fee in {city} (MAD)": "Frais de livraison à {city} (MAD)",
+  "Delivery fee in your city (MAD)": "Frais de livraison dans votre ville (MAD)",
+  "Delivery fee to other cities (MAD)": "Frais de livraison vers les autres villes (MAD)",
+  "You collect this fee from the buyer with the parts. Empty = PartHub's standard fee (35 MAD). 0 = free delivery.": "Vous encaissez ces frais auprès de l'acheteur avec les pièces. Vide = frais standard PartHub (35 MAD). 0 = livraison gratuite.",
+  "Carrier": "Transporteur",
+  "Tracking number (optional)": "Numéro de suivi (facultatif)",
+  "The buyer sees the carrier and the tracking number on their order.": "L'acheteur voit le transporteur et le numéro de suivi sur sa commande.",
+  "Collect {amount} (your delivery fee {fee} included)": "Encaissez {amount} (vos frais de livraison de {fee} inclus)",
+  "My own driver": "Mon propre livreur",
+  "Amana (Barid Al-Maghrib)": "Amana (Barid Al-Maghrib)",
+  "Other carrier": "Autre transporteur",
 };

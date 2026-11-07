@@ -46,17 +46,29 @@ export async function refreshOrderStatus(DB: D1Database, orderId: number): Promi
   const lines = rows.results || [];
   const status = rollupStatus(lines.map((r) => r.status));
   const subtotal = lines.filter((l) => l.status !== "cancelled").reduce((sum, l) => sum + Number(l.subtotal || 0), 0);
+  // Delivery fees: those of the sellers who still have open lines
+  // (order_shipments, migrations/0022). Older orders keep their flat fee.
+  const fees = await DB.prepare(
+    `select count(*) as n,
+            coalesce(sum(case when exists (select 1 from order_items oi where oi.order_id = sh.order_id
+                                           and oi.seller_id = sh.seller_id and oi.status != 'cancelled')
+                              then sh.fee else 0 end), 0) as open_fees
+     from order_shipments sh where sh.order_id = ?1`
+  ).bind(orderId).first<{ n: number; open_fees: number }>();
+  // ?6 = 1: fees from the shipments; 0: keep the order's own fee.
+  const feeSql = "(case when ?6 = 1 then ?5 else shipping_fee end)";
   await DB.prepare(
     `update orders
      set status = ?1,
          shipping_status = ?2,
          delivered_at = case when ?1 = 'delivered' then coalesce(delivered_at, datetime('now')) else null end,
          subtotal = ?3,
-         total = case when ?1 = 'cancelled' then 0 else max(0, ?3 + shipping_fee - discount) end,
+         shipping_fee = ${feeSql},
+         total = case when ?1 = 'cancelled' then 0 else max(0, ?3 + ${feeSql} - discount) end,
          updated_at = datetime('now')
      where id = ?4`
   )
-    .bind(status, SHIPPING_STATUS[status] ?? "pending", subtotal, orderId)
+    .bind(status, SHIPPING_STATUS[status] ?? "pending", subtotal, orderId, Number(fees?.open_fees || 0), Number(fees?.n || 0) > 0 ? 1 : 0)
     .run();
   return status;
 }

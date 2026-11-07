@@ -108,6 +108,9 @@ jobs:
       - name: 0021 session security (token version, sign-in attempts)
         run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0021_session_security.sql"
 
+      - name: 0022 delivery fees per seller, shipments with tracking
+        run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0022_shipping_fees.sql"
+
       # Read query: fails while the daily read limit is exceeded, which
       # doesn't mean the migrations failed.
       - name: Verify
