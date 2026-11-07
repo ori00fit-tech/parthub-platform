@@ -5,6 +5,7 @@ import { useT } from "../../i18n";
 import LanguageSwitcher from "../common/LanguageSwitcher";
 import { usePendingCounts } from "../../lib/pending";
 import { Icon } from "@parthub/shared/icons";
+import { LogoMark } from "@parthub/shared/brand";
 
 // Nav items whose badge shows how many items wait for moderation.
 const PENDING_KEY = { "/sellers": "sellers", "/parts": "parts", "/reviews": "reviews", "/issues": "issues", "/vehicles": "catalog", "/part-numbers": "numbers" };
@@ -33,9 +34,7 @@ function SidebarContent({ pathname, onNavigate, user, logout, pending }) {
     <div className="flex h-full flex-col bg-gray-950">
       <div className="border-b border-gray-800 px-5 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-900/40">
-            <Icon name="oem_origin" className="h-6 w-6" />
-          </div>
+          <LogoMark variant="white" className="h-11 w-11 flex-none" />
           <div className="min-w-0">
             <p className="truncate text-lg font-black text-white">{t("PartHub Admin")}</p>
             <p className="truncate text-xs text-gray-400">{t("Control panel")}</p>

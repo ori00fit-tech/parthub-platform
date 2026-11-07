@@ -29,7 +29,7 @@ export async function onRequestGet(context) {
             "query-input": "required name=search_term_string",
           },
         },
-        { "@context": "https://schema.org", "@type": "Organization", name: SITE_NAME, url: `${base}/`, logo: `${base}/favicon.svg` },
+        { "@context": "https://schema.org", "@type": "Organization", name: SITE_NAME, url: `${base}/`, logo: `${base}/logo-512.png` },
       ],
     });
   } catch {
