@@ -12,6 +12,7 @@ import { listingNumbers, readNumbersInput, saveListingNumbers } from "../utils/p
 import { type IssueRow, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, updateIssue } from "../utils/issues";
 import { type LineStatus, SELLER_NEXT, logOrderEvent, refreshOrderStatus, rollupStatus, setLineStatus } from "../utils/fulfillment";
 import { runInBackground } from "../utils/whatsapp";
+import { MAX_IMPORT_ROWS, applyImport, planImport } from "../utils/part-import";
 
 export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -1025,6 +1026,37 @@ marketplaceRoutes.post("/me/parts", authMiddleware, async (c) => {
       ),
       500
     );
+  }
+});
+
+// POST /api/v1/marketplace/me/parts/import — bulk import from a
+// spreadsheet (utils/part-import.ts). Body: { rows: [{ column: value }],
+// first_row?: number (row number of rows[0] in the file, for messages),
+// dry_run?: boolean }. A known reference (SKU) updates price and stock;
+// other rows create parts sent to moderation. Rows with errors are never
+// written; with dry_run nothing is.
+marketplaceRoutes.post("/me/parts/import", authMiddleware, async (c) => {
+  const sellerId = c.get("seller_id");
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const rows = body.rows;
+  if (!Array.isArray(rows) || !rows.length) return c.json(failure("ROWS_REQUIRED", "rows must be a non-empty list"), 400);
+  if (rows.length > MAX_IMPORT_ROWS) return c.json(failure("TOO_MANY_ROWS", `At most ${MAX_IMPORT_ROWS} rows per request`), 400);
+  if (rows.some((r) => !r || typeof r !== "object" || Array.isArray(r))) return c.json(failure("INVALID_ROWS", "Each row must be an object"), 400);
+  const firstRow = Number.isInteger(Number(body.first_row)) && Number(body.first_row) > 0 ? Number(body.first_row) : 1;
+
+  try {
+    const plan = await planImport(c.env.DB, Number(sellerId), rows as Array<Record<string, unknown>>, firstRow);
+    const dryRun = body.dry_run === true;
+    if (!dryRun) {
+      const restocked = await applyImport(c.env.DB, Number(sellerId), plan);
+      for (const id of restocked) runInBackground(c, notifyBackInStock(c.env, id));
+    }
+    const results = plan.map((p) => p.result);
+    const count = (a: string) => results.filter((r) => r.action === a).length;
+    return c.json(success(results, { dry_run: dryRun, created: count("create"), updated: count("update"), errors: count("error") }));
+  } catch (error) {
+    return c.json(failure("IMPORT_FAILED", error instanceof Error ? error.message : "Import failed"), 500);
   }
 });
 

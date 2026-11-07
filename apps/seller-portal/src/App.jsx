@@ -6,6 +6,7 @@ import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import PartsPage from "./pages/PartsPage";
 import PartWizardPage from "./pages/PartWizardPage";
+import PartImportPage from "./pages/PartImportPage";
 import PartEditPage from "./pages/PartEditPage";
 import OrdersPage from "./pages/OrdersPage";
 import OrderDetailsPage from "./pages/OrderDetailsPage";
@@ -75,6 +76,15 @@ export default function App() {
         element={
           <ProtectedShell>
             <PartWizardPage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
+        path="/parts/import"
+        element={
+          <ProtectedShell>
+            <PartImportPage />
           </ProtectedShell>
         }
       />

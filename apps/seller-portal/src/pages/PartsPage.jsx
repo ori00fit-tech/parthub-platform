@@ -154,6 +154,12 @@ export default function PartsPage() {
             >
               {t("+ Create part")}
             </Link>
+            <Link
+              to="/parts/import"
+              className="inline-flex items-center justify-center rounded-2xl border border-white/30 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            >
+              {t("Import from a spreadsheet")}
+            </Link>
           </div>
         </div>
       </div>

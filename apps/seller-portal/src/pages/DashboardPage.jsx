@@ -201,6 +201,13 @@ export default function DashboardPage() {
               </Link>
 
               <Link
+                to="/parts/import"
+                className="rounded-2xl border border-gray-300 bg-white px-5 py-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+              >
+                {t("Import from a spreadsheet")}
+              </Link>
+
+              <Link
                 to="/parts"
                 className="rounded-2xl border border-gray-300 bg-white px-5 py-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
               >
