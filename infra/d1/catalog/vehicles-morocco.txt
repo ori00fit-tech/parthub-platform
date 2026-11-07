@@ -34,6 +34,7 @@ make | renault | Renault
 model | r4 | 4 (R4)
 gen | Renault 4 | 1961 | 1994 | 1.0 34; 1.1 34
 model | clio | Clio
+gen | Clio I | 1990 | 1998 | 1.2 55; 1.4 75; 1.9 D 64
 gen | Clio II | 1998 | 2012 | 1.2 60; 1.4 16V 98; 1.5 dCi 65; 1.5 dCi 82
 gen | Clio III | 2005 | 2014 | 1.2 16V 75; 1.6 16V 110; 1.5 dCi 70; 1.5 dCi 85; 1.5 dCi 105
 gen | Clio IV | 2012 | 2019 | 1.2 16V 75; 0.9 TCe 90; 1.5 dCi 75; 1.5 dCi 90
@@ -49,6 +50,7 @@ gen | Kangoo III | 2021 | | 1.3 TCe 100; 1.5 Blue dCi 95; 1.5 Blue dCi 115
 model | express | Express
 gen | Express | 2021 | | 1.3 TCe 100; 1.5 Blue dCi 75; 1.5 Blue dCi 95
 model | megane | Mégane
+gen | Mégane I | 1995 | 2002 | 1.4 75; 1.6 90; 1.9 dTi 98; 1.9 dCi 105
 gen | Mégane II | 2002 | 2009 | 1.4 16V 98; 1.6 16V 110; 1.5 dCi 85; 1.5 dCi 105; 1.9 dCi 120
 gen | Mégane III | 2008 | 2016 | 1.6 16V 110; 1.5 dCi 90; 1.5 dCi 110; 1.9 dCi 130
 gen | Mégane IV | 2016 | 2022 | 1.2 TCe 130; 1.3 TCe 140; 1.5 dCi 110; 1.6 dCi 130
@@ -72,6 +74,22 @@ gen | Scénic II | 2003 | 2009 | 1.6 16V 110; 1.5 dCi 85; 1.5 dCi 105; 1.9 dCi 1
 gen | Scénic III | 2009 | 2016 | 1.6 16V 110; 1.5 dCi 110; 1.9 dCi 130
 model | modus | Modus
 gen | Modus | 2004 | 2012 | 1.2 16V 75; 1.4 16V 98; 1.5 dCi 86
+model | 19 | 19 (R19)
+gen | Renault 19 | 1988 | 2000 | 1.4 80; 1.7 90; 1.9 D 65
+model | 5 | 5 (R5 / Super 5)
+gen | Renault 5 | 1972 | 1996 | 1.1 47; 1.4 60
+model | laguna | Laguna
+gen | Laguna II | 2001 | 2007 | 1.6 16V 110; 1.8 16V 120; 1.9 dCi 120; 2.2 dCi 150
+gen | Laguna III | 2007 | 2015 | 2.0 16V 140; 1.5 dCi 110; 2.0 dCi 150
+model | fluence | Fluence
+gen | Fluence | 2009 | 2016 | 1.6 16V 110; 1.5 dCi 90; 1.5 dCi 110
+model | koleos | Koleos
+gen | Koleos I | 2008 | 2016 | 2.5 171; 2.0 dCi 150
+gen | Koleos II | 2016 | | 2.5 171; 2.0 dCi 175
+model | arkana | Arkana
+gen | Arkana | 2019 | | 1.3 TCe 140; 1.6 E-Tech Hybrid 145
+model | austral | Austral
+gen | Austral | 2022 | | 1.3 TCe 160; 1.2 E-Tech Hybrid 200
 
 make | peugeot | Peugeot
 model | 205 | 205
@@ -113,6 +131,26 @@ gen | Partner II | 2008 | 2018 | 1.6 VTi 98; 1.6 HDi 75; 1.6 HDi 90; 1.6 BlueHDi
 gen | Partner III / Rifter | 2018 | | 1.2 PureTech 110; 1.5 BlueHDi 75; 1.5 BlueHDi 100; 1.5 BlueHDi 130
 model | boxer | Boxer
 gen | Boxer II | 2006 | | 2.2 HDi 100; 2.2 HDi 120; 2.2 BlueHDi 140; 3.0 HDi 160
+model | 106 | 106
+gen | 106 | 1991 | 2003 | 1.0 45; 1.1 60; 1.4 75; 1.5 D 57
+model | 306 | 306
+gen | 306 | 1993 | 2002 | 1.4 75; 1.6 90; 1.9 D 70; 2.0 HDi 90
+model | 107 | 107
+gen | 107 | 2005 | 2014 | 1.0 68; 1.4 HDi 54
+model | 108 | 108
+gen | 108 | 2014 | 2021 | 1.0 VTi 68; 1.2 PureTech 82
+model | 5008 | 5008
+gen | 5008 I | 2009 | 2017 | 1.6 THP 156; 1.6 HDi 112; 2.0 HDi 150
+gen | 5008 II | 2017 | | 1.2 PureTech 130; 1.5 BlueHDi 130; 2.0 BlueHDi 180
+model | 408 | 408
+gen | 408 | 2022 | | 1.2 PureTech 130; 1.6 Hybrid 180
+model | expert | Expert
+gen | Expert II | 2007 | 2016 | 1.6 HDi 90; 2.0 HDi 120
+gen | Expert III | 2016 | | 1.5 BlueHDi 120; 2.0 BlueHDi 150
+model | bipper | Bipper
+gen | Bipper | 2008 | 2017 | 1.4 75; 1.3 HDi 75
+model | landtrek | Landtrek
+gen | Landtrek | 2020 | |
 
 make | citroen | Citroën
 model | c3 | C3
@@ -135,9 +173,34 @@ model | c2 | C2
 gen | C2 | 2003 | 2009 | 1.1 60; 1.4 75; 1.4 HDi 70
 model | c3-picasso | C3 Picasso
 gen | C3 Picasso | 2009 | 2017 | 1.4 VTi 95; 1.6 VTi 120; 1.6 HDi 90; 1.6 HDi 110
+model | saxo | Saxo
+gen | Saxo | 1996 | 2003 | 1.1 60; 1.4 75; 1.5 D 57
+model | xsara | Xsara
+gen | Xsara | 1997 | 2006 | 1.4 75; 1.6 90; 1.9 D 70; 2.0 HDi 90
+model | c1 | C1
+gen | C1 I | 2005 | 2014 | 1.0 68; 1.4 HDi 54
+gen | C1 II | 2014 | 2022 | 1.0 VTi 68; 1.2 PureTech 82
+model | c4-picasso | C4 Picasso
+gen | C4 Picasso I | 2006 | 2013 | 1.6 HDi 110; 2.0 HDi 136
+gen | C4 Picasso II | 2013 | 2022 | 1.2 PureTech 130; 1.6 BlueHDi 120
+model | c5 | C5
+gen | C5 I | 2001 | 2008 | 1.8 16V 115; 2.0 HDi 110
+gen | C5 II | 2008 | 2017 | 1.6 THP 156; 1.6 HDi 110; 2.0 HDi 140
+model | c5-aircross | C5 Aircross
+gen | C5 Aircross | 2018 | | 1.2 PureTech 130; 1.5 BlueHDi 130
+model | c3-aircross | C3 Aircross
+gen | C3 Aircross | 2017 | | 1.2 PureTech 110; 1.5 BlueHDi 100
+model | c4-cactus | C4 Cactus
+gen | C4 Cactus | 2014 | 2020 | 1.2 PureTech 82; 1.6 BlueHDi 100
+model | jumpy | Jumpy
+gen | Jumpy II | 2007 | 2016 | 1.6 HDi 90; 2.0 HDi 120
+gen | Jumpy III | 2016 | | 1.5 BlueHDi 120; 2.0 BlueHDi 150
+model | nemo | Nemo
+gen | Nemo | 2008 | 2017 | 1.4 75; 1.3 HDi 75
 
 make | hyundai | Hyundai
 model | accent | Accent
+gen | Accent II | 1999 | 2005 | 1.3 85; 1.5 CRDi 82
 gen | Accent III | 2005 | 2011 | 1.4 97; 1.6 112; 1.5 CRDi 110
 gen | Accent IV | 2011 | 2017 | 1.4 MPI 100; 1.6 MPI 123; 1.4 CRDi 90; 1.6 CRDi 128
 gen | Accent V | 2017 | 2022 | 1.4 MPI 100; 1.6 MPI 123; 1.6 CRDi 128
@@ -155,6 +218,31 @@ model | tucson | Tucson
 gen | Tucson I | 2004 | 2010 | 2.0 141; 2.0 CRDi 140
 gen | Tucson III | 2015 | 2020 | 1.6 GDi 132; 1.7 CRDi 115; 1.7 CRDi 141; 2.0 CRDi 136; 2.0 CRDi 185
 gen | Tucson IV | 2020 | | 1.6 T-GDi 150; 1.6 CRDi 136; 1.6 T-GDi Hybrid 230
+model | atos | Atos
+gen | Atos | 1997 | 2008 | 1.0 58; 1.1 63
+model | getz | Getz
+gen | Getz | 2002 | 2011 | 1.1 66; 1.3 82; 1.4 97; 1.5 CRDi 88
+model | elantra | Elantra
+gen | Elantra HD | 2006 | 2010 | 1.6 122; 1.6 CRDi 115
+gen | Elantra MD | 2010 | 2015 | 1.6 132; 1.6 CRDi 128
+gen | Elantra AD | 2015 | 2020 | 1.6 128; 1.6 CRDi 136
+gen | Elantra CN7 | 2020 | | 1.6 123
+model | i30 | i30
+gen | i30 FD | 2007 | 2012 | 1.4 109; 1.6 CRDi 115
+gen | i30 GD | 2012 | 2017 | 1.4 100; 1.6 CRDi 110
+gen | i30 PD | 2017 | | 1.0 T-GDi 120; 1.4 T-GDi 140; 1.6 CRDi 116
+model | santa-fe | Santa Fe
+gen | Santa Fe II | 2006 | 2012 | 2.2 CRDi 150
+gen | Santa Fe III | 2012 | 2018 | 2.2 CRDi 197
+gen | Santa Fe IV | 2018 | 2024 | 2.2 CRDi 200
+model | creta | Creta
+gen | Creta | 2015 | | 1.6 123; 1.6 CRDi 128
+model | kona | Kona
+gen | Kona | 2017 | | 1.0 T-GDi 120; 1.6 CRDi 115; Electric 204
+model | bayon | Bayon
+gen | Bayon | 2021 | | 1.2 84; 1.0 T-GDi 100
+model | h-1 | H-1
+gen | H-1 | 2007 | 2021 | 2.5 CRDi 170
 
 make | kia | Kia
 model | picanto | Picanto
@@ -162,42 +250,80 @@ gen | Picanto I | 2004 | 2011 | 1.0 62; 1.1 65
 gen | Picanto II | 2011 | 2017 | 1.0 69; 1.2 85
 gen | Picanto III | 2017 | | 1.0 67; 1.2 84
 model | rio | Rio
+gen | Rio II | 2005 | 2011 | 1.4 97; 1.5 CRDi 110
 gen | Rio III | 2011 | 2017 | 1.2 85; 1.4 109; 1.1 CRDi 75; 1.4 CRDi 90
 gen | Rio IV | 2017 | | 1.2 84; 1.4 100; 1.0 T-GDi 100
 model | sportage | Sportage
+gen | Sportage II | 2004 | 2010 | 2.0 141; 2.0 CRDi 140
 gen | Sportage III | 2010 | 2015 | 2.0 163; 1.7 CRDi 115; 2.0 CRDi 136
 gen | Sportage IV | 2016 | 2021 | 1.6 GDi 132; 1.7 CRDi 115; 1.7 CRDi 141; 2.0 CRDi 136; 2.0 CRDi 185
 gen | Sportage V | 2021 | | 1.6 T-GDi 150; 1.6 CRDi 136; 1.6 T-GDi Hybrid 230
+model | cerato | Cerato
+gen | Cerato II | 2008 | 2013 | 1.6 126; 1.6 CRDi 128
+gen | Cerato III | 2013 | 2018 | 1.6 128; 1.6 CRDi 128
+gen | Cerato IV | 2018 | | 1.6 128
+model | ceed | Ceed
+gen | Ceed I | 2006 | 2012 | 1.4 109; 1.6 CRDi 115
+gen | Ceed II | 2012 | 2018 | 1.4 100; 1.6 CRDi 128
+gen | Ceed III | 2018 | | 1.0 T-GDi 120; 1.6 CRDi 136
+model | sorento | Sorento
+gen | Sorento II | 2009 | 2014 | 2.2 CRDi 197
+gen | Sorento III | 2014 | 2020 | 2.2 CRDi 200
+gen | Sorento IV | 2020 | | 2.2 CRDi 202; 1.6 T-GDi Hybrid 230
+model | stonic | Stonic
+gen | Stonic | 2017 | | 1.4 100; 1.0 T-GDi 100; 1.6 CRDi 110
+model | k2500 | K2500
+gen | K2500 | 2004 | |
 
 make | toyota | Toyota
 model | yaris | Yaris
+gen | Yaris I | 1999 | 2005 | 1.0 68; 1.3 86; 1.4 D-4D 75
 gen | Yaris II | 2005 | 2011 | 1.0 69; 1.3 87; 1.4 D-4D 90
 gen | Yaris III | 2011 | 2020 | 1.0 69; 1.33 99; 1.4 D-4D 90; 1.5 Hybrid 100
 gen | Yaris IV | 2020 | | 1.0 72; 1.5 Hybrid 116
 model | corolla | Corolla
+gen | Corolla E110 | 1995 | 2002 | 1.4 86; 1.6 110; 2.0 D 72
 gen | Corolla E120 | 2002 | 2007 | 1.4 97; 1.6 110; 2.0 D-4D 90; 2.0 D-4D 116
 gen | Corolla E150 | 2007 | 2013 | 1.6 124; 1.4 D-4D 90; 2.0 D-4D 126
 gen | Corolla E170 | 2013 | 2019 | 1.6 132; 1.4 D-4D 90
 gen | Corolla E210 | 2019 | | 1.6 132; 1.8 Hybrid 122
 model | hilux | Hilux
+gen | Hilux VI | 1997 | 2005 | 2.4 D 75; 2.5 D-4D 102
 gen | Hilux VII | 2005 | 2015 | 2.5 D-4D 102; 2.5 D-4D 144; 3.0 D-4D 171
 gen | Hilux VIII | 2015 | | 2.4 D-4D 150; 2.8 D-4D 204
 model | land-cruiser | Land Cruiser
 gen | Land Cruiser J120 | 2002 | 2009 | 3.0 D-4D 166
 gen | Land Cruiser J150 | 2009 | 2023 | 3.0 D-4D 190; 2.8 D-4D 177
+model | auris | Auris
+gen | Auris I | 2006 | 2012 | 1.6 124; 1.4 D-4D 90
+gen | Auris II | 2012 | 2018 | 1.33 99; 1.4 D-4D 90; 1.8 Hybrid 136
+model | rav4 | RAV4
+gen | RAV4 III | 2005 | 2012 | 2.0 152; 2.2 D-4D 136
+gen | RAV4 IV | 2012 | 2018 | 2.0 152; 2.2 D-4D 150; 2.5 Hybrid 197
+gen | RAV4 V | 2018 | | 2.0 175; 2.5 Hybrid 218
+model | c-hr | C-HR
+gen | C-HR | 2016 | | 1.2 Turbo 116; 1.8 Hybrid 122
+model | avensis | Avensis
+gen | Avensis II | 2003 | 2009 | 1.8 129; 2.0 D-4D 116
+gen | Avensis III | 2009 | 2018 | 1.8 147; 2.0 D-4D 126
+model | hiace | Hiace
+gen | Hiace H200 | 2004 | 2019 | 2.5 D-4D 102; 3.0 D-4D 136
 
 make | volkswagen | Volkswagen
 model | polo | Polo
+gen | Polo III (6N) | 1994 | 2001 | 1.0 50; 1.4 60; 1.9 D 64
 gen | Polo IV (9N) | 2001 | 2009 | 1.2 64; 1.4 16V 75; 1.4 TDI 80; 1.9 SDI 64; 1.9 TDI 100
 gen | Polo V (6R) | 2009 | 2017 | 1.2 70; 1.2 TSI 90; 1.4 16V 85; 1.2 TDI 75; 1.6 TDI 90; 1.4 TDI 90
 gen | Polo VI (AW) | 2017 | | 1.0 MPI 80; 1.0 TSI 95; 1.0 TSI 110; 1.6 TDI 80; 1.6 TDI 95
 model | golf | Golf
+gen | Golf III | 1991 | 1997 | 1.4 60; 1.6 75; 1.8 90; 1.9 TD 75; 1.9 TDI 90
 gen | Golf IV | 1997 | 2003 | 1.4 16V 75; 1.6 100; 1.9 SDI 68; 1.9 TDI 90; 1.9 TDI 110; 1.9 TDI 130
 gen | Golf V | 2003 | 2008 | 1.4 16V 80; 1.6 FSI 115; 1.9 TDI 105; 2.0 TDI 140
 gen | Golf VI | 2008 | 2012 | 1.4 TSI 122; 1.6 TDI 90; 1.6 TDI 105; 2.0 TDI 140
 gen | Golf VII | 2012 | 2020 | 1.2 TSI 105; 1.4 TSI 125; 1.6 TDI 90; 1.6 TDI 110; 2.0 TDI 150
 gen | Golf VIII | 2019 | | 1.0 TSI 110; 1.5 TSI 130; 2.0 TDI 115; 2.0 TDI 150
 model | passat | Passat
+gen | Passat B5 | 1996 | 2005 | 1.6 101; 1.8 T 150; 1.9 TDI 101; 1.9 TDI 130
 gen | Passat B6 | 2005 | 2010 | 1.6 FSI 115; 1.9 TDI 105; 2.0 TDI 140
 gen | Passat B7 | 2010 | 2014 | 1.4 TSI 122; 1.6 TDI 105; 2.0 TDI 140
 gen | Passat B8 | 2014 | 2023 | 1.4 TSI 150; 1.6 TDI 120; 2.0 TDI 150; 2.0 TDI 190
@@ -217,6 +343,23 @@ gen | Transporter T6 | 2015 | | 2.0 TDI 102; 2.0 TDI 150
 model | jetta | Jetta
 gen | Jetta V | 2005 | 2010 | 1.6 102; 1.9 TDI 105; 2.0 TDI 140
 gen | Jetta VI | 2010 | 2018 | 1.2 TSI 105; 1.4 TSI 122; 1.6 TDI 105; 2.0 TDI 140
+model | up | Up!
+gen | Up! | 2011 | | 1.0 60; 1.0 75
+model | t-roc | T-Roc
+gen | T-Roc | 2017 | | 1.0 TSI 110; 1.5 TSI 150; 2.0 TDI 150
+model | t-cross | T-Cross
+gen | T-Cross | 2018 | | 1.0 TSI 95; 1.0 TSI 110
+model | touran | Touran
+gen | Touran I | 2003 | 2015 | 1.6 102; 1.9 TDI 105; 2.0 TDI 140
+gen | Touran II | 2015 | | 1.4 TSI 150; 2.0 TDI 150
+model | amarok | Amarok
+gen | Amarok I | 2010 | 2022 | 2.0 TDI 140; 2.0 BiTDI 180; 3.0 V6 TDI 224
+gen | Amarok II | 2022 | | 2.0 TDI 170; 3.0 V6 TDI 240
+model | crafter | Crafter
+gen | Crafter I | 2006 | 2016 | 2.5 TDI 109; 2.0 TDI 136
+gen | Crafter II | 2016 | | 2.0 TDI 140
+model | bora | Bora
+gen | Bora | 1998 | 2005 | 1.6 100; 1.9 TDI 90; 1.9 TDI 115
 
 make | fiat | Fiat
 model | uno | Uno
@@ -235,13 +378,26 @@ model | tipo | Tipo
 gen | Tipo | 2016 | | 1.4 95; 1.3 Multijet 95; 1.6 Multijet 120
 model | ducato | Ducato
 gen | Ducato III | 2006 | | 2.3 Multijet 130; 2.3 Multijet 150; 2.2 Multijet 140
+model | 500 | 500
+gen | 500 | 2007 | | 1.2 69; 0.9 TwinAir 85; 1.3 Multijet 95
+model | panda | Panda
+gen | Panda II | 2003 | 2012 | 1.1 54; 1.2 60; 1.3 Multijet 70
+gen | Panda III | 2012 | | 1.2 69; 0.9 TwinAir 85; 1.3 Multijet 75
+model | fiorino | Fiorino
+gen | Fiorino III | 2007 | | 1.4 75; 1.3 Multijet 75
+model | linea | Linea
+gen | Linea | 2007 | 2015 | 1.4 77; 1.3 Multijet 90
+model | bravo | Bravo
+gen | Bravo II | 2007 | 2014 | 1.4 90; 1.6 Multijet 120
 
 make | ford | Ford
 model | fiesta | Fiesta
+gen | Fiesta IV | 1995 | 2002 | 1.25 75; 1.3 60; 1.8 D 60
 gen | Fiesta V | 2002 | 2008 | 1.25 75; 1.4 80; 1.4 TDCi 68
 gen | Fiesta VI | 2008 | 2017 | 1.25 82; 1.0 EcoBoost 100; 1.4 TDCi 70; 1.6 TDCi 95
 gen | Fiesta VII | 2017 | 2023 | 1.0 EcoBoost 100; 1.5 TDCi 85
 model | focus | Focus
+gen | Focus I | 1998 | 2004 | 1.4 75; 1.6 100; 1.8 TDDi 90; 1.8 TDCi 115
 gen | Focus II | 2004 | 2011 | 1.6 100; 1.6 TDCi 90; 1.6 TDCi 110; 2.0 TDCi 136
 gen | Focus III | 2011 | 2018 | 1.0 EcoBoost 125; 1.6 TDCi 95; 1.6 TDCi 115; 1.5 TDCi 120
 gen | Focus IV | 2018 | | 1.0 EcoBoost 125; 1.5 EcoBlue 95; 1.5 EcoBlue 120
@@ -251,6 +407,28 @@ gen | Transit VIII | 2014 | | 2.2 TDCi 125; 2.0 EcoBlue 130
 model | ranger | Ranger
 gen | Ranger III | 2011 | 2022 | 2.2 TDCi 150; 3.2 TDCi 200; 2.0 EcoBlue 170
 gen | Ranger IV | 2022 | | 2.0 EcoBlue 170; 3.0 V6 TDCi 240
+model | ka | Ka
+gen | Ka I | 1996 | 2008 | 1.3 60
+gen | Ka II | 2008 | 2016 | 1.2 69; 1.3 TDCi 75
+model | fusion | Fusion
+gen | Fusion | 2002 | 2012 | 1.4 80; 1.4 TDCi 68; 1.6 TDCi 90
+model | kuga | Kuga
+gen | Kuga I | 2008 | 2012 | 2.0 TDCi 136
+gen | Kuga II | 2012 | 2019 | 1.5 EcoBoost 150; 2.0 TDCi 150
+gen | Kuga III | 2019 | | 1.5 EcoBoost 150; 1.5 EcoBlue 120; 2.5 Hybrid 190
+model | ecosport | EcoSport
+gen | EcoSport | 2012 | 2022 | 1.0 EcoBoost 125; 1.5 TDCi 95
+model | mondeo | Mondeo
+gen | Mondeo III | 2000 | 2007 | 1.8 125; 2.0 TDCi 130
+gen | Mondeo IV | 2007 | 2014 | 2.0 145; 2.0 TDCi 140
+model | c-max | C-Max
+gen | C-Max I | 2003 | 2010 | 1.6 100; 1.6 TDCi 109
+gen | C-Max II | 2010 | 2019 | 1.0 EcoBoost 125; 1.6 TDCi 115
+model | transit-custom | Transit Custom
+gen | Transit Custom | 2012 | | 2.2 TDCi 125; 2.0 EcoBlue 130
+model | transit-connect | Transit Connect
+gen | Transit Connect I | 2002 | 2013 | 1.8 TDCi 90
+gen | Transit Connect II | 2013 | | 1.5 TDCi 100
 
 make | mercedes-benz | Mercedes-Benz
 model | w123 | W123 (200 D – 300 D)
@@ -275,41 +453,120 @@ gen | Sprinter II | 2006 | 2018 | 2.1 CDI 109; 2.1 CDI 129; 2.1 CDI 163; 3.0 CDI
 model | vito | Vito
 gen | Vito W639 | 2003 | 2014 | 2.1 CDI 109; 2.1 CDI 136; 3.0 CDI 204
 gen | Vito W447 | 2014 | | 1.6 CDI 114; 2.1 CDI 136; 2.1 CDI 163
+gen | Vito W638 | 1996 | 2003 | 108 D 79; 110 CDI 102
+model | a-class | A-Class
+gen | A-Class W168 | 1997 | 2004 | A 140 82; A 160 CDI 60
+gen | A-Class W169 | 2004 | 2012 | A 150 95; A 180 CDI 109
+gen | A-Class W176 | 2012 | 2018 | A 180 122; A 180 d 109; A 200 d 136
+gen | A-Class W177 | 2018 | | A 180 136; A 200 163; A 180 d 116
+model | b-class | B-Class
+gen | B-Class W245 | 2005 | 2011 | B 180 CDI 109; B 200 136
+gen | B-Class W246 | 2011 | 2018 | B 180 122; B 180 CDI 109
+gen | B-Class W247 | 2018 | | B 180 136; B 180 d 116
+model | cla | CLA
+gen | CLA C117 | 2013 | 2019 | CLA 180 122; CLA 200 d 136
+gen | CLA C118 | 2019 | | CLA 200 163; CLA 180 d 116
+model | gla | GLA
+gen | GLA X156 | 2013 | 2020 | GLA 200 156; GLA 200 d 136
+gen | GLA H247 | 2020 | | GLA 200 163; GLA 200 d 150
+model | glc | GLC
+gen | GLC X253 | 2015 | 2022 | GLC 250 211; GLC 220 d 170
+gen | GLC X254 | 2022 | | GLC 200 204; GLC 220 d 197
+model | ml-gle | ML / GLE
+gen | ML W164 | 2005 | 2011 | ML 320 CDI 224
+gen | ML W166 | 2011 | 2015 | ML 250 BlueTEC 204
+gen | GLE W166 | 2015 | 2019 | GLE 250 d 204
+gen | GLE V167 | 2019 | | GLE 300 d 245
 
 make | opel | Opel
 model | corsa | Corsa
+gen | Corsa B | 1993 | 2000 | 1.0 54; 1.2 45; 1.4 60; 1.5 TD 67
 gen | Corsa C | 2000 | 2006 | 1.2 75; 1.3 CDTI 70; 1.7 DI 65
 gen | Corsa D | 2006 | 2014 | 1.2 80; 1.4 90; 1.3 CDTI 75; 1.3 CDTI 90
 gen | Corsa E | 2014 | 2019 | 1.4 90; 1.3 CDTI 75; 1.3 CDTI 95
 gen | Corsa F | 2019 | | 1.2 75; 1.2 Turbo 100; 1.5 D 100
 model | astra | Astra
+gen | Astra F | 1991 | 1998 | 1.4 60; 1.6 75; 1.7 TD 68
 gen | Astra G | 1998 | 2004 | 1.6 75; 1.7 DTI 75; 2.0 DTI 100
 gen | Astra H | 2004 | 2010 | 1.6 105; 1.3 CDTI 90; 1.7 CDTI 100; 1.9 CDTI 120
 gen | Astra J | 2009 | 2015 | 1.4 Turbo 140; 1.7 CDTI 110; 1.7 CDTI 125; 1.6 CDTI 136
 gen | Astra K | 2015 | 2021 | 1.0 Turbo 105; 1.4 Turbo 125; 1.6 CDTI 110; 1.6 CDTI 136
+model | zafira | Zafira
+gen | Zafira A | 1999 | 2005 | 1.6 101; 2.0 DTI 101
+gen | Zafira B | 2005 | 2014 | 1.6 115; 1.9 CDTI 120
+gen | Zafira C | 2011 | 2019 | 1.4 Turbo 140; 2.0 CDTI 130
+model | insignia | Insignia
+gen | Insignia A | 2008 | 2017 | 1.6 Turbo 180; 2.0 CDTI 130
+gen | Insignia B | 2017 | | 1.5 Turbo 165; 2.0 D 170
+model | vectra | Vectra
+gen | Vectra B | 1995 | 2002 | 1.6 100; 2.0 DTI 101
+gen | Vectra C | 2002 | 2008 | 1.8 122; 1.9 CDTI 120
+model | meriva | Meriva
+gen | Meriva A | 2003 | 2010 | 1.4 90; 1.3 CDTI 75; 1.7 CDTI 100
+gen | Meriva B | 2010 | 2017 | 1.4 100; 1.3 CDTI 95; 1.7 CDTI 110
+model | combo | Combo
+gen | Combo C | 2001 | 2011 | 1.4 90; 1.3 CDTI 75; 1.7 CDTI 100
+gen | Combo D | 2011 | 2018 | 1.4 95; 1.3 CDTI 90; 1.6 CDTI 105
+gen | Combo E | 2018 | | 1.2 Turbo 110; 1.5 D 100
+model | mokka | Mokka
+gen | Mokka A | 2012 | 2019 | 1.4 Turbo 140; 1.6 CDTI 136
+gen | Mokka B | 2020 | | 1.2 Turbo 130; 1.5 D 110
+model | crossland | Crossland
+gen | Crossland | 2017 | | 1.2 Turbo 110; 1.5 D 102
+model | grandland | Grandland
+gen | Grandland | 2017 | | 1.2 Turbo 130; 1.5 D 130
 
 make | skoda | Škoda
 model | fabia | Fabia
 gen | Fabia I | 1999 | 2007 | 1.2 64; 1.4 75; 1.9 SDI 64; 1.4 TDI 75; 1.9 TDI 100
 gen | Fabia II | 2007 | 2014 | 1.2 70; 1.2 TSI 86; 1.4 TDI 80; 1.6 TDI 90; 1.6 TDI 105
 gen | Fabia III | 2014 | 2021 | 1.0 MPI 75; 1.2 TSI 90; 1.4 TDI 90
+gen | Fabia IV | 2021 |  | 1.0 MPI 80; 1.0 TSI 95; 1.0 TSI 110
 model | octavia | Octavia
+gen | Octavia I | 1996 | 2010 | 1.6 102; 1.9 TDI 90; 1.9 TDI 110
 gen | Octavia II | 2004 | 2013 | 1.4 TSI 122; 1.6 TDI 105; 1.9 TDI 105; 2.0 TDI 140
 gen | Octavia III | 2013 | 2020 | 1.2 TSI 105; 1.4 TSI 150; 1.6 TDI 105; 1.6 TDI 115; 2.0 TDI 150
 gen | Octavia IV | 2020 | | 1.5 TSI 150; 2.0 TDI 115; 2.0 TDI 150
+model | rapid | Rapid
+gen | Rapid | 2012 | 2019 | 1.2 TSI 105; 1.6 TDI 105
+model | superb | Superb
+gen | Superb II | 2008 | 2015 | 1.8 TSI 160; 2.0 TDI 140
+gen | Superb III | 2015 | 2023 | 1.4 TSI 150; 2.0 TDI 150
+model | kodiaq | Kodiaq
+gen | Kodiaq | 2016 | | 1.4 TSI 150; 2.0 TDI 150
+model | karoq | Karoq
+gen | Karoq | 2017 | | 1.5 TSI 150; 2.0 TDI 150
+model | kamiq | Kamiq
+gen | Kamiq | 2019 | | 1.0 TSI 110
+model | scala | Scala
+gen | Scala | 2019 | | 1.0 TSI 110
 
 make | seat | SEAT
 model | ibiza | Ibiza
+gen | Ibiza II | 1993 | 2002 | 1.4 60; 1.6 75; 1.9 TDI 90
 gen | Ibiza III | 2002 | 2008 | 1.2 64; 1.4 16V 75; 1.4 TDI 80; 1.9 TDI 100; 1.9 TDI 130
 gen | Ibiza IV | 2008 | 2017 | 1.4 16V 85; 1.2 TSI 105; 1.2 TDI 75; 1.6 TDI 90; 1.6 TDI 105
 gen | Ibiza V | 2017 | | 1.0 TSI 95; 1.0 TSI 110; 1.6 TDI 95
 model | leon | Leon
+gen | Leon I | 1999 | 2005 | 1.6 105; 1.9 TDI 110
 gen | Leon II | 2005 | 2012 | 1.6 102; 1.9 TDI 105; 2.0 TDI 140
 gen | Leon III | 2012 | 2020 | 1.4 TSI 125; 1.6 TDI 105; 1.6 TDI 110; 2.0 TDI 150
 gen | Leon IV | 2020 | | 1.5 TSI 130; 2.0 TDI 115; 2.0 TDI 150
+model | arona | Arona
+gen | Arona | 2017 | | 1.0 TSI 95; 1.0 TSI 110; 1.6 TDI 95
+model | ateca | Ateca
+gen | Ateca | 2016 | | 1.5 TSI 150; 2.0 TDI 150
+model | toledo | Toledo
+gen | Toledo III | 2004 | 2009 | 1.6 102; 1.9 TDI 105
+gen | Toledo IV | 2012 | 2019 | 1.2 TSI 105; 1.6 TDI 105
+model | cordoba | Cordoba
+gen | Cordoba II | 2002 | 2009 | 1.4 75; 1.9 TDI 100
+model | altea | Altea
+gen | Altea | 2004 | 2015 | 1.6 102; 1.9 TDI 105; 2.0 TDI 140
 
 make | nissan | Nissan
 model | micra | Micra
+gen | Micra K11 | 1992 | 2003 | 1.0 55; 1.3 75; 1.5 D 57
 gen | Micra K12 | 2003 | 2010 | 1.2 80; 1.4 88; 1.5 dCi 65; 1.5 dCi 86
 gen | Micra K13 | 2010 | 2017 | 1.2 80
 gen | Micra K14 | 2017 | | 1.0 71; 0.9 IG-T 90; 1.5 dCi 90
@@ -320,6 +577,25 @@ gen | Qashqai III | 2021 | | 1.3 DIG-T 140; 1.3 DIG-T 158; e-Power Hybrid 190
 model | navara | Navara
 gen | Navara D40 | 2005 | 2015 | 2.5 dCi 174; 2.5 dCi 190
 gen | Navara D23 (NP300) | 2015 | | 2.3 dCi 160; 2.3 dCi 190
+model | juke | Juke
+gen | Juke I | 2010 | 2019 | 1.6 117; 1.5 dCi 110
+gen | Juke II | 2019 | | 1.0 DIG-T 117
+model | x-trail | X-Trail
+gen | X-Trail T30 | 2001 | 2007 | 2.2 dCi 136
+gen | X-Trail T31 | 2007 | 2014 | 2.0 dCi 150
+gen | X-Trail T32 | 2014 | 2022 | 1.6 dCi 130; 2.0 dCi 177
+model | almera-sunny | Almera / Sunny
+gen | Almera N16 | 2000 | 2006 | 1.5 90; 1.8 114; 2.2 dCi 112
+gen | Sunny N17 | 2011 | 2019 | 1.5 99
+model | note | Note
+gen | Note E11 | 2006 | 2013 | 1.4 88; 1.5 dCi 86
+gen | Note E12 | 2013 | 2017 | 1.2 80; 1.5 dCi 90
+model | tiida | Tiida
+gen | Tiida | 2007 | 2012 | 1.6 110; 1.5 dCi 105
+model | pathfinder | Pathfinder
+gen | Pathfinder R51 | 2005 | 2014 | 2.5 dCi 174
+model | patrol | Patrol
+gen | Patrol Y61 | 1997 | 2010 | 3.0 Di 160
 
 make | suzuki | Suzuki
 model | alto | Alto
@@ -330,11 +606,41 @@ model | swift | Swift
 gen | Swift III | 2004 | 2010 | 1.3 92; 1.5 102; 1.3 DDiS 75
 gen | Swift IV | 2010 | 2017 | 1.2 94; 1.3 DDiS 75
 gen | Swift V | 2017 | 2024 | 1.2 Dualjet 90; 1.0 Boosterjet 111
+model | grand-vitara | Grand Vitara
+gen | Grand Vitara II | 2005 | 2015 | 1.6 106; 2.0 140; 1.9 DDiS 129
+model | vitara | Vitara
+gen | Vitara | 2015 | | 1.6 120; 1.4 BoosterJet 140; 1.6 DDiS 120
+model | jimny | Jimny
+gen | Jimny III | 1998 | 2018 | 1.3 82
+gen | Jimny IV | 2018 | | 1.5 102
+model | dzire | Dzire
+gen | Dzire | 2017 | | 1.2 83
+model | baleno | Baleno
+gen | Baleno | 2016 | | 1.2 90; 1.0 BoosterJet 111
+model | s-presso | S-Presso
+gen | S-Presso | 2019 | | 1.0 68
+model | ertiga | Ertiga
+gen | Ertiga | 2018 | | 1.5 105
 
 make | mitsubishi | Mitsubishi
 model | l200 | L200
+gen | L200 III | 1996 | 2005 | 2.5 TD 99
 gen | L200 IV | 2005 | 2015 | 2.5 DI-D 136; 2.5 DI-D 178
 gen | L200 V | 2015 | | 2.4 DI-D 154; 2.4 DI-D 181
+model | pajero | Pajero
+gen | Pajero III | 1999 | 2006 | 3.2 DI-D 165
+gen | Pajero IV | 2006 | 2021 | 3.2 DI-D 200
+model | pajero-sport | Pajero Sport
+gen | Pajero Sport II | 2008 | 2015 | 2.5 DI-D 178
+gen | Pajero Sport III | 2015 | | 2.4 DI-D 181
+model | asx | ASX
+gen | ASX | 2010 | 2023 | 1.6 117; 1.8 DI-D 150; 2.2 DI-D 150
+model | outlander | Outlander
+gen | Outlander II | 2006 | 2012 | 2.0 DI-D 140; 2.2 DI-D 156
+gen | Outlander III | 2012 | 2021 | 2.0 150; 2.2 DI-D 150; 2.4 PHEV Hybrid 224
+model | lancer | Lancer
+gen | Lancer IX | 2003 | 2007 | 1.6 98
+gen | Lancer X | 2007 | 2017 | 1.5 109; 1.8 143; 2.0 DI-D 140
 
 make | isuzu | Isuzu
 model | d-max | D-Max
@@ -347,28 +653,178 @@ model | spark | Spark
 gen | Spark (M300) | 2009 | 2015 | 1.0 68; 1.2 82
 model | aveo | Aveo
 gen | Aveo (T250) | 2006 | 2011 | 1.2 72; 1.4 101
+gen | Aveo (T300) | 2011 | 2015 | 1.2 86; 1.4 100; 1.3 VCDi 95
 model | optra | Optra / Lacetti
 gen | Optra / Lacetti | 2003 | 2009 | 1.4 95; 1.6 109; 1.8 122
+model | captiva | Captiva
+gen | Captiva | 2006 | 2018 | 2.4 136; 2.0 VCDi 150; 2.2 VCDi 163
+model | cruze | Cruze
+gen | Cruze | 2009 | 2016 | 1.6 113; 1.8 141; 2.0 VCDi 150
 
 make | audi | Audi
 model | a3 | A3
+gen | A3 8L | 1996 | 2003 | 1.6 101; 1.9 TDI 90; 1.9 TDI 110
 gen | A3 8P | 2003 | 2012 | 1.6 102; 1.4 TFSI 125; 1.9 TDI 105; 2.0 TDI 140
 gen | A3 8V | 2012 | 2020 | 1.4 TFSI 122; 1.6 TDI 110; 2.0 TDI 150
 model | a4 | A4
+gen | A4 B6 | 2000 | 2004 | 1.8 T 150; 1.9 TDI 130; 2.5 TDI 155
+gen | A4 B5 | 1994 | 2001 | 1.6 101; 1.8 125; 1.9 TDI 110
 gen | A4 B7 | 2004 | 2008 | 1.8 T 163; 1.9 TDI 116; 2.0 TDI 140
 gen | A4 B8 | 2007 | 2015 | 1.8 TFSI 160; 2.0 TDI 143; 2.0 TDI 177
 gen | A4 B9 | 2015 | | 2.0 TFSI 190; 2.0 TDI 150; 2.0 TDI 190
 model | a6 | A6
+gen | A6 C5 | 1997 | 2004 | 1.8 T 150; 1.9 TDI 130; 2.5 TDI 155
 gen | A6 C6 | 2004 | 2011 | 2.0 TDI 140; 2.7 TDI 180; 3.0 TDI 225
 gen | A6 C7 | 2011 | 2018 | 2.0 TDI 177; 2.0 TDI 190; 3.0 TDI 218
+model | a1 | A1
+gen | A1 8X | 2010 | 2018 | 1.2 TFSI 86; 1.4 TFSI 122; 1.6 TDI 90
+gen | A1 GB | 2018 | | 1.0 TFSI 95; 1.0 TFSI 116
+model | a5 | A5
+gen | A5 8T | 2007 | 2016 | 1.8 TFSI 170; 2.0 TDI 170
+gen | A5 F5 | 2016 | | 2.0 TFSI 190; 2.0 TDI 190
+model | q3 | Q3
+gen | Q3 8U | 2011 | 2018 | 1.4 TFSI 150; 2.0 TDI 140
+gen | Q3 F3 | 2018 | | 1.5 TFSI 150; 2.0 TDI 150
+model | q5 | Q5
+gen | Q5 8R | 2008 | 2017 | 2.0 TFSI 211; 2.0 TDI 170
+gen | Q5 FY | 2017 | | 2.0 TFSI 252; 2.0 TDI 190
+model | q7 | Q7
+gen | Q7 4L | 2006 | 2015 | 3.0 TDI 240
+gen | Q7 4M | 2015 | | 3.0 TDI 272
 
 make | bmw | BMW
 model | 3-series | 3 Series
+gen | 3 Series E36 | 1990 | 2000 | 316i 102; 318i 115; 318tds 90; 325td 115
 gen | 3 Series E46 | 1998 | 2005 | 318i 118; 320d 136; 320d 150
 gen | 3 Series E90 | 2005 | 2012 | 318i 143; 318d 143; 320d 177
 gen | 3 Series F30 | 2012 | 2019 | 318i 136; 316d 116; 318d 143; 320d 184
 gen | 3 Series G20 | 2019 | | 318i 156; 318d 150; 320d 190
 model | 5-series | 5 Series
+gen | 5 Series E39 | 1995 | 2003 | 520i 150; 525d 163; 530d 193
 gen | 5 Series E60 | 2003 | 2010 | 520d 163; 525d 177; 530d 231
 gen | 5 Series F10 | 2010 | 2017 | 520d 184; 525d 218; 530d 258
 gen | 5 Series G30 | 2017 | 2023 | 520d 190; 530d 265
+model | 1-series | 1 Series
+gen | 1 Series E87 | 2004 | 2011 | 116i 115; 118d 143; 120d 177
+gen | 1 Series F20 | 2011 | 2019 | 116i 136; 116d 116; 118d 150
+gen | 1 Series F40 | 2019 | | 118i 140; 118d 150
+model | x1 | X1
+gen | X1 E84 | 2009 | 2015 | sDrive18d 143; xDrive20d 177
+gen | X1 F48 | 2015 | 2022 | sDrive18i 136; sDrive18d 150
+gen | X1 U11 | 2022 | | sDrive18i 136; sDrive18d 150
+model | x3 | X3
+gen | X3 E83 | 2003 | 2010 | 2.0d 150
+gen | X3 F25 | 2010 | 2017 | xDrive20d 184
+gen | X3 G01 | 2017 | | xDrive20d 190
+model | x5 | X5
+gen | X5 E53 | 1999 | 2006 | 3.0d 184
+gen | X5 E70 | 2006 | 2013 | xDrive30d 235
+gen | X5 F15 | 2013 | 2018 | xDrive30d 258
+gen | X5 G05 | 2018 | | xDrive30d 286
+
+make | honda | Honda
+model | civic | Civic
+gen | Civic VIII | 2005 | 2011 | 1.4 100; 1.8 140; 2.2 i-CTDi 140
+gen | Civic IX | 2011 | 2017 | 1.4 100; 1.8 142; 1.6 i-DTEC 120
+gen | Civic X | 2017 | 2022 | 1.0 VTEC Turbo 129; 1.5 VTEC Turbo 182; 1.6 i-DTEC 120
+model | cr-v | CR-V
+gen | CR-V III | 2006 | 2012 | 2.0 150; 2.2 i-DTEC 150
+gen | CR-V IV | 2012 | 2018 | 2.0 155; 1.6 i-DTEC 120; 2.2 i-DTEC 150
+gen | CR-V V | 2018 | 2023 | 1.5 VTEC Turbo 173; 2.0 Hybrid 184
+model | jazz | Jazz
+gen | Jazz II | 2008 | 2015 | 1.2 90; 1.4 100
+gen | Jazz III | 2015 | 2020 | 1.3 102
+
+make | mazda | Mazda
+model | mazda2 | Mazda2
+gen | Mazda2 DE | 2007 | 2014 | 1.3 75; 1.5 103; 1.4 MZ-CD 68
+gen | Mazda2 DJ | 2014 | | 1.5 Skyactiv-G 90
+model | mazda3 | Mazda3
+gen | Mazda3 BK | 2003 | 2009 | 1.6 105; 1.6 MZ-CD 109
+gen | Mazda3 BL | 2009 | 2013 | 1.6 105; 1.6 MZ-CD 115
+gen | Mazda3 BM | 2013 | 2019 | 2.0 Skyactiv-G 120; 1.5 Skyactiv-D 105
+gen | Mazda3 BP | 2019 | | 2.0 Skyactiv-G 122
+model | cx-5 | CX-5
+gen | CX-5 KE | 2012 | 2017 | 2.0 Skyactiv-G 165; 2.2 Skyactiv-D 150
+gen | CX-5 KF | 2017 | | 2.0 Skyactiv-G 165; 2.2 Skyactiv-D 150
+
+make | jeep | Jeep
+model | renegade | Renegade
+gen | Renegade | 2014 | | 1.4 MultiAir 140; 1.6 MultiJet 120; 2.0 MultiJet 140
+model | compass | Compass
+gen | Compass II | 2017 | | 1.4 MultiAir 140; 1.6 MultiJet 120
+model | wrangler | Wrangler
+gen | Wrangler JK | 2007 | 2018 | 2.8 CRD 200; 3.6 V6 284
+gen | Wrangler JL | 2018 | | 2.0 Turbo 272; 2.2 MultiJet 200
+model | grand-cherokee | Grand Cherokee
+gen | Grand Cherokee WK2 | 2010 | 2021 | 3.0 CRD 250; 3.6 V6 286
+
+make | land-rover | Land Rover
+model | range-rover-evoque | Range Rover Evoque
+gen | Evoque L538 | 2011 | 2018 | 2.0 Si4 240; 2.2 TD4 150; 2.0 TD4 150
+gen | Evoque L551 | 2018 | | 2.0 P200 200; 2.0 D150 150
+model | discovery-sport | Discovery Sport
+gen | Discovery Sport | 2014 | | 2.0 TD4 150; 2.0 D180 180
+model | freelander | Freelander
+gen | Freelander 2 | 2006 | 2014 | 2.2 TD4 150; 2.2 SD4 190
+model | range-rover-sport | Range Rover Sport
+gen | Range Rover Sport L320 | 2005 | 2013 | 3.0 TDV6 245
+gen | Range Rover Sport L494 | 2013 | 2022 | 3.0 SDV6 292
+model | defender | Defender
+gen | Defender L663 | 2020 | | 2.0 P300 300; 3.0 D250 249
+
+make | volvo | Volvo
+model | xc40 | XC40
+gen | XC40 | 2017 | | T3 163; D3 150
+model | xc60 | XC60
+gen | XC60 I | 2008 | 2017 | D4 181; D5 220
+gen | XC60 II | 2017 | | B4 197; D4 190
+model | xc90 | XC90
+gen | XC90 II | 2015 | | D5 235; B5 250
+
+make | mini | Mini
+model | hatch | Mini (Hatch)
+gen | Mini R56 | 2006 | 2013 | One 1.4 95; Cooper 1.6 120; Cooper D 1.6 109
+gen | Mini F56 | 2014 | | One 1.2 102; Cooper 1.5 136; Cooper D 1.5 116
+
+make | mg | MG
+model | zs | ZS
+gen | ZS | 2017 | | 1.5 106; 1.0 T-GDI 111; ZS EV Electric 177
+model | mg3 | MG3
+gen | MG3 | 2013 | | 1.5 106
+model | mg5 | MG5
+gen | MG5 | 2020 | | 1.5 114
+model | hs | HS
+gen | HS | 2018 | | 1.5 T-GDI 162
+model | mg4 | MG4
+gen | MG4 | 2022 | | Electric 170
+
+make | chery | Chery
+model | tiggo-4 | Tiggo 4 Pro
+gen | Tiggo 4 Pro | 2020 | | 1.5 Turbo 147
+model | tiggo-7 | Tiggo 7 Pro
+gen | Tiggo 7 Pro | 2020 | | 1.6 TGDI 186
+model | tiggo-8 | Tiggo 8 Pro
+gen | Tiggo 8 Pro | 2021 | | 1.6 TGDI 186
+model | arrizo-5 | Arrizo 5
+gen | Arrizo 5 | 2016 | | 1.5 116
+
+make | geely | Geely
+model | coolray | Coolray
+gen | Coolray | 2018 | | 1.5 Turbo 177
+model | emgrand | Emgrand
+gen | Emgrand | 2021 | | 1.5 114
+
+make | byd | BYD
+model | atto-3 | Atto 3
+gen | Atto 3 | 2022 | | Electric 204
+model | dolphin | Dolphin
+gen | Dolphin | 2023 | | Electric 204
+model | seal | Seal
+gen | Seal | 2023 | | Electric 313
+
+make | haval | Haval
+model | h6 | H6
+gen | H6 III | 2021 | | 1.5 GDIT 184
+model | jolion | Jolion
+gen | Jolion | 2021 | | 1.5 GDIT 150

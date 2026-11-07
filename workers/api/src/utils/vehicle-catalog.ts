@@ -18,7 +18,7 @@ export function engineInfo(name: string): { fuel: string; cc: number | null; hp:
   let fuel = "petrol";
   if (/hybrid|e-tech|e-power/.test(n)) fuel = "hybrid";
   else if (/electric|ë-|^e-\d/.test(n)) fuel = "electric";
-  else if (/dci|hdi|tdi|sdi|cdi|crdi|d-4d|multijet|jtd|tdci|ecoblue|cdti|\bdti\b|\bdi\b|ddis|di-d|ddi|\btd\b|\bd\b|\d+d\b|dti/.test(n)) fuel = "diesel";
+  else if (/dci|hdi|tdi|sdi|cdi|crdi|d-4d|multijet|jtd|tdci|ecoblue|cdti|\bdti\b|\bdi\b|ddis|di-d|ddi|\btd\b|\bd\b|\d+d\b|dti|dtec|ctdi|bluetec|\bcrd\b|mz-cd|\btci\b|\btd[v]?\d|\bsd[v]?\d|\bd\d{1,3}\b|skyactiv-d|\d+tds?\b/.test(n)) fuel = "diesel";
   const disp = name.match(/^(\d\.\d{1,2})\b/) || name.match(/\b(\d\.\d)\b/);
   const cc = disp ? Math.round((Number(disp[1]) * 1000) / 10) * 10 : null;
   const hp = name.match(/(\d{2,3})\s*$/);

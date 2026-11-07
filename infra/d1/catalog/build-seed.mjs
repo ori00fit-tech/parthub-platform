@@ -20,6 +20,16 @@ const BRANDS = [
   // Added with the first real seller imports.
   "ATE", "Bendix", "Fram", "Vernet", "TYC", "Nissens", "Spidan", "GSP", "Elf", "Facet", "Autofren Seinsa",
   "Philips", "Osram", "Meyle", "Metzger", "NRF", "Hengst", "Knecht", "Blue Print", "Saginaw",
+  // Catalog extension: more aftermarket, OE, tyre and oil brands.
+  "Jurid", "Mintex", "Pagid", "Zimmermann", "Remsa", "Galfer", "Icer", "Filtron", "UFI", "Sofima", "Wix", "Alco",
+  "Clean Filters", "Contitech", "NTN-SNR", "FAG", "Timken", "Koyo", "Aisin", "Graf", "Metelli", "Kolbenschmidt",
+  "Glyco", "Goetze", "Payen", "Ajusa", "Swag", "Topran", "Optimal", "Ruville", "Wahler", "Behr", "Beru", "Lucas",
+  "Cargo", "AS-PL", "Bilstein", "Boge", "Walker", "Bosal", "Eberspächer", "Exedy", "Narva", "Depo", "Neolux",
+  "Tudor", "Fulmen", "Yuasa", "Banner", "Centra", "Goodyear", "Pirelli", "Dunlop", "Kumho", "Nexen", "Firestone",
+  "Yokohama", "Falken", "Kleber", "BFGoodrich", "Toyo", "Linglong", "Sailun", "Mobil", "Valvoline", "Petronas",
+  "Repsol", "Afriquia", "Ziz", "Winxo", "Fuchs", "Eni", "Wynn's", "Japanparts", "Ashika", "Herth+Buss Jakoparts",
+  "Kavo Parts", "Nipparts", "Ford (origine)", "Fiat (origine)", "Nissan (origine)", "BMW (origine)",
+  "Opel (origine)", "Honda (origine)", "Mitsubishi (origine)", "Suzuki (origine)",
 ];
 
 const q = (s) => `'${String(s).replace(/'/g, "''")}'`;
@@ -32,7 +42,7 @@ function engineInfo(name) {
   let fuel = "petrol";
   if (/hybrid|e-tech|e-power/.test(n)) fuel = "hybrid";
   else if (/electric|ë-|^e-\d/.test(n)) fuel = "electric";
-  else if (/dci|hdi|tdi|sdi|cdi|crdi|d-4d|multijet|jtd|tdci|ecoblue|cdti|\bdti\b|\bdi\b|ddis|di-d|ddi|\btd\b|\bd\b|\d+d\b|dti/.test(n)) fuel = "diesel";
+  else if (/dci|hdi|tdi|sdi|cdi|crdi|d-4d|multijet|jtd|tdci|ecoblue|cdti|\bdti\b|\bdi\b|ddis|di-d|ddi|\btd\b|\bd\b|\d+d\b|dti|dtec|ctdi|bluetec|\bcrd\b|mz-cd|\btci\b|\btd[v]?\d|\bsd[v]?\d|\bd\d{1,3}\b|skyactiv-d|\d+tds?\b/.test(n)) fuel = "diesel";
   const disp = name.match(/^(\d\.\d{1,2})\b/) || name.match(/\b(\d\.\d)\b/);
   const cc = disp ? Math.round(Number(disp[1]) * 1000 / 10) * 10 : null;
   const hp = name.match(/(\d{2,3})\s*$/);

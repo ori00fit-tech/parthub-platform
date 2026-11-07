@@ -61,21 +61,34 @@ const fold = (s: string) =>
 
 // Category names a seller may write, besides the slug and English name.
 const CATEGORY_ALIASES: Record<string, string[]> = {
-  "body-exterior": ["carrosserie", "carrosserie et exterieur", "الهيكل والخارج", "الهيكل"],
-  brakes: ["freinage", "freins", "frein", "الفرامل والأقراص", "الفرامل", "فرامل"],
-  cooling: ["refroidissement", "radiateur", "نظام التبريد", "التبريد"],
-  electrical: ["electricite", "electricite et eclairage", "eclairage", "الكهرباء والإنارة", "الكهرباء"],
-  "engine-parts": ["moteur", "pieces moteur", "قطع المحرك", "المحرك"],
-  exhaust: ["echappement", "العادم والانبعاثات", "العادم"],
+  "body-exterior": [
+    "carrosserie", "carrosserie et exterieur", "exterieur", "retroviseur", "retroviseurs", "pare chocs", "vitrage", "portiere",
+    "poignees", "body", "الهيكل والخارج", "الهيكل", "هيكل", "الكاروسري",
+  ],
+  brakes: ["freinage", "freins", "frein", "plaquettes", "disques", "etriers", "الفرامل والأقراص", "الفرامل", "فرامل", "فران", "الفران"],
+  cooling: [
+    "refroidissement", "radiateur", "radiateurs", "climatisation", "clim", "chauffage", "air conditioning", "ac",
+    "نظام التبريد", "التبريد", "تبريد", "الكليما", "كليماتيزور",
+  ],
+  electrical: [
+    "electricite", "electricite et eclairage", "electrique", "eclairage", "phares", "feux", "ampoules", "lampes", "batterie", "batteries",
+    "alternateur", "demarreur", "allumage", "capteurs", "lighting", "electrical", "battery",
+    "الكهرباء والإنارة", "الكهرباء", "كهرباء", "الإنارة", "الضو", "بطارية", "البطاريات",
+  ],
+  "engine-parts": ["moteur", "pieces moteur", "distribution", "joints", "engine", "قطع المحرك", "المحرك", "محرك", "موتور", "الموتور"],
+  exhaust: ["echappement", "pot", "pot d echappement", "silencieux", "catalyseur", "العادم والانبعاثات", "العادم", "الشكمان", "الشاكمان"],
   filters: [
     "filtres", "filtre", "filtres et fluides", "huiles", "huile", "huile moteur", "lubrifiants", "lubrifiant", "fluides", "liquides",
-    "lubricants", "oils", "fluids", "الفلاتر والسوائل", "الفلاتر", "الزيوت", "زيوت", "الزيوت والسوائل",
+    "lubricants", "oils", "fluids", "الفلاتر والسوائل", "الفلاتر", "فلاتر", "الزيوت", "زيوت", "الزيوت والسوائل", "الزيت",
   ],
-  interior: ["interieur", "accessoires", "interieur et accessoires", "الداخلية والإكسسوارات", "الداخلية"],
-  suspension: ["suspension et direction", "direction", "amortisseurs", "التعليق والمقود", "التعليق"],
-  "tires-wheels": ["pneus", "jantes", "pneus et jantes", "الإطارات والعجلات", "الإطارات"],
-  tools: ["outillage", "outils", "الأدوات والمعدات", "الأدوات"],
-  transmission: ["boite de vitesses", "embrayage", "ناقل الحركة"],
+  interior: ["interieur", "accessoires", "interieur et accessoires", "sieges", "tapis", "accessories", "الداخلية والإكسسوارات", "الداخلية", "اكسسوارات", "إكسسوارات"],
+  suspension: [
+    "suspension et direction", "direction", "amortisseurs", "amortisseur", "train avant", "rotules", "silentblocs", "steering",
+    "التعليق والمقود", "التعليق", "المقود", "الامورتيسور", "امورتيسور",
+  ],
+  "tires-wheels": ["pneus", "pneumatiques", "jantes", "roues", "pneus et jantes", "tyres", "wheels", "الإطارات والعجلات", "الإطارات", "العجلات", "عجلات", "البنو"],
+  tools: ["outillage", "outils", "equipement", "equipement garage", "garage", "الأدوات والمعدات", "الأدوات", "ادوات", "معدات"],
+  transmission: ["boite de vitesses", "boite", "embrayage", "cardans", "cardan", "transmission", "gearbox", "clutch", "ناقل الحركة", "الفيتاس", "لامبرياج", "الكلاتش"],
 };
 
 const CONDITIONS: Record<string, string> = {
@@ -223,7 +236,18 @@ function parseOne(cat: Catalog, text: string, lastMake: Make | null): One {
   let rest = v;
   if (make) rest = v.slice((startsWith(v, fold(make.name)) ? fold(make.name) : fold(make.slug)).length).trim();
 
-  const modelOf = (mk: Make, s: string) => {
+  // French names: "Classe C" = C-Class, "Série 3" = 3 Series (tried
+  // after the text as written, for a catalog that says "Classe C").
+  const frenchName = (t: string) => t.replace(/^classe ([a-z]{1,3})\b/, "$1 class").replace(/^serie (\d)\b/, "$1 series");
+  const modelOf = (mk: Make, raw: string): { model: Model; gen: Gen | null } | null => {
+    const asWritten = modelIn(mk, raw);
+    if (asWritten || frenchName(raw) === raw) return asWritten;
+    const f = modelIn(mk, frenchName(raw));
+    if (f) translated = true;
+    return f;
+  };
+  let translated = false;
+  const modelIn = (mk: Make, s: string) => {
     const models = cat.models.filter((m) => m.make_id === mk.id);
     const gens = cat.generations.filter((g) => models.some((m) => m.id === g.model_id));
     const gen = longestFirst(gens, (g) => g.name).find((g) => startsWith(s, fold(g.name)));
@@ -234,6 +258,19 @@ function parseOne(cat: Catalog, text: string, lastMake: Make | null): One {
   };
 
   let found = make ? modelOf(make, rest) : null;
+  // The same make can exist twice (old seed + Morocco catalog, e.g.
+  // Mercedes-Benz): use the one that has this model.
+  if (make && !found) {
+    const prefix = fold(make.name);
+    for (const other of cat.makes.filter((m) => m.id !== make!.id && fold(m.name) === prefix)) {
+      const f = modelOf(other, rest);
+      if (f) {
+        make = other;
+        found = f;
+        break;
+      }
+    }
+  }
   if (!make) {
     // No make written: the previous vehicle's make, else the only make with that model.
     if (lastMake) found = modelOf(lastMake, v);
@@ -257,6 +294,7 @@ function parseOne(cat: Catalog, text: string, lastMake: Make | null): One {
       : msg("Vehicle skipped: give the model after the make in \"{value}\"", { value: text });
   }
   const { model } = found;
+  if (translated) rest = frenchName(rest);
   const allGens = cat.generations.filter((g) => g.model_id === model.id).sort((a, b) => a.year_start - b.year_start);
   const name = found.gen ? fold(found.gen.name) : startsWith(rest, fold(model.name)) ? fold(model.name) : fold(model.slug);
   rest = rest.slice(name.length).trim();
@@ -335,7 +373,11 @@ export function parseVehicle(cat: Catalog, text: string): Fitment | Message {
 
 // Brands sellers write for unbranded parts: saved with no brand, no warning.
 const NO_BRAND = new Set(["generic", "generique", "sans marque", "no name", "noname", "oem style", "universal fit", "universel", "adaptable", "autre", "other", "بدون", "بدون ماركة"]);
-const BRAND_ALIASES: Record<string, string> = { facets: "facet", mann: "mann filter", autofren: "autofren seinsa", "febi": "febi bilstein", magneti: "magneti marelli" };
+const BRAND_ALIASES: Record<string, string> = {
+  facets: "facet", mann: "mann filter", autofren: "autofren seinsa", febi: "febi bilstein", magneti: "magneti marelli",
+  totalenergies: "total", agip: "eni", "ntn": "ntn snr", snr: "ntn snr", "herth buss": "herth plus buss jakoparts", jakoparts: "herth plus buss jakoparts",
+  kavo: "kavo parts", "bf goodrich": "bfgoodrich", eberspacher: "eberspacher", "wynns": "wynn s",
+};
 
 export function findBrand(cat: Catalog, value: string): { id: number } | "none" | null {
   let v = fold(value);
