@@ -831,7 +831,6 @@ export default {
   "Import finished": "انتهى الاستيراد",
   "3. Review and import": "3. راجع واستورد",
   "{created} parts created, {updated} updated, {errors} lines skipped.": "أُنشئت {created} قطعة، وحُدّثت {updated}، وتُجوهل {errors} سطر.",
-  "New parts are waiting for PartHub's check. Add photos to them from your inventory.": "القطع الجديدة في انتظار مراجعة PartHub. أضف لها صوراً من مخزونك.",
   "Go to my inventory": "اذهب إلى مخزوني",
   "{n} new parts": "{n} قطعة جديدة",
   "{n} price and stock updates": "{n} تحديث للسعر والمخزون",
@@ -875,4 +874,5 @@ export default {
   "Vehicle skipped: unknown model in \"{value}\"": "تُجوهلت السيارة: طراز غير معروف في \"{value}\"",
   "Vehicle skipped: year missing in \"{value}\" (e.g. {example})": "تُجوهلت السيارة: السنة ناقصة في \"{value}\" (مثلاً {example})",
   "Vehicle skipped: years out of range in \"{value}\"": "تُجوهلت السيارة: سنوات خارج المدى في \"{value}\"",
+  "New parts are waiting for PartHub's check. Each part needs at least one photo to be approved: add them from your inventory.": "القطع الجديدة في انتظار مراجعة PartHub. كل قطعة تحتاج صورة واحدة على الأقل لتُقبل: أضف الصور من مخزونك.",
 };

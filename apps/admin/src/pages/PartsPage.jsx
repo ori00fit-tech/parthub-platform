@@ -146,7 +146,11 @@ export default function PartsPage() {
       setError("");
       const res = await api.post("/api/v1/admin/parts/bulk-status", { ids, status: nextStatus, reason });
       const n = res?.data?.updated?.length ?? 0;
-      setNotice(t("{n} parts updated: {status}", { n, status: statusLabel(nextStatus) }));
+      const noPhoto = res?.data?.no_photo?.length ?? 0;
+      setNotice(
+        t("{n} parts updated: {status}", { n, status: statusLabel(nextStatus) }) +
+          (noPhoto ? ` ${t("{n} skipped: no photo yet.", { n: noPhoto })}` : "")
+      );
       notifyPendingChanged();
       await loadRows();
     } catch (err) {
@@ -269,6 +273,11 @@ export default function PartsPage() {
                         <span className={["rounded-full border px-3 py-1 text-xs font-semibold", statusClasses(part.status)].join(" ")}>
                           {statusLabel(part.status)}
                         </span>
+                        {!part.image_url ? (
+                          <span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800" title={t("A part is approved only with at least one photo.")}>
+                            {t("No photo")}
+                          </span>
+                        ) : null}
                       </div>
                       <p className="mt-1 text-sm text-gray-500">
                         {part.seller_name || t("unknown")} • {part.category_name ? t(part.category_name) : t("Uncategorized")} • {formatMoney(part.price)}

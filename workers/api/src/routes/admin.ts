@@ -169,9 +169,21 @@ function checkPartDecision(status: string, reason: string): ModerationResult | n
   }
   return null;
 }
-async function applyPartStatus(c: Context<{ Bindings: Env; Variables: HonoVariables }>, id: number, status: string, reason: string): Promise<boolean> {
-  const part = await dbFirst(c.env.DB, "SELECT id FROM parts WHERE id = ?", [id]);
-  if (!part) return false;
+// "missing": no such part. "no_photo": a part is approved only with at least
+// one photo (buyers don't trust listings without one).
+async function applyPartStatus(
+  c: Context<{ Bindings: Env; Variables: HonoVariables }>,
+  id: number,
+  status: string,
+  reason: string
+): Promise<"ok" | "missing" | "no_photo"> {
+  const part = await dbFirst<{ id: number; photos: number }>(
+    c.env.DB,
+    "SELECT id, (SELECT COUNT(*) FROM part_images pi WHERE pi.part_id = parts.id) as photos FROM parts WHERE id = ?",
+    [id]
+  );
+  if (!part) return "missing";
+  if (status === "active" && !Number(part.photos)) return "no_photo";
   const note = status === "active" ? null : reason || null;
   await dbRun(
     c.env.DB,
@@ -179,7 +191,7 @@ async function applyPartStatus(c: Context<{ Bindings: Env; Variables: HonoVariab
     [status, note, id]
   );
   if (status === "active") runInBackground(c, notifyBackInStock(c.env, id));
-  return true;
+  return "ok";
 }
 
 const MAX_BULK = 100;
@@ -276,7 +288,9 @@ adminRoutes.patch("/parts/:id/status", async (c) => {
   const reason = readReason(body);
   const bad = checkPartDecision(status, reason);
   if (bad && !bad.ok) return fail(c, bad.error, bad.code);
-  if (!(await applyPartStatus(c, id, status, reason))) return fail(c, "Part not found", 404);
+  const done = await applyPartStatus(c, id, status, reason);
+  if (done === "missing") return fail(c, "Part not found", 404);
+  if (done === "no_photo") return fail(c, "Add at least one photo before approving this part", 409);
   return ok(c, { message: `Part ${status}`, status, moderation_note: status === "active" ? null : reason || null });
 });
 
@@ -291,8 +305,12 @@ adminRoutes.post("/parts/bulk-status", async (c) => {
   if (bad && !bad.ok) return fail(c, bad.error, bad.code);
   const updated: number[] = [];
   const missing: number[] = [];
-  for (const id of ids) ((await applyPartStatus(c, id, status, reason)) ? updated : missing).push(id);
-  return ok(c, { status, updated, missing });
+  const no_photo: number[] = [];
+  for (const id of ids) {
+    const done = await applyPartStatus(c, id, status, reason);
+    (done === "ok" ? updated : done === "missing" ? missing : no_photo).push(id);
+  }
+  return ok(c, { status, updated, missing, no_photo });
 });
 
 // GET /api/v1/admin/orders

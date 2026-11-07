@@ -831,7 +831,6 @@ export default {
   "Import finished": "Import terminé",
   "3. Review and import": "3. Vérifiez et importez",
   "{created} parts created, {updated} updated, {errors} lines skipped.": "{created} pièces créées, {updated} mises à jour, {errors} lignes ignorées.",
-  "New parts are waiting for PartHub's check. Add photos to them from your inventory.": "Les nouvelles pièces attendent la vérification de PartHub. Ajoutez-leur des photos depuis votre inventaire.",
   "Go to my inventory": "Voir mon inventaire",
   "{n} new parts": "{n} nouvelles pièces",
   "{n} price and stock updates": "{n} mises à jour de prix et de stock",
@@ -875,4 +874,5 @@ export default {
   "Vehicle skipped: unknown model in \"{value}\"": "Véhicule ignoré : modèle inconnu dans « {value} »",
   "Vehicle skipped: year missing in \"{value}\" (e.g. {example})": "Véhicule ignoré : année manquante dans « {value} » (ex. {example})",
   "Vehicle skipped: years out of range in \"{value}\"": "Véhicule ignoré : années hors limites dans « {value} »",
+  "New parts are waiting for PartHub's check. Each part needs at least one photo to be approved: add them from your inventory.": "Les nouvelles pièces attendent la vérification de PartHub. Chaque pièce doit avoir au moins une photo pour être approuvée : ajoutez-les depuis votre inventaire.",
 };

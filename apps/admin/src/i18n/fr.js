@@ -481,4 +481,7 @@ export default {
   "Type of the first number": "Type de la première référence",
   "First number": "Première référence",
   "Save link": "Enregistrer le lien",
+  "No photo": "Sans photo",
+  "A part is approved only with at least one photo.": "Une pièce n'est approuvée qu'avec au moins une photo.",
+  "{n} skipped: no photo yet.": "{n} ignorée(s) : pas encore de photo.",
 };
