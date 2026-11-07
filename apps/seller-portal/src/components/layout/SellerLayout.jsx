@@ -4,6 +4,7 @@ import { api } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { useT } from "../../i18n";
 import LanguageSwitcher from "../common/LanguageSwitcher";
+import { LogoMark, LogoWordmark } from "@parthub/shared/brand";
 
 function navClass({ isActive }) {
   return [
@@ -41,8 +42,12 @@ export default function SellerLayout({ children }) {
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-6">
-            <Link to="/" className="truncate text-lg font-black tracking-tight text-slate-950 sm:text-xl">
-              {t("PartHub Seller")}
+            <Link to="/" className="flex min-w-0 items-center gap-2" aria-label={t("PartHub Seller")}>
+              <LogoMark className="h-9 w-9 flex-none" />
+              <span className="truncate text-lg sm:text-xl">
+                <LogoWordmark />
+                <span className="ms-1.5 text-sm font-semibold text-slate-500">{t("Seller")}</span>
+              </span>
             </Link>
           </div>
 
