@@ -1,7 +1,13 @@
 import { Hono } from "hono";
 import type { Env, HonoVariables } from "../types";
+import { authMiddleware } from "../middlewares/auth";
+import { adminGuard } from "../middlewares/admin";
 
 export const adminAnalyticsRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
+
+// Admins only. (Mounted under /api/v1/admin, whose guard also covers it,
+// but this keeps it protected wherever it is mounted.)
+adminAnalyticsRoutes.use("*", authMiddleware, adminGuard);
 
 function ok(data: unknown, meta: unknown = null) {
   return {

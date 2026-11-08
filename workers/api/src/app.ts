@@ -16,13 +16,16 @@ import { healthRoutes } from "./routes/health";
 import { whatsappRoutes } from "./routes/whatsapp";
 import { requestsRoutes } from "./routes/requests";
 import { stockAlertsRoutes } from "./routes/stock-alerts";
+import { allowedOrigin } from "./utils/cors";
 
 const app = new Hono();
 
 app.use(
   "*",
   cors({
-    origin: "*",
+    // Our own sites only (utils/cors.ts).
+    origin: (origin, c) => allowedOrigin(origin, (c.env || {}) as Record<string, string>),
+    maxAge: 86400,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
   })

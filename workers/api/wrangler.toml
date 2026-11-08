@@ -8,6 +8,7 @@ APP_ENV = "production"
 JWT_EXPIRES_IN = "7d"
 STOREFRONT_URL = "https://parthub.autos"
 SELLER_PORTAL_URL = "https://seller.parthub.autos"
+ADMIN_URL = "https://admin.parthub.autos"
 WHATSAPP_TEMPLATE_LANG = "fr"
 # Flat delivery fee added to every order, in centimes (3500 = 35 MAD).
 SHIPPING_FEE_CENTIMES = "3500"

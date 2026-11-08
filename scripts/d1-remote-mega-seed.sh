@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -e
+source "$(dirname "$0")/_guard-production.sh" "load infra/d1/seed-mega-uk.sql (UK sample data) into production"
 
 FILE="infra/d1/seed-mega-uk.sql"
 
