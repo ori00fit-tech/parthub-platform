@@ -14,6 +14,8 @@ const api = join(here, "..");
 const common = { bundle: true, format: "esm", platform: "neutral", mainFields: ["module", "main"], logLevel: "warning" };
 await build({ ...common, entryPoints: [join(api, "src/app.ts")], outfile: join(here, ".build/app.mjs") });
 await build({ ...common, entryPoints: [join(api, "src/utils/auth.ts")], outfile: join(here, ".build/auth.mjs") });
+// The Worker entry (fetch + scheduled cron), for the lifecycle test.
+await build({ ...common, entryPoints: [join(api, "src/index.ts")], outfile: join(here, ".build/index.mjs") });
 
 const only = process.argv.slice(2);
 const suites = readdirSync(here)

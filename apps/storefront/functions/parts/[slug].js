@@ -56,10 +56,11 @@ export async function onRequestGet(context) {
       description: clip(part.description || description, 500),
       url,
       ...(uniqueImages.length ? { image: uniqueImages } : {}),
-      // mpn: the part's own number (OEM or maker's), else the seller's code.
+      // mpn: the part's own number (OEM or maker's) only. The seller's
+      // code is not a manufacturer number: it stays in sku.
       ...(() => {
         const own = (part.part_numbers || []).find((n) => n.role === "own");
-        const mpn = own?.number || part.sku;
+        const mpn = own?.number || null;
         return { ...(part.sku ? { sku: part.sku } : {}), ...(mpn ? { mpn } : {}) };
       })(),
       ...(part.brand_name ? { brand: { "@type": "Brand", name: part.brand_name } } : {}),
