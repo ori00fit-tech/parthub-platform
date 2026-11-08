@@ -1,0 +1,21 @@
+name: Production health
+
+# Every day at 07:23 (Morocco, UTC+1) and on demand. Read-only: it only
+# requests public pages and API routes. A failure means something buyers
+# or Google see is wrong; GitHub e-mails the repository owner.
+on:
+  schedule:
+    - cron: "23 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check production
+        run: node .github/scripts/prod-health.mjs
