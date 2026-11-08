@@ -2,11 +2,8 @@
 -- PartHub Platform — Seed Data
 -- ============================================================
 
--- Admin user (password: Admin123!)
-INSERT OR IGNORE INTO users (name, email, password_hash, role) VALUES
-('Admin', 'admin@parthub.site',
- 'c4430a21a7b0b6bb374e23cdde875a8d462c4db68eed0e3e3a0bfb0cfb7c4e3b',
- 'admin');
+-- No admin account here: create admins with a real password (sign up, then
+-- set users.role = 'admin' by hand). A fixed sample admin used to be here.
 
 -- Vehicle Makes
 INSERT OR IGNORE INTO vehicle_makes (slug, name) VALUES

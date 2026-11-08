@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
+source "$(dirname "$0")/_guard-production.sh" "DROP EVERY TABLE of the production database (all orders, sellers, parts, accounts)"
 
 if [ -z "${CF_ACCOUNT_ID:-}" ] || [ -z "${D1_DATABASE_ID:-}" ] || [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
   echo "Missing one of: CF_ACCOUNT_ID, D1_DATABASE_ID, CLOUDFLARE_API_TOKEN"

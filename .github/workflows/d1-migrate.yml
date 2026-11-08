@@ -122,30 +122,7 @@ jobs:
       - name: 0025 commission invoices and payments, buyer receipt
         run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0025_commission_invoices.sql"
 
-      # Read query: fails while the daily read limit is exceeded, which
-      # doesn't mean the migrations failed.
+      # Fails the job (and the API deploy waiting for it) when the schema is
+      # not what the API needs; only warns while D1's daily read limit is hit.
       - name: Verify
-        continue-on-error: true
-        run: |
-          npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --command \
-            "SELECT
-               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('part_requests','request_offers','whatsapp_notifications','part_search_logs','stock_alerts','order_issues')) AS tables_of_6,
-               (SELECT CASE WHEN instr(sql, 'images') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='part_requests') AS images_column,
-               (SELECT CASE WHEN instr(sql, 'seller_type') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='sellers') AS seller_type_column,
-               (SELECT CASE WHEN instr(sql, 'part_origin') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='parts') AS part_origin_column,
-               (SELECT CASE WHEN instr(sql, 'moderation_note') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='parts') AS parts_note_column,
-               (SELECT CASE WHEN instr(sql, 'moderation_note') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='sellers') AS sellers_note_column,
-               (SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name IN ('idx_part_images_part','idx_compat_part_id','idx_parts_seller_id','idx_parts_status')) AS key_indexes_of_4,
-               (SELECT CASE WHEN instr(sql, 'terms_accepted_at') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='users') AS users_terms_column,
-               (SELECT CASE WHEN instr(sql, 'agreement_accepted_at') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='sellers') AS sellers_agreement_column,
-               (SELECT CASE WHEN instr(sql, 'delivered_at') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='order_items') AS order_items_fulfilment_columns,
-               (SELECT CASE WHEN instr(sql, 'delivered_at') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='orders') AS orders_delivered_column,
-               (SELECT COUNT(*) FROM vehicle_generations) AS vehicle_generations,
-               (SELECT COUNT(*) FROM vehicle_engines) AS vehicle_engines,
-               (SELECT CASE WHEN instr(sql, 'engine_scope') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='part_compatibility') AS engine_scope_column,
-               (SELECT COUNT(*) FROM vehicle_engines WHERE source IS NULL) AS engines_without_source,
-               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('part_numbers','part_listing_numbers','part_number_links')) AS part_number_tables_of_3,
-               (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('order_shipments','commissions','platform_settings','commission_rates','commission_events','commission_invoices','commission_payments')) AS revenue_tables_of_7,
-               (SELECT CASE WHEN instr(sql, 'delivery_fee_local') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='sellers') AS sellers_fee_columns,
-               (SELECT CASE WHEN instr(sql, 'refund_amount') > 0 THEN 1 ELSE 0 END FROM sqlite_master WHERE type='table' AND name='order_issues') AS issues_refund_column,
-               (SELECT rate_bps FROM commission_rates WHERE cancelled_at IS NULL AND effective_from <= datetime('now') ORDER BY effective_from DESC, id DESC LIMIT 1) AS commission_rate_now_bps"
+        run: ../../.github/scripts/d1-verify.sh

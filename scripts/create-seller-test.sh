@@ -2,6 +2,11 @@
 set -euo pipefail
 
 API_BASE="${API_BASE:-https://parthub-api.ori00fit-c96.workers.dev}"
+# The default API is production: guard it (a local API needs no confirmation).
+case "$API_BASE" in
+  http://localhost*|http://127.0.0.1*) ;;
+  *) source "$(dirname "$0")/_guard-production.sh" "create a TEST seller account and store (city: ${STORE_CITY:-London}) through the live API" ;;
+esac
 
 SELLER_NAME="${SELLER_NAME:-Test Seller}"
 SELLER_EMAIL="${SELLER_EMAIL:-seller.test.$(date +%s)@parthub.local}"

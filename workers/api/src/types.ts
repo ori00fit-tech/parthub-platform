@@ -10,6 +10,7 @@ export type Env = {
   WHATSAPP_TEMPLATE_LANG?: string;
   STOREFRONT_URL?: string;
   SELLER_PORTAL_URL?: string;
+  ADMIN_URL?: string;
   SHIPPING_FEE_CENTIMES?: string;
 };
 

@@ -600,3 +600,22 @@ CREATE TABLE IF NOT EXISTS commission_payments (
 );
 CREATE INDEX IF NOT EXISTS idx_commission_payments_invoice ON commission_payments(invoice_id);
 CREATE INDEX IF NOT EXISTS idx_commissions_invoice ON commissions(invoice_id);
+
+-- ── Search analytics (migrations/0002) ────────────────────────
+CREATE TABLE IF NOT EXISTS part_search_logs (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  query           TEXT NOT NULL DEFAULT '',
+  make            TEXT,
+  model           TEXT,
+  year            INTEGER,
+  category_slug   TEXT,
+  brand_slug      TEXT,
+  results_count   INTEGER NOT NULL DEFAULT 0,
+  selected_part_id INTEGER,
+  session_id      TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_search_logs_query        ON part_search_logs(query);
+CREATE INDEX IF NOT EXISTS idx_search_logs_vehicle      ON part_search_logs(make, model, year);
+CREATE INDEX IF NOT EXISTS idx_search_logs_created_at   ON part_search_logs(created_at DESC);
