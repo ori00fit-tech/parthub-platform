@@ -38,6 +38,10 @@ export function translate(lang, text, vars) {
 // Module-level translator for helpers outside components. Helpers only run
 // while a component that uses useT() renders, so this stays in step.
 let currentLang = "en";
+// The interface language, for the API (X-PartHub-Lang: WhatsApp messages).
+export function currentLanguage() {
+  return currentLang;
+}
 export function t(text, vars) {
   return translate(currentLang, text, vars);
 }

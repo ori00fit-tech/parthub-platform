@@ -1,4 +1,4 @@
-import { serverMessage } from "../i18n";
+import { currentLanguage, serverMessage } from "../i18n";
 
 export const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "https://api.parthub.autos").replace(/\/$/, "");
 
@@ -58,6 +58,8 @@ async function request(path, options = {}) {
     const token = getAuthToken();
     if (token) {
       finalHeaders.Authorization = `Bearer ${token}`;
+      // PartHub's WhatsApp messages to this buyer use the site's language.
+      finalHeaders["X-PartHub-Lang"] = currentLanguage();
     }
   }
 

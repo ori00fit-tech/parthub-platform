@@ -25,15 +25,23 @@ export const authMiddleware: MiddlewareHandler<{
   }
 
   const user = await c.env.DB.prepare(
-    `SELECT u.role, u.is_active, u.token_version, s.id AS seller_id
+    `SELECT u.role, u.is_active, u.token_version, u.locale, s.id AS seller_id
      FROM users u LEFT JOIN sellers s ON s.user_id = u.id
      WHERE u.id = ?1`
   )
     .bind(payload.user_id)
-    .first<{ role: "buyer" | "seller" | "admin"; is_active: number; token_version: number; seller_id: number | null }>();
+    .first<{ role: "buyer" | "seller" | "admin"; is_active: number; token_version: number; locale: string | null; seller_id: number | null }>();
 
   if (!user || !Number(user.is_active) || Number(payload.tv ?? 0) !== Number(user.token_version ?? 0)) {
     return c.json({ success: false, error: "Session expired, please sign in again" }, 401);
+  }
+
+  // The language the person uses PartHub in (sent by the sites): their
+  // WhatsApp messages go out in it (utils/wa-notify.ts). Written only when
+  // it changes.
+  const lang = String(c.req.header("X-PartHub-Lang") || "").slice(0, 2).toLowerCase();
+  if ((lang === "ar" || lang === "fr" || lang === "en") && lang !== user.locale) {
+    await c.env.DB.prepare("UPDATE users SET locale = ?1 WHERE id = ?2").bind(lang, payload.user_id).run().catch(() => undefined);
   }
 
   c.set("user_id", payload.user_id);

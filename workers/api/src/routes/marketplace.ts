@@ -12,6 +12,7 @@ import { listingNumbers, readNumbersInput, saveListingNumbers } from "../utils/p
 import { type IssueRow, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, updateIssue } from "../utils/issues";
 import { type LineStatus, SELLER_NEXT, logOrderEvent, refreshOrderStatus, rollupStatus, setLineStatus } from "../utils/fulfillment";
 import { runInBackground } from "../utils/whatsapp";
+import { waClaimEvent, waOrderStep } from "../utils/wa-events";
 import { MAX_IMPORT_ROWS, applyImport, planImport } from "../utils/part-import";
 import { MAX_CODE_ATTEMPTS, holdUntil, isPickup, nextStatuses, sameCode } from "../utils/pickup";
 import { cleanTracking, readFeeMad } from "../utils/shipping";
@@ -1683,6 +1684,7 @@ marketplaceRoutes.post("/me/issues/:id/respond", authMiddleware, async (c) => {
     `seller:${sellerId}`,
     note
   );
+  runInBackground(c, waClaimEvent(c.env, issue.id, decision === "accept" ? "accepted" : "refused"));
   return c.json(success(publicIssue(updated), { message: "Reply sent to the buyer" }));
 });
 
@@ -1710,6 +1712,7 @@ marketplaceRoutes.post("/me/issues/:id/resolve", authMiddleware, async (c) => {
     c.env.DB, issue, { status: "closed", outcome: "buyer", closed_at: nowText(), refund_amount: refund }, "issue_refunded", `seller:${sellerId}`,
     cleanNote(body.note) ?? (refund !== null ? `Partial refund: ${(refund / 100).toFixed(2)} MAD` : null)
   );
+  runInBackground(c, waClaimEvent(c.env, issue.id, "refunded"));
   return c.json(success(publicIssue(updated), { message: "Claim closed" }));
 });
 
@@ -1786,6 +1789,9 @@ marketplaceRoutes.patch("/me/orders/:id/status", authMiddleware, async (c) => {
   await logOrderEvent(c.env.DB, orderId, deliveryFailed ? "delivery_failed" : next, `seller:${sellerId}`, note);
   await refreshOrderStatus(c.env.DB, orderId);
   for (const partId of restocked) runInBackground(c, notifyBackInStock(c.env, partId));
+  if (next === "confirmed" || next === "shipped" || next === "delivered" || next === "cancelled") {
+    runInBackground(c, waOrderStep(c.env, orderId, sellerId, next, note));
+  }
 
   const updated = await loadSellerOrder(c.env.DB, sellerId, orderId);
   return c.json(success(updated, { message: "Order updated" }));

@@ -1,5 +1,9 @@
 # WhatsApp notifications — templates
 
+> **Now:** all templates (orders, shipping, claims, store, account) in
+> Arabic, French and English are in `whatsapp-templates.md`. This page
+> keeps the history of the first four.
+
 Set-up, webhook, delivery tracking and inbox: see `whatsapp.md`. New
 orders also notify the seller (`parthub_new_order`, text in `whatsapp.md`).
 

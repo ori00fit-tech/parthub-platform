@@ -11,7 +11,8 @@
 // isn't configured.
 // ============================================================
 import type { Env } from "../types";
-import { isWhatsAppConfigured, sendWhatsAppTemplate } from "./whatsapp";
+import { isWhatsAppConfigured } from "./whatsapp";
+import { notify } from "./wa-notify";
 
 export const TEMPLATES = {
   newRequest: "parthub_new_request",
@@ -35,25 +36,8 @@ function formatMAD(cents: number) {
   return `${(cents / 100).toFixed(2)} MAD`;
 }
 
-// Returns true if this (kind, ref, recipient) hasn't been sent before.
-async function claim(env: Env, kind: Kind, refId: number, recipient: string): Promise<boolean> {
-  const res = await env.DB.prepare(
-    "insert or ignore into whatsapp_notifications (kind, ref_id, recipient) values (?1, ?2, ?3)"
-  )
-    .bind(kind, refId, recipient)
-    .run();
-  return Boolean(res.meta?.changes);
-}
-
-// Keeps WhatsApp's message id: its delivery status arrives by webhook.
-async function markSent(env: Env, kind: Kind, refId: number, recipient: string, waId: string) {
-  await env.DB.prepare(
-    "update whatsapp_notifications set sent = 1, wa_message_id = ?4, status = 'sent', status_at = datetime('now') where kind = ?1 and ref_id = ?2 and recipient = ?3"
-  )
-    .bind(kind, refId, recipient, waId)
-    .run();
-}
-
+// One message, through notify(): claimed once per (kind, ref, recipient),
+// in the recipient's language when Meta approved it (utils/wa-notify.ts).
 async function deliver(
   env: Env,
   kind: Kind,
@@ -61,12 +45,10 @@ async function deliver(
   recipient: string,
   phone: string,
   template: string,
-  params: string[]
+  params: string[],
+  locale?: string | null
 ): Promise<boolean> {
-  if (!(await claim(env, kind, refId, recipient))) return false;
-  const sent = await sendWhatsAppTemplate(env, phone, template, params);
-  if (sent) await markSent(env, kind, refId, recipient, sent);
-  return Boolean(sent);
+  return notify(env, { kind, refId, recipient, phone, locale, template, params });
 }
 
 export async function notifySellersOfNewRequest(env: Env, requestId: number): Promise<number> {
@@ -85,7 +67,8 @@ export async function notifySellersOfNewRequest(env: Env, requestId: number): Pr
   // Active sellers that stock this make (via compatibility) or this category,
   // have a contact number, and haven't hit today's alert cap.
   const sellers = await env.DB.prepare(
-    `select s.id, coalesce(nullif(trim(s.whatsapp), ''), s.phone) as contact
+    `select s.id, coalesce(nullif(trim(s.whatsapp), ''), s.phone) as contact,
+            (select locale from users where id = s.user_id) as locale
      from sellers s
      where s.status = 'active'
        and coalesce(nullif(trim(s.whatsapp), ''), nullif(trim(s.phone), '')) is not null
@@ -107,7 +90,7 @@ export async function notifySellersOfNewRequest(env: Env, requestId: number): Pr
      limit ?4`
   )
     .bind(request.make, request.category_id, MAX_SELLER_ALERTS_PER_DAY, MAX_SELLERS_PER_REQUEST)
-    .all<{ id: number; contact: string }>();
+    .all<{ id: number; contact: string; locale: string | null }>();
 
   const vehicle = [request.make, request.model, request.year].filter(Boolean).join(" ");
   const link = `${sellerPortalUrl(env)}/requests/${request.id}`;
@@ -116,7 +99,7 @@ export async function notifySellersOfNewRequest(env: Env, requestId: number): Pr
   for (const seller of sellers.results || []) {
     const ok = await deliver(
       env, "new_request", request.id, `seller:${seller.id}`, seller.contact,
-      TEMPLATES.newRequest, [request.part_name, vehicle, request.city, link]
+      TEMPLATES.newRequest, [request.part_name, vehicle, request.city, link], seller.locale
     );
     if (ok) sent++;
   }
@@ -127,7 +110,8 @@ export async function notifyBuyerOfNewOffer(env: Env, offerId: number): Promise<
   if (!isWhatsAppConfigured(env)) return false;
 
   const row = await env.DB.prepare(
-    `select o.id, o.price, r.id as request_id, r.buyer_id, r.phone, r.part_name, s.name as seller_name
+    `select o.id, o.price, r.id as request_id, r.buyer_id, r.phone, r.part_name, s.name as seller_name,
+            (select locale from users where id = r.buyer_id) as locale
      from request_offers o
      join part_requests r on r.id = o.request_id
      join sellers s on s.id = o.seller_id
@@ -136,13 +120,13 @@ export async function notifyBuyerOfNewOffer(env: Env, offerId: number): Promise<
     .bind(offerId)
     .first<{
       id: number; price: number; request_id: number; buyer_id: number;
-      phone: string; part_name: string; seller_name: string;
+      phone: string; part_name: string; seller_name: string; locale: string | null;
     }>();
   if (!row) return false;
 
   return deliver(
     env, "new_offer", row.id, `buyer:${row.buyer_id}`, row.phone, TEMPLATES.newOffer,
-    [row.part_name, row.seller_name, formatMAD(row.price), `${storefrontUrl(env)}/requests/${row.request_id}`]
+    [row.part_name, row.seller_name, formatMAD(row.price), `${storefrontUrl(env)}/requests/${row.request_id}`], row.locale
   );
 }
 
@@ -151,7 +135,8 @@ export async function notifySellerOfAcceptance(env: Env, offerId: number): Promi
 
   const row = await env.DB.prepare(
     `select o.id, o.seller_id, r.id as request_id, r.part_name, u.name as buyer_name,
-       coalesce(nullif(trim(s.whatsapp), ''), s.phone) as contact
+       coalesce(nullif(trim(s.whatsapp), ''), s.phone) as contact,
+       (select locale from users where id = s.user_id) as locale
      from request_offers o
      join part_requests r on r.id = o.request_id
      join users u on u.id = r.buyer_id
@@ -161,13 +146,13 @@ export async function notifySellerOfAcceptance(env: Env, offerId: number): Promi
     .bind(offerId)
     .first<{
       id: number; seller_id: number; request_id: number;
-      part_name: string; buyer_name: string; contact: string | null;
+      part_name: string; buyer_name: string; contact: string | null; locale: string | null;
     }>();
   if (!row?.contact) return false;
 
   return deliver(
     env, "offer_accepted", row.id, `seller:${row.seller_id}`, row.contact, TEMPLATES.offerAccepted,
-    [row.part_name, row.buyer_name, `${sellerPortalUrl(env)}/requests/${row.request_id}`]
+    [row.part_name, row.buyer_name, `${sellerPortalUrl(env)}/requests/${row.request_id}`], row.locale
   );
 }
 
@@ -183,12 +168,13 @@ export async function notifySellersOfNewOrder(env: Env, orderId: number): Promis
   if (!order) return 0;
   const sellers = await env.DB.prepare(
     `select s.id, coalesce(nullif(trim(s.whatsapp), ''), s.phone) as contact,
+            (select locale from users where id = s.user_id) as locale,
             group_concat(oi.quantity || ' × ' || oi.title, ', ') as items,
             sum(oi.subtotal) + coalesce((select sh.fee from order_shipments sh where sh.order_id = oi.order_id and sh.seller_id = s.id), 0) as amount
      from order_items oi join sellers s on s.id = oi.seller_id
      where oi.order_id = ?1 and oi.status != 'cancelled'
      group by s.id`
-  ).bind(orderId).all<{ id: number; contact: string | null; items: string; amount: number }>();
+  ).bind(orderId).all<{ id: number; contact: string | null; locale: string | null; items: string; amount: number }>();
   let sent = 0;
   for (const s of sellers.results || []) {
     if (!s.contact) continue;
@@ -199,7 +185,7 @@ export async function notifySellersOfNewOrder(env: Env, orderId: number): Promis
       `${(Number(s.amount) / 100).toFixed(2)} MAD`,
       order.city || "-",
       `${sellerPortalUrl(env)}/orders/${order.id}`,
-    ]);
+    ], s.locale);
     if (ok) sent++;
   }
   return sent;

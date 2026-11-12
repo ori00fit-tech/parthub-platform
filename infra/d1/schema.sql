@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
   token_version  INTEGER NOT NULL DEFAULT 0,  -- sessions (see migrations/0021)
   terms_accepted_at TEXT,                   -- terms of use (see migrations/0013)
   terms_version  TEXT,
+  locale         TEXT,                      -- ar | fr | en (see migrations/0028)
   created_at     TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -313,6 +314,8 @@ CREATE TABLE IF NOT EXISTS whatsapp_notifications (
   status      TEXT,              -- sent | delivered | read | failed (webhook)
   status_at   TEXT,
   error       TEXT,
+  template    TEXT,              -- template and language sent (migrations/0028)
+  language    TEXT,
   UNIQUE (kind, ref_id, recipient)
 );
 
@@ -704,3 +707,17 @@ CREATE TABLE IF NOT EXISTS whatsapp_messages (
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_whatsapp_messages_phone ON whatsapp_messages(phone, created_at);
+
+-- See migrations/0028_whatsapp_templates.sql
+CREATE TABLE IF NOT EXISTS whatsapp_templates (
+  name        TEXT NOT NULL,
+  language    TEXT NOT NULL,
+  status      TEXT NOT NULL DEFAULT 'draft',
+  category    TEXT,
+  reason      TEXT,
+  meta_id     TEXT,
+  source      TEXT NOT NULL DEFAULT 'meta',
+  updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (name, language)
+);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_notifications_template ON whatsapp_notifications(template, created_at);

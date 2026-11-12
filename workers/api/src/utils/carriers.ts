@@ -215,7 +215,7 @@ export async function recordEvent(
   carrier: string,
   ev: ParsedEvent,
   source: "carrier" | "seller" | "admin"
-): Promise<{ result: ApplyResult; shipment_id: number | null }> {
+): Promise<{ result: ApplyResult; shipment_id: number | null; event_id?: number | undefined }> {
   const shipment = await findShipment(DB, carrier, ev.tracking);
   const status = ev.status;
   const key = `${carrier}|${trackingKey(ev.tracking)}|${fold(ev.carrier_status)}|${ev.occurred_at}`;
@@ -226,6 +226,7 @@ export async function recordEvent(
   if (!Number(ins.meta?.changes)) return { result: "duplicate", shipment_id: shipment?.id ?? null };
   if (!shipment) return { result: "unknown_shipment", shipment_id: null };
   if (!status) return { result: "unknown_status", shipment_id: shipment.id };
+  const eventId = Number(ins.meta?.last_row_id) || undefined;
 
   // Which status the shipment shows. Events arrive out of order and carrier
   // clocks differ, so: a final status (delivered / returned / cancelled)
@@ -261,7 +262,7 @@ export async function recordEvent(
   } else if (status === "failed_attempt") {
     await logOrderEvent(DB, shipment.order_id, "delivery_attempt_failed", `carrier:${carrier}`, ev.note);
   }
-  return { result: "applied", shipment_id: shipment.id };
+  return { result: "applied", shipment_id: shipment.id, event_id: eventId };
 }
 
 // ── Reading / editing carriers ─────────────────────────────────────────

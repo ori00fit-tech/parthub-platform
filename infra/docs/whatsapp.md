@@ -43,7 +43,8 @@ Admin › **WhatsApp**. Template texts: `infra/docs/whatsapp-notifications.md`.
    for a 6-digit PIN (two-step verification) — keep it safe.
 4. **Business verification** (Step 3) and the display name review ("Pending
    review"): needed to message more people and lift the limits.
-5. **Templates**: WhatsApp Manager › Message templates, category
+5. **Templates** (all of them, three languages: `whatsapp-templates.md`,
+   Admin › WhatsApp › Templates). The first five, by hand: WhatsApp Manager › Message templates, category
    **Utility**, language French (`WHATSAPP_TEMPLATE_LANG = fr`). Names and
    the number / order of `{{n}}` must match exactly. Until a template is
    approved, Meta refuses that message: it shows as failed in Admin ›

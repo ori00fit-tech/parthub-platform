@@ -9,7 +9,8 @@
 // sends twice. Runs off the request path (see runInBackground).
 // ============================================================
 import type { Env } from "../types";
-import { isWhatsAppConfigured, sendWhatsAppTemplate } from "./whatsapp";
+import { isWhatsAppConfigured } from "./whatsapp";
+import { notify } from "./wa-notify";
 
 export const BACK_IN_STOCK_TEMPLATE = "parthub_back_in_stock";
 const MAX_ALERTS_PER_RUN = 200;
@@ -32,7 +33,7 @@ export async function notifyBackInStock(env: Env, partId: number): Promise<numbe
   if (!part || part.status !== "active" || Number(part.quantity) <= 0) return 0;
 
   const alerts = await env.DB.prepare(
-    `select a.id, a.user_id, u.phone
+    `select a.id, a.user_id, u.phone, u.locale
      from stock_alerts a
      join users u on u.id = a.user_id
      where a.part_id = ?1 and a.status = 'active'
@@ -40,7 +41,7 @@ export async function notifyBackInStock(env: Env, partId: number): Promise<numbe
      limit ?2`
   )
     .bind(partId, MAX_ALERTS_PER_RUN)
-    .all<{ id: number; user_id: number; phone: string | null }>();
+    .all<{ id: number; user_id: number; phone: string | null; locale: string | null }>();
   const rows = alerts.results || [];
   if (!rows.length) return 0;
 
@@ -57,25 +58,15 @@ export async function notifyBackInStock(env: Env, partId: number): Promise<numbe
     const link = `${storefrontUrl(env)}/parts/${part.slug}`;
     for (const alert of rows) {
       if (!alert.phone) continue;
-      const recipient = `buyer:${alert.user_id}`;
-      const claimed = await env.DB.prepare(
-        "insert or ignore into whatsapp_notifications (kind, ref_id, recipient) values ('back_in_stock', ?1, ?2)"
-      )
-        .bind(alert.id, recipient)
-        .run();
-      if (!claimed.meta?.changes) continue;
-      const sent = await sendWhatsAppTemplate(env, alert.phone, BACK_IN_STOCK_TEMPLATE, [
-        part.title,
-        formatMAD(Number(part.price)),
-        link,
-      ]);
-      if (sent) {
-        await env.DB.prepare(
-          "update whatsapp_notifications set sent = 1, wa_message_id = ?3, status = 'sent', status_at = datetime('now') where kind = 'back_in_stock' and ref_id = ?1 and recipient = ?2"
-        )
-          .bind(alert.id, recipient, sent)
-          .run();
-      }
+      await notify(env, {
+        kind: "back_in_stock",
+        refId: alert.id,
+        recipient: `buyer:${alert.user_id}`,
+        phone: alert.phone,
+        locale: alert.locale,
+        template: BACK_IN_STOCK_TEMPLATE,
+        params: [part.title, formatMAD(Number(part.price)), link],
+      });
     }
   }
 

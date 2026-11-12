@@ -11,7 +11,7 @@
 import type { Context } from "hono";
 import type { Env } from "../types";
 
-const GRAPH_API_VERSION = "v20.0";
+export const GRAPH_API_VERSION = "v20.0";
 
 export function isWhatsAppConfigured(env: Env): boolean {
   return Boolean(env.WHATSAPP_ACCESS_TOKEN && env.WHATSAPP_PHONE_NUMBER_ID);
@@ -30,13 +30,14 @@ export function normalizeWhatsAppNumber(phone: string | null | undefined): strin
 
 // Sends an approved template. Returns WhatsApp's message id (truthy) so
 // its delivery status can be followed (webhook), or false. Numbers that
-// replied STOP are skipped.
+// replied STOP are skipped. (Event notifications go through
+// utils/wa-notify.ts, which also picks the language.)
 export async function sendWhatsAppTemplate(
   env: Env,
   to: string,
   template: string,
   params: string[],
-  options: { language?: string } = {}
+  options: { language?: string; buttonPath?: string } = {}
 ): Promise<string | false> {
   if (!isWhatsAppConfigured(env)) return false;
 
@@ -44,23 +45,37 @@ export async function sendWhatsAppTemplate(
   if (!number) return false;
   if (await isOptedOut(env, number)) return false;
 
-  const components = params.length
-    ? [
-        {
-          type: "body",
-          // WhatsApp rejects empty parameters and caps them at 1024 chars.
-          parameters: params.map((text) => ({ type: "text", text: (text || "-").slice(0, 1024) })),
-        },
-      ]
-    : [];
-
-  const res = await graphSend(env, {
-    to: number,
-    type: "template",
-    template: { name: template, language: { code: options.language || env.WHATSAPP_TEMPLATE_LANG || "fr" }, components },
-  });
+  const res = await sendTemplateMessage(env, number, template, options.language || env.WHATSAPP_TEMPLATE_LANG || "fr", params, options.buttonPath);
   if (!res.ok) console.warn(`[whatsapp] ${template} → ${res.error}`);
   return res.ok ? res.id || "sent" : false;
+}
+
+// One template message to a normalized number, in one language. The URL
+// button (if the template has one) gets `buttonPath` as its {{1}}.
+export async function sendTemplateMessage(
+  env: Env,
+  number: string,
+  template: string,
+  language: string,
+  params: string[],
+  buttonPath?: string
+): Promise<{ ok: boolean; id?: string; error?: string }> {
+  const components: Array<Record<string, unknown>> = [];
+  if (params.length) {
+    components.push({
+      type: "body",
+      // WhatsApp rejects empty parameters, new lines in them, and caps them at 1024 chars.
+      parameters: params.map((text) => ({ type: "text", text: (String(text ?? "").replace(/\s*\n\s*/g, " ").trim() || "-").slice(0, 1024) })),
+    });
+  }
+  if (buttonPath) {
+    components.push({ type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: buttonPath.replace(/^\//, "") }] });
+  }
+  return graphSend(env, {
+    to: number,
+    type: "template",
+    template: { name: template, language: { code: language }, components },
+  });
 }
 
 // A free text message (replies from the admin inbox). WhatsApp only allows
@@ -88,7 +103,7 @@ async function graphSend(env: Env, message: Record<string, unknown>): Promise<{ 
   }
 }
 
-async function isOptedOut(env: Env, number: string): Promise<boolean> {
+export async function isOptedOut(env: Env, number: string): Promise<boolean> {
   try {
     const row = await env.DB.prepare("select opted_out_at from whatsapp_contacts where phone = ?1").bind(number).first<{ opted_out_at: string | null }>();
     return Boolean(row?.opted_out_at);

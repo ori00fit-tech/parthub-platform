@@ -9,6 +9,7 @@ export type Env = {
   WHATSAPP_VERIFY_TOKEN?: string;
   WHATSAPP_APP_SECRET?: string; // Meta app secret: signs the webhook calls
   WHATSAPP_TEMPLATE_LANG?: string;
+  WHATSAPP_BUSINESS_ACCOUNT_ID?: string; // WhatsApp Business account: read / submit templates (Admin › WhatsApp › Templates)
   STOREFRONT_URL?: string;
   SELLER_PORTAL_URL?: string;
   ADMIN_URL?: string;
