@@ -96,6 +96,8 @@ const EVENT_LABELS = {
   delivery_failed: "Delivery failed",
   delivered_by_carrier: "Delivered (confirmed by the carrier)",
   delivery_attempt_failed: "Delivery attempt failed",
+  delivery_returning: "Being returned to you",
+  shipping_delayed: "No carrier update for several days",
   received_by_buyer: "The buyer confirmed receipt",
 };
 
@@ -129,6 +131,9 @@ export default function OrderDetailsPage() {
   const [code, setCode] = useState("");
   const [carrier, setCarrier] = useState("own");
   const [tracking, setTracking] = useState("");
+  const [shipStatus, setShipStatus] = useState("out_for_delivery");
+  const [shipNote, setShipNote] = useState("");
+  const [shipMsg, setShipMsg] = useState("");
 
   const load = useCallback(
     () =>
@@ -158,6 +163,28 @@ export default function OrderDetailsPage() {
   }, []);
 
   const pickupOrder = order?.fulfillment === "pickup" || order?.fulfillment === "courier";
+
+  // What the carrier says, for carriers that send PartHub nothing.
+  async function carrierUpdate(e) {
+    e.preventDefault();
+    setActionError("");
+    setShipMsg("");
+    if (shipStatus === "failed_attempt" && !shipNote.trim()) {
+      setActionError(t("Write why the delivery failed (the buyer sees it)"));
+      return;
+    }
+    setSaving("shipment");
+    try {
+      const res = await api.post(`/api/v1/marketplace/me/orders/${id}/shipment`, { status: shipStatus, note: shipNote.trim() || undefined });
+      setOrder(res?.data || order);
+      setShipNote("");
+      setShipMsg(t("Saved. The buyer sees it on their order."));
+    } catch (err) {
+      setActionError(err?.message || t("Something went wrong. Please try again."));
+    } finally {
+      setSaving("");
+    }
+  }
 
   async function move(status) {
     setActionError("");
@@ -216,6 +243,8 @@ export default function OrderDetailsPage() {
   const canShip = !pickupOrder && next.includes("shipped");
   const collect = pickupOrder && next.includes("delivered");
   const canCancel = next.includes("cancelled");
+  const shipmentFinal = ["delivered", "returned", "cancelled"].includes(order.shipment?.shipment_status);
+  const canUpdateShipment = order.status === "shipped" && !pickupOrder && !shipmentFinal;
   const failedDelivery = canCancel && order.status === "shipped";
   const cancelText = failedDelivery ? FAILED : ACTIONS.cancelled;
   const wa = whatsappNumber(order.buyer_phone);
@@ -292,6 +321,54 @@ export default function OrderDetailsPage() {
             {forward.map((s) => (
               <p key={s} className="mt-2 text-xs text-gray-500">{t(actions[s].hint)}</p>
             ))}
+            {canUpdateShipment ? (
+              <form onSubmit={carrierUpdate} className="mt-4 space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{t("Carrier update")}</p>
+                  <p className="text-xs text-gray-600">{t("Your carrier does not send updates to PartHub? Record what it tells you: the buyer is informed.")}</p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                  <div>
+                    <label htmlFor="ship-status" className="block text-sm font-semibold text-gray-900">{t("The carrier says")}</label>
+                    <select
+                      id="ship-status"
+                      value={shipStatus}
+                      onChange={(e) => setShipStatus(e.target.value)}
+                      className="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
+                    >
+                      {["picked_up", "in_transit", "out_for_delivery", "failed_attempt", "returning", "returned"].map((s) => (
+                        <option key={s} value={s}>{t(shipmentStatusLabel(s))}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="ship-note" className="block text-sm font-semibold text-gray-900">
+                      {shipStatus === "failed_attempt" ? t("Reason (required)") : t("Note (optional)")}
+                    </label>
+                    <input
+                      id="ship-note"
+                      value={shipNote}
+                      onChange={(e) => setShipNote(e.target.value)}
+                      maxLength={500}
+                      dir="auto"
+                      placeholder={shipStatus === "failed_attempt" ? t("e.g. buyer unreachable") : ""}
+                      className="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={Boolean(saving)}
+                    className="inline-flex h-11 items-center justify-center rounded-2xl bg-amber-600 px-5 text-sm font-semibold text-white hover:bg-amber-700 disabled:bg-amber-300"
+                  >
+                    {saving === "shipment" ? t("Saving…") : t("Record")}
+                  </button>
+                </div>
+                {shipStatus === "returned" ? (
+                  <p className="text-xs font-semibold text-amber-900">{t("Returned: the order is cancelled for you and the quantity goes back to your stock.")}</p>
+                ) : null}
+                {shipMsg ? <p className="text-xs text-emerald-700" role="status">{shipMsg}</p> : null}
+              </form>
+            ) : null}
             {canShip ? (
               <form
                 onSubmit={(e) => {

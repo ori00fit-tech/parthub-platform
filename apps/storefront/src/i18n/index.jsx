@@ -38,6 +38,10 @@ export function translate(lang, text, vars) {
 // Module-level translator for helpers outside components. Helpers only run
 // while a component that uses useT() renders, so this stays in step.
 let currentLang = "en";
+// The interface language, for the API (X-PartHub-Lang: WhatsApp messages).
+export function currentLanguage() {
+  return currentLang;
+}
 export function t(text, vars) {
   return translate(currentLang, text, vars);
 }
@@ -59,6 +63,7 @@ const STATUS_LABELS = {
   fulfilled: "Fulfilled", expired: "Expired", accepted: "Accepted", declined: "Declined",
   withdrawn: "Withdrawn", unknown: "Unknown", new: "New", used: "Used", refurbished: "Refurbished",
   not_shipped: "Not shipped", in_transit: "In transit",
+  delivery_attempt_failed: "Delivery attempt failed", delivery_returning: "Being returned to the seller",
 };
 export function statusLabel(value) {
   if (value === undefined || value === null || value === "") return "";

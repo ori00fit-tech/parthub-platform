@@ -9,6 +9,7 @@ import { deliveryFee } from "../utils/shipping";
 import { shipmentTimeline, trackingUrl } from "../utils/carriers";
 import { runInBackground } from "../utils/whatsapp";
 import { notifySellersOfNewOrder } from "../utils/request-notifications";
+import { waClaimEvent, waOrderReceived } from "../utils/wa-events";
 import { ISSUE_REASONS, type IssueRow, canEscalate, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, reportWindow, updateIssue } from "../utils/issues";
 
 const MAX_REVIEW_LENGTH = 1000;
@@ -242,6 +243,7 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
   // Each seller hears about the order on WhatsApp (after the response,
   // best-effort: utils/request-notifications.ts).
   if (order) runInBackground(c, notifySellersOfNewOrder(c.env, order.id));
+  if (order) runInBackground(c, waOrderReceived(c.env, order.id));
   return created(c, order);
 });
 
@@ -397,6 +399,7 @@ commerceRoutes.post("/orders/:reference/issues", authMiddleware, async (c) => {
   );
   await logOrderEvent(c.env.DB, item.order_id, "issue_opened", "buyer", details);
   const issue = await loadIssue(c.env.DB, Number(res.lastRowId));
+  if (issue) runInBackground(c, waClaimEvent(c.env, issue.id, "opened"));
   return created(c, publicIssue(issue as IssueRow));
 });
 
@@ -414,6 +417,7 @@ commerceRoutes.post("/issues/:id/escalate", authMiddleware, async (c) => {
   const updated = await updateIssue(
     c.env.DB, issue, { status: "escalated", escalated_at: nowText() }, "issue_escalated", "buyer", cleanNote(body.note)
   );
+  runInBackground(c, waClaimEvent(c.env, issue.id, "escalated"));
   return ok(c, publicIssue(updated));
 });
 
@@ -425,6 +429,7 @@ commerceRoutes.post("/issues/:id/withdraw", authMiddleware, async (c) => {
   const updated = await updateIssue(
     c.env.DB, issue, { status: "closed", outcome: "withdrawn", closed_at: nowText() }, "issue_withdrawn", "buyer", null
   );
+  runInBackground(c, waClaimEvent(c.env, issue.id, "withdrawn"));
   return ok(c, publicIssue(updated));
 });
 

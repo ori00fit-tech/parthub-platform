@@ -6,6 +6,9 @@ interface ClientOptions {
   onUnauthorized?: () => void;
   // Turns an English API/client error message into the user's language.
   translateError?: (message: string) => string;
+  // The interface language ("ar" | "fr" | "en"), sent with signed-in calls:
+  // PartHub's WhatsApp messages to the person use it.
+  getLanguage?: () => string;
 }
 
 type LegacyApiResponse<T> = {
@@ -43,7 +46,7 @@ function isSuccessful(body: unknown): boolean {
 }
 
 export function createApiClient(options: ClientOptions) {
-  const { baseUrl, getToken, onUnauthorized, translateError } = options;
+  const { baseUrl, getToken, onUnauthorized, translateError, getLanguage } = options;
   const fail = (message: string) => new Error(translateError ? translateError(message) : message);
 
   async function request<T>(
@@ -55,6 +58,7 @@ export function createApiClient(options: ClientOptions) {
     const headers: HeadersInit = {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(token && getLanguage ? { "X-PartHub-Lang": getLanguage() } : {}),
       ...init.headers,
     };
 

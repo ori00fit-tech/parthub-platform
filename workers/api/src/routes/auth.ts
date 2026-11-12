@@ -6,6 +6,8 @@ import { hashPassword, verifyPassword, needsRehash, signToken } from "../utils/a
 import { dbFirst, dbRun } from "../utils/db";
 import { LEGAL_VERSION } from "../utils/legal";
 import { passwordProblem } from "../utils/password-policy";
+import { runInBackground } from "../utils/whatsapp";
+import { waPasswordChanged } from "../utils/wa-events";
 import { LIMITS, blockedFor, clearAttempts, clientIp, pruneAttempts, recordAttempt } from "../utils/rate-limit";
 
 const TOO_MANY = "Too many attempts. Try again in a few minutes.";
@@ -202,6 +204,8 @@ authRoutes.post("/password", authMiddleware, async (c) => {
     tv,
     user.id,
   ]);
+  // A WhatsApp warning too: if it was not them, they know at once.
+  runInBackground(c, waPasswordChanged(c.env, user.id, tv));
   const payload = user.seller_id != null ? { user_id: user.id, role: user.role, seller_id: user.seller_id, tv } : { user_id: user.id, role: user.role, tv };
   return ok(c, { access_token: await signToken(payload, c.env.JWT_SECRET), message: "Password changed. Other devices are signed out." });
 });

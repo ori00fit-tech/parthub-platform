@@ -30,7 +30,7 @@ to the output; counsel should state it in the transfer deed.
 | D1 database `parthub-db` | id in `workers/api/wrangler.toml`; all marketplace data | same Cloudflare account |
 | R2 bucket `parthub-media` | part and store photos | same Cloudflare account |
 | Pages projects | `parthub-platform` (storefront), `parthub-platform-seller`, `parthub-platform-admin` | same Cloudflare account |
-| Worker secrets (names) | `JWT_SECRET`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`, and per carrier `CARRIER_<CODE>_WEBHOOK_SECRET` when set | re-create (rotate) them after the transfer |
+| Worker secrets (names) | `JWT_SECRET`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`, `WHATSAPP_BUSINESS_ACCOUNT_ID`, and per carrier `CARRIER_<CODE>_WEBHOOK_SECRET` when set | re-create (rotate) them after the transfer |
 | GitHub Actions secrets (names) | `CF_EMAIL`, `CF_GLOBAL_API_KEY` (to replace by a scoped API token), `VITE_API_BASE_URL` | rotate after the transfer |
 
 Moving Cloudflare: either transfer the domain and resources to an account
@@ -41,7 +41,7 @@ personal access. Same for GitHub (organisation owned by the company).
 | Asset | Detail | Holder today |
 |---|---|---|
 | Meta app and WhatsApp Business account "PartHub" | number +212 751-411879 (`infra/docs/whatsapp.md`) | **to fill**: Meta Business portfolio owner. Business verification should be done in the company's name (RC, ICE) once registered |
-| Message templates | `parthub_new_order`, `parthub_new_request`, `parthub_new_offer`, `parthub_offer_accepted`, `parthub_back_in_stock` | belong to the WhatsApp Business account |
+| Message templates | 25 templates in Arabic, French and English (`infra/docs/whatsapp-templates.md`) | belong to the WhatsApp Business account |
 
 ## 5. Other accounts
 | Asset | Holder today |

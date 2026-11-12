@@ -29,6 +29,30 @@ Admin › **Carriers**.
   (`SD-3003` = `sd 3003`).
 - The seller's own actions (shipped, delivered, delivery failed) go on the
   same timeline.
+- **Carriers without a webhook (most today): updates by hand.** On the
+  order page the seller records what the carrier tells them ("Carrier
+  update": picked up, on the way, out for delivery, failed attempt — reason
+  required, being returned, returned) —
+  `POST /api/v1/marketplace/me/orders/:id/shipment`. PartHub can do the
+  same, delivered with the cash collected included, from Admin › Carriers ›
+  Late shipments (`POST /api/v1/admin/orders/:id/shipment`). Same timeline,
+  same effects as the webhook (returned: lines cancelled, stock back once).
+- **What each status sends on WhatsApp** (`utils/wa-events.ts`,
+  `whatsapp-templates.md`):
+  | Status | Buyer | Seller |
+  |---|---|---|
+  | shipped (seller) | order shipped, carrier, tracking | — |
+  | `picked_up`, `in_transit` | — (timeline only, saves messages) | — |
+  | `out_for_delivery` | out for delivery, cash to prepare | — |
+  | `failed_attempt` | each attempt, with the reason; replying reaches the PartHub inbox | — |
+  | `returning` | going back to the seller, reply if still wanted | — |
+  | `returned` | — | parcel returned, stock back |
+  | `delivered` | delivered, 7 days to report a problem | delivered, cash collected |
+- **Late shipments**: a shipped parcel with no update for 4 days
+  (`utils/shipping-delays.ts`, `LATE_DAYS`). The daily job (03:17 UTC)
+  tells the buyer and the seller once, notes it on the order
+  (`shipping_delayed`), and Admin › Carriers lists it to follow up. The
+  next update clears it (a new quiet period can be reported again).
 
 ## Connecting a carrier (about 15 minutes, no code)
 1. Ask the carrier for: its webhook / callback option, a sample payload,

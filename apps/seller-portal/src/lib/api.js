@@ -1,4 +1,4 @@
-import { serverMessage } from "../i18n";
+import { currentLanguage, serverMessage } from "../i18n";
 import { createApiClient, SELLER_TOKEN_KEY } from "@parthub/shared";
 
 export const BASE_URL =
@@ -8,6 +8,7 @@ export const BASE_URL =
 export const api = createApiClient({
   baseUrl: BASE_URL,
   translateError: serverMessage,
+  getLanguage: currentLanguage,
   getToken: () => localStorage.getItem(SELLER_TOKEN_KEY),
   onUnauthorized: () => {
     localStorage.removeItem(SELLER_TOKEN_KEY);

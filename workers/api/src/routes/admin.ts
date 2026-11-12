@@ -8,6 +8,9 @@ import { dbAll, dbRun, dbFirst, dbCount } from "../utils/db";
 import { parsePagination } from "../utils/pagination";
 import { notifyBackInStock } from "../utils/stock-alerts";
 import { runInBackground } from "../utils/whatsapp";
+import { waClaimEvent, waOrderStepAllSellers, waPartsReviewed, waShipmentEvent, waStoreStatus } from "../utils/wa-events";
+import { TEMPLATE_STATUSES, submitTemplates, syncTemplates, templateCenter } from "../utils/wa-meta";
+import { WA_LANGS, WA_TEMPLATE_BY_NAME } from "../utils/wa-templates";
 import { type LineStatus, logOrderEvent, refreshOrderStatus, setLineStatus } from "../utils/fulfillment";
 import { readNumbersInput } from "../utils/part-numbers";
 import { ensureBrand, ensureVehicle, engineInfo, readVehicleEntry } from "../utils/vehicle-catalog";
@@ -18,7 +21,8 @@ import {
 } from "../utils/commissions";
 import { investorKpis, kpisCsv } from "../utils/kpis";
 import { isWhatsAppConfigured, normalizeWhatsAppNumber, sendWhatsAppText } from "../utils/whatsapp";
-import { findShipment, listCarriers, loadCarrier, parseWebhook, readCarrierInput, secretName } from "../utils/carriers";
+import { ADMIN_SHIPMENT_STATUSES, type ShipmentStatus, findShipment, listCarriers, loadCarrier, parseWebhook, readCarrierInput, recordManualEvent, secretName } from "../utils/carriers";
+import { LATE_DAYS, lateShipments } from "../utils/shipping-delays";
 import { PAYMENT_METHODS, cancelInvoice, invoiceDraft, invoicePayments, issueInvoice, ledgerTotals, listInvoices, readDay, readMad, recordPayment } from "../utils/invoices";
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
@@ -158,18 +162,27 @@ function checkSellerDecision(status: string, reason: string): ModerationResult |
   }
   return null;
 }
-async function applySellerStatus(env: Env, id: number, status: string, reason: string): Promise<boolean> {
-  const seller = await dbFirst(env.DB, "SELECT id FROM sellers WHERE id = ?", [id]);
+// false: no such seller. "changed": the seller is told on WhatsApp.
+async function applySellerStatus(env: Env, id: number, status: string, reason: string): Promise<false | "changed" | "same"> {
+  const seller = await dbFirst<{ id: number; status: string }>(env.DB, "SELECT id, status FROM sellers WHERE id = ?", [id]);
   if (!seller) return false;
   await dbRun(
     env.DB,
     "UPDATE sellers SET status = ?, moderation_note = ?, updated_at = datetime('now') WHERE id = ?",
     [status, status === "active" ? null : reason, id]
   );
-  return true;
+  return seller.status === status ? "same" : "changed";
 }
 
 const PART_STATUSES = ["active", "rejected", "archived"];
+// Parts of `ids` not already in `status` (to tell their seller once).
+async function partsChanging(DB: D1Database, ids: number[], status: string): Promise<number[]> {
+  if (!ids.length) return [];
+  const rows = await DB.prepare(`SELECT id FROM parts WHERE id IN (${ids.map((_, i) => `?${i + 2}`).join(",")}) AND status != ?1`)
+    .bind(status, ...ids)
+    .all<{ id: number }>();
+  return (rows.results || []).map((r) => r.id);
+}
 function checkPartDecision(status: string, reason: string): ModerationResult | null {
   if (!PART_STATUSES.includes(status)) return { ok: false, error: "Invalid status", code: 400 };
   if (status === "rejected" && reason.length < MIN_REASON) {
@@ -218,7 +231,9 @@ adminRoutes.patch("/sellers/:id/status", async (c) => {
   const reason = readReason(body);
   const bad = checkSellerDecision(status, reason);
   if (bad && !bad.ok) return fail(c, bad.error, bad.code);
-  if (!(await applySellerStatus(c.env, id, status, reason))) return fail(c, "Seller not found", 404);
+  const applied = await applySellerStatus(c.env, id, status, reason);
+  if (!applied) return fail(c, "Seller not found", 404);
+  if (applied === "changed") runInBackground(c, waStoreStatus(c.env, id, status, status === "active" ? null : reason));
   return ok(c, { message: `Seller ${status}`, status, moderation_note: status === "active" ? null : reason });
 });
 
@@ -234,7 +249,11 @@ adminRoutes.post("/sellers/bulk-status", async (c) => {
   if (bad && !bad.ok) return fail(c, bad.error, bad.code);
   const updated: number[] = [];
   const missing: number[] = [];
-  for (const id of ids) ((await applySellerStatus(c.env, id, status, reason)) ? updated : missing).push(id);
+  for (const id of ids) {
+    const applied = await applySellerStatus(c.env, id, status, reason);
+    (applied ? updated : missing).push(id);
+    if (applied === "changed") runInBackground(c, waStoreStatus(c.env, id, status, status === "active" ? null : reason));
+  }
   return ok(c, { status, updated, missing });
 });
 
@@ -296,7 +315,9 @@ adminRoutes.patch("/parts/:id/status", async (c) => {
   const reason = readReason(body);
   const bad = checkPartDecision(status, reason);
   if (bad && !bad.ok) return fail(c, bad.error, bad.code);
+  const before = await partsChanging(c.env.DB, [id], status);
   const done = await applyPartStatus(c, id, status, reason);
+  if (done === "ok" && before.length) runInBackground(c, waPartsReviewed(c.env, before, status));
   if (done === "missing") return fail(c, "Part not found", 404);
   if (done === "no_photo") return fail(c, "Add at least one photo before approving this part", 409);
   return ok(c, { message: `Part ${status}`, status, moderation_note: status === "active" ? null : reason || null });
@@ -314,10 +335,14 @@ adminRoutes.post("/parts/bulk-status", async (c) => {
   const updated: number[] = [];
   const missing: number[] = [];
   const no_photo: number[] = [];
+  const before = await partsChanging(c.env.DB, ids, status);
   for (const id of ids) {
     const done = await applyPartStatus(c, id, status, reason);
     (done === "ok" ? updated : done === "missing" ? missing : no_photo).push(id);
   }
+  // One WhatsApp per seller for the whole batch (parts that really changed).
+  const reviewed = before.filter((id) => updated.includes(id));
+  if (reviewed.length) runInBackground(c, waPartsReviewed(c.env, reviewed, status));
   return ok(c, { status, updated, missing, no_photo });
 });
 
@@ -353,7 +378,44 @@ adminRoutes.patch("/orders/:id/status", async (c) => {
   await logOrderEvent(c.env.DB, orderId, status, "admin");
   await refreshOrderStatus(c.env.DB, orderId);
   for (const partId of restocked) runInBackground(c, notifyBackInStock(c.env, partId));
+  if (status === "confirmed" || status === "shipped" || status === "delivered" || status === "cancelled") {
+    runInBackground(c, waOrderStepAllSellers(c.env, orderId, status));
+  }
   return ok(c, { message: "Order updated" });
+});
+
+// POST /api/v1/admin/orders/:id/shipment { seller_id, status, note?, cod? }
+// PartHub records what the carrier says (phone call, carrier portal) for
+// one seller's parcel: the same effects as the carrier's webhook.
+adminRoutes.post("/orders/:id/shipment", async (c) => {
+  const orderId = Number(c.req.param("id"));
+  const body = await c.req.json<{ seller_id?: unknown; status?: unknown; note?: unknown; cod?: unknown }>().catch(() => ({}) as Record<string, unknown>);
+  const sellerId = Number(body.seller_id);
+  const status = String(body.status || "");
+  const note = typeof body.note === "string" ? body.note.trim().slice(0, 500) || null : null;
+  if (!(ADMIN_SHIPMENT_STATUSES as readonly string[]).includes(status)) return fail(c, "Choose what the carrier says");
+  if (status === "failed_attempt" && !note) return fail(c, "Write why the delivery failed (the buyer sees it)");
+  let cod: number | null = null;
+  if (body.cod !== undefined && body.cod !== null && String(body.cod).trim() !== "") {
+    const mad = Number(String(body.cod).replace(",", ".").trim());
+    if (!Number.isFinite(mad) || mad < 0 || mad > 1_000_000) return fail(c, "Invalid amount");
+    cod = Math.round(mad * 100);
+  }
+  const done = await recordManualEvent(c.env.DB, orderId, sellerId, status as ShipmentStatus, note, cod, "admin");
+  if (!done.ok) return fail(c, done.error, done.code);
+  runInBackground(c, waShipmentEvent(c.env, done.shipment_id, status, done.event_id ?? null, note, cod));
+  for (const partId of done.restocked) runInBackground(c, notifyBackInStock(c.env, partId));
+  return ok(c, { message: "Shipment updated" });
+});
+
+// GET /api/v1/admin/shipments/late?days=4 — shipped parcels with no news.
+adminRoutes.get("/shipments/late", async (c) => {
+  const days = Math.min(30, Math.max(1, Number(c.req.query("days") || LATE_DAYS) || LATE_DAYS));
+  const rows = await lateShipments(c.env.DB, days);
+  return ok(c, {
+    days,
+    shipments: rows.map(({ seller_locale, buyer_locale, ...r }) => r),
+  });
 });
 
 // GET /api/v1/admin/issues?status=escalated|active|all — returns and complaints.
@@ -404,6 +466,7 @@ adminRoutes.post("/issues/:id/decide", async (c) => {
   const updated = await updateIssue(
     c.env.DB, issue, fields, outcome === "buyer" ? "issue_decided_buyer" : "issue_decided_seller", "admin", note
   );
+  runInBackground(c, waClaimEvent(c.env, issue.id, outcome === "buyer" ? "decided_buyer" : "decided_seller"));
   return ok(c, publicIssue(updated));
 });
 
@@ -1020,7 +1083,7 @@ adminRoutes.get("/whatsapp/status", async (c) => {
   const origin = new URL(c.req.url).origin;
   const byStatus = await dbAll<{ status: string | null; n: number }>(
     c.env.DB,
-    `SELECT CASE WHEN sent = 0 THEN 'not_sent' ELSE coalesce(status, 'sent') END AS status, COUNT(*) AS n
+    `SELECT CASE WHEN status = 'skipped' THEN 'skipped' WHEN sent = 0 THEN 'not_sent' ELSE coalesce(status, 'sent') END AS status, COUNT(*) AS n
      FROM whatsapp_notifications WHERE created_at >= datetime('now', '-30 days') GROUP BY 1`
   );
   const byKind = await dbAll<{ kind: string; n: number; delivered: number }>(
@@ -1051,6 +1114,51 @@ adminRoutes.get("/whatsapp/status", async (c) => {
     failures,
     unread: Number(unread?.n || 0),
   });
+});
+
+// ── Template Center (utils/wa-templates.ts, utils/wa-meta.ts) ──────────
+// GET: every template, its status in Meta per language, 30 days of sends.
+adminRoutes.get("/whatsapp/templates", async (c) => ok(c, await templateCenter(c.env)));
+
+// POST: read the statuses from Meta now.
+adminRoutes.post("/whatsapp/templates/sync", async (c) => {
+  const res = await syncTemplates(c.env);
+  if (!res.ok) return fail(c, res.error || "Could not read Meta's templates", 502);
+  return ok(c, { found: res.found, ...(await templateCenter(c.env)) });
+});
+
+// POST { name?, language? }: create in Meta the versions not there yet
+// (in batches: `remaining` says how many are left for the next call).
+adminRoutes.post("/whatsapp/templates/submit", async (c) => {
+  const body = await c.req.json<{ name?: unknown; language?: unknown }>().catch(() => ({}) as { name?: unknown; language?: unknown });
+  const name = typeof body.name === "string" && body.name ? body.name : undefined;
+  const language = typeof body.language === "string" && body.language ? body.language : undefined;
+  if (name && !WA_TEMPLATE_BY_NAME[name]) return fail(c, "Unknown template", 404);
+  if (language && !(WA_LANGS as readonly string[]).includes(language)) return fail(c, "Unknown language");
+  const res = await submitTemplates(c.env, { name, language });
+  if (!res.ok) return fail(c, res.error || "Could not submit to Meta", 502);
+  return ok(c, { submitted: res.submitted, remaining: res.remaining, ...(await templateCenter(c.env)) });
+});
+
+// PATCH { status } — set a status by hand (no Business account id), or
+// { status: "" } to forget it.
+adminRoutes.patch("/whatsapp/templates/:name/:lang", async (c) => {
+  const name = c.req.param("name");
+  const lang = c.req.param("lang");
+  if (!WA_TEMPLATE_BY_NAME[name]) return fail(c, "Unknown template", 404);
+  if (!(WA_LANGS as readonly string[]).includes(lang)) return fail(c, "Unknown language");
+  const body = await c.req.json<{ status?: unknown }>().catch(() => ({}) as { status?: unknown });
+  const status = String(body.status ?? "");
+  if (!status) {
+    await c.env.DB.prepare("DELETE FROM whatsapp_templates WHERE name = ?1 AND language = ?2").bind(name, lang).run();
+  } else {
+    if (!(TEMPLATE_STATUSES as readonly string[]).includes(status)) return fail(c, "Invalid status");
+    await c.env.DB.prepare(
+      `INSERT INTO whatsapp_templates (name, language, status, source, updated_at) VALUES (?1, ?2, ?3, 'manual', datetime('now'))
+       ON CONFLICT(name, language) DO UPDATE SET status = excluded.status, source = 'manual', reason = NULL, updated_at = excluded.updated_at`
+    ).bind(name, lang, status).run();
+  }
+  return ok(c, await templateCenter(c.env));
 });
 
 // GET /api/v1/admin/whatsapp/conversations — one row per number: last

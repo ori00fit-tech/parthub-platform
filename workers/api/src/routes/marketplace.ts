@@ -12,10 +12,12 @@ import { listingNumbers, readNumbersInput, saveListingNumbers } from "../utils/p
 import { type IssueRow, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, updateIssue } from "../utils/issues";
 import { type LineStatus, SELLER_NEXT, logOrderEvent, refreshOrderStatus, rollupStatus, setLineStatus } from "../utils/fulfillment";
 import { runInBackground } from "../utils/whatsapp";
+import { waClaimEvent, waOrderStep, waShipmentEvent } from "../utils/wa-events";
 import { MAX_IMPORT_ROWS, applyImport, planImport } from "../utils/part-import";
 import { MAX_CODE_ATTEMPTS, holdUntil, isPickup, nextStatuses, sameCode } from "../utils/pickup";
 import { cleanTracking, readFeeMad } from "../utils/shipping";
-import { noteShipment, shipmentTimeline, trackingUrl, validCarrier } from "../utils/carriers";
+import { MANUAL_SHIPMENT_STATUSES, noteShipment, recordManualEvent, shipmentTimeline, trackingUrl, validCarrier } from "../utils/carriers";
+import { type ShipmentStatus } from "../utils/carriers";
 import { readPartValues } from "../utils/part-values";
 import { RATE_NOTICE_DAYS, accrueCommissions, commissionRateBps, currentPeriod, readPeriod, upcomingRates } from "../utils/commissions";
 import { invoicePayments, ledgerTotals, listInvoices } from "../utils/invoices";
@@ -1683,6 +1685,7 @@ marketplaceRoutes.post("/me/issues/:id/respond", authMiddleware, async (c) => {
     `seller:${sellerId}`,
     note
   );
+  runInBackground(c, waClaimEvent(c.env, issue.id, decision === "accept" ? "accepted" : "refused"));
   return c.json(success(publicIssue(updated), { message: "Reply sent to the buyer" }));
 });
 
@@ -1710,6 +1713,7 @@ marketplaceRoutes.post("/me/issues/:id/resolve", authMiddleware, async (c) => {
     c.env.DB, issue, { status: "closed", outcome: "buyer", closed_at: nowText(), refund_amount: refund }, "issue_refunded", `seller:${sellerId}`,
     cleanNote(body.note) ?? (refund !== null ? `Partial refund: ${(refund / 100).toFixed(2)} MAD` : null)
   );
+  runInBackground(c, waClaimEvent(c.env, issue.id, "refunded"));
   return c.json(success(publicIssue(updated), { message: "Claim closed" }));
 });
 
@@ -1786,9 +1790,41 @@ marketplaceRoutes.patch("/me/orders/:id/status", authMiddleware, async (c) => {
   await logOrderEvent(c.env.DB, orderId, deliveryFailed ? "delivery_failed" : next, `seller:${sellerId}`, note);
   await refreshOrderStatus(c.env.DB, orderId);
   for (const partId of restocked) runInBackground(c, notifyBackInStock(c.env, partId));
+  if (next === "confirmed" || next === "shipped" || next === "delivered" || next === "cancelled") {
+    runInBackground(c, waOrderStep(c.env, orderId, sellerId, next, note));
+  }
 
   const updated = await loadSellerOrder(c.env.DB, sellerId, orderId);
   return c.json(success(updated, { message: "Order updated" }));
+});
+
+// POST /api/v1/marketplace/me/orders/:id/shipment { status, note? }
+// A carrier update recorded by the seller, for carriers that send PartHub
+// nothing (most): picked up, on the way, out for delivery, failed attempt
+// (reason required: the buyer gets it), being returned, returned (the
+// lines are cancelled and the stock comes back). Same timeline, effects
+// and WhatsApp messages as a carrier webhook.
+marketplaceRoutes.post("/me/orders/:id/shipment", authMiddleware, async (c) => {
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const orderId = Number(c.req.param("id"));
+  const body = await c.req.json<{ status?: unknown; note?: unknown }>().catch(() => ({} as { status?: unknown; note?: unknown }));
+  const status = String(body.status || "");
+  const note = typeof body.note === "string" ? body.note.trim().slice(0, 500) || null : null;
+  if (!(MANUAL_SHIPMENT_STATUSES as readonly string[]).includes(status)) {
+    return c.json(failure("INVALID_STATUS", "Choose what the carrier says"), 400);
+  }
+  if (status === "failed_attempt" && !note) {
+    return c.json(failure("NOTE_REQUIRED", "Write why the delivery failed (the buyer sees it)"), 400);
+  }
+  const order = Number.isInteger(orderId) && orderId > 0 ? await loadSellerOrder(c.env.DB, sellerId, orderId) : null;
+  if (!order) return c.json(failure("NOT_FOUND", "Order not found"), 404);
+  const done = await recordManualEvent(c.env.DB, orderId, sellerId, status as ShipmentStatus, note, null, "seller");
+  if (!done.ok) return c.json(failure("NOT_SHIPPED", done.error), done.code as 409);
+  runInBackground(c, waShipmentEvent(c.env, done.shipment_id, status, done.event_id ?? null, note, null));
+  for (const partId of done.restocked) runInBackground(c, notifyBackInStock(c.env, partId));
+  const updated = await loadSellerOrder(c.env.DB, sellerId, orderId);
+  return c.json(success(updated, { message: "Shipment updated" }));
 });
 
 marketplaceRoutes.get("/me/reviews", authMiddleware, async (c) => {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useT } from "../i18n";
 
@@ -13,8 +14,23 @@ const KIND = {
   new_offer: "New offer (to the buyer)",
   offer_accepted: "Offer accepted (to the seller)",
   back_in_stock: "Back in stock (to the buyer)",
+  order_received: "Order received (to the buyer)",
+  order_confirmed: "Order confirmed (to the buyer)",
+  pickup_ready: "Ready for pickup (to the buyer)",
+  order_shipped: "Order shipped (to the buyer)",
+  out_for_delivery: "Out for delivery (to the buyer)",
+  delivery_attempt_failed: "Delivery attempt failed (to the buyer)",
+  order_delivered: "Order delivered (to the buyer)",
+  order_cancelled: "Order cancelled (to the buyer)",
+  carrier_delivered: "Delivered by the carrier (to the seller)",
+  delivery_returned: "Parcel returned (to the seller)",
+  delivery_returning: "Parcel going back (to the buyer)",
+  shipping_delayed: "Late shipment (buyer and seller)",
+  claim_opened: "New claim (to the seller)",
+  store_approved: "Store approved (to the seller)",
+  password_changed: "Password changed (to the account)",
 };
-const STATUS = { not_sent: "Not sent", sent: "Sent", delivered: "Delivered", read: "Read", failed: "Failed" };
+const STATUS = { not_sent: "Not sent", skipped: "Not sent (reason logged)", sent: "Sent", delivered: "Delivered", read: "Read", failed: "Failed" };
 const time = (v) => String(v || "").slice(0, 16);
 
 function Check({ ok, label }) {
@@ -111,6 +127,9 @@ export default function WhatsAppPage() {
         <p className="mt-3 max-w-3xl text-sm text-emerald-100 sm:text-base">
           {t("Notifications PartHub sends (new orders, requests, offers, back in stock), whether they arrive, and the messages people send to the PartHub number.")}
         </p>
+        <Link to="/whatsapp/templates" className="mt-4 inline-flex h-10 items-center rounded-xl bg-white px-4 text-sm font-semibold text-gray-950 hover:bg-emerald-50">
+          {t("Templates (Arabic, French, English)")} →
+        </Link>
       </div>
       {error ? <p className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">{error}</p> : null}
 
@@ -126,7 +145,7 @@ export default function WhatsAppPage() {
             </ul>
             <p className="mt-4 text-xs font-semibold text-gray-700">{t("Callback URL to paste in Meta")}</p>
             <p className="break-all font-mono text-xs" dir="ltr">{status.webhook_url}</p>
-            <p className="mt-2 text-xs text-gray-500">{t("Templates language: {lang}", { lang: status.template_lang })}</p>
+            <p className="mt-2 text-xs text-gray-500">{t("Each person gets messages in the language they use PartHub in, when Meta approved it (see Templates).")}</p>
           </div>
           <div className="rounded-3xl border border-gray-200 bg-white p-6 text-gray-900 shadow-sm">
             <h2 className="text-xl font-bold">{t("Last 30 days")}</h2>

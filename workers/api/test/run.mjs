@@ -14,6 +14,7 @@ const api = join(here, "..");
 const common = { bundle: true, format: "esm", platform: "neutral", mainFields: ["module", "main"], logLevel: "warning" };
 await build({ ...common, entryPoints: [join(api, "src/app.ts")], outfile: join(here, ".build/app.mjs") });
 await build({ ...common, entryPoints: [join(api, "src/utils/auth.ts")], outfile: join(here, ".build/auth.mjs") });
+await build({ ...common, entryPoints: [join(api, "src/utils/wa-templates.ts")], outfile: join(here, ".build/wa-templates.mjs") });
 // The Worker entry (fetch + scheduled cron), for the lifecycle test.
 await build({ ...common, entryPoints: [join(api, "src/index.ts")], outfile: join(here, ".build/index.mjs") });
 // Storefront sitemap function (imports a JSON file, as Cloudflare's bundler allows).

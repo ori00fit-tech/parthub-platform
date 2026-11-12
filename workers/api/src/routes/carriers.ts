@@ -1,6 +1,9 @@
 import { Hono } from "hono";
 import type { Env, HonoVariables } from "../types";
 import { listCarriers, loadCarrier, parseWebhook, recordEvent, verifyWebhook } from "../utils/carriers";
+import { runInBackground } from "../utils/whatsapp";
+import { waShipmentEvent } from "../utils/wa-events";
+import { notifyBackInStock } from "../utils/stock-alerts";
 
 // Carriers (utils/carriers.ts, infra/docs/carriers.md).
 export const carriersRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
@@ -42,6 +45,14 @@ carriersRoutes.post("/:code/webhook", async (c) => {
   }
   const events = parseWebhook(carrier, body);
   const counts = { received: events.length, applied: 0, duplicate: 0, unknown_shipment: 0, unknown_status: 0 };
-  for (const ev of events) counts[(await recordEvent(c.env.DB, code, ev, "carrier")).result]++;
+  for (const ev of events) {
+    const done = await recordEvent(c.env.DB, code, ev, "carrier");
+    counts[done.result]++;
+    // Buyer and seller hear about the steps that matter (utils/wa-events.ts).
+    if (done.result === "applied" && done.shipment_id && ev.status) {
+      runInBackground(c, waShipmentEvent(c.env, done.shipment_id, ev.status, done.event_id ?? null, ev.note, ev.cod));
+    }
+    for (const partId of done.restocked || []) runInBackground(c, notifyBackInStock(c.env, partId));
+  }
   return c.json({ success: true, data: counts });
 });
