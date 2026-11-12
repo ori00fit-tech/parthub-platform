@@ -1110,4 +1110,18 @@ export default {
   "Amana (Barid Al-Maghrib)": "أمانة (بريد المغرب)",
   "Seller's own driver": "سائق البائع",
   "Other carrier": "شركة نقل أخرى",
+  // Carriers and shipment tracking
+  "Shipment created": "تم إنشاء الشحنة",
+  "Picked up by the carrier": "استلمها الناقل",
+  "On the way": "في الطريق",
+  "Out for delivery": "خرجت للتسليم",
+  "Delivery attempt failed": "فشلت محاولة التسليم",
+  "Being returned to the seller": "في طريق العودة إلى البائع",
+  "Returned to the seller": "أُعيدت إلى البائع",
+  "Shipment cancelled": "أُلغيت الشحنة",
+  "Update from the carrier": "تحديث من الناقل",
+  "Carrier": "الناقل",
+  "PartHub": "PartHub",
+  "Track my parcel": "تتبّع طردي",
+  "{n} failed attempt(s)": "{n} محاولة فاشلة",
 };

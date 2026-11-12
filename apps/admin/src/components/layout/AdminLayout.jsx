@@ -18,6 +18,7 @@ const navItems = [
   { to: "/vehicles", label: "Vehicles", icon: "vehicles" },
   { to: "/part-numbers", label: "Part numbers", icon: "oem" },
   { to: "/orders", label: "Orders", icon: "orders" },
+  { to: "/carriers", label: "Carriers", icon: "delivery" },
   { to: "/issues", label: "Returns", icon: "warning" },
   { to: "/reviews", label: "Reviews", icon: "messages" },
   { to: "/analytics", label: "Analytics", icon: "insights" },

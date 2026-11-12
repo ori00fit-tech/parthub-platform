@@ -7,6 +7,7 @@ import { mediaUrl } from "../lib/media";
 import { statusLabel, useT } from "../i18n";
 import { OrderStatusBadge, formatOrderDate } from "./OrdersPage";
 import { Icon } from "@parthub/shared/icons";
+import { shipmentStatusLabel } from "@parthub/shared";
 import { ItemReview } from "../features/reviews/Reviews";
 import ItemIssue from "../features/issues/ItemIssue";
 
@@ -26,7 +27,8 @@ const PICKUP_STEPS = [
 ];
 const PICKUP_STEP_INDEX = { pending: 0, confirmed: 1, processing: 1, shipped: 1, delivered: 2 };
 const isPickup = (item) => item.fulfillment === "pickup" || item.fulfillment === "courier";
-// Carriers a seller can pick when shipping (API: utils/shipping.ts).
+// Labels for carriers of older orders; the API now sends carrier_name
+// (carriers table, managed in the admin panel).
 export const CARRIER_LABELS = { amana: "Amana (Barid Al-Maghrib)", ctm: "CTM Messagerie", sendit: "Sendit", forcelog: "Forcelog", olivraison: "Olivraison", own: "Seller's own driver", other: "Other carrier" };
 
 function formatUntil(value) {
@@ -341,11 +343,35 @@ export default function OrderTrackingPage() {
                 {tracked.map((s) => (
                   <li key={s.seller_id}>
                     <p className="font-semibold text-ink">{s.seller_name}</p>
-                    {s.carrier ? <p className="text-ink-2">{t(CARRIER_LABELS[s.carrier] || s.carrier)}</p> : null}
+                    {s.carrier ? (
+                      <p className="text-ink-2">{s.carrier === "own" || s.carrier === "other" || !s.carrier_name ? t(CARRIER_LABELS[s.carrier] || s.carrier) : s.carrier_name}</p>
+                    ) : null}
                     {s.tracking_number ? (
                       <p className="text-muted">
                         {t("Tracking number:")} <span className="font-mono font-semibold text-ink" dir="ltr">{s.tracking_number}</span>
                       </p>
+                    ) : null}
+                    {s.shipment_status ? (
+                      <p className="mt-1 font-semibold text-ink">
+                        {t(shipmentStatusLabel(s.shipment_status))}
+                        {s.attempts ? <span className="ms-2 text-xs font-normal text-muted">{t("{n} failed attempt(s)", { n: s.attempts })}</span> : null}
+                      </p>
+                    ) : null}
+                    {s.tracking_url ? (
+                      <a href={s.tracking_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex h-9 items-center rounded-xl border border-line px-3 text-xs font-semibold text-ink hover:bg-surface-2">
+                        {t("Track my parcel")}
+                      </a>
+                    ) : null}
+                    {Array.isArray(s.events) && s.events.length > 1 ? (
+                      <ol className="mt-2 space-y-1 border-s border-line ps-3 text-xs text-muted">
+                        {s.events.map((e, i) => (
+                          <li key={i}>
+                            <span className="font-semibold text-ink-2">{t(shipmentStatusLabel(e.status))}</span>
+                            <span> · {String(e.occurred_at || "").slice(0, 16)}</span>
+                            {e.note && e.source === "carrier" ? <span className="block">{e.note}</span> : null}
+                          </li>
+                        ))}
+                      </ol>
                     ) : null}
                   </li>
                 ))}

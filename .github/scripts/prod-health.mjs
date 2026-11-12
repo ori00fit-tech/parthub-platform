@@ -86,6 +86,12 @@ else {
   notes.push(`sitemap pages checked: ${sample.length}`);
 }
 
+// 3b. Carriers sellers choose from when shipping (migrations/0026).
+const car = await get(`${API}/api/v1/carriers`).catch(() => null);
+const carList = car && car.ok ? ((await car.json()).data || []) : null;
+if (!carList || carList.length < 2) fail(`Carriers list: ${carList ? carList.length : "no answer"} active carriers (sellers cannot pick one)`);
+else notes.push(`active carriers: ${carList.length}`);
+
 // 4. Unknown addresses are real 404s (no soft 404)
 for (const p of ["/health-check-unknown-page", "/parts/health-check-no-such-part"]) {
   const s = await status(`${SITE}${p}`);

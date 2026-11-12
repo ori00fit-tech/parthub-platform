@@ -14,7 +14,8 @@ import { type LineStatus, SELLER_NEXT, logOrderEvent, refreshOrderStatus, rollup
 import { runInBackground } from "../utils/whatsapp";
 import { MAX_IMPORT_ROWS, applyImport, planImport } from "../utils/part-import";
 import { MAX_CODE_ATTEMPTS, holdUntil, isPickup, nextStatuses, sameCode } from "../utils/pickup";
-import { cleanCarrier, cleanTracking, readFeeMad } from "../utils/shipping";
+import { cleanTracking, readFeeMad } from "../utils/shipping";
+import { noteShipment, shipmentTimeline, trackingUrl, validCarrier } from "../utils/carriers";
 import { readPartValues } from "../utils/part-values";
 import { RATE_NOTICE_DAYS, accrueCommissions, commissionRateBps, currentPeriod, readPeriod, upcomingRates } from "../utils/commissions";
 import { invoicePayments, ledgerTotals, listInvoices } from "../utils/invoices";
@@ -1521,14 +1522,28 @@ async function loadSellerOrder(DB: D1Database, sellerId: number, orderId: number
   // This seller's shipment (migrations/0022): their delivery fee, carrier
   // and tracking number. Older orders have none (flat fee on the order).
   const shipment = await DB.prepare(
-    "select method, fee, carrier, tracking_number, shipped_at from order_shipments where order_id = ?1 and seller_id = ?2"
-  ).bind(orderId, sellerId).first<{ method: string; fee: number; carrier: string | null; tracking_number: string | null; shipped_at: string | null }>();
+    `select sh.id, sh.method, sh.fee, sh.carrier, sh.tracking_number, sh.shipped_at, sh.status as shipment_status, sh.status_at,
+            sh.carrier_delivered_at, sh.cod_collected, sh.attempts, ca.name as carrier_name, ca.tracking_url_template
+     from order_shipments sh left join carriers ca on ca.code = sh.carrier where sh.order_id = ?1 and sh.seller_id = ?2`
+  ).bind(orderId, sellerId).first<{
+    id: number; method: string; fee: number; carrier: string | null; tracking_number: string | null; shipped_at: string | null;
+    shipment_status: string | null; status_at: string | null; carrier_delivered_at: string | null; cod_collected: number | null;
+    attempts: number; carrier_name: string | null; tracking_url_template: string | null;
+  }>();
+  const shipmentView = shipment
+    ? (() => {
+        const { tracking_url_template, ...rest } = shipment;
+        return { ...rest, tracking_url: trackingUrl(tracking_url_template, shipment.tracking_number) };
+      })()
+    : null;
+  const timeline = shipment ? await shipmentTimeline(DB, [shipment.id]) : [];
   const openTotal = lines.filter((l) => l.status !== "cancelled").reduce((sum, l) => sum + Number(l.subtotal || 0), 0);
   return {
     ...order,
     issues,
     status,
-    shipment: shipment ?? null,
+    shipment: shipmentView,
+    shipment_events: timeline,
     // What this seller collects from the buyer: their open lines + their fee.
     amount_to_collect: shipment ? (openTotal ? openTotal + Number(shipment.fee || 0) : 0) : null,
     total: lines.reduce((sum, l) => sum + Number(l.subtotal || 0), 0),
@@ -1744,7 +1759,8 @@ marketplaceRoutes.patch("/me/orders/:id/status", authMiddleware, async (c) => {
   const restocked = await setLineStatus(c.env.DB, lineIds, next);
   // Shipped: who carries it and the tracking number (both optional).
   if (next === "shipped") {
-    const carrier = cleanCarrier(body.carrier);
+    // Any active carrier of the carriers table (admin panel), else none.
+    const carrier = await validCarrier(c.env.DB, body.carrier);
     const tracking = cleanTracking(body.tracking_number);
     await c.env.DB.prepare(
       `insert into order_shipments (order_id, seller_id, method, fee, carrier, tracking_number, shipped_at)
@@ -1758,6 +1774,10 @@ marketplaceRoutes.patch("/me/orders/:id/status", authMiddleware, async (c) => {
          tracking_number = coalesce(excluded.tracking_number, tracking_number), shipped_at = excluded.shipped_at`
     ).bind(orderId, sellerId, carrier, tracking).run();
   }
+  // The same timeline as the carrier's webhook events (utils/carriers.ts).
+  if (next === "shipped") await noteShipment(c.env.DB, orderId, sellerId, "in_transit", "seller", note);
+  else if (next === "delivered") await noteShipment(c.env.DB, orderId, sellerId, "delivered", "seller", note);
+  else if (deliveryFailed) await noteShipment(c.env.DB, orderId, sellerId, "returned", "seller", note);
   // Pickup confirmed = the part is kept for the buyer for a few days.
   if (isPickup(order.fulfillment) && next === "confirmed" && lineIds.length) {
     await c.env.DB.prepare(`update order_items set pickup_until = ?1 where id in (${lineIds.map((_, i) => `?${i + 2}`).join(",")})`)

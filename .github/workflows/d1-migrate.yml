@@ -122,6 +122,9 @@ jobs:
       - name: 0025 commission invoices and payments, buyer receipt
         run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0025_commission_invoices.sql"
 
+      - name: 0026 carriers, shipment events, normalized shipment status
+        run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0026_carriers.sql"
+
       # Fails the job (and the API deploy waiting for it) when the schema is
       # not what the API needs; only warns while D1's daily read limit is hit.
       - name: Verify

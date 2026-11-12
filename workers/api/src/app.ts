@@ -17,6 +17,7 @@ import type { Env } from "./types";
 import { whatsappRoutes } from "./routes/whatsapp";
 import { requestsRoutes } from "./routes/requests";
 import { stockAlertsRoutes } from "./routes/stock-alerts";
+import { carriersRoutes } from "./routes/carriers";
 import { allowedOrigin } from "./utils/cors";
 
 const app = new Hono();
@@ -53,6 +54,7 @@ app.route("/api/v1/admin/analytics", adminAnalyticsRoutes);
 app.route("/api/v1/whatsapp", whatsappRoutes);
 app.route("/api/v1/requests", requestsRoutes);
 app.route("/api/v1/stock-alerts", stockAlertsRoutes);
+app.route("/api/v1/carriers", carriersRoutes);
 
 app.notFound((c) => {
   return c.json(

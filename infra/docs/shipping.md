@@ -31,11 +31,11 @@ Delivery / pickup / courier choice: see `fulfillment-methods.md`.
 - Orders placed before 0022 keep their flat fee (moved to the first
   shipment row when a seller ships).
 
-## Later: carriers (needs signed contracts)
-1. Contract + API docs from one carrier → `utils/carriers/<name>.ts`:
-   create shipment, label, tracking webhook; fills the same
-   `order_shipments` columns (+ status / cost columns then).
-2. Fees from the carrier's price grid (weight `parts.weight_kg`, zones).
-3. If PartHub collects the money (carrier COD remitted to PartHub):
-   ledger + seller payouts before going live.
+## Carriers
+Carriers are a table managed in Admin › Carriers, with tracking links and
+status webhooks for every carrier: see `infra/docs/carriers.md`.
+Still to do per carrier, once there is a contract and API documentation:
+creating the shipment and the label from PartHub (CarrierClient), fees
+from its price grid, and — if the carrier collects for PartHub — COD
+remittance and seller payouts.
 Heavy parts stay "pickup only" until a heavy-cargo partner exists.

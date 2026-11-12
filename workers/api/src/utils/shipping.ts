@@ -2,11 +2,10 @@
 // Each seller charges their own fee: one price in their city, one for the
 // rest of Morocco (NULL = the platform's flat fee). The buyer pays each
 // seller their parts + that seller's fee, cash on delivery. When the seller
-// ships, they record the carrier and the tracking number (no carrier API
-// yet: see infra/docs/shipping.md).
+// ships, they record the carrier and the tracking number; carriers' status
+// updates arrive by webhook (utils/carriers.ts, infra/docs/carriers.md).
 
-export const CARRIERS = ["amana", "ctm", "sendit", "forcelog", "olivraison", "own", "other"] as const;
-export type Carrier = (typeof CARRIERS)[number];
+// Carriers: the carriers table (migrations/0026, utils/carriers.ts).
 
 // Same spelling for "Casa", "Casablanca", "الدار البيضاء"...
 const CITY_ALIASES: Record<string, string[]> = {
@@ -68,10 +67,6 @@ export function readFeeMad(value: unknown): number | null | "invalid" {
   return Math.round(n * 100);
 }
 
-export function cleanCarrier(value: unknown): Carrier | null {
-  const v = String(value || "").trim().toLowerCase();
-  return (CARRIERS as readonly string[]).includes(v) ? (v as Carrier) : null;
-}
 
 export function cleanTracking(value: unknown): string | null {
   const v = String(value || "").trim().replace(/\s+/g, " ").slice(0, 60);
