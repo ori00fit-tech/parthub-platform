@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { formatMoney } from "@parthub/shared";
+import { formatMoney, shipmentStatusLabel, SHIPMENT_SOURCE_LABELS } from "@parthub/shared";
 import { Icon } from "@parthub/shared/icons";
 import { api } from "../lib/api";
 import { mediaUrl } from "../lib/requests";
@@ -65,8 +65,9 @@ const PICKUP_ACTIONS = {
   delivered: { label: "Mark as collected", hint: "After the buyer checked the part and paid, enter the 6-digit code they show you.", tone: "primary" },
 };
 
-// Carrier picked when shipping (API: utils/shipping.ts).
-const CARRIERS = [
+// Carriers come from the API (GET /api/v1/carriers: the carriers table,
+// managed in the admin panel); this list is only used if it cannot load.
+const FALLBACK_CARRIERS = [
   ["own", "My own driver"],
   ["amana", "Amana (Barid Al-Maghrib)"],
   ["ctm", "CTM Messagerie"],
@@ -93,6 +94,8 @@ const EVENT_LABELS = {
   issue_refunded: "Refund done",
   issue_withdrawn: "Claim withdrawn",
   delivery_failed: "Delivery failed",
+  delivered_by_carrier: "Delivered (confirmed by the carrier)",
+  delivery_attempt_failed: "Delivery attempt failed",
   received_by_buyer: "The buyer confirmed receipt",
 };
 
@@ -109,6 +112,7 @@ function actorLabel(t, createdBy) {
   if (by.startsWith("seller")) return t("Seller");
   if (by === "admin") return "PartHub";
   if (by === "buyer") return t("Buyer");
+  if (by.startsWith("carrier")) return t("Carrier");
   return "PartHub";
 }
 
@@ -140,6 +144,18 @@ export default function OrderDetailsPage() {
     setLoading(true);
     load();
   }, [load]);
+
+  const [carriers, setCarriers] = useState(FALLBACK_CARRIERS);
+  useEffect(() => {
+    api
+      .get("/api/v1/carriers")
+      .then((res) => {
+        const list = (res?.data || []).map((c) => [c.code, c.code === "own" ? "My own driver" : c.code === "other" ? "Other carrier" : c.name]);
+        // Own driver first (the most common), then the carriers in their order.
+        if (list.length) setCarriers([...list.filter(([c]) => c === "own"), ...list.filter(([c]) => c !== "own")]);
+      })
+      .catch(() => {});
+  }, []);
 
   const pickupOrder = order?.fulfillment === "pickup" || order?.fulfillment === "courier";
 
@@ -292,7 +308,7 @@ export default function OrderDetailsPage() {
                     onChange={(e) => setCarrier(e.target.value)}
                     className="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
                   >
-                    {CARRIERS.map(([value, label]) => (
+                    {carriers.map(([value, label]) => (
                       <option key={value} value={value}>{t(label)}</option>
                     ))}
                   </select>
@@ -497,8 +513,42 @@ export default function OrderDetailsPage() {
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-gray-400">{t("Shipping")}</dt>
                   <dd className="text-gray-900">
-                    {order.shipment.carrier ? t(CARRIERS.find(([v]) => v === order.shipment.carrier)?.[1] || order.shipment.carrier) : null}
-                    {order.shipment.tracking_number ? <span className="ms-2 font-mono" dir="ltr">{order.shipment.tracking_number}</span> : null}
+                    {order.shipment.carrier ? t(order.shipment.carrier_name || carriers.find(([v]) => v === order.shipment.carrier)?.[1] || order.shipment.carrier) : null}
+                    {order.shipment.tracking_number ? (
+                      order.shipment.tracking_url ? (
+                        <a href={order.shipment.tracking_url} target="_blank" rel="noopener noreferrer" className="ms-2 font-mono text-blue-700 underline" dir="ltr">
+                          {order.shipment.tracking_number}
+                        </a>
+                      ) : (
+                        <span className="ms-2 font-mono" dir="ltr">{order.shipment.tracking_number}</span>
+                      )
+                    ) : null}
+                  </dd>
+                  {order.shipment.shipment_status ? (
+                    <dd className="mt-1 text-sm font-semibold text-gray-800">
+                      {t(shipmentStatusLabel(order.shipment.shipment_status))}
+                      {order.shipment.attempts ? <span className="ms-2 text-xs font-normal text-amber-700">{t("{n} failed attempt(s)", { n: order.shipment.attempts })}</span> : null}
+                    </dd>
+                  ) : null}
+                  {order.shipment.cod_collected != null ? (
+                    <dd className="text-xs text-gray-600">{t("Collected by the carrier: {amount}", { amount: formatMoney(order.shipment.cod_collected) })}</dd>
+                  ) : null}
+                </div>
+              ) : null}
+              {Array.isArray(order.shipment_events) && order.shipment_events.length ? (
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-gray-400">{t("Shipment history")}</dt>
+                  <dd>
+                    <ol className="mt-1 space-y-1 border-s border-gray-200 ps-3 text-xs text-gray-700">
+                      {order.shipment_events.map((e, i) => (
+                        <li key={i}>
+                          <span className="font-semibold">{t(shipmentStatusLabel(e.status))}</span>
+                          {e.carrier_status && e.source === "carrier" ? <span className="text-gray-500"> · {e.carrier_status}</span> : null}
+                          <span className="text-gray-400"> · {t(SHIPMENT_SOURCE_LABELS[e.source] || e.source)} · {String(e.occurred_at || "").slice(0, 16)}</span>
+                          {e.note ? <span className="block text-gray-500">{e.note}</span> : null}
+                        </li>
+                      ))}
+                    </ol>
                   </dd>
                 </div>
               ) : null}

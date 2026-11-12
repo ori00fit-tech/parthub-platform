@@ -16,6 +16,7 @@ import {
   RATE_NOTICE_DAYS, accrueCommissions, cancelRate, commissionRateBps, currentPeriod, lastPeriods, rateHistory, readEffectiveFrom,
   readPeriod, readRatePercent, scheduleRate, upcomingRates, waiveCommission,
 } from "../utils/commissions";
+import { findShipment, listCarriers, loadCarrier, parseWebhook, readCarrierInput, secretName } from "../utils/carriers";
 import { PAYMENT_METHODS, cancelInvoice, invoiceDraft, invoicePayments, issueInvoice, ledgerTotals, listInvoices, readDay, readMad, recordPayment } from "../utils/invoices";
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
@@ -907,3 +908,103 @@ adminRoutes.post("/invoices/:id/cancel", async (c) => {
   if (!res.ok) return fail(c, res.error, res.code === "NOT_FOUND" ? 404 : 409);
   return ok(c, res);
 });
+
+// ── Carriers (utils/carriers.ts, infra/docs/carriers.md) ───────────────
+// GET /api/v1/admin/carriers — every carrier, its webhook address, whether
+// its secret is set (never the secret), and recent activity.
+adminRoutes.get("/carriers", async (c) => {
+  const origin = new URL(c.req.url).origin;
+  const rows = await listCarriers(c.env.DB);
+  const stats = await dbAll<{ carrier: string; events_7d: number; last_event_at: string | null; unmatched_7d: number }>(
+    c.env.DB,
+    `SELECT carrier, COUNT(*) AS events_7d, MAX(created_at) AS last_event_at,
+            SUM(CASE WHEN shipment_id IS NULL THEN 1 ELSE 0 END) AS unmatched_7d
+     FROM shipment_events WHERE created_at >= datetime('now', '-7 days') GROUP BY carrier`
+  );
+  const env = c.env as unknown as Record<string, unknown>;
+  return ok(c, rows.map((r) => {
+    const st = stats.find((x) => x.carrier === r.code);
+    return {
+      ...r,
+      webhook_url: `${origin}/api/v1/carriers/${r.code}/webhook`,
+      secret_name: secretName(r.code),
+      secret_configured: String(env[secretName(r.code)] ?? "").length >= 16,
+      events_7d: Number(st?.events_7d || 0),
+      unmatched_7d: Number(st?.unmatched_7d || 0),
+      last_event_at: st?.last_event_at ?? null,
+    };
+  }));
+});
+
+// POST /api/v1/admin/carriers { code, name, kind? } — a new carrier.
+adminRoutes.post("/carriers", async (c) => {
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({}) as Record<string, unknown>);
+  const code = String(body.code || "").trim().toLowerCase();
+  if (!/^[a-z0-9]{2,30}$/.test(code)) return fail(c, "The code is 2 to 30 lowercase letters or digits (e.g. speedaf)");
+  const input = readCarrierInput({ name: body.name, kind: body.kind ?? "courier" });
+  if (!input.ok) return fail(c, input.error);
+  if (await loadCarrier(c.env.DB, code)) return fail(c, "This carrier already exists", 409);
+  await c.env.DB.prepare("INSERT INTO carriers (code, name, kind, updated_by) VALUES (?1, ?2, ?3, ?4)")
+    .bind(code, input.values.name, input.values.kind, Number(c.get("user_id"))).run();
+  return ok(c, await loadCarrier(c.env.DB, code));
+});
+
+// PUT /api/v1/admin/carriers/:code { name?, active?, kind?, sort_order?,
+// tracking_url_template?, webhook_enabled?, field_map?, status_map?, notes? }
+adminRoutes.put("/carriers/:code", async (c) => {
+  const carrier = await loadCarrier(c.env.DB, c.req.param("code"));
+  if (!carrier) return fail(c, "Carrier not found", 404);
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({}) as Record<string, unknown>);
+  const input = readCarrierInput(body);
+  if (!input.ok) return fail(c, input.error);
+  const keys = Object.keys(input.values);
+  if (keys.length) {
+    await c.env.DB.prepare(
+      `UPDATE carriers SET ${keys.map((k, i) => `${k} = ?${i + 1}`).join(", ")}, updated_by = ?${keys.length + 1}, updated_at = datetime('now') WHERE code = ?${keys.length + 2}`
+    ).bind(...keys.map((k) => input.values[k]), Number(c.get("user_id")), carrier.code).run();
+  }
+  return ok(c, await loadCarrier(c.env.DB, carrier.code));
+});
+
+// POST /api/v1/admin/carriers/:code/test { payload, field_map?, status_map? }
+// Dry run: how a sample webhook from the carrier is read (and which
+// shipment each event would update). Writes nothing.
+adminRoutes.post("/carriers/:code/test", async (c) => {
+  const carrier = await loadCarrier(c.env.DB, c.req.param("code"));
+  if (!carrier) return fail(c, "Carrier not found", 404);
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({}) as Record<string, unknown>);
+  const input = readCarrierInput({ field_map: body.field_map, status_map: body.status_map });
+  if (!input.ok) return fail(c, input.error);
+  let payload = body.payload;
+  if (typeof payload === "string") {
+    try {
+      payload = JSON.parse(payload);
+    } catch {
+      return fail(c, "The sample is not valid JSON");
+    }
+  }
+  const maps = {
+    field_map: body.field_map !== undefined ? (input.values.field_map as string | null) : carrier.field_map,
+    status_map: body.status_map !== undefined ? (input.values.status_map as string | null) : carrier.status_map,
+  };
+  const events = parseWebhook(maps, payload);
+  const out = [];
+  for (const ev of events) {
+    const sh = await findShipment(c.env.DB, carrier.code, ev.tracking);
+    out.push({ ...ev, shipment_id: sh?.id ?? null, order_id: sh?.order_id ?? null });
+  }
+  return ok(c, { events: out, read: events.length });
+});
+
+// GET /api/v1/admin/carriers/:code/events — latest events received.
+adminRoutes.get("/carriers/:code/events", async (c) => {
+  const rows = await dbAll(
+    c.env.DB,
+    `SELECT e.*, o.reference FROM shipment_events e
+     LEFT JOIN order_shipments sh ON sh.id = e.shipment_id LEFT JOIN orders o ON o.id = sh.order_id
+     WHERE e.carrier = ? ORDER BY e.id DESC LIMIT 100`,
+    [c.req.param("code").toLowerCase()]
+  );
+  return ok(c, rows);
+});
+

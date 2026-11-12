@@ -6,6 +6,7 @@ import { dbFirst, dbAll, dbRun } from "../utils/db";
 import { logOrderEvent, refreshOrderStatus, setLineStatus } from "../utils/fulfillment";
 import { type Fulfillment, FULFILLMENTS, allowedMethods, generatePickupCode, isPickup, loadSellerFulfillment } from "../utils/pickup";
 import { deliveryFee } from "../utils/shipping";
+import { shipmentTimeline, trackingUrl } from "../utils/carriers";
 import { ISSUE_REASONS, type IssueRow, canEscalate, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, reportWindow, updateIssue } from "../utils/issues";
 
 const MAX_REVIEW_LENGTH = 1000;
@@ -306,14 +307,24 @@ commerceRoutes.get("/orders/:reference", authMiddleware, async (c) => {
   const shipments = (
     await dbAll<Record<string, any>>(
       c.env.DB,
-      `SELECT sh.seller_id, s.name AS seller_name, sh.method, sh.fee, sh.carrier, sh.tracking_number, sh.shipped_at
-       FROM order_shipments sh JOIN sellers s ON s.id = sh.seller_id WHERE sh.order_id = ? ORDER BY sh.id`,
+      `SELECT sh.id, sh.seller_id, s.name AS seller_name, sh.method, sh.fee, sh.carrier, sh.tracking_number, sh.shipped_at,
+              sh.status AS shipment_status, sh.status_at, sh.attempts, ca.name AS carrier_name, ca.tracking_url_template
+       FROM order_shipments sh JOIN sellers s ON s.id = sh.seller_id LEFT JOIN carriers ca ON ca.code = sh.carrier
+       WHERE sh.order_id = ? ORDER BY sh.id`,
       [(order as any).id]
     )
-  ).map((sh) => {
+  ).map((sh): Record<string, any> => {
     const open = (items as Array<Record<string, any>>).filter((i) => Number(i.seller_id) === Number(sh.seller_id) && i.status !== "cancelled");
-    return { ...sh, amount_due: open.length ? open.reduce((sum, i) => sum + Number(i.subtotal || 0), 0) + Number(sh.fee || 0) : 0 };
+    const { tracking_url_template, ...rest } = sh as Record<string, any>;
+    return {
+      ...(rest as Record<string, any>),
+      tracking_url: trackingUrl(tracking_url_template, sh.tracking_number),
+      amount_due: open.length ? open.reduce((sum, i) => sum + Number(i.subtotal || 0), 0) + Number(sh.fee || 0) : 0,
+    };
   });
+  // Each shipment's timeline (seller and carrier events, utils/carriers.ts).
+  const timeline = await shipmentTimeline(c.env.DB, shipments.map((sh) => Number(sh.id)));
+  for (const sh of shipments) (sh as Record<string, unknown>).events = timeline.filter((e) => e.shipment_id === Number(sh.id));
 
   return ok(c, { ...order, items: withIssues, shipping_address: address, events, pickups, shipments });
 });

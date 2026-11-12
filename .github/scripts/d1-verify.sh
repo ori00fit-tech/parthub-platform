@@ -37,6 +37,9 @@ sql="SELECT
   $(has commissions invoice_id commissions_invoice_column),
   $(has order_items received_by_buyer_at items_received_column),
   (SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='uq_commission_invoices_live') AS invoice_unique_index,
+  $(tables "'carriers','shipment_events'" carrier_tables_of_2),
+  $(has order_shipments cod_collected shipments_status_columns),
+  (SELECT COUNT(*) FROM carriers) AS carriers_count,
   (SELECT rate_bps FROM commission_rates WHERE cancelled_at IS NULL AND effective_from <= datetime('now') ORDER BY effective_from DESC, id DESC LIMIT 1) AS commission_rate_now_bps"
 
 out=$(npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --json --command "$sql" 2>&1)
@@ -56,12 +59,13 @@ const raw = require("fs").readFileSync(0, "utf8");
 const json = JSON.parse(raw.slice(raw.indexOf("[")));
 const row = json[0].results[0];
 console.log(JSON.stringify(row, null, 2));
-const exact = { tables_of_6: 6, key_indexes_of_4: 4, part_number_tables_of_3: 3, revenue_tables_of_7: 7, engines_without_source: 0, invoice_unique_index: 1 };
+const exact = { tables_of_6: 6, key_indexes_of_4: 4, part_number_tables_of_3: 3, revenue_tables_of_7: 7, engines_without_source: 0, invoice_unique_index: 1, carrier_tables_of_2: 2 };
 for (const k of Object.keys(row)) if (k.endsWith("_column") || k.endsWith("_columns")) exact[k] = 1;
 const bad = [];
 for (const [k, v] of Object.entries(exact)) if (Number(row[k]) !== v) bad.push(`${k} = ${row[k]} (expected ${v})`);
 if (Number(row.vehicle_generations) < Number(process.env.MIN_GENS)) bad.push(`vehicle_generations = ${row.vehicle_generations} (expected >= ${process.env.MIN_GENS})`);
 if (Number(row.vehicle_engines) < Number(process.env.MIN_ENGINES)) bad.push(`vehicle_engines = ${row.vehicle_engines} (expected >= ${process.env.MIN_ENGINES})`);
+if (Number(row.carriers_count) < 12) bad.push(`carriers_count = ${row.carriers_count} (expected >= 12, the carriers of 0026)`);
 if (row.commission_rate_now_bps === null || row.commission_rate_now_bps === undefined) bad.push("no commission rate in force (commission_rates is empty)");
 console.log(`commission rate now: ${row.commission_rate_now_bps} bps`);
 if (bad.length) { for (const b of bad) console.log(`::error::${b}`); process.exit(1); }

@@ -1108,4 +1108,18 @@ export default {
   "Amana (Barid Al-Maghrib)": "Amana (Barid Al-Maghrib)",
   "Seller's own driver": "Livreur du vendeur",
   "Other carrier": "Autre transporteur",
+  // Carriers and shipment tracking
+  "Shipment created": "Envoi créé",
+  "Picked up by the carrier": "Ramassé par le transporteur",
+  "On the way": "En route",
+  "Out for delivery": "En cours de livraison",
+  "Delivery attempt failed": "Tentative de livraison échouée",
+  "Being returned to the seller": "En retour vers le vendeur",
+  "Returned to the seller": "Retourné au vendeur",
+  "Shipment cancelled": "Envoi annulé",
+  "Update from the carrier": "Mise à jour du transporteur",
+  "Carrier": "Transporteur",
+  "PartHub": "PartHub",
+  "Track my parcel": "Suivre mon colis",
+  "{n} failed attempt(s)": "{n} tentative(s) échouée(s)",
 };

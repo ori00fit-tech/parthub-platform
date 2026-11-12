@@ -16,6 +16,7 @@ export * from "./lib/tokens";
 export * from "./lib/formatters";
 export * from "./lib/money";
 export * from "./lib/issues";
+export * from "./lib/shipments";
 
 // API
 export * from "./api/client";

@@ -507,6 +507,11 @@ CREATE TABLE IF NOT EXISTS order_shipments (
   tracking_number TEXT,
   shipped_at      TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  status          TEXT,                               -- normalized carrier status (migrations/0026)
+  status_at       TEXT,
+  carrier_delivered_at TEXT,
+  cod_collected   INTEGER,
+  attempts        INTEGER NOT NULL DEFAULT 0,
   UNIQUE (order_id, seller_id)
 );
 CREATE INDEX IF NOT EXISTS idx_order_shipments_seller ON order_shipments(seller_id);
@@ -619,3 +624,53 @@ CREATE TABLE IF NOT EXISTS part_search_logs (
 CREATE INDEX IF NOT EXISTS idx_search_logs_query        ON part_search_logs(query);
 CREATE INDEX IF NOT EXISTS idx_search_logs_vehicle      ON part_search_logs(make, model, year);
 CREATE INDEX IF NOT EXISTS idx_search_logs_created_at   ON part_search_logs(created_at DESC);
+
+-- ── Carriers (migrations/0026) ────────────────────────────────
+CREATE TABLE IF NOT EXISTS carriers (
+  code                  TEXT PRIMARY KEY,          -- amana, sendit... (used in order_shipments.carrier)
+  name                  TEXT NOT NULL,
+  kind                  TEXT NOT NULL DEFAULT 'courier' CHECK (kind IN ('courier','postal','own','other')),
+  active                INTEGER NOT NULL DEFAULT 1,
+  sort_order            INTEGER NOT NULL DEFAULT 100,
+  tracking_url_template TEXT,                      -- e.g. https://example.ma/track?n={tracking}
+  webhook_enabled       INTEGER NOT NULL DEFAULT 0,
+  field_map             TEXT,                      -- JSON, see utils/carriers.ts
+  status_map            TEXT,                      -- JSON { "their status": "delivered", ... }
+  api_client            TEXT NOT NULL DEFAULT 'manual', -- outbound integration (manual until a client exists)
+  notes                 TEXT,
+  updated_by            INTEGER REFERENCES users(id),
+  updated_at            TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Delivery companies active in Morocco. Tracking links and webhooks are
+-- configured by an admin once the carrier gives them (nothing guessed here).
+INSERT OR IGNORE INTO carriers (code, name, kind, sort_order) VALUES
+  ('amana', 'Amana (Barid Al-Maghrib)', 'postal', 10),
+  ('ctm', 'CTM Messagerie', 'courier', 20),
+  ('sendit', 'Sendit', 'courier', 30),
+  ('forcelog', 'Forcelog', 'courier', 40),
+  ('olivraison', 'Olivraison', 'courier', 50),
+  ('ozonexpress', 'Ozon Express', 'courier', 60),
+  ('cathedis', 'Cathedis', 'courier', 70),
+  ('chronopost', 'Chronopost Maroc', 'courier', 80),
+  ('dhl', 'DHL Express', 'courier', 90),
+  ('aramex', 'Aramex', 'courier', 100),
+  ('own', 'Own driver', 'own', 900),
+  ('other', 'Other', 'other', 999);
+
+CREATE TABLE IF NOT EXISTS shipment_events (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  shipment_id     INTEGER REFERENCES order_shipments(id) ON DELETE CASCADE,
+  carrier         TEXT NOT NULL,
+  tracking_number TEXT,
+  status          TEXT NOT NULL,                   -- normalized (see order_shipments.status)
+  carrier_status  TEXT,                            -- as the carrier wrote it
+  note            TEXT,
+  cod_amount      INTEGER,                         -- centimes
+  occurred_at     TEXT NOT NULL,
+  source          TEXT NOT NULL,                   -- seller | carrier | admin
+  dedupe_key      TEXT NOT NULL UNIQUE,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_shipment_events_shipment ON shipment_events(shipment_id, occurred_at);
+CREATE INDEX IF NOT EXISTS idx_order_shipments_tracking ON order_shipments(carrier, tracking_number);
