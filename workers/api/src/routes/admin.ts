@@ -8,7 +8,7 @@ import { dbAll, dbRun, dbFirst, dbCount } from "../utils/db";
 import { parsePagination } from "../utils/pagination";
 import { notifyBackInStock } from "../utils/stock-alerts";
 import { runInBackground } from "../utils/whatsapp";
-import { waClaimEvent, waOrderStepAllSellers, waPartsReviewed, waStoreStatus } from "../utils/wa-events";
+import { waClaimEvent, waOrderStepAllSellers, waPartsReviewed, waShipmentEvent, waStoreStatus } from "../utils/wa-events";
 import { TEMPLATE_STATUSES, submitTemplates, syncTemplates, templateCenter } from "../utils/wa-meta";
 import { WA_LANGS, WA_TEMPLATE_BY_NAME } from "../utils/wa-templates";
 import { type LineStatus, logOrderEvent, refreshOrderStatus, setLineStatus } from "../utils/fulfillment";
@@ -21,7 +21,8 @@ import {
 } from "../utils/commissions";
 import { investorKpis, kpisCsv } from "../utils/kpis";
 import { isWhatsAppConfigured, normalizeWhatsAppNumber, sendWhatsAppText } from "../utils/whatsapp";
-import { findShipment, listCarriers, loadCarrier, parseWebhook, readCarrierInput, secretName } from "../utils/carriers";
+import { ADMIN_SHIPMENT_STATUSES, type ShipmentStatus, findShipment, listCarriers, loadCarrier, parseWebhook, readCarrierInput, recordManualEvent, secretName } from "../utils/carriers";
+import { LATE_DAYS, lateShipments } from "../utils/shipping-delays";
 import { PAYMENT_METHODS, cancelInvoice, invoiceDraft, invoicePayments, issueInvoice, ledgerTotals, listInvoices, readDay, readMad, recordPayment } from "../utils/invoices";
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
@@ -381,6 +382,40 @@ adminRoutes.patch("/orders/:id/status", async (c) => {
     runInBackground(c, waOrderStepAllSellers(c.env, orderId, status));
   }
   return ok(c, { message: "Order updated" });
+});
+
+// POST /api/v1/admin/orders/:id/shipment { seller_id, status, note?, cod? }
+// PartHub records what the carrier says (phone call, carrier portal) for
+// one seller's parcel: the same effects as the carrier's webhook.
+adminRoutes.post("/orders/:id/shipment", async (c) => {
+  const orderId = Number(c.req.param("id"));
+  const body = await c.req.json<{ seller_id?: unknown; status?: unknown; note?: unknown; cod?: unknown }>().catch(() => ({}) as Record<string, unknown>);
+  const sellerId = Number(body.seller_id);
+  const status = String(body.status || "");
+  const note = typeof body.note === "string" ? body.note.trim().slice(0, 500) || null : null;
+  if (!(ADMIN_SHIPMENT_STATUSES as readonly string[]).includes(status)) return fail(c, "Choose what the carrier says");
+  if (status === "failed_attempt" && !note) return fail(c, "Write why the delivery failed (the buyer sees it)");
+  let cod: number | null = null;
+  if (body.cod !== undefined && body.cod !== null && String(body.cod).trim() !== "") {
+    const mad = Number(String(body.cod).replace(",", ".").trim());
+    if (!Number.isFinite(mad) || mad < 0 || mad > 1_000_000) return fail(c, "Invalid amount");
+    cod = Math.round(mad * 100);
+  }
+  const done = await recordManualEvent(c.env.DB, orderId, sellerId, status as ShipmentStatus, note, cod, "admin");
+  if (!done.ok) return fail(c, done.error, done.code);
+  runInBackground(c, waShipmentEvent(c.env, done.shipment_id, status, done.event_id ?? null, note, cod));
+  for (const partId of done.restocked) runInBackground(c, notifyBackInStock(c.env, partId));
+  return ok(c, { message: "Shipment updated" });
+});
+
+// GET /api/v1/admin/shipments/late?days=4 — shipped parcels with no news.
+adminRoutes.get("/shipments/late", async (c) => {
+  const days = Math.min(30, Math.max(1, Number(c.req.query("days") || LATE_DAYS) || LATE_DAYS));
+  const rows = await lateShipments(c.env.DB, days);
+  return ok(c, {
+    days,
+    shipments: rows.map(({ seller_locale, buyer_locale, ...r }) => r),
+  });
 });
 
 // GET /api/v1/admin/issues?status=escalated|active|all — returns and complaints.

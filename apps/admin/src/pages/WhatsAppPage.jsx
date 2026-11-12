@@ -24,6 +24,8 @@ const KIND = {
   order_cancelled: "Order cancelled (to the buyer)",
   carrier_delivered: "Delivered by the carrier (to the seller)",
   delivery_returned: "Parcel returned (to the seller)",
+  delivery_returning: "Parcel going back (to the buyer)",
+  shipping_delayed: "Late shipment (buyer and seller)",
   claim_opened: "New claim (to the seller)",
   store_approved: "Store approved (to the seller)",
   password_changed: "Password changed (to the account)",

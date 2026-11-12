@@ -41,7 +41,7 @@ personal access. Same for GitHub (organisation owned by the company).
 | Asset | Detail | Holder today |
 |---|---|---|
 | Meta app and WhatsApp Business account "PartHub" | number +212 751-411879 (`infra/docs/whatsapp.md`) | **to fill**: Meta Business portfolio owner. Business verification should be done in the company's name (RC, ICE) once registered |
-| Message templates | 22 templates in Arabic, French and English (`infra/docs/whatsapp-templates.md`) | belong to the WhatsApp Business account |
+| Message templates | 25 templates in Arabic, French and English (`infra/docs/whatsapp-templates.md`) | belong to the WhatsApp Business account |
 
 ## 5. Other accounts
 | Asset | Holder today |

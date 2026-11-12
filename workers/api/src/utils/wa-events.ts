@@ -185,6 +185,17 @@ export async function waShipmentEvent(
       })
     )
       sent++;
+  } else if (status === "returning") {
+    if (
+      await notify(env, {
+        ...buyer,
+        kind: "delivery_returning",
+        refId: o.line_ref,
+        template: "parthub_delivery_returning",
+        params: (lang) => [o.reference, note || waWord("not_given", lang)],
+      })
+    )
+      sent++;
   } else if (status === "returned") {
     if (
       await notify(env, {

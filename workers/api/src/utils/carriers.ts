@@ -215,7 +215,7 @@ export async function recordEvent(
   carrier: string,
   ev: ParsedEvent,
   source: "carrier" | "seller" | "admin"
-): Promise<{ result: ApplyResult; shipment_id: number | null; event_id?: number | undefined }> {
+): Promise<{ result: ApplyResult; shipment_id: number | null; event_id?: number | undefined; restocked?: number[] }> {
   const shipment = await findShipment(DB, carrier, ev.tracking);
   const status = ev.status;
   const key = `${carrier}|${trackingKey(ev.tracking)}|${fold(ev.carrier_status)}|${ev.occurred_at}`;
@@ -228,41 +228,92 @@ export async function recordEvent(
   if (!status) return { result: "unknown_status", shipment_id: shipment.id };
   const eventId = Number(ins.meta?.last_row_id) || undefined;
 
+  const applied = await applyShipmentStatus(DB, shipment, status, ev.occurred_at, ev.cod, ev.note, `carrier:${carrier}`);
+  return { result: "applied", shipment_id: shipment.id, event_id: eventId, restocked: applied.restocked };
+}
+
+// What a status does, whoever reports it (carrier webhook, seller, admin).
+// Returns the parts whose stock came back (a returned parcel).
+export async function applyShipmentStatus(
+  DB: D1Database,
+  shipment: ShipmentRow,
+  status: ShipmentStatus,
+  occurredAt: string,
+  cod: number | null,
+  note: string | null,
+  actor: string
+): Promise<{ restocked: number[] }> {
   // Which status the shipment shows. Events arrive out of order and carrier
   // clocks differ, so: a final status (delivered / returned / cancelled)
   // beats an in-progress one; an in-progress one never replaces a final one
   // (timeline only); between two of the same kind, the latest wins.
   const final = (x: string | null) => x === "delivered" || x === "returned" || x === "cancelled";
-  const later = !shipment.status_at || ev.occurred_at >= shipment.status_at;
+  const later = !shipment.status_at || occurredAt >= shipment.status_at;
   const newer = final(status) ? !final(shipment.status) || later : !final(shipment.status) && later;
   await DB.prepare(
     `update order_shipments set
        status = case when ?2 then ?3 else status end,
        status_at = case when ?2 then ?4 else status_at end,
+       delay_notified_at = case when ?2 then null else delay_notified_at end,
        attempts = attempts + case when ?3 = 'failed_attempt' then 1 else 0 end,
        carrier_delivered_at = case when ?3 = 'delivered' then coalesce(carrier_delivered_at, ?4) else carrier_delivered_at end,
        cod_collected = case when ?3 = 'delivered' and ?5 is not null then ?5 else cod_collected end
      where id = ?1`
-  ).bind(shipment.id, newer ? 1 : 0, status, ev.occurred_at, ev.cod).run();
+  ).bind(shipment.id, newer ? 1 : 0, status, occurredAt, cod).run();
 
   // Effects on the seller's lines of that order (only shipped delivery lines).
+  let restocked: number[] = [];
+  const byCarrier = actor.startsWith("carrier:");
   if (status === "delivered" || status === "returned") {
     const lines = await DB.prepare(
       "select id from order_items where order_id = ?1 and seller_id = ?2 and status = 'shipped' and fulfillment = 'delivery'"
     ).bind(shipment.order_id, shipment.seller_id).all<{ id: number }>();
     const ids = (lines.results || []).map((l) => l.id);
     if (ids.length) {
-      await setLineStatus(DB, ids, status === "delivered" ? "delivered" : "cancelled");
+      restocked = await setLineStatus(DB, ids, status === "delivered" ? "delivered" : "cancelled");
       await logOrderEvent(
-        DB, shipment.order_id, status === "delivered" ? "delivered_by_carrier" : "delivery_failed", `carrier:${carrier}`,
-        status === "delivered" ? ev.note : `Returned by the carrier${ev.note ? `: ${ev.note}` : ""}`
+        DB, shipment.order_id, status === "delivered" ? (byCarrier ? "delivered_by_carrier" : "delivered") : "delivery_failed", actor,
+        status === "delivered" ? note : `${byCarrier ? "Returned by the carrier" : "Returned to the seller"}${note ? `: ${note}` : ""}`
       );
       await refreshOrderStatus(DB, shipment.order_id);
     }
   } else if (status === "failed_attempt") {
-    await logOrderEvent(DB, shipment.order_id, "delivery_attempt_failed", `carrier:${carrier}`, ev.note);
+    await logOrderEvent(DB, shipment.order_id, "delivery_attempt_failed", actor, note);
+  } else if (status === "returning") {
+    await logOrderEvent(DB, shipment.order_id, "delivery_returning", actor, note);
   }
-  return { result: "applied", shipment_id: shipment.id, event_id: eventId };
+  return { restocked };
+}
+
+// Statuses the seller or PartHub can record by hand, for carriers that
+// send no webhook (most of them): the same timeline and effects.
+export const MANUAL_SHIPMENT_STATUSES = ["picked_up", "in_transit", "out_for_delivery", "failed_attempt", "returning", "returned"] as const;
+export const ADMIN_SHIPMENT_STATUSES = [...MANUAL_SHIPMENT_STATUSES, "delivered", "cancelled"] as const;
+
+export async function recordManualEvent(
+  DB: D1Database,
+  orderId: number,
+  sellerId: number,
+  status: ShipmentStatus,
+  note: string | null,
+  cod: number | null,
+  source: "seller" | "admin"
+): Promise<{ ok: true; shipment_id: number; event_id: number | undefined; restocked: number[] } | { ok: false; error: string; code: number }> {
+  const shipment = await DB.prepare(
+    "select id, order_id, seller_id, status, status_at, carrier, tracking_number from order_shipments where order_id = ?1 and seller_id = ?2"
+  ).bind(orderId, sellerId).first<ShipmentRow & { carrier: string | null; tracking_number: string | null }>();
+  const shipped = await DB.prepare(
+    "select count(*) as n from order_items where order_id = ?1 and seller_id = ?2 and status = 'shipped' and fulfillment = 'delivery'"
+  ).bind(orderId, sellerId).first<{ n: number }>();
+  if (!shipment || !Number(shipped?.n)) return { ok: false, error: "Only a shipped delivery can get a carrier update", code: 409 };
+  const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+  const ins = await DB.prepare(
+    `insert into shipment_events (shipment_id, carrier, tracking_number, status, carrier_status, note, cod_amount, occurred_at, source, dedupe_key)
+     values (?1, ?2, ?3, ?4, null, ?5, ?6, ?7, ?8, ?9)`
+  ).bind(shipment.id, shipment.carrier || "other", shipment.tracking_number, status, note, cod, now, source, `${source}|${shipment.id}|${status}|${now}|${crypto.randomUUID()}`).run();
+  const actor = source === "admin" ? "admin" : `seller:${sellerId}`;
+  const applied = await applyShipmentStatus(DB, shipment, status, now, cod, note, actor);
+  return { ok: true, shipment_id: shipment.id, event_id: Number(ins.meta?.last_row_id) || undefined, restocked: applied.restocked };
 }
 
 // ── Reading / editing carriers ─────────────────────────────────────────

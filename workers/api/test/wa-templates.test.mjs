@@ -84,7 +84,7 @@ check("catalog_follows_meta_rules", problems.length === 0, problems);
 check("catalog_names_unique", new Set(WA_TEMPLATES.map((t) => t.name)).size === WA_TEMPLATES.length);
 // Every template is sent by some code (no template without an event).
 const SRC = ROOT + "workers/api/src/";
-const code = ["utils/wa-events.ts", "utils/request-notifications.ts", "utils/stock-alerts.ts"].map((f) => readFileSync(SRC + f, "utf8")).join("\n");
+const code = ["utils/wa-events.ts", "utils/request-notifications.ts", "utils/stock-alerts.ts", "utils/shipping-delays.ts"].map((f) => readFileSync(SRC + f, "utf8")).join("\n");
 const unused = WA_TEMPLATES.filter((t) => !code.includes(`"${t.name}"`)).map((t) => t.name);
 check("every_template_has_an_event", unused.length === 0, unused);
 const payload = metaTemplatePayload(WA_TEMPLATES.find((t) => t.name === "parthub_order_shipped"), "ar", { storefront: "https://parthub.autos", seller: "https://seller.parthub.autos" });

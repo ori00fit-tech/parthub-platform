@@ -44,6 +44,7 @@ sql="SELECT
   $(has whatsapp_notifications wa_message_id whatsapp_status_columns),
   $(has whatsapp_notifications language whatsapp_language_columns),
   $(has users locale users_locale_column),
+  $(has order_shipments delay_notified_at shipments_delay_column),
   $(tables "'whatsapp_templates'" whatsapp_templates_table),
   (SELECT rate_bps FROM commission_rates WHERE cancelled_at IS NULL AND effective_from <= datetime('now') ORDER BY effective_from DESC, id DESC LIMIT 1) AS commission_rate_now_bps"
 

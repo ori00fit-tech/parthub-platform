@@ -84,6 +84,9 @@ step of an order, a claim, a store or an account.
 | `parthub_order_cancelled` | Buyer | The seller (or PartHub) cancels the buyer's order, with a reason | {{1}} reference, {{2}} seller, {{3}} reason | Track the order |
 | `parthub_carrier_delivered` | Seller | The carrier reports the parcel delivered (and the cash collected) | {{1}} reference, {{2}} carrier, {{3}} cod | Open the order |
 | `parthub_delivery_returned` | Seller | The carrier reports the parcel returned (delivery failed) | {{1}} reference, {{2}} carrier, {{3}} reason | Open the order |
+| `parthub_delivery_returning` | Buyer | The carrier (or the seller) reports the parcel going back to the seller | {{1}} reference, {{2}} reason | Track the order |
+| `parthub_shipping_delayed` | Buyer | A shipped order has had no carrier update for several days (daily check) | {{1}} reference, {{2}} days | Track the order |
+| `parthub_seller_shipping_delayed` | Seller | One of the store's shipped orders has had no carrier update for several days (daily check) | {{1}} reference, {{2}} days, {{3}} carrier | Open the order |
 | `parthub_claim_opened` | Seller | A buyer reports a problem with a delivered part (return claim) | {{1}} reference, {{2}} part, {{3}} reason | Open claims |
 | `parthub_claim_update` | Buyer | The buyer's claim changes: the seller answers, or PartHub decides | {{1}} reference, {{2}} part, {{3}} status | Track the order |
 | `parthub_seller_claim_update` | Seller | A claim on the store changes: the buyer escalates or withdraws, or PartHub decides | {{1}} reference, {{2}} part, {{3}} status | Open claims |

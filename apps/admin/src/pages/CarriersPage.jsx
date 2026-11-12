@@ -194,12 +194,73 @@ function CarrierEditor({ carrier, onSaved }) {
   );
 }
 
+// One late parcel: what PartHub learnt from the carrier (phone, portal).
+function LateRow({ row, onDone }) {
+  const t = useT();
+  const [status, setStatus] = useState("out_for_delivery");
+  const [note, setNote] = useState("");
+  const [cod, setCod] = useState("");
+  const [state, setState] = useState({ busy: false, error: "" });
+  async function save(e) {
+    e.preventDefault();
+    setState({ busy: true, error: "" });
+    try {
+      await api.post(`/api/v1/admin/orders/${row.order_id}/shipment`, { seller_id: row.seller_id, status, note: note.trim() || undefined, cod: status === "delivered" ? cod : undefined });
+      setState({ busy: false, error: "" });
+      onDone();
+    } catch (err) {
+      setState({ busy: false, error: err?.message || t("Something went wrong. Please try again.") });
+    }
+  }
+  return (
+    <li className="py-3 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p>
+          <span className="font-mono font-semibold" dir="ltr">{row.reference}</span>
+          <span className="ms-2 text-gray-600">{row.seller_name} → {row.buyer_name}</span>
+        </p>
+        <p className="text-xs">
+          <span className="rounded-full bg-red-50 px-2 py-0.5 font-semibold text-red-700">{t("{n} days without news", { n: row.days })}</span>
+          <span className="ms-2 text-gray-600">{t(shipmentStatusLabel(row.status || "in_transit"))}</span>
+        </p>
+      </div>
+      <p className="mt-1 text-xs text-gray-500">
+        {row.carrier_name || row.carrier || t("No carrier given")}
+        {row.tracking_number ? <span className="ms-2 font-mono" dir="ltr">{row.tracking_number}</span> : null}
+        {row.attempts ? <span className="ms-2 text-amber-700">{t("{n} failed attempt(s)", { n: row.attempts })}</span> : null}
+        {row.delay_notified_at ? <span className="ms-2">· {t("Buyer and seller told")}</span> : null}
+      </p>
+      <form onSubmit={save} className="mt-2 flex flex-wrap items-center gap-2">
+        <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-9 rounded-xl border border-gray-200 bg-white px-2 text-xs text-gray-900">
+          {["picked_up", "in_transit", "out_for_delivery", "failed_attempt", "returning", "returned", "delivered"].map((s) => (
+            <option key={s} value={s}>{t(shipmentStatusLabel(s))}</option>
+          ))}
+        </select>
+        <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} dir="auto" placeholder={status === "failed_attempt" ? t("Reason (required)") : t("Note (optional)")} className="h-9 min-w-[10rem] flex-1 rounded-xl border border-gray-200 px-2 text-xs text-gray-900" />
+        {status === "delivered" ? (
+          <input value={cod} onChange={(e) => setCod(e.target.value)} inputMode="decimal" placeholder={t("Cash collected (MAD)")} className="h-9 w-36 rounded-xl border border-gray-200 px-2 text-xs text-gray-900" />
+        ) : null}
+        <button type="submit" disabled={state.busy} className="h-9 rounded-xl bg-blue-600 px-3 text-xs font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300">
+          {state.busy ? t("Saving…") : t("Record")}
+        </button>
+      </form>
+      {state.error ? <p className="mt-1 text-xs text-red-700" role="alert">{state.error}</p> : null}
+    </li>
+  );
+}
+
 export default function CarriersPage() {
   const t = useT();
   const [list, setList] = useState(null);
   const [open, setOpen] = useState("");
   const [error, setError] = useState("");
   const [adding, setAdding] = useState({ code: "", name: "" });
+  const [late, setLate] = useState(null);
+  const loadLate = () =>
+    api
+      .get("/api/v1/admin/shipments/late")
+      .then((r) => setLate(r?.data || null))
+      .catch(() => setLate({ days: 4, shipments: [] }));
   const load = () =>
     api
       .get("/api/v1/admin/carriers")
@@ -207,6 +268,7 @@ export default function CarriersPage() {
       .catch((err) => setError(err?.message || t("Something went wrong. Please try again.")));
   useEffect(() => {
     load();
+    loadLate();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function add(e) {
@@ -231,6 +293,25 @@ export default function CarriersPage() {
         </p>
       </div>
       {error ? <p className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">{error}</p> : null}
+
+      <div className="rounded-3xl border border-gray-200 bg-white p-6 text-gray-900 shadow-sm">
+        <h2 className="text-xl font-bold">
+          {t("Late shipments")}
+          {late?.shipments?.length ? <span className="ms-2 rounded-full bg-red-600 px-2.5 py-0.5 text-sm text-white">{late.shipments.length}</span> : null}
+        </h2>
+        <p className="mt-1 text-xs text-gray-500">
+          {t("Shipped parcels with no update for {n} days or more. Every morning PartHub tells the buyer and the seller once (WhatsApp). Call the carrier, then record what it says: the buyer is informed.", { n: late?.days ?? 4 })}
+        </p>
+        {!late ? (
+          <div className="mt-3 h-16 animate-pulse rounded-2xl bg-gray-50" />
+        ) : late.shipments.length ? (
+          <ul className="mt-2 divide-y divide-gray-100">
+            {late.shipments.map((row) => <LateRow key={row.shipment_id} row={row} onDone={loadLate} />)}
+          </ul>
+        ) : (
+          <p className="mt-3 text-sm text-emerald-700">{t("No late shipment.")}</p>
+        )}
+      </div>
 
       <div className="rounded-3xl border border-gray-200 bg-white p-6 text-gray-900 shadow-sm">
         {!list ? (

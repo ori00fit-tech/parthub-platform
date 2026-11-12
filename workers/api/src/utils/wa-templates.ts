@@ -310,6 +310,56 @@ export const WA_TEMPLATES: WaTemplate[] = [
     button: { site: "seller", text: SELLER_ORDER, example: "orders/42" },
   },
 
+  {
+    name: "parthub_delivery_returning",
+    audience: "buyer",
+    category: "UTILITY",
+    trigger: "The carrier (or the seller) reports the parcel going back to the seller",
+    params: [
+      { name: "reference", example: "PH-2026-00042" },
+      { name: "reason", example: "Client injoignable" },
+    ],
+    body: {
+      ar: "لم يتم تسليم طلبك *{{1}}* وهو في طريق العودة إلى البائع.\nالسبب: {{2}}.\nإذا كنت ما زلت تريد القطعة، ردّ على هذه الرسالة اليوم.",
+      fr: "Votre commande *{{1}}* n'a pas pu être livrée et repart chez le vendeur.\nMotif : {{2}}.\nSi vous voulez toujours la pièce, répondez à ce message aujourd'hui.",
+      en: "Your order *{{1}}* could not be delivered and is going back to the seller.\nReason: {{2}}.\nIf you still want the part, reply to this message today.",
+    },
+    button: { site: "storefront", text: TRACK, example: "orders/PH-2026-00042/tracking" },
+  },
+  {
+    name: "parthub_shipping_delayed",
+    audience: "buyer",
+    category: "UTILITY",
+    trigger: "A shipped order has had no carrier update for several days (daily check)",
+    params: [
+      { name: "reference", example: "PH-2026-00042" },
+      { name: "days", example: "4" },
+    ],
+    body: {
+      ar: "طلبك *{{1}}* يتأخر: لا جديد من شركة الشحن منذ {{2}} أيام.\nنتابع الأمر مع البائع وشركة الشحن، وسنراسلك عند أي جديد.",
+      fr: "Votre commande *{{1}}* prend du retard : pas de nouvelles du transporteur depuis {{2}} jours.\nNous suivons cela avec le vendeur et le transporteur, et vous écrivons dès qu'il y a du nouveau.",
+      en: "Your order *{{1}}* is late: no news from the carrier for {{2}} days.\nWe are following it up with the seller and the carrier, and will message you as soon as there is news.",
+    },
+    button: { site: "storefront", text: TRACK, example: "orders/PH-2026-00042/tracking" },
+  },
+  {
+    name: "parthub_seller_shipping_delayed",
+    audience: "seller",
+    category: "UTILITY",
+    trigger: "One of the store's shipped orders has had no carrier update for several days (daily check)",
+    params: [
+      { name: "reference", example: "PH-2026-00042" },
+      { name: "days", example: "4" },
+      { name: "carrier", example: "Amana" },
+    ],
+    body: {
+      ar: "الطلب *{{1}}* بلا جديد منذ {{2}} أيام (شركة الشحن: {{3}}).\nتحقق من الطرد مع شركة الشحن، ثم سجّل حالته في صفحة الطلب ليعرف الزبون.",
+      fr: "La commande *{{1}}* n'a pas bougé depuis {{2}} jours (transporteur : {{3}}).\nVérifiez le colis auprès du transporteur, puis indiquez son statut sur la page de la commande pour informer le client.",
+      en: "Order *{{1}}* has had no update for {{2}} days (carrier: {{3}}).\nCheck the parcel with the carrier, then record its status on the order page so the buyer knows.",
+    },
+    button: { site: "seller", text: SELLER_ORDER, example: "orders/42" },
+  },
+
   // ── Returns and claims ────────────────────────────────────────────────
   {
     name: "parthub_claim_opened",

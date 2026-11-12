@@ -63,6 +63,7 @@ const STATUS_LABELS = {
   fulfilled: "Fulfilled", expired: "Expired", accepted: "Accepted", declined: "Declined",
   withdrawn: "Withdrawn", unknown: "Unknown", new: "New", used: "Used", refurbished: "Refurbished",
   not_shipped: "Not shipped", in_transit: "In transit",
+  delivery_attempt_failed: "Delivery attempt failed", delivery_returning: "Being returned to the seller",
 };
 export function statusLabel(value) {
   if (value === undefined || value === null || value === "") return "";

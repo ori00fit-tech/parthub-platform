@@ -519,6 +519,7 @@ CREATE TABLE IF NOT EXISTS order_shipments (
   carrier_delivered_at TEXT,
   cod_collected   INTEGER,
   attempts        INTEGER NOT NULL DEFAULT 0,
+  delay_notified_at TEXT,                             -- late-shipment notice sent (migrations/0029)
   UNIQUE (order_id, seller_id)
 );
 CREATE INDEX IF NOT EXISTS idx_order_shipments_seller ON order_shipments(seller_id);

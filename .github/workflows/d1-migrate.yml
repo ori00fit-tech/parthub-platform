@@ -131,6 +131,9 @@ jobs:
       - name: 0028 WhatsApp templates (languages, Meta status), user language
         run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0028_whatsapp_templates.sql"
 
+      - name: 0029 late shipments (delay notice)
+        run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0029_shipping_delays.sql"
+
       # Fails the job (and the API deploy waiting for it) when the schema is
       # not what the API needs; only warns while D1's daily read limit is hit.
       - name: Verify
