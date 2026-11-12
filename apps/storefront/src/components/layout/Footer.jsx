@@ -1,3 +1,4 @@
+import { companyLine, companyRegistered } from "@parthub/shared/legal";
 import { Link } from "react-router-dom";
 import BrandMark, { Wordmark } from "../brand/BrandMark";
 import { useT } from "../../i18n";
@@ -74,12 +75,14 @@ export default function Footer() {
           <Link to="/legal/terms" className={linkClass}>{t("Terms of use")}</Link>
           <Link to="/legal/returns" className={linkClass}>{t("Returns policy")}</Link>
           <Link to="/legal/privacy" className={linkClass}>{t("Privacy policy")}</Link>
+          {companyRegistered() ? <Link to="/legal/notice" className={linkClass}>{t("Legal notice")}</Link> : null}
         </FooterColumn>
       </div>
 
       <div className="border-t border-slate-800">
         <div className="mx-auto max-w-[1380px] px-4 py-5 text-xs text-[#A9B4C8] sm:px-6 lg:px-6">
           {t("© {year} PartHub. All rights reserved.", { year: new Date().getFullYear() })}
+          {companyLine() ? <span className="block sm:ms-2 sm:inline">{companyLine()}</span> : null}
         </div>
       </div>
     </footer>
