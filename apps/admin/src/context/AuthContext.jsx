@@ -31,6 +31,14 @@ export function AuthProvider({ children }) {
     const res = await api.post("/api/v1/auth/login", { email, password });
     if (res.data.user.role !== "admin") throw new Error("Not an admin account");
     localStorage.setItem(ADMIN_TOKEN_KEY, res.data.access_token);
+    // Signed in with a password that would be refused today: show a warning
+    // on every page until it is changed (AdminLayout, AccountPage).
+    try {
+      if (res.data.password_weak) localStorage.setItem("ph_admin_password_weak", "1");
+      else localStorage.removeItem("ph_admin_password_weak");
+    } catch {
+      // ignore
+    }
     setUser(res.data.user);
   }
 

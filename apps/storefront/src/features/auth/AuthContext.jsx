@@ -115,6 +115,13 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // After a password change: the API signs out every other device and gives
+  // this one a new token.
+  function replaceToken(nextToken) {
+    persistSession(nextToken, user);
+    setToken(nextToken);
+  }
+
   function logout() {
     revokeOnServer(BASE_URL, token);
     setToken("");
@@ -131,6 +138,7 @@ export function AuthProvider({ children }) {
       register,
       logout,
       refreshMe,
+      replaceToken,
     };
   }, [token, user, loading]);
 

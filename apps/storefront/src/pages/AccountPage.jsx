@@ -1,3 +1,5 @@
+import ChangePasswordForm from "@parthub/shared/account";
+import { apiPost } from "../lib/api";
 import { Link } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
 import { useCart } from "../features/cart/CartContext";
@@ -7,7 +9,7 @@ import StockAlertsList from "../features/stock/StockAlertsList";
 
 export default function AccountPage() {
   const t = useT();
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, replaceToken } = useAuth();
   const { totalItems } = useCart();
   const { selectedVehicle, hasVehicle } = useSelectedVehicle();
 
@@ -210,6 +212,16 @@ export default function AccountPage() {
             </div>
           </div>
 
+        </div>
+      </div>
+      <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-ink">{t("Password")}</h2>
+        <div className="mt-3">
+          <ChangePasswordForm
+            t={t}
+            submit={(current, next) => apiPost("/api/v1/auth/password", { current_password: current, new_password: next }, { auth: true }).then((r) => r?.data)}
+            onToken={replaceToken}
+          />
         </div>
       </div>
     </section>

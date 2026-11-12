@@ -5,7 +5,7 @@
 // conversion buttons (Add to cart, Checkout, fitment search, Send request)
 // via the `btn-cta` class in src/styles/globals.css.
 export default {
-  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}", "../../packages/shared/src/brand/**/*.jsx"],
+  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}", "../../packages/shared/src/brand/**/*.jsx", "../../packages/shared/src/account/**/*.jsx"],
   theme: {
     extend: {
       colors: {
