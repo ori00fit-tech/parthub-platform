@@ -16,6 +16,7 @@ import {
   RATE_NOTICE_DAYS, accrueCommissions, cancelRate, commissionRateBps, currentPeriod, lastPeriods, rateHistory, readEffectiveFrom,
   readPeriod, readRatePercent, scheduleRate, upcomingRates, waiveCommission,
 } from "../utils/commissions";
+import { investorKpis, kpisCsv } from "../utils/kpis";
 import { isWhatsAppConfigured, normalizeWhatsAppNumber, sendWhatsAppText } from "../utils/whatsapp";
 import { findShipment, listCarriers, loadCarrier, parseWebhook, readCarrierInput, secretName } from "../utils/carriers";
 import { PAYMENT_METHODS, cancelInvoice, invoiceDraft, invoicePayments, issueInvoice, ledgerTotals, listInvoices, readDay, readMad, recordPayment } from "../utils/invoices";
@@ -1132,5 +1133,25 @@ adminRoutes.post("/whatsapp/conversations/:phone/handled", async (c) => {
   const phone = c.req.param("phone").replace(/\D/g, "");
   await c.env.DB.prepare("UPDATE whatsapp_messages SET handled_at = datetime('now') WHERE phone = ?1 AND direction = 'in' AND handled_at IS NULL").bind(phone).run();
   return ok(c, { phone });
+});
+
+// ── Investor KPIs (utils/kpis.ts) ──────────────────────────────────────
+// GET /api/v1/admin/kpis?months=12 — monthly marketplace figures + today.
+adminRoutes.get("/kpis", async (c) => {
+  const months = Number(c.req.query("months")) || 12;
+  return ok(c, await investorKpis(c.env.DB, months));
+});
+
+// GET /api/v1/admin/kpis.csv?months=24 — the same months as a CSV file.
+adminRoutes.get("/kpis.csv", async (c) => {
+  const months = Number(c.req.query("months")) || 24;
+  const data = await investorKpis(c.env.DB, months);
+  return new Response(kpisCsv(data.months), {
+    headers: {
+      "content-type": "text/csv; charset=utf-8",
+      "content-disposition": `attachment; filename="parthub-kpis-${data.first_period}-${data.last_period}.csv"`,
+      "cache-control": "no-store",
+    },
+  });
 });
 
