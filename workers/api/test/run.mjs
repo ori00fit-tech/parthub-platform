@@ -16,6 +16,8 @@ await build({ ...common, entryPoints: [join(api, "src/app.ts")], outfile: join(h
 await build({ ...common, entryPoints: [join(api, "src/utils/auth.ts")], outfile: join(here, ".build/auth.mjs") });
 // The Worker entry (fetch + scheduled cron), for the lifecycle test.
 await build({ ...common, entryPoints: [join(api, "src/index.ts")], outfile: join(here, ".build/index.mjs") });
+// Storefront sitemap function (imports a JSON file, as Cloudflare's bundler allows).
+await build({ ...common, platform: "node", entryPoints: [join(api, "../../apps/storefront/functions/sitemap.xml.js")], outfile: join(here, ".build/sitemap.mjs") });
 
 const only = process.argv.slice(2);
 const suites = readdirSync(here)

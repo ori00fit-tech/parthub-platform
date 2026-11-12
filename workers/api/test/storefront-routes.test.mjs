@@ -33,6 +33,26 @@ const { SECURITY_HEADERS } = await import(ROOT + "apps/storefront/functions/_lib
 const h404 = (await run("/nope", page())).headers;
 check("security_headers_on_404", Object.keys(SECURITY_HEADERS).every((k) => h404.has(k)), [...h404.keys()]);
 
+// Sitemap: full list when the API answers; 503 + Retry-After when it does
+// not (never a sitemap with only the static pages).
+const http = await import("node:http");
+let apiUp = true;
+const server = http.createServer((req, res) => {
+  if (!apiUp) { res.writeHead(500); return res.end(); }
+  res.writeHead(200, { "content-type": "application/json" });
+  res.end(JSON.stringify({ data: { parts: [{ slug: "plaquettes-logan", updated_at: "2026-11-01 10:00:00" }], sellers: [{ slug: "garage-atlas" }], landings: ["/voiture/dacia"] } }));
+}).listen(0);
+const port = server.address().port;
+const { onRequestGet: sitemap } = await import("./.build/sitemap.mjs");
+const smEnv = { API_BASE_URL: `http://127.0.0.1:${port}` };
+let sm = await sitemap({ request: new Request("https://parthub.autos/sitemap.xml"), env: smEnv });
+let smText = await sm.text();
+check("sitemap_ok", sm.status === 200 && smText.includes("/parts/plaquettes-logan") && smText.includes("/sellers/garage-atlas"), [sm.status, smText.slice(0, 200)]);
+apiUp = false;
+sm = await sitemap({ request: new Request("https://parthub.autos/sitemap.xml"), env: smEnv });
+check("sitemap_api_down_503", sm.status === 503 && sm.headers.get("retry-after") === "300" && !(await sm.text()).includes("<urlset"), sm.status);
+server.close();
+
 console.log(results);
 const fails = Object.values(results).filter((v) => v !== "PASS").length;
 console.log(fails ? `${fails} FAIL` : "ALL PASS");

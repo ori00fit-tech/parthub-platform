@@ -58,8 +58,6 @@ parthub-platform/
 ├── .gitignore
 ├── .env.example
 ├── pnpm-lock.yaml
-├── storefront-audit-report.txt
-├── tmp-fix-image.json
 └── deploy-api.sh
 ```
 

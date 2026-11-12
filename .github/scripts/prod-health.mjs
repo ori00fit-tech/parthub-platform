@@ -29,20 +29,34 @@ async function status(url, init) {
 }
 
 // 1. Up
-for (const [what, url, want] of [["API health", `${API}/health`, 200], ["Home", `${SITE}/`, 200], ["Catalog", `${SITE}/parts`, 200], ["robots.txt", `${SITE}/robots.txt`, 200], ["Seller portal", "https://seller.parthub.autos/", 200], ["Admin", "https://admin.parthub.autos/", 200]]) {
+const health = await get(`${API}/api/v1/health`).catch(() => null);
+const hj = health ? await health.json().catch(() => null) : null;
+if (!health || health.status !== 200 || hj?.data?.database?.ok !== true) {
+  fail(`API health: database not OK (${health ? health.status : "no answer"} ${JSON.stringify(hj?.data?.database ?? null)})`);
+}
+for (const [what, url, want] of [["Home", `${SITE}/`, 200], ["Catalog", `${SITE}/parts`, 200], ["robots.txt", `${SITE}/robots.txt`, 200], ["Seller portal", "https://seller.parthub.autos/", 200], ["Admin", "https://admin.parthub.autos/", 200]]) {
   const s = await status(url);
   if (s !== want) fail(`${what}: ${url} answered ${s} (expected ${want})`);
 }
 
-// 2. Public catalog: no test/demo parts or stores
-const res = await get(`${API}/api/v1/catalog/parts?limit=100`).catch(() => null);
+// 2. Public data: no test/demo parts or stores. Every active part and
+//    store (slugs, from the API's sitemap list) + the first catalog page
+//    (titles, store names and cities: seller_location).
+const apiSm = await get(`${API}/api/v1/catalog/sitemap`).catch(() => null);
+const apiList = apiSm && apiSm.ok ? (await apiSm.json()).data : null;
+if (!apiList) fail("Catalog API: /api/v1/catalog/sitemap did not answer");
+else {
+  notes.push(`active parts: ${apiList.parts.length}, active stores: ${apiList.sellers.length}`);
+  for (const p of apiList.parts) if (SUSPECT.test(p.slug.replace(/-/g, " "))) fail(`Test/demo-looking part is public: /parts/${p.slug}`);
+  for (const s of apiList.sellers) if (SUSPECT.test(s.slug.replace(/-/g, " "))) fail(`Test/demo-looking store is public: /sellers/${s.slug}`);
+}
+const res = await get(`${API}/api/v1/catalog/parts?limit=60`).catch(() => null);
 const parts = res && res.ok ? ((await res.json()).data || []) : null;
 if (!parts) fail("Catalog API: /api/v1/catalog/parts did not answer");
 else {
-  notes.push(`public parts (first page): ${parts.length}`);
   for (const p of parts) {
-    const text = [p.title, p.slug, p.seller_name, p.seller_slug, p.seller_city, p.location].filter(Boolean).join(" | ");
-    if (SUSPECT.test(text)) fail(`Test/demo-looking part is public: "${p.title}" (${p.slug}) — seller ${p.seller_name || "?"}`);
+    const text = [p.title, p.slug, p.seller_name, p.seller_slug, p.seller_location].filter(Boolean).join(" | ");
+    if (SUSPECT.test(text)) fail(`Test/demo-looking part is public: "${p.title}" (${p.slug}) — store ${p.seller_name || "?"}, ${p.seller_location || "?"}`);
   }
 }
 
@@ -50,15 +64,24 @@ else {
 const sm = await get(`${SITE}/sitemap.xml`).catch(() => null);
 const xml = sm && sm.ok ? await sm.text() : "";
 const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+if (!sm || sm.status !== 200) fail(`sitemap.xml answered ${sm ? sm.status : "nothing"}`);
 if (!locs.length) fail("sitemap.xml is missing or empty");
 else {
   notes.push(`sitemap URLs: ${locs.length}`);
+  // Same parts and stores as the API says are active (a sitemap with only the static pages = API failure).
+  if (apiList) {
+    const smParts = locs.filter((u) => /\/parts\/[^/]+$/.test(u)).length;
+    const smStores = locs.filter((u) => /\/sellers\/[^/]+$/.test(u)).length;
+    if (smParts !== apiList.parts.length) fail(`sitemap lists ${smParts} parts, the API has ${apiList.parts.length} active`);
+    if (smStores !== apiList.sellers.length) fail(`sitemap lists ${smStores} stores, the API has ${apiList.sellers.length} active`);
+  }
   for (const u of locs) if (SUSPECT.test(decodeURIComponent(u).replace(/[-/]/g, " "))) fail(`Test/demo-looking URL in sitemap: ${u}`);
   const sample = [...locs.filter((u) => /\/(parts|sellers)\//.test(u)), ...locs.filter((u) => /\/voiture\//.test(u)).slice(0, 10)].slice(0, MAX_PAGES);
   for (const u of sample) {
     const r = await get(u).catch((e) => ({ status: `error: ${e.message}`, headers: new Headers() }));
     if (r.status !== 200) fail(`Sitemap page ${u} answered ${r.status}`);
-    else if ((r.headers.get("x-robots-tag") || "").includes("noindex")) fail(`Sitemap page ${u} is marked noindex`);
+    else if ((r.headers.get("x-robots-tag") || "").includes("noindex")) fail(`Sitemap page ${u} is marked noindex (header)`);
+    else if (/<meta[^>]+name=["']robots["'][^>]+noindex/i.test(await r.text())) fail(`Sitemap page ${u} is marked noindex (meta)`);
   }
   notes.push(`sitemap pages checked: ${sample.length}`);
 }
@@ -78,7 +101,18 @@ for (const p of ["/api/v1/admin/revenue", "/api/v1/admin/invoices", "/api/v1/adm
 // 6. CORS: our sites yes, others no
 const acao = async (origin) => (await get(`${API}/api/v1/commerce/shipping`, { headers: { Origin: origin } }).catch(() => null))?.headers.get("access-control-allow-origin") ?? null;
 if ((await acao("https://parthub.autos")) !== "https://parthub.autos") fail("CORS: the storefront origin is not allowed (the site cannot call the API)");
-if ((await acao("https://health-check.invalid")) !== null) fail("CORS: a foreign origin is allowed");
+if (await acao("https://health-check.invalid")) fail("CORS: a foreign origin is allowed");
+// The browser's preflight before a signed-in POST (Authorization header).
+for (const site of ["https://parthub.autos", "https://seller.parthub.autos", "https://admin.parthub.autos"]) {
+  const pf = await get(`${API}/api/v1/commerce/orders`, {
+    method: "OPTIONS",
+    headers: { Origin: site, "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "authorization,content-type" },
+  }).catch(() => null);
+  const allow = (h) => (pf?.headers.get(h) || "").toLowerCase();
+  if (!pf || allow("access-control-allow-origin") !== site || !allow("access-control-allow-methods").includes("post") || !allow("access-control-allow-headers").includes("authorization")) {
+    fail(`CORS preflight from ${site} refused (${pf ? pf.status : "no answer"}): signed-in actions would fail there`);
+  }
+}
 
 for (const n of notes) console.log(`· ${n}`);
 if (problems.length) {

@@ -26,6 +26,16 @@ export async function onRequestGet(context) {
     ok = false;
   }
 
+  // API down: answer 503 + Retry-After, not a sitemap with only the static
+  // pages (Google would read that as "every part page is gone"). Google
+  // keeps the last good sitemap and comes back.
+  if (!ok) {
+    return new Response("Sitemap temporarily unavailable\n", {
+      status: 503,
+      headers: { "content-type": "text/plain; charset=utf-8", "retry-after": "300", "cache-control": "no-store" },
+    });
+  }
+
   const entry = (path, lastmod, priority) =>
     `  <url><loc>${xmlEscape(base + path)}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}${priority ? `<priority>${priority}</priority>` : ""}</url>`;
   const urls = [
@@ -38,8 +48,7 @@ export async function onRequestGet(context) {
   return new Response(xml, {
     headers: {
       "content-type": "application/xml; charset=utf-8",
-      // Short cache when the API could not be reached, so the full list comes back soon.
-      "cache-control": `public, max-age=${ok ? 3600 : 300}`,
+      "cache-control": "public, max-age=3600",
     },
   });
 }
