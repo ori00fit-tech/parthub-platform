@@ -342,7 +342,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex flex-1 flex-col gap-1.5 p-3.5">
                   <p className="truncate text-xs font-semibold uppercase tracking-[0.08em] text-navy">{part.brand_name || t("Unbranded")}</p>
-                  <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-ink">{part.title}</p>
+                  <p dir="auto" className="line-clamp-2 text-[15px] font-semibold leading-snug text-ink">{part.title}</p>
                   {part.seller_name ? (
                     <p className="truncate text-xs text-muted">
                       {part.seller_location ? `${part.seller_name} · ${part.seller_location}` : part.seller_name}

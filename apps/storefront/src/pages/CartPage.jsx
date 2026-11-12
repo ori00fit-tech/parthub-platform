@@ -115,7 +115,7 @@ export default function CartPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                      <h2 className="text-lg font-bold text-ink">{item.title}</h2>
+                      <h2 dir="auto" className="text-lg font-bold text-ink">{item.title}</h2>
                       <p className="mt-1 text-sm text-muted">
                         {t("Seller: {seller}", { seller: item.seller_name || t("Unknown seller") })}
                       </p>

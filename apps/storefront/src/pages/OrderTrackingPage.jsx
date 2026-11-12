@@ -281,7 +281,7 @@ export default function OrderTrackingPage() {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="line-clamp-2 text-sm font-semibold text-ink">{item.title}</p>
+                    <p dir="auto" className="line-clamp-2 text-sm font-semibold text-ink">{item.title}</p>
                     <p className="text-xs text-muted">
                       {t("{price} each", { price: formatPrice(item.price) })} × {item.quantity}
                     </p>

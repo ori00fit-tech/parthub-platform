@@ -7,6 +7,7 @@ import DashboardPage from "./pages/DashboardPage";
 import PartsPage from "./pages/PartsPage";
 import PartWizardPage from "./pages/PartWizardPage";
 import PartImportPage from "./pages/PartImportPage";
+import PhotosPage from "./pages/PhotosPage";
 import PartEditPage from "./pages/PartEditPage";
 import OrdersPage from "./pages/OrdersPage";
 import OrderDetailsPage from "./pages/OrderDetailsPage";
@@ -86,6 +87,15 @@ export default function App() {
         element={
           <ProtectedShell>
             <StatementPage />
+          </ProtectedShell>
+        }
+      />
+
+      <Route
+        path="/parts/photos"
+        element={
+          <ProtectedShell>
+            <PhotosPage />
           </ProtectedShell>
         }
       />

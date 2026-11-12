@@ -668,7 +668,7 @@ export default function CheckoutPage() {
           <div className="mt-5 space-y-4">
             {items.map((item) => (
               <div key={item.id || item.part_id} className="rounded-2xl bg-surface-2 p-4">
-                <p className="font-semibold text-ink">{item.title}</p>
+                <p dir="auto" className="font-semibold text-ink">{item.title}</p>
                 <p className="mt-1 text-sm text-muted">
                   Qty: {item.quantity || 1} • {formatPrice(item.price)}
                 </p>

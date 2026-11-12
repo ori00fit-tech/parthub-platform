@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
 import { authRoutes } from "./routes/auth";
 import { vehiclesRoutes } from "./routes/vehicles";
 import { catalogRoutes } from "./routes/catalog";
@@ -30,6 +31,27 @@ app.use(
     maxAge: 86400,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// Security headers on every API response (the three sites set theirs in
+// _headers). Part photos are served from this domain and shown on the
+// sites: Cross-Origin-Resource-Policy must allow other origins.
+app.use(
+  "*",
+  secureHeaders({
+    strictTransportSecurity: "max-age=31536000; includeSubDomains",
+    xFrameOptions: "DENY",
+    xContentTypeOptions: "nosniff",
+    referrerPolicy: "strict-origin-when-cross-origin",
+    crossOriginResourcePolicy: "cross-origin",
+    crossOriginOpenerPolicy: "same-origin",
+    crossOriginEmbedderPolicy: false,
+    originAgentCluster: "?1",
+    xDnsPrefetchControl: "off",
+    xDownloadOptions: "noopen",
+    xPermittedCrossDomainPolicies: "none",
+    xXssProtection: "0",
   })
 );
 

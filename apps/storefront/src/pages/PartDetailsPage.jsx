@@ -438,7 +438,7 @@ export default function PartDetailsPage() {
               ) : null}
             </div>
 
-            <h1 className="mt-4 text-3xl font-bold text-ink">{part.title}</h1>
+            <h1 dir="auto" className="mt-4 text-3xl font-bold text-ink">{part.title}</h1>
             <a href="#reviews" className="mt-2 inline-block">
               <RatingSummary rating={part.rating} />
             </a>
@@ -841,7 +841,7 @@ export default function PartDetailsPage() {
                     </div>
 
                     <div className="p-4">
-                      <p className="line-clamp-2 font-semibold text-ink">
+                      <p dir="auto" className="line-clamp-2 font-semibold text-ink">
                         {item.title}
                       </p>
                       <p className="mt-1 text-sm text-muted">
@@ -862,7 +862,7 @@ export default function PartDetailsPage() {
       <div className="fixed bottom-0 inset-x-0 z-40 border-t border-line bg-surface/95 px-4 py-3 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden">
         <div className="mx-auto flex max-w-7xl items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-ink">{part.title}</p>
+            <p dir="auto" className="truncate text-sm font-semibold text-ink">{part.title}</p>
             <div className="flex items-center gap-2">
               <p className="text-base font-bold text-ink">{formatPrice(part.price)}</p>
               {selectedVehicleMatch ? (

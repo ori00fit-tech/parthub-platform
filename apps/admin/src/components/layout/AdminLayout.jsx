@@ -87,7 +87,7 @@ function SidebarContent({ pathname, onNavigate, user, logout, pending }) {
             {user?.name || t("Admin")}
           </p>
           <p className="truncate text-xs text-gray-500">
-            {user?.email || "admin@parthub.local"}
+            {user?.email || ""}
           </p>
 
           <LanguageSwitcher className="mt-4 w-fit" />

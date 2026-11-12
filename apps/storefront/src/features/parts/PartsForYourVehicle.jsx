@@ -115,7 +115,7 @@ export default function PartsForYourVehicle() {
               </div>
               <div className="flex flex-1 flex-col gap-2 p-3.5">
                 <p className="truncate text-xs font-semibold uppercase tracking-[0.08em] text-navy">{part.brand_name || t("Unbranded")}</p>
-                <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-ink">{part.title}</p>
+                <p dir="auto" className="line-clamp-2 text-[15px] font-semibold leading-snug text-ink">{part.title}</p>
                 <span className="inline-flex h-6 w-fit items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 text-xs font-medium text-emerald-700 before:h-1.5 before:w-1.5 before:rounded-full before:bg-current">
                   {model ? t("Fits your {vehicle}", { vehicle: model }) : t("Fits your vehicle")}
                 </span>
