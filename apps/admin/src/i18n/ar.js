@@ -489,6 +489,8 @@ export default {
   "Start charging {pct}% on new sales? The seller agreement promises sellers at least 30 days notice: update it and tell them first.": "هل تبدأ باقتطاع {pct}% من المبيعات الجديدة؟ اتفاقية البائع تعِد البائعين بإشعار قبل 30 يوماً على الأقل: حدّثها وأبلغهم أولاً.",
   "Saved.": "تم الحفظ.",
   "Commission rate": "نسبة العمولة",
+  "Issuer: {company}": "المُصدِر: {company}",
+  "Issuer details appear here once the company is registered (packages/shared/src/legal/company.js).": "تظهر بيانات المُصدِر هنا بعد تسجيل الشركة (packages/shared/src/legal/company.js).",
   "Investor metrics": "مؤشرات المستثمر",
   "Active stores": "المتاجر النشطة",
   "Average delivered order": "متوسط الطلب المسلَّم",

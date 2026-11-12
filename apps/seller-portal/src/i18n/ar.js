@@ -717,6 +717,7 @@ export default {
   // Returns and claims
   "The part is different from its description": "القطعة مختلفة عن الوصف",
   "The part was damaged on arrival": "القطعة وصلت تالفة",
+  "Issued by {company}": "صادرة عن {company}",
   "The buyer confirmed receipt": "أكّد المشتري الاستلام",
   "PartHub invoices": "فواتير PartHub",
   "Outstanding: {amount}": "المتبقي: {amount}",

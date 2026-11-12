@@ -489,6 +489,8 @@ export default {
   "Start charging {pct}% on new sales? The seller agreement promises sellers at least 30 days notice: update it and tell them first.": "Commencer à prélever {pct} % sur les nouvelles ventes ? Le contrat vendeur promet un préavis d'au moins 30 jours : mettez-le à jour et prévenez-les d'abord.",
   "Saved.": "Enregistré.",
   "Commission rate": "Taux de commission",
+  "Issuer: {company}": "Émetteur : {company}",
+  "Issuer details appear here once the company is registered (packages/shared/src/legal/company.js).": "Les informations de l’émetteur apparaissent ici une fois la société immatriculée (packages/shared/src/legal/company.js).",
   "Investor metrics": "Indicateurs investisseurs",
   "Active stores": "Boutiques actives",
   "Average delivered order": "Panier moyen livré",

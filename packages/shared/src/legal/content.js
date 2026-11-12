@@ -12,7 +12,12 @@
 export const LEGAL_VERSION = "2026-11-06";
 export const LEGAL_CONTACT_EMAIL = "support@parthub.autos";
 
-export const LEGAL_DOC_IDS = ["terms", "seller", "returns", "privacy"];
+import { COMPANY, HOSTING, companyRegistered } from "./company.js";
+export { COMPANY, COMPANY_REQUIRED, HOSTING, companyLine, companyRegistered } from "./company.js";
+
+// "notice" (Mentions légales) is listed only once the operating company is
+// registered (company.js): before, it would say nothing true.
+export const LEGAL_DOC_IDS = ["terms", "seller", "returns", "privacy", ...(companyRegistered() ? ["notice"] : [])];
 
 const terms = {
   en: {
@@ -755,7 +760,59 @@ const privacy = {
   },
 };
 
-export const LEGAL_DOCS = { terms, seller, returns, privacy };
+// Mentions légales, built from company.js (only filled lines are shown).
+function noticeDoc(lang) {
+  const c = COMPANY;
+  const L = {
+    en: {
+      title: "Legal notice", summary: "Who operates PartHub, and who hosts it.",
+      operator: "Operator of the site", host: "Hosting", activity: "Activity", data: "Personal data",
+      name: "Company", form: "Legal form", capital: "Share capital", office: "Registered office", rc: "Trade register (RC)", ice: "ICE",
+      ifn: "Tax identifier (IF)", tp: "Taxe professionnelle", manager: "Manager and publication director", contact: "Contact",
+      activityText: "PartHub is a digital intermediation platform: it connects buyers with independent auto parts sellers. Each seller sells its own parts, is identified on each listing and order, and is responsible for the part, its description, its invoice and its warranty.",
+      dataText: "Personal data is processed as described in the privacy policy (law 09-08).", cndp: "CNDP reference",
+    },
+    fr: {
+      title: "Mentions légales", summary: "Qui exploite PartHub, et qui l'héberge.",
+      operator: "Éditeur du site", host: "Hébergement", activity: "Activité", data: "Données personnelles",
+      name: "Raison sociale", form: "Forme juridique", capital: "Capital social", office: "Siège social", rc: "Registre de commerce (RC)", ice: "ICE",
+      ifn: "Identifiant fiscal (IF)", tp: "Taxe professionnelle", manager: "Gérant, directeur de la publication", contact: "Contact",
+      activityText: "PartHub est une plateforme d'intermédiation numérique : elle met en relation des acheteurs et des vendeurs indépendants de pièces automobiles. Chaque vendeur vend ses propres pièces, est identifié sur chaque annonce et chaque commande, et répond de la pièce, de sa description, de sa facture et de sa garantie.",
+      dataText: "Les données personnelles sont traitées comme décrit dans la politique de confidentialité (loi 09-08).", cndp: "Référence CNDP",
+    },
+    ar: {
+      title: "الإشعار القانوني", summary: "من يشغّل PartHub ومن يستضيفها.",
+      operator: "ناشر الموقع", host: "الاستضافة", activity: "النشاط", data: "المعطيات الشخصية",
+      name: "التسمية", form: "الشكل القانوني", capital: "رأس المال", office: "المقر الاجتماعي", rc: "السجل التجاري", ice: "التعريف الموحد للمقاولة (ICE)",
+      ifn: "التعريف الضريبي (IF)", tp: "الرسم المهني", manager: "المسيّر ومدير النشر", contact: "التواصل",
+      activityText: "PartHub منصة وساطة رقمية: تربط المشترين بباعة مستقلين لقطع غيار السيارات. كل بائع يبيع قطعه، ويظهر اسمه في كل إعلان وكل طلب، وهو المسؤول عن القطعة ووصفها وفاتورتها وضمانها.",
+      dataText: "تُعالَج المعطيات الشخصية كما هو مبيّن في سياسة الخصوصية (القانون 09-08).", cndp: "مرجع CNDP",
+    },
+  }[lang] || null;
+  if (!L) return null;
+  const line = (label, value) => (value === null || value === undefined || String(value).trim() === "" ? null : `${label}: ${value}`);
+  const capital = c.capitalMad ? `${Number(c.capitalMad).toLocaleString("fr-MA")} MAD` : "";
+  return {
+    title: L.title,
+    summary: L.summary,
+    sections: [
+      {
+        title: L.operator,
+        items: [
+          line(L.name, c.name), line(L.form, c.legalForm), line(L.capital, capital), line(L.office, [c.address, c.city].filter(Boolean).join(", ")),
+          line(L.rc, c.rc), line(L.ice, c.ice), line(L.ifn, c.ifNumber), line(L.tp, c.taxePro), line(L.manager, c.manager),
+          line(L.contact, [c.email, c.phone].filter(Boolean).join(" · ")),
+        ].filter(Boolean),
+      },
+      { title: L.host, items: [HOSTING.name, HOSTING.address, HOSTING.website] },
+      { title: L.activity, paragraphs: [L.activityText] },
+      { title: L.data, paragraphs: [L.dataText], ...(c.cndp ? { items: [`${L.cndp}: ${c.cndp}`] } : {}) },
+    ],
+  };
+}
+const notice = { en: noticeDoc("en"), fr: noticeDoc("fr"), ar: noticeDoc("ar") };
+
+export const LEGAL_DOCS = { terms, seller, returns, privacy, ...(companyRegistered() ? { notice } : {}) };
 
 // The document in the given language (falls back to English).
 export function legalDoc(id, lang) {

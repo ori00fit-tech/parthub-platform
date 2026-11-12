@@ -1,3 +1,4 @@
+import { companyLine } from "@parthub/shared/legal";
 import { useEffect, useState } from "react";
 import { formatMoney } from "@parthub/shared";
 import { api } from "../lib/api";
@@ -260,6 +261,9 @@ export default function InvoicesPage() {
 
       <div className="rounded-3xl border border-gray-200 bg-white p-6 text-gray-900 shadow-sm">
         <h2 className="text-xl font-bold">{t("Invoices issued")}</h2>
+        <p className="mt-1 text-xs text-gray-500">
+          {companyLine() ? t("Issuer: {company}", { company: companyLine() }) : t("Issuer details appear here once the company is registered (packages/shared/src/legal/company.js).")}
+        </p>
         {!list ? (
           <div className="mt-4 h-20 animate-pulse rounded-2xl bg-gray-50" />
         ) : list.invoices.length ? (

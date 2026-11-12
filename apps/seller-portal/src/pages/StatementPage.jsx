@@ -1,3 +1,4 @@
+import { companyLine } from "@parthub/shared/legal";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatMoney } from "@parthub/shared";
@@ -41,6 +42,7 @@ function Invoices() {
   return (
     <div className="space-y-3">
       <h2 className="text-xl font-bold text-gray-900">{t("PartHub invoices")}</h2>
+      {companyLine() ? <p className="text-xs text-gray-500">{t("Issued by {company}", { company: companyLine() })}</p> : null}
       <p className="text-sm text-gray-600">
         {t("Outstanding: {amount}", { amount: formatMoney(data.totals?.outstanding || 0) })}
       </p>

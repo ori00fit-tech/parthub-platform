@@ -717,6 +717,7 @@ export default {
   // Returns and claims
   "The part is different from its description": "La pièce est différente de sa description",
   "The part was damaged on arrival": "La pièce est arrivée endommagée",
+  "Issued by {company}": "Émise par {company}",
   "The buyer confirmed receipt": "L'acheteur a confirmé la réception",
   "PartHub invoices": "Factures PartHub",
   "Outstanding: {amount}": "Reste dû : {amount}",
