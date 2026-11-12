@@ -22,7 +22,7 @@ export const TEMPLATES = {
 const MAX_SELLERS_PER_REQUEST = 25;
 const MAX_SELLER_ALERTS_PER_DAY = 10;
 
-type Kind = "new_request" | "new_offer" | "offer_accepted";
+type Kind = "new_request" | "new_offer" | "offer_accepted" | "new_order";
 
 function storefrontUrl(env: Env) {
   return (env.STOREFRONT_URL || "https://parthub.autos").replace(/\/$/, "");
@@ -45,11 +45,12 @@ async function claim(env: Env, kind: Kind, refId: number, recipient: string): Pr
   return Boolean(res.meta?.changes);
 }
 
-async function markSent(env: Env, kind: Kind, refId: number, recipient: string) {
+// Keeps WhatsApp's message id: its delivery status arrives by webhook.
+async function markSent(env: Env, kind: Kind, refId: number, recipient: string, waId: string) {
   await env.DB.prepare(
-    "update whatsapp_notifications set sent = 1 where kind = ?1 and ref_id = ?2 and recipient = ?3"
+    "update whatsapp_notifications set sent = 1, wa_message_id = ?4, status = 'sent', status_at = datetime('now') where kind = ?1 and ref_id = ?2 and recipient = ?3"
   )
-    .bind(kind, refId, recipient)
+    .bind(kind, refId, recipient, waId)
     .run();
 }
 
@@ -64,8 +65,8 @@ async function deliver(
 ): Promise<boolean> {
   if (!(await claim(env, kind, refId, recipient))) return false;
   const sent = await sendWhatsAppTemplate(env, phone, template, params);
-  if (sent) await markSent(env, kind, refId, recipient);
-  return sent;
+  if (sent) await markSent(env, kind, refId, recipient, sent);
+  return Boolean(sent);
 }
 
 export async function notifySellersOfNewRequest(env: Env, requestId: number): Promise<number> {
@@ -169,3 +170,38 @@ export async function notifySellerOfAcceptance(env: Env, offerId: number): Promi
     [row.part_name, row.buyer_name, `${sellerPortalUrl(env)}/requests/${row.request_id}`]
   );
 }
+
+// A new order for a seller (one message per seller and order): reference,
+// what was ordered, what they collect (their lines + their delivery fee),
+// the buyer's city, and the link to the order in the seller portal.
+// Template parthub_new_order (infra/docs/whatsapp.md).
+export async function notifySellersOfNewOrder(env: Env, orderId: number): Promise<number> {
+  if (!isWhatsAppConfigured(env)) return 0;
+  const order = await env.DB.prepare(
+    `select o.id, o.reference, a.city from orders o left join order_addresses a on a.order_id = o.id where o.id = ?1`
+  ).bind(orderId).first<{ id: number; reference: string; city: string | null }>();
+  if (!order) return 0;
+  const sellers = await env.DB.prepare(
+    `select s.id, coalesce(nullif(trim(s.whatsapp), ''), s.phone) as contact,
+            group_concat(oi.quantity || ' × ' || oi.title, ', ') as items,
+            sum(oi.subtotal) + coalesce((select sh.fee from order_shipments sh where sh.order_id = oi.order_id and sh.seller_id = s.id), 0) as amount
+     from order_items oi join sellers s on s.id = oi.seller_id
+     where oi.order_id = ?1 and oi.status != 'cancelled'
+     group by s.id`
+  ).bind(orderId).all<{ id: number; contact: string | null; items: string; amount: number }>();
+  let sent = 0;
+  for (const s of sellers.results || []) {
+    if (!s.contact) continue;
+    const items = s.items.length > 200 ? `${s.items.slice(0, 197)}...` : s.items;
+    const ok = await deliver(env, "new_order", order.id, `seller:${s.id}`, s.contact, "parthub_new_order", [
+      order.reference,
+      items,
+      `${(Number(s.amount) / 100).toFixed(2)} MAD`,
+      order.city || "-",
+      `${sellerPortalUrl(env)}/orders/${order.id}`,
+    ]);
+    if (ok) sent++;
+  }
+  return sent;
+}
+

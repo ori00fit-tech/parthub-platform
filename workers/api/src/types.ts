@@ -7,6 +7,7 @@ export type Env = {
   WHATSAPP_ACCESS_TOKEN?: string;
   WHATSAPP_PHONE_NUMBER_ID?: string;
   WHATSAPP_VERIFY_TOKEN?: string;
+  WHATSAPP_APP_SECRET?: string; // Meta app secret: signs the webhook calls
   WHATSAPP_TEMPLATE_LANG?: string;
   STOREFRONT_URL?: string;
   SELLER_PORTAL_URL?: string;

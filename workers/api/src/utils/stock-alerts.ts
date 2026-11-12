@@ -71,9 +71,9 @@ export async function notifyBackInStock(env: Env, partId: number): Promise<numbe
       ]);
       if (sent) {
         await env.DB.prepare(
-          "update whatsapp_notifications set sent = 1 where kind = 'back_in_stock' and ref_id = ?1 and recipient = ?2"
+          "update whatsapp_notifications set sent = 1, wa_message_id = ?3, status = 'sent', status_at = datetime('now') where kind = 'back_in_stock' and ref_id = ?1 and recipient = ?2"
         )
-          .bind(alert.id, recipient)
+          .bind(alert.id, recipient, sent)
           .run();
       }
     }

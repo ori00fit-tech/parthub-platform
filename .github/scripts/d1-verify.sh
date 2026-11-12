@@ -40,6 +40,8 @@ sql="SELECT
   $(tables "'carriers','shipment_events'" carrier_tables_of_2),
   $(has order_shipments cod_collected shipments_status_columns),
   (SELECT COUNT(*) FROM carriers) AS carriers_count,
+  $(tables "'whatsapp_contacts','whatsapp_messages'" whatsapp_tables_of_2),
+  $(has whatsapp_notifications wa_message_id whatsapp_status_columns),
   (SELECT rate_bps FROM commission_rates WHERE cancelled_at IS NULL AND effective_from <= datetime('now') ORDER BY effective_from DESC, id DESC LIMIT 1) AS commission_rate_now_bps"
 
 out=$(npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --json --command "$sql" 2>&1)
@@ -59,7 +61,7 @@ const raw = require("fs").readFileSync(0, "utf8");
 const json = JSON.parse(raw.slice(raw.indexOf("[")));
 const row = json[0].results[0];
 console.log(JSON.stringify(row, null, 2));
-const exact = { tables_of_6: 6, key_indexes_of_4: 4, part_number_tables_of_3: 3, revenue_tables_of_7: 7, engines_without_source: 0, invoice_unique_index: 1, carrier_tables_of_2: 2 };
+const exact = { tables_of_6: 6, key_indexes_of_4: 4, part_number_tables_of_3: 3, revenue_tables_of_7: 7, engines_without_source: 0, invoice_unique_index: 1, carrier_tables_of_2: 2, whatsapp_tables_of_2: 2 };
 for (const k of Object.keys(row)) if (k.endsWith("_column") || k.endsWith("_columns")) exact[k] = 1;
 const bad = [];
 for (const [k, v] of Object.entries(exact)) if (Number(row[k]) !== v) bad.push(`${k} = ${row[k]} (expected ${v})`);

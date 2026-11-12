@@ -16,6 +16,7 @@ import {
   RATE_NOTICE_DAYS, accrueCommissions, cancelRate, commissionRateBps, currentPeriod, lastPeriods, rateHistory, readEffectiveFrom,
   readPeriod, readRatePercent, scheduleRate, upcomingRates, waiveCommission,
 } from "../utils/commissions";
+import { isWhatsAppConfigured, normalizeWhatsAppNumber, sendWhatsAppText } from "../utils/whatsapp";
 import { findShipment, listCarriers, loadCarrier, parseWebhook, readCarrierInput, secretName } from "../utils/carriers";
 import { PAYMENT_METHODS, cancelInvoice, invoiceDraft, invoicePayments, issueInvoice, ledgerTotals, listInvoices, readDay, readMad, recordPayment } from "../utils/invoices";
 
@@ -1006,5 +1007,130 @@ adminRoutes.get("/carriers/:code/events", async (c) => {
     [c.req.param("code").toLowerCase()]
   );
   return ok(c, rows);
+});
+
+// ── WhatsApp (utils/whatsapp.ts, infra/docs/whatsapp.md) ───────────────
+const WINDOW_HOURS = 24;
+
+// GET /api/v1/admin/whatsapp/status — what is set up (never the secrets),
+// deliveries of the last 30 days, recent failures with Meta's reason.
+adminRoutes.get("/whatsapp/status", async (c) => {
+  const env = c.env;
+  const origin = new URL(c.req.url).origin;
+  const byStatus = await dbAll<{ status: string | null; n: number }>(
+    c.env.DB,
+    `SELECT CASE WHEN sent = 0 THEN 'not_sent' ELSE coalesce(status, 'sent') END AS status, COUNT(*) AS n
+     FROM whatsapp_notifications WHERE created_at >= datetime('now', '-30 days') GROUP BY 1`
+  );
+  const byKind = await dbAll<{ kind: string; n: number; delivered: number }>(
+    c.env.DB,
+    `SELECT kind, COUNT(*) AS n, SUM(CASE WHEN status IN ('delivered','read') THEN 1 ELSE 0 END) AS delivered
+     FROM whatsapp_notifications WHERE created_at >= datetime('now', '-30 days') GROUP BY kind ORDER BY n DESC`
+  );
+  const failures = await dbAll(
+    c.env.DB,
+    `SELECT kind, recipient, error, status_at FROM whatsapp_notifications WHERE status = 'failed' ORDER BY status_at DESC LIMIT 20`
+  );
+  const unread = await dbFirst<{ n: number }>(
+    c.env.DB,
+    "SELECT COUNT(*) AS n FROM whatsapp_messages WHERE direction = 'in' AND handled_at IS NULL"
+  );
+  return ok(c, {
+    configured: {
+      access_token: Boolean(env.WHATSAPP_ACCESS_TOKEN),
+      phone_number_id: Boolean(env.WHATSAPP_PHONE_NUMBER_ID),
+      verify_token: String(env.WHATSAPP_VERIFY_TOKEN || "").length >= 16,
+      app_secret: Boolean(env.WHATSAPP_APP_SECRET),
+      sending: isWhatsAppConfigured(env),
+    },
+    template_lang: env.WHATSAPP_TEMPLATE_LANG || "fr",
+    webhook_url: `${origin}/api/v1/whatsapp/webhook`,
+    last_30_days: byStatus,
+    by_kind: byKind,
+    failures,
+    unread: Number(unread?.n || 0),
+  });
+});
+
+// GET /api/v1/admin/whatsapp/conversations — one row per number: last
+// message, unhandled count, 24-hour window, opt-out, and who it is.
+adminRoutes.get("/whatsapp/conversations", async (c) => {
+  const rows = await dbAll<Record<string, any>>(
+    c.env.DB,
+    `SELECT m.phone, MAX(m.created_at) AS last_at,
+            SUM(CASE WHEN m.direction = 'in' AND m.handled_at IS NULL THEN 1 ELSE 0 END) AS unread,
+            (SELECT body FROM whatsapp_messages x WHERE x.phone = m.phone ORDER BY x.created_at DESC, x.id DESC LIMIT 1) AS last_body,
+            ct.name, ct.last_inbound_at, ct.opted_out_at,
+            CASE WHEN ct.last_inbound_at >= datetime('now', '-${WINDOW_HOURS} hours') THEN 1 ELSE 0 END AS window_open
+     FROM whatsapp_messages m LEFT JOIN whatsapp_contacts ct ON ct.phone = m.phone
+     GROUP BY m.phone ORDER BY unread DESC, last_at DESC LIMIT 100`
+  );
+  // Who it is: a seller (whatsapp / phone) or a user (phone), same digits.
+  const sellers = await dbAll<{ id: number; name: string; contact: string | null }>(
+    c.env.DB, "SELECT id, name, coalesce(nullif(trim(whatsapp), ''), phone) AS contact FROM sellers WHERE coalesce(whatsapp, phone) IS NOT NULL"
+  );
+  const users = await dbAll<{ id: number; name: string; phone: string | null; role: string }>(
+    c.env.DB, "SELECT id, name, phone, role FROM users WHERE phone IS NOT NULL AND trim(phone) != ''"
+  );
+  return ok(c, rows.map((r) => {
+    const seller = sellers.find((s) => normalizeWhatsAppNumber(s.contact) === r.phone);
+    const user = users.find((u) => normalizeWhatsAppNumber(u.phone) === r.phone);
+    return {
+      ...r,
+      unread: Number(r.unread || 0),
+      window_open: Boolean(r.window_open),
+      who: seller ? { kind: "seller", id: seller.id, name: seller.name } : user ? { kind: user.role, id: user.id, name: user.name } : null,
+    };
+  }));
+});
+
+// GET /api/v1/admin/whatsapp/conversations/:phone — the messages.
+adminRoutes.get("/whatsapp/conversations/:phone", async (c) => {
+  const phone = c.req.param("phone").replace(/\D/g, "");
+  const messages = await dbAll(
+    c.env.DB,
+    "SELECT id, direction, type, body, status, error, created_at, handled_at, sent_by FROM whatsapp_messages WHERE phone = ? ORDER BY created_at, id LIMIT 500",
+    [phone]
+  );
+  const contact = await dbFirst(c.env.DB, "SELECT * FROM whatsapp_contacts WHERE phone = ?", [phone]);
+  return ok(c, { phone, contact, messages });
+});
+
+// POST /api/v1/admin/whatsapp/conversations/:phone/reply { text }
+// Free text, only within 24 hours of their last message (WhatsApp rule);
+// after that, only an approved template can be sent.
+adminRoutes.post("/whatsapp/conversations/:phone/reply", async (c) => {
+  const phone = c.req.param("phone").replace(/\D/g, "");
+  const body = await c.req.json<{ text?: unknown }>().catch(() => ({}) as { text?: unknown });
+  const text = typeof body.text === "string" ? body.text.trim() : "";
+  if (!text) return fail(c, "Write a message");
+  if (text.length > 4096) return fail(c, "The message is too long (4096 characters at most)");
+  const contact = await dbFirst<{ last_inbound_at: string | null; opted_out_at: string | null }>(
+    c.env.DB,
+    `SELECT last_inbound_at, opted_out_at FROM whatsapp_contacts WHERE phone = ?`,
+    [phone]
+  );
+  const open = await dbFirst<{ ok: number }>(
+    c.env.DB, `SELECT CASE WHEN ? >= datetime('now', '-${WINDOW_HOURS} hours') THEN 1 ELSE 0 END AS ok`, [contact?.last_inbound_at ?? ""]
+  );
+  if (!contact || !Number(open?.ok)) {
+    return fail(c, "More than 24 hours since their last message: WhatsApp only allows an approved template now", 409);
+  }
+  const res = await sendWhatsAppText(c.env, phone, text);
+  if (!res.ok) return fail(c, `WhatsApp refused the message: ${res.error || "unknown error"}`, 502);
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      "INSERT INTO whatsapp_messages (wa_message_id, direction, phone, type, body, status, sent_by) VALUES (?1, 'out', ?2, 'text', ?3, 'sent', ?4)"
+    ).bind(res.id ?? null, phone, text, Number(c.get("user_id"))),
+    c.env.DB.prepare("UPDATE whatsapp_messages SET handled_at = datetime('now') WHERE phone = ?1 AND direction = 'in' AND handled_at IS NULL").bind(phone),
+  ]);
+  return ok(c, { sent: true, id: res.id ?? null });
+});
+
+// POST /api/v1/admin/whatsapp/conversations/:phone/handled — no reply needed.
+adminRoutes.post("/whatsapp/conversations/:phone/handled", async (c) => {
+  const phone = c.req.param("phone").replace(/\D/g, "");
+  await c.env.DB.prepare("UPDATE whatsapp_messages SET handled_at = datetime('now') WHERE phone = ?1 AND direction = 'in' AND handled_at IS NULL").bind(phone).run();
+  return ok(c, { phone });
 });
 
