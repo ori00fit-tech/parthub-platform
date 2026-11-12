@@ -304,11 +304,15 @@ CREATE INDEX IF NOT EXISTS idx_request_offers_seller ON request_offers(seller_id
 -- See migrations/0004_whatsapp_notifications.sql
 CREATE TABLE IF NOT EXISTS whatsapp_notifications (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  kind        TEXT NOT NULL,     -- new_request | new_offer | offer_accepted
-  ref_id      INTEGER NOT NULL,  -- part_requests.id or request_offers.id
+  kind        TEXT NOT NULL,     -- new_request | new_offer | offer_accepted | back_in_stock | new_order
+  ref_id      INTEGER NOT NULL,  -- part_requests.id, request_offers.id, stock_alerts.id or orders.id
   recipient   TEXT NOT NULL,     -- 'seller:<id>' or 'buyer:<id>'
   sent        INTEGER NOT NULL DEFAULT 0,
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  wa_message_id TEXT,            -- WhatsApp's id (migrations/0027)
+  status      TEXT,              -- sent | delivered | read | failed (webhook)
+  status_at   TEXT,
+  error       TEXT,
   UNIQUE (kind, ref_id, recipient)
 );
 
@@ -674,3 +678,29 @@ CREATE TABLE IF NOT EXISTS shipment_events (
 );
 CREATE INDEX IF NOT EXISTS idx_shipment_events_shipment ON shipment_events(shipment_id, occurred_at);
 CREATE INDEX IF NOT EXISTS idx_order_shipments_tracking ON order_shipments(carrier, tracking_number);
+
+-- ── WhatsApp webhook (migrations/0027) ────────────────────────
+CREATE INDEX IF NOT EXISTS idx_whatsapp_notifications_wamid ON whatsapp_notifications(wa_message_id);
+
+CREATE TABLE IF NOT EXISTS whatsapp_contacts (
+  phone           TEXT PRIMARY KEY,                 -- international digits, e.g. 212612345678
+  name            TEXT,                             -- WhatsApp profile name
+  last_inbound_at TEXT,                             -- their last message (24-hour window)
+  opted_out_at    TEXT,                             -- replied STOP: no more notifications
+  updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS whatsapp_messages (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  wa_message_id TEXT UNIQUE,
+  direction     TEXT NOT NULL CHECK (direction IN ('in','out')),
+  phone         TEXT NOT NULL,
+  type          TEXT NOT NULL DEFAULT 'text',       -- text | image | document | audio | location | button | ...
+  body          TEXT,
+  status        TEXT,                               -- out: sent | delivered | read | failed
+  error         TEXT,
+  sent_by       INTEGER REFERENCES users(id),       -- admin who replied
+  handled_at    TEXT,                               -- in: marked handled in the inbox
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_messages_phone ON whatsapp_messages(phone, created_at);

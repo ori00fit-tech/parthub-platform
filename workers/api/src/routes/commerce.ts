@@ -7,6 +7,8 @@ import { logOrderEvent, refreshOrderStatus, setLineStatus } from "../utils/fulfi
 import { type Fulfillment, FULFILLMENTS, allowedMethods, generatePickupCode, isPickup, loadSellerFulfillment } from "../utils/pickup";
 import { deliveryFee } from "../utils/shipping";
 import { shipmentTimeline, trackingUrl } from "../utils/carriers";
+import { runInBackground } from "../utils/whatsapp";
+import { notifySellersOfNewOrder } from "../utils/request-notifications";
 import { ISSUE_REASONS, type IssueRow, canEscalate, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, reportWindow, updateIssue } from "../utils/issues";
 
 const MAX_REVIEW_LENGTH = 1000;
@@ -236,7 +238,10 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
     throw err;
   }
 
-  const order = await dbFirst(c.env.DB, "SELECT * FROM orders WHERE reference = ?", [ref]);
+  const order = await dbFirst<{ id: number }>(c.env.DB, "SELECT * FROM orders WHERE reference = ?", [ref]);
+  // Each seller hears about the order on WhatsApp (after the response,
+  // best-effort: utils/request-notifications.ts).
+  if (order) runInBackground(c, notifySellersOfNewOrder(c.env, order.id));
   return created(c, order);
 });
 

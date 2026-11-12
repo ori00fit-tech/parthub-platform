@@ -19,6 +19,7 @@ const navItems = [
   { to: "/part-numbers", label: "Part numbers", icon: "oem" },
   { to: "/orders", label: "Orders", icon: "orders" },
   { to: "/carriers", label: "Carriers", icon: "delivery" },
+  { to: "/whatsapp", label: "WhatsApp", icon: "whatsapp" },
   { to: "/issues", label: "Returns", icon: "warning" },
   { to: "/reviews", label: "Reviews", icon: "messages" },
   { to: "/analytics", label: "Analytics", icon: "insights" },

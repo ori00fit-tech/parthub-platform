@@ -1,4 +1,7 @@
-# WhatsApp notifications — "Request a part"
+# WhatsApp notifications — templates
+
+Set-up, webhook, delivery tracking and inbox: see `whatsapp.md`. New
+orders also notify the seller (`parthub_new_order`, text in `whatsapp.md`).
 
 The API sends WhatsApp template messages at four moments:
 
