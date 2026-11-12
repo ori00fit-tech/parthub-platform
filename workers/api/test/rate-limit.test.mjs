@@ -73,11 +73,11 @@ check("counter_cleared_on_success", sql.prepare("select count(*) n from auth_att
 
 // Sign-up: 10 per network per hour.
 let last;
-for (let i = 0; i < 10; i++) last = await req("/api/v1/auth/register", { name: "N", email: `n${i}@x`, password: "password123", accept_terms: true }, "4.4.4.4");
+for (let i = 0; i < 10; i++) last = await req("/api/v1/auth/register", { name: "N", email: `n${i}@x`, password: "Riad-Fes-2026", accept_terms: true }, "4.4.4.4");
 check("register_10_ok", last[0] === 201, last);
-last = await req("/api/v1/auth/register", { name: "N", email: "n10@x", password: "password123", accept_terms: true }, "4.4.4.4");
+last = await req("/api/v1/auth/register", { name: "N", email: "n10@x", password: "Riad-Fes-2026", accept_terms: true }, "4.4.4.4");
 check("register_11_blocked", last[0] === 429, last);
-last = await req("/api/v1/auth/register", { name: "N", email: "n11@x", password: "password123", accept_terms: true }, "3.3.3.3");
+last = await req("/api/v1/auth/register", { name: "N", email: "n11@x", password: "Riad-Fes-2026", accept_terms: true }, "3.3.3.3");
 check("register_other_ip_ok", last[0] === 201, last);
 
 console.log(results);

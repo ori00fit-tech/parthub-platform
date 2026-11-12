@@ -6,6 +6,7 @@ import { STATUS_COPY, useReadiness } from "../lib/readiness";
 import { mediaUrl } from "../lib/requests";
 import StoreChecklist, { StoreStatusBanner } from "../components/store/StoreChecklist";
 import { useT } from "../i18n";
+import ChangePasswordForm from "@parthub/shared/account";
 import { LinkedText } from "../components/legal/LegalDocument";
 import FulfillmentSettings from "../components/store/FulfillmentSettings";
 
@@ -423,6 +424,16 @@ export default function StoreSettingsPage() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+      <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-gray-900">{t("Password")}</h2>
+        <div className="mt-3">
+          <ChangePasswordForm
+            t={t}
+            submit={(current, next) => api.post("/api/v1/auth/password", { current_password: current, new_password: next }).then((r) => r?.data)}
+            onToken={setSessionToken}
+          />
         </div>
       </div>
     </section>

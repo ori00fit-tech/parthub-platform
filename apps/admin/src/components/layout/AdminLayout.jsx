@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useT } from "../../i18n";
 import LanguageSwitcher from "../common/LanguageSwitcher";
@@ -89,6 +89,9 @@ function SidebarContent({ pathname, onNavigate, user, logout, pending }) {
           <p className="truncate text-xs text-gray-500">
             {user?.email || ""}
           </p>
+          <Link to="/account" onClick={onNavigate} className="mt-2 inline-block text-xs font-semibold text-blue-400 hover:underline">
+            {t("Change password")}
+          </Link>
 
           <LanguageSwitcher className="mt-4 w-fit" />
 
@@ -112,6 +115,14 @@ export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pending = usePendingCounts(pathname);
   const pendingTotal = (pending.sellers || 0) + (pending.parts || 0) + (pending.reviews || 0);
+  // Set at sign-in when the password would be refused today; re-read on each page.
+  const weakPassword = useMemo(() => {
+    try {
+      return localStorage.getItem("ph_admin_password_weak") === "1";
+    } catch {
+      return false;
+    }
+  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentLabel = useMemo(() => {
     const current = navItems.find((item) => isActivePath(item.to, pathname));
@@ -193,6 +204,11 @@ export default function AdminLayout() {
 
         {/* Main content */}
         <main className="min-w-0 flex-1">
+          {weakPassword && pathname !== "/account" ? (
+            <Link to="/account" className="mx-4 mt-4 block rounded-2xl border border-red-500/60 bg-red-950/60 px-4 py-3 text-sm text-red-100 hover:bg-red-950 lg:mx-6">
+              <span className="font-semibold">{t("Your password is weak or well known.")}</span> {t("Anyone who guesses it controls PartHub: change it now.")}
+            </Link>
+          ) : null}
           <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
             <div className="mx-auto w-full max-w-7xl">
               <Outlet />

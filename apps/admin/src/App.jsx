@@ -21,6 +21,7 @@ import InvoicesPage from "./pages/InvoicesPage";
 import CarriersPage from "./pages/CarriersPage";
 import WhatsAppPage from "./pages/WhatsAppPage";
 import InvestorPage from "./pages/InvestorPage";
+import AccountPage from "./pages/AccountPage";
 
 function PrivateRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -54,6 +55,7 @@ function AppRoutes() {
         <Route path="/carriers" element={<CarriersPage />} />
         <Route path="/whatsapp" element={<WhatsAppPage />} />
         <Route path="/investor" element={<InvestorPage />} />
+        <Route path="/account" element={<AccountPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

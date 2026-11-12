@@ -47,13 +47,13 @@ const oldSeller = await tok({ user_id: 2, role: "seller", seller_id: 1 });
 const newSeller = await tok({ user_id: 3, role: "seller" });
 
 // Register: acceptance recorded only when sent.
-let [st, b] = await call("POST", "/api/v1/auth/register", null, { name: "A", email: "a1@x", password: "password123", accept_terms: true });
+let [st, b] = await call("POST", "/api/v1/auth/register", null, { name: "A", email: "a1@x", password: "Riad-Fes-2026", accept_terms: true });
 let row = sql.prepare("select terms_accepted_at, terms_version from users where email = 'a1@x'").get();
 check("register_records_terms", st === 201 && row.terms_accepted_at && row.terms_version === "2026-11-06", [st, row]);
-[st, b] = await call("POST", "/api/v1/auth/register", null, { name: "B", email: "b1@x", password: "password123" });
+[st, b] = await call("POST", "/api/v1/auth/register", null, { name: "B", email: "b1@x", password: "Riad-Fes-2026" });
 row = sql.prepare("select terms_accepted_at, terms_version from users where email = 'b1@x'").get();
 check("register_without_terms_null", st === 201 && row.terms_accepted_at === null && row.terms_version === null, row);
-[st, b] = await call("POST", "/api/v1/auth/register", null, { name: "C", email: "c1@x", password: "password123", accept_terms: "yes" });
+[st, b] = await call("POST", "/api/v1/auth/register", null, { name: "C", email: "c1@x", password: "Riad-Fes-2026", accept_terms: "yes" });
 row = sql.prepare("select terms_accepted_at from users where email = 'c1@x'").get();
 check("register_only_true_counts", row.terms_accepted_at === null, row);
 
