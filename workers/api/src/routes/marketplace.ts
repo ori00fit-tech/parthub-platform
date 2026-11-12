@@ -15,6 +15,7 @@ import { runInBackground } from "../utils/whatsapp";
 import { MAX_IMPORT_ROWS, applyImport, planImport } from "../utils/part-import";
 import { MAX_CODE_ATTEMPTS, holdUntil, isPickup, nextStatuses, sameCode } from "../utils/pickup";
 import { cleanCarrier, cleanTracking, readFeeMad } from "../utils/shipping";
+import { readPartValues } from "../utils/part-values";
 import { RATE_NOTICE_DAYS, accrueCommissions, commissionRateBps, currentPeriod, readPeriod, upcomingRates } from "../utils/commissions";
 import { invoicePayments, ledgerTotals, listInvoices } from "../utils/invoices";
 import { RETURN_WINDOW_DAYS } from "../utils/issues";
@@ -194,9 +195,10 @@ marketplaceRoutes.post("/parts", authMiddleware, sellerGuard, async (c) => {
     if (!category_id) return c.json(failure("CATEGORY_ID_REQUIRED", "category_id is required"), 400);
     if (!slug) return c.json(failure("SLUG_REQUIRED", "slug is required"), 400);
     if (!title) return c.json(failure("TITLE_REQUIRED", "title is required"), 400);
-    if (price == null || Number.isNaN(Number(price))) {
-      return c.json(failure("PRICE_REQUIRED", "price is required"), 400);
-    }
+    // Price, stock, weight: strict, whatever the client sent (utils/part-values.ts).
+    const checked = readPartValues({ price, compare_price, quantity, weight_kg });
+    if (!checked.ok) return c.json(failure(checked.code, checked.error), 400);
+    const v = checked.values;
 
     const existing = await c.env.DB.prepare(
       "select id from parts where slug = ?1 limit 1"
@@ -224,11 +226,11 @@ marketplaceRoutes.post("/parts", authMiddleware, sellerGuard, async (c) => {
         String(title).trim(),
         description ? String(description).trim() : null,
         sku ? String(sku).trim() : null,
-        Number(price),
-        compare_price != null && compare_price !== "" ? Number(compare_price) : null,
+        v.price,
+        v.compare_price,
         condition ? String(condition).trim() : "new",
-        quantity != null && quantity !== "" ? Number(quantity) : 1,
-        weight_kg != null && weight_kg !== "" ? Number(weight_kg) : null,
+        v.quantity,
+        v.weight_kg,
         resolvePartStatus(status, null, actor.isAdmin),
         featured ? 1 : 0
       )
@@ -340,9 +342,10 @@ marketplaceRoutes.put("/parts/:id", authMiddleware, sellerGuard, async (c) => {
     if (!category_id) return c.json(failure("CATEGORY_ID_REQUIRED", "category_id is required"), 400);
     if (!slug) return c.json(failure("SLUG_REQUIRED", "slug is required"), 400);
     if (!title) return c.json(failure("TITLE_REQUIRED", "title is required"), 400);
-    if (price == null || Number.isNaN(Number(price))) {
-      return c.json(failure("PRICE_REQUIRED", "price is required"), 400);
-    }
+    // Price, stock, weight: strict, whatever the client sent (utils/part-values.ts).
+    const checked = readPartValues({ price, compare_price, quantity, weight_kg });
+    if (!checked.ok) return c.json(failure(checked.code, checked.error), 400);
+    const v = checked.values;
 
     const slugConflict = await c.env.DB.prepare(
       "select id from parts where slug = ?1 and id != ?2 limit 1"
@@ -382,11 +385,11 @@ marketplaceRoutes.put("/parts/:id", authMiddleware, sellerGuard, async (c) => {
         String(title).trim(),
         description ? String(description).trim() : null,
         sku ? String(sku).trim() : null,
-        Number(price),
-        compare_price != null && compare_price !== "" ? Number(compare_price) : null,
+        v.price,
+        v.compare_price,
         condition ? String(condition).trim() : "new",
-        quantity != null && quantity !== "" ? Number(quantity) : 1,
-        weight_kg != null && weight_kg !== "" ? Number(weight_kg) : null,
+        v.quantity,
+        v.weight_kg,
         resolvePartStatus(status, existing.status, actor.isAdmin),
         featured ? 1 : 0,
         id
@@ -1071,9 +1074,10 @@ marketplaceRoutes.post("/me/parts", authMiddleware, async (c) => {
     if (!category_id) return c.json(failure("CATEGORY_ID_REQUIRED", "category_id is required"), 400);
     if (!slug) return c.json(failure("SLUG_REQUIRED", "slug is required"), 400);
     if (!title) return c.json(failure("TITLE_REQUIRED", "title is required"), 400);
-    if (price == null || Number.isNaN(Number(price))) {
-      return c.json(failure("PRICE_REQUIRED", "price is required"), 400);
-    }
+    // Price, stock, weight: strict, whatever the client sent (utils/part-values.ts).
+    const checked = readPartValues({ price, compare_price, quantity, weight_kg });
+    if (!checked.ok) return c.json(failure(checked.code, checked.error), 400);
+    const v = checked.values;
 
     const existing = await c.env.DB.prepare(
       "select id from parts where slug = ?1 limit 1"
@@ -1101,11 +1105,11 @@ marketplaceRoutes.post("/me/parts", authMiddleware, async (c) => {
         String(title).trim(),
         description ? String(description).trim() : null,
         sku ? String(sku).trim() : null,
-        Number(price),
-        compare_price != null && compare_price !== "" ? Number(compare_price) : null,
+        v.price,
+        v.compare_price,
         condition ? String(condition).trim() : "new",
-        quantity != null && quantity !== "" ? Number(quantity) : 1,
-        weight_kg != null && weight_kg !== "" ? Number(weight_kg) : null,
+        v.quantity,
+        v.weight_kg,
         resolvePartStatus(status, null, false),
         featured ? 1 : 0,
         resolvePartOrigin(part_origin) || "aftermarket"
@@ -1286,9 +1290,10 @@ marketplaceRoutes.put("/me/parts/:id", authMiddleware, async (c) => {
     if (!category_id) return c.json(failure("CATEGORY_ID_REQUIRED", "category_id is required"), 400);
     if (!slug) return c.json(failure("SLUG_REQUIRED", "slug is required"), 400);
     if (!title) return c.json(failure("TITLE_REQUIRED", "title is required"), 400);
-    if (price == null || Number.isNaN(Number(price))) {
-      return c.json(failure("PRICE_REQUIRED", "price is required"), 400);
-    }
+    // Price, stock, weight: strict, whatever the client sent (utils/part-values.ts).
+    const checked = readPartValues({ price, compare_price, quantity, weight_kg });
+    if (!checked.ok) return c.json(failure(checked.code, checked.error), 400);
+    const v = checked.values;
 
     const slugConflict = await c.env.DB.prepare(
       "select id from parts where slug = ?1 and id != ?2 limit 1"
@@ -1329,11 +1334,11 @@ marketplaceRoutes.put("/me/parts/:id", authMiddleware, async (c) => {
         String(title).trim(),
         description ? String(description).trim() : null,
         sku ? String(sku).trim() : null,
-        Number(price),
-        compare_price != null && compare_price !== "" ? Number(compare_price) : null,
+        v.price,
+        v.compare_price,
         condition ? String(condition).trim() : "new",
-        quantity != null && quantity !== "" ? Number(quantity) : 1,
-        weight_kg != null && weight_kg !== "" ? Number(weight_kg) : null,
+        v.quantity,
+        v.weight_kg,
         resolvePartStatus(status, existing.status, false),
         featured ? 1 : 0,
         partId,

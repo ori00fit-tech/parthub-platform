@@ -6,7 +6,7 @@
     "dev": "vite --port 3002",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint src --ext .js,.jsx"
+    "lint": "eslint src"
   },
   "dependencies": {
     "@fontsource/ibm-plex-sans-arabic": "5.1.0",

@@ -88,27 +88,37 @@ export async function logOrderEvent(
 
 // Set lines to a status. Cancelling puts the quantities back in stock and
 // returns the affected part ids (to notify buyers waiting for them).
+// Cancelling is atomic per line: the stock goes back and the line is
+// marked cancelled in one transaction, and only if it was not cancelled
+// already, so two requests at the same time never restock twice.
 export async function setLineStatus(
   DB: D1Database,
   lineIds: number[],
   status: LineStatus
 ): Promise<number[]> {
   if (!lineIds.length) return [];
-  const ids = lineIds.map((_, i) => `?${i + 1}`).join(", ");
-  const restocked: number[] = [];
   if (status === "cancelled") {
-    const lines = await DB.prepare(
-      `select part_id, quantity from order_items where id in (${ids}) and status != 'cancelled'`
+    const parts = await DB.prepare(
+      `select id, part_id from order_items where id in (${lineIds.map((_, i) => `?${i + 1}`).join(", ")}) and status != 'cancelled'`
     )
       .bind(...lineIds)
-      .all<{ part_id: number; quantity: number }>();
-    for (const line of lines.results || []) {
-      await DB.prepare("update parts set quantity = quantity + ?1, updated_at = datetime('now') where id = ?2")
-        .bind(line.quantity, line.part_id)
-        .run();
-      restocked.push(line.part_id);
-    }
+      .all<{ id: number; part_id: number }>();
+    const open = parts.results || [];
+    if (!open.length) return [];
+    const stmts = open.flatMap((l) => [
+      DB.prepare(
+        `update parts set quantity = quantity + (select quantity from order_items where id = ?1 and status != 'cancelled'), updated_at = datetime('now')
+         where id = (select part_id from order_items where id = ?1 and status != 'cancelled')`
+      ).bind(l.id),
+      DB.prepare(
+        "update order_items set status = 'cancelled', status_updated_at = datetime('now') where id = ?1 and status != 'cancelled'"
+      ).bind(l.id),
+    ]);
+    const res = await DB.batch(stmts);
+    // Parts whose stock this call really put back (the other call, if any, changed nothing).
+    return open.filter((_, i) => Number(res[i * 2]?.meta?.changes || 0) > 0).map((l) => l.part_id);
   }
+  const ids = lineIds.map((_, i) => `?${i + 1}`).join(", ");
   await DB.prepare(
     `update order_items
      set status = ?${lineIds.length + 1},
@@ -118,5 +128,5 @@ export async function setLineStatus(
   )
     .bind(...lineIds, status)
     .run();
-  return restocked;
+  return [];
 }

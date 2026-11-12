@@ -12,7 +12,8 @@ import { mediaRoutes } from "./routes/media";
 import { commerceRoutes } from "./routes/commerce";
 import { adminRoutes } from "./routes/admin";
 import { adminAnalyticsRoutes } from "./routes/admin.analytics";
-import { healthRoutes } from "./routes/health";
+import { checkDatabase, healthRoutes } from "./routes/health";
+import type { Env } from "./types";
 import { whatsappRoutes } from "./routes/whatsapp";
 import { requestsRoutes } from "./routes/requests";
 import { stockAlertsRoutes } from "./routes/stock-alerts";
@@ -31,11 +32,9 @@ app.use(
   })
 );
 
-app.get("/health", (c) => {
-  return c.json({
-    ok: true,
-    service: "parthub-api",
-  });
+app.get("/health", async (c) => {
+  const db = await checkDatabase(c.env as Env);
+  return c.json({ ok: db.ok, service: "parthub-api", database: db.ok ? "ok" : "down" }, db.ok ? 200 : 503);
 });
 
 app.route("/api/v1/health", healthRoutes);

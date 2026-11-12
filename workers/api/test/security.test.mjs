@@ -65,6 +65,17 @@ check("analytics_buyer", (await get("/api/v1/admin/analytics/search-demand", { u
 check("analytics_seller", (await get("/api/v1/admin/analytics/search-demand", { user_id: 2, role: "seller", seller_id: 1 })) === 403);
 check("analytics_admin", (await get("/api/v1/admin/analytics/search-demand", { user_id: 1, role: "admin" })) === 200);
 
+// /health really tests the database: 200 + ok, or 503 when it fails.
+let hr = await app.request("/api/v1/health", {}, env);
+let hb = await hr.json();
+check("health_ok", hr.status === 200 && hb.data.database.ok === true, hb);
+const brokenEnv = { ...env, DB: { prepare: () => { throw new Error("D1_ERROR: database unavailable"); } } };
+hr = await app.request("/api/v1/health", {}, brokenEnv);
+hb = await hr.json();
+check("health_db_down_503", hr.status === 503 && hb.data.database.ok === false && /unavailable/.test(hb.data.database.error), hb);
+hr = await app.request("/health", {}, brokenEnv);
+check("root_health_db_down_503", hr.status === 503 && (await hr.json()).database === "down");
+
 console.log(results);
 const fails = Object.values(results).filter((v) => v !== "PASS").length;
 console.log(fails ? `${fails} FAIL` : "ALL PASS");

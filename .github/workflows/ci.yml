@@ -44,6 +44,12 @@ jobs:
       - name: Typecheck API
         run: pnpm --filter @parthub/api typecheck
 
+      # ESLint on the API, the three apps and the storefront Functions
+      # (eslint.config.mjs). Errors (undefined names, hooks misuse...) fail;
+      # warnings are shown only.
+      - name: Lint
+        run: pnpm lint
+
       - name: API tests
         run: pnpm --filter @parthub/api test
 
