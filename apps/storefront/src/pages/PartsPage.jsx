@@ -1011,7 +1011,7 @@ export default function PartsPage() {
                           {part.category_name ? <span className="truncate">{t(part.category_name)}</span> : null}
                         </div>
 
-                        <h3 className="line-clamp-2 font-sans text-[15.5px] font-semibold leading-snug text-ink">{part.title}</h3>
+                        <h3 dir="auto" className="line-clamp-2 font-sans text-[15.5px] font-semibold leading-snug text-ink">{part.title}</h3>
 
                         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5 rounded-lg border border-line bg-surface-2 px-2.5 py-2 text-xs">
                           <dt className="self-center text-[10.5px] uppercase tracking-[0.06em] text-muted">{t("SKU")}</dt>

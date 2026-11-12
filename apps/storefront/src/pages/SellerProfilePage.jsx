@@ -282,7 +282,7 @@ export default function SellerProfilePage() {
 
                   <div className="space-y-3 p-4">
                     <div>
-                      <h3 className="line-clamp-2 text-base font-bold text-ink">
+                      <h3 dir="auto" className="line-clamp-2 text-base font-bold text-ink">
                         {part.title}
                       </h3>
                       <p className="mt-1 text-sm text-muted">

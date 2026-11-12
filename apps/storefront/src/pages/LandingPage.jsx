@@ -187,7 +187,7 @@ export default function LandingPage() {
                 </div>
                 <div className="flex flex-1 flex-col gap-2 p-3.5">
                   <p className="truncate text-xs font-semibold uppercase tracking-[0.08em] text-navy">{part.brand_name || t("Unbranded")}</p>
-                  <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-ink">{part.title}</h3>
+                  <h3 dir="auto" className="line-clamp-2 text-[15px] font-semibold leading-snug text-ink">{part.title}</h3>
                   {part.seller_location ? <p className="text-xs text-muted">{part.seller_name} · {part.seller_location}</p> : null}
                   <div className="mt-auto flex items-center justify-between gap-2 pt-1">
                     <p className="font-mono text-lg font-semibold text-ink">{formatPrice(part.price)}</p>

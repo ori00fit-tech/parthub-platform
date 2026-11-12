@@ -76,6 +76,13 @@ check("health_db_down_503", hr.status === 503 && hb.data.database.ok === false &
 hr = await app.request("/health", {}, brokenEnv);
 check("root_health_db_down_503", hr.status === 503 && (await hr.json()).database === "down");
 
+// Security headers on API responses; photos stay usable from the sites.
+const hh = (await app.request("/api/v1/commerce/shipping", {}, env)).headers;
+check("api_hsts", hh.get("strict-transport-security") === "max-age=31536000; includeSubDomains", hh.get("strict-transport-security"));
+check("api_nosniff_frame", hh.get("x-content-type-options") === "nosniff" && hh.get("x-frame-options") === "DENY");
+check("api_photos_cross_origin", hh.get("cross-origin-resource-policy") === "cross-origin", hh.get("cross-origin-resource-policy"));
+check("api_cors_still_ok", (await origin("https://parthub.autos")) === "https://parthub.autos");
+
 console.log(results);
 const fails = Object.values(results).filter((v) => v !== "PASS").length;
 console.log(fails ? `${fails} FAIL` : "ALL PASS");

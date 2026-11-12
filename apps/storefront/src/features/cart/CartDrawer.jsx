@@ -185,7 +185,7 @@ export default function CartDrawer() {
                     )}
                   </Link>
                   <div className="min-w-0">
-                    <Link to={`/parts/${item.slug}`} className="line-clamp-2 text-sm font-semibold leading-snug text-ink hover:text-link">
+                    <Link dir="auto" to={`/parts/${item.slug}`} className="line-clamp-2 text-sm font-semibold leading-snug text-ink hover:text-link">
                       {item.title}
                     </Link>
                     {item.seller_name ? <p className="mt-0.5 text-xs text-faint">{t("Sold by {seller}", { seller: item.seller_name })}</p> : null}

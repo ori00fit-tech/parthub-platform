@@ -102,7 +102,7 @@ export default function ComparePage() {
           {items.map((item) => (
             <div key={item.id} className="border-e border-line p-5 last:border-e-0">
               <div className="flex items-start justify-between gap-3">
-                <p className="line-clamp-2 font-bold text-ink">{item.title}</p>
+                <p dir="auto" className="line-clamp-2 font-bold text-ink">{item.title}</p>
                 <button
                   type="button"
                   onClick={() => removeItem(item.id)}

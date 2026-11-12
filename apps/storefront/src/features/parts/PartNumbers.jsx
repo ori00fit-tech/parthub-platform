@@ -49,7 +49,7 @@ export function OtherOffers({ offers = [] }) {
               {o.image_url ? <img src={mediaUrl(o.image_url)} alt="" className="h-full w-full object-cover" /> : <Icon name="part" className="h-6 w-6 text-faint" />}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="line-clamp-1 text-sm font-semibold text-ink">{o.title}</p>
+              <p dir="auto" className="line-clamp-1 text-sm font-semibold text-ink">{o.title}</p>
               <p className="text-xs text-muted">
                 {[o.brand_name, conditionLabel(o.condition), o.seller_name, o.seller_location].filter(Boolean).join(" · ")}
               </p>

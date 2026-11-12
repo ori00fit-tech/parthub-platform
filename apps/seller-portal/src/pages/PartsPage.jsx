@@ -133,8 +133,21 @@ export default function PartsPage() {
     );
   }
 
+  // Parts PartHub cannot approve yet: no photo (link to the photo screen).
+  const withoutPhoto = parts.filter((p) => !p.image_url && String(p.status || "").toLowerCase() !== "archived").length;
+
   return (
     <section className="space-y-6">
+      {withoutPhoto ? (
+        <Link to="/parts/photos" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 hover:bg-amber-100">
+          <span>
+            <span className="font-semibold">{t("{n} parts have no photo", { n: withoutPhoto })}</span>
+            {" · "}
+            {t("PartHub publishes a part only with a photo.")}
+          </span>
+          <span className="font-semibold underline">{t("Add photos now")}</span>
+        </Link>
+      ) : null}
       <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
