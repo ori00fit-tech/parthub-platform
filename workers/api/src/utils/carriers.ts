@@ -223,12 +223,18 @@ export async function recordEvent(
     `insert or ignore into shipment_events (shipment_id, carrier, tracking_number, status, carrier_status, note, cod_amount, occurred_at, source, dedupe_key)
      values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)`
   ).bind(shipment?.id ?? null, carrier, ev.tracking, status ?? "unknown", ev.carrier_status, ev.note, ev.cod, ev.occurred_at, source, key).run();
-  if (!Number(ins.meta?.changes)) return { result: "duplicate", shipment_id: shipment?.id ?? null };
+  let eventId = Number(ins.meta?.last_row_id) || undefined;
+  if (!Number(ins.meta?.changes)) {
+    // Sent again. Recorded but never applied (an error half-way)? Apply it now.
+    const prev = await DB.prepare("select id, applied_at from shipment_events where dedupe_key = ?1").bind(key).first<{ id: number; applied_at: string | null }>();
+    if (!prev || prev.applied_at || !shipment || !status) return { result: "duplicate", shipment_id: shipment?.id ?? null };
+    eventId = prev.id;
+  }
   if (!shipment) return { result: "unknown_shipment", shipment_id: null };
   if (!status) return { result: "unknown_status", shipment_id: shipment.id };
-  const eventId = Number(ins.meta?.last_row_id) || undefined;
 
   const applied = await applyShipmentStatus(DB, shipment, status, ev.occurred_at, ev.cod, ev.note, `carrier:${carrier}`);
+  if (eventId) await DB.prepare("update shipment_events set applied_at = datetime('now') where id = ?1").bind(eventId).run();
   return { result: "applied", shipment_id: shipment.id, event_id: eventId, restocked: applied.restocked };
 }
 
@@ -313,7 +319,9 @@ export async function recordManualEvent(
   ).bind(shipment.id, shipment.carrier || "other", shipment.tracking_number, status, note, cod, now, source, `${source}|${shipment.id}|${status}|${now}|${crypto.randomUUID()}`).run();
   const actor = source === "admin" ? "admin" : `seller:${sellerId}`;
   const applied = await applyShipmentStatus(DB, shipment, status, now, cod, note, actor);
-  return { ok: true, shipment_id: shipment.id, event_id: Number(ins.meta?.last_row_id) || undefined, restocked: applied.restocked };
+  const eventId = Number(ins.meta?.last_row_id) || undefined;
+  if (eventId) await DB.prepare("update shipment_events set applied_at = datetime('now') where id = ?1").bind(eventId).run();
+  return { ok: true, shipment_id: shipment.id, event_id: eventId, restocked: applied.restocked };
 }
 
 // ── Reading / editing carriers ─────────────────────────────────────────
@@ -412,8 +420,8 @@ export async function noteShipment(
   await DB.batch([
     DB.prepare("update order_shipments set status = ?2, status_at = ?3 where id = ?1").bind(sh.id, status, now),
     DB.prepare(
-      `insert or ignore into shipment_events (shipment_id, carrier, tracking_number, status, carrier_status, note, occurred_at, source, dedupe_key)
-       values (?1, ?2, ?3, ?4, null, ?5, ?6, ?7, ?8)`
+      `insert or ignore into shipment_events (shipment_id, carrier, tracking_number, status, carrier_status, note, occurred_at, source, dedupe_key, applied_at)
+       values (?1, ?2, ?3, ?4, null, ?5, ?6, ?7, ?8, ?6)`
     ).bind(sh.id, sh.carrier || "other", sh.tracking_number, status, note, now, source, `${source}|${sh.id}|${status}|${now}|${crypto.randomUUID()}`),
   ]);
 }

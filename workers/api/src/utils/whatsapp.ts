@@ -181,20 +181,28 @@ export async function handleWhatsAppWebhook(DB: D1Database, body: unknown): Prom
         if (!m.id || !m.from) continue;
         const text = messageText(m).slice(0, 4096);
         const at = tsText(m.timestamp);
-        const ins = await DB.prepare(
-          "insert or ignore into whatsapp_messages (wa_message_id, direction, phone, type, body, created_at) values (?1, 'in', ?2, ?3, ?4, ?5)"
-        ).bind(m.id, m.from, m.type || "text", text, at).run();
-        if (!Number(ins.meta?.changes)) continue; // retry of a message already stored
         const word = fold(text);
         const optOut = STOP_WORDS.test(word);
         const optIn = START_WORDS.test(word);
-        await DB.prepare(
-          `insert into whatsapp_contacts (phone, name, last_inbound_at, opted_out_at, updated_at) values (?1, ?2, ?3, case when ?4 then ?3 else null end, datetime('now'))
-           on conflict(phone) do update set name = coalesce(excluded.name, name),
-             last_inbound_at = max(coalesce(last_inbound_at, ''), excluded.last_inbound_at),
-             opted_out_at = case when ?4 then excluded.last_inbound_at when ?5 then null else opted_out_at end,
-             updated_at = datetime('now')`
-        ).bind(m.from, names.get(m.from) ?? null, at, optOut ? 1 : 0, optIn ? 1 : 0).run();
+        // One transaction: the message and its effect (24-hour window, STOP /
+        // START) are stored together, so a failure half-way leaves nothing
+        // and Meta's retry applies both. Applying it again is harmless: STOP /
+        // START only count when the message is not older than the latest one.
+        const [ins] = await DB.batch([
+          DB.prepare(
+            "insert or ignore into whatsapp_messages (wa_message_id, direction, phone, type, body, created_at) values (?1, 'in', ?2, ?3, ?4, ?5)"
+          ).bind(m.id, m.from, m.type || "text", text, at),
+          DB.prepare(
+            `insert into whatsapp_contacts (phone, name, last_inbound_at, opted_out_at, updated_at) values (?1, ?2, ?3, case when ?4 then ?3 else null end, datetime('now'))
+             on conflict(phone) do update set name = coalesce(excluded.name, name),
+               opted_out_at = case when excluded.last_inbound_at >= coalesce(last_inbound_at, '')
+                                   then case when ?4 then excluded.last_inbound_at when ?5 then null else opted_out_at end
+                                   else opted_out_at end,
+               last_inbound_at = max(coalesce(last_inbound_at, ''), excluded.last_inbound_at),
+               updated_at = datetime('now')`
+          ).bind(m.from, names.get(m.from) ?? null, at, optOut ? 1 : 0, optIn ? 1 : 0),
+        ]);
+        if (!Number(ins?.meta?.changes)) continue; // retry of a message already stored
         out.messages++;
         if (optOut) out.opt_outs++;
       }
