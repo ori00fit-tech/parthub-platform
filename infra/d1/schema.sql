@@ -317,6 +317,8 @@ CREATE TABLE IF NOT EXISTS whatsapp_notifications (
   error       TEXT,
   template    TEXT,              -- template and language sent (migrations/0028)
   language    TEXT,
+  payload     TEXT,              -- what to send, for retries (migrations/0032)
+  attempts    INTEGER NOT NULL DEFAULT 0,
   UNIQUE (kind, ref_id, recipient)
 );
 
@@ -679,7 +681,8 @@ CREATE TABLE IF NOT EXISTS shipment_events (
   occurred_at     TEXT NOT NULL,
   source          TEXT NOT NULL,                   -- seller | carrier | admin
   dedupe_key      TEXT NOT NULL UNIQUE,
-  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  applied_at      TEXT                             -- its effects done (migrations/0032)
 );
 CREATE INDEX IF NOT EXISTS idx_shipment_events_shipment ON shipment_events(shipment_id, occurred_at);
 CREATE INDEX IF NOT EXISTS idx_order_shipments_tracking ON order_shipments(carrier, tracking_number);
@@ -745,3 +748,7 @@ CREATE TABLE IF NOT EXISTS admin_audit_log (
 CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit_log(created_at);
 CREATE INDEX IF NOT EXISTS idx_admin_audit_target ON admin_audit_log(target_type, target_id);
 CREATE INDEX IF NOT EXISTS idx_admin_audit_admin ON admin_audit_log(admin_id, created_at);
+
+-- See migrations/0032_reliability.sql
+CREATE UNIQUE INDEX IF NOT EXISTS uq_orders_buyer_cart_pending ON orders(buyer_id, cart_hash) WHERE status = 'pending' AND cart_hash IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_whatsapp_notifications_retry ON whatsapp_notifications(status, created_at);

@@ -79,6 +79,24 @@ const refs = new Set(raced.map(([, x]) => x.data?.reference));
 check("race_one_order", refs.size === 1 && sql.prepare("select count(*) n from orders where idempotency_key = 'checkout-race-2222'").get().n === 1 && stock(3) === 99,
   [raced.map(([s, x]) => [s, x.data?.reference, x.error]), stock(3)]);
 
+// 2b. Same cart at the same moment with DIFFERENT keys (two tabs) → one order.
+// Slow the duplicate check down so the three requests all pass it before
+// any of them writes: only the unique index can stop the extra orders.
+const realPrepare = DB.prepare;
+DB.prepare = (q) => {
+  const st = realPrepare(q);
+  if (/cart_hash = \?2 and status = 'pending'/.test(q) && !/select \*/.test(q)) {
+    const first = st.first.bind(st);
+    st.first = async () => { const r = await first(); await new Promise((res) => setTimeout(res, 50)); return r; };
+  }
+  return st;
+};
+const tabs = await Promise.all(["tab-one-aaaa1111", "tab-two-bbbb2222", "tab-three-cccc3333"].map((k) => place([{ part_id: 11, quantity: 1 }], { key: k })));
+DB.prepare = realPrepare;
+const tabRefs = new Set(tabs.map(([, x]) => x.data?.reference));
+check("race_different_keys_one_order", tabRefs.size === 1 && sql.prepare("select count(*) n from order_items where part_id = 11").get().n === 1 && stock(11) === 99,
+  [tabs.map(([s, x]) => [s, x.data?.reference, x.meta, x.error]), stock(11)]);
+
 // 3. No key: same cart within minutes → same order; another quantity → new order.
 [st, r] = await place([{ part_id: 4, quantity: 1 }]);
 const noKey = r.data.reference;

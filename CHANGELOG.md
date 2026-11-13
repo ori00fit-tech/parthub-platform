@@ -27,8 +27,8 @@ known limits: `infra/docs/release-v0.1.1-readiness.md`.
 ### Orders, money, shipping
 - Stock held at order time (no oversell under concurrency), per-seller
   lines and delivery fees, atomic cancel and restock.
-- **Duplicate and fake order guard**: idempotency key per checkout, same
-  cart within 10 minutes, at most 5 orders awaiting confirmation, limits
+- **Duplicate and fake order guard**: idempotency key per checkout, one
+  pending order per cart (also under concurrency), at most 5 orders awaiting confirmation, limits
   per account (8/hour) and per phone (12/day).
 - Commission ledger with dated rates (0% while selling is free), invoices,
   payments, partial refunds.
