@@ -119,3 +119,18 @@ Each finding was checked against the code before fixing.
 | F | Node 20 in deploys vs 22 in CI; deploy without `--frozen-lockfile` | **Confirmed** | Node 22 and pnpm 9 with the lockfile everywhere |
 | — | A backup that was never restored is not proven | **Confirmed** | Every export is restored into a scratch SQLite and checked before it is stored |
 | — | This document contradicted itself (§2 vs §7) | **Confirmed** | §2 rewritten to the current code |
+
+## 9. Production pilot (13 Nov 2026)
+Order `PH-2026-Y2K52JCQ` (130 MAD, cash on delivery): placed → stock held
+(12 → 11) → confirmed → shipped with Amana and a tracking number →
+delivered; the buyer sees it delivered; a review was created (waiting for
+moderation). **The order lifecycle is PROVEN in production.**
+
+| Pilot finding | Verdict | Action |
+|---|---|---|
+| `payment_status` still "unpaid" after delivery; admin revenue 0 | **Bug** | Fixed: delivered = paid, migration 0036, dashboard revenue from delivered lines (`cod-paid.test.mjs`) |
+| `POST …/received` answers 409 after the seller marked it delivered | Expected | The buyer confirms receipt only while the parcel is on its way |
+| Stock not given back after delivery | Expected | Stock goes back only on cancel / return |
+| The shared test accounts (admin, buyer, seller) still work with their known passwords | **P0 open (owner)** | Change them or deactivate them before inviting anyone |
+| The pilot order and review are test data in production | Note | They count in the investor metrics: cancel or note them once the real sellers start |
+| 12 public parts, 56 waiting for photos | Content (owner) | Photos per part (`/parts/photos`), then bulk approval |
