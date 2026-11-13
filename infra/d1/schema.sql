@@ -2,7 +2,6 @@
 -- PartHub Platform — D1 Schema
 -- ============================================================
 
-PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
 
 -- ── Users ────────────────────────────────────────────────────
