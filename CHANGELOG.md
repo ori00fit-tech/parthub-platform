@@ -41,6 +41,13 @@ known limits: `infra/docs/release-v0.1.1-readiness.md`.
 - 25 Utility templates and 1 Authentication template (reset code) in ar/fr/en, sent in each person's language with
   fallback; submitted to and synced from Meta from the admin.
 
+### Cash on delivery
+- Fix (found by the production pilot of 13 Nov): a delivered order stayed
+  "unpaid" and the admin's revenue stayed at 0 MAD. A delivered order is now
+  paid (the cash was collected at delivery; "refunded" is kept), old ones
+  are marked by migration 0036, and the dashboard revenue counts every
+  delivered line and its delivery fee, also in orders not fully delivered.
+
 ### Photos
 - Fix: photos were broken on the part page, the store page, the comparison
   and the cart (storefront), the inventory (seller portal) and the part

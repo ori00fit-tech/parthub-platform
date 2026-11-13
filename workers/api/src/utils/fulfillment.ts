@@ -39,7 +39,8 @@ export function rollupStatus(lineStatuses: string[]): LineStatus {
 
 // Recompute orders.status / shipping_status / delivered_at from the lines,
 // and the amounts: cancelled lines are not paid (nothing at all when the
-// whole order is cancelled).
+// whole order is cancelled). Cash on delivery: the order is paid when it is
+// delivered (payment_status 'paid'); 'refunded' is never overwritten.
 export async function refreshOrderStatus(DB: D1Database, orderId: number): Promise<LineStatus> {
   const rows = await DB.prepare("select status, subtotal from order_items where order_id = ?1")
     .bind(orderId)
@@ -63,6 +64,8 @@ export async function refreshOrderStatus(DB: D1Database, orderId: number): Promi
      set status = ?1,
          shipping_status = ?2,
          delivered_at = case when ?1 = 'delivered' then coalesce(delivered_at, datetime('now')) else null end,
+         payment_status = case when payment_status = 'refunded' then payment_status
+                               when ?1 = 'delivered' then 'paid' else 'unpaid' end,
          subtotal = ?3,
          shipping_fee = ${feeSql},
          total = case when ?1 = 'cancelled' then 0 else max(0, ?3 + ${feeSql} - discount) end,

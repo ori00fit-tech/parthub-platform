@@ -63,7 +63,14 @@ adminRoutes.get("/dashboard", async (c) => {
       dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM sellers"),
       dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM parts WHERE status = 'active'"),
       dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM orders"),
-      dbFirst<{ n: number }>(c.env.DB, "SELECT SUM(total) as n FROM orders WHERE payment_status = 'paid'"),
+      // Cash collected: what was delivered (lines, and the delivery fee of
+      // each seller who delivered), also inside orders not fully delivered.
+      dbFirst<{ n: number }>(
+        c.env.DB,
+        `SELECT COALESCE((SELECT SUM(subtotal) FROM order_items WHERE status = 'delivered'), 0)
+              + COALESCE((SELECT SUM(sh.fee) FROM order_shipments sh WHERE EXISTS (
+                  SELECT 1 FROM order_items oi WHERE oi.order_id = sh.order_id AND oi.seller_id = sh.seller_id AND oi.status = 'delivered')), 0) AS n`
+      ),
       dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM sellers WHERE status = 'pending'"),
       dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM parts WHERE status = 'pending'"),
     ]);
