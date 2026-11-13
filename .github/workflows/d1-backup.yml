@@ -1,0 +1,54 @@
+name: D1 backup
+
+# A full SQL export of the production database every Sunday (and on
+# demand), gzipped into the private R2 bucket under backups/d1/. The API
+# never serves that prefix (routes/media.ts serves uploads/ images only).
+# Restore and the other recovery paths: infra/docs/operations-runbook.md.
+
+on:
+  schedule:
+    - cron: "41 2 * * 0" # Sunday 02:41 UTC (03:41 Morocco), quiet hours
+  workflow_dispatch:
+
+concurrency:
+  group: d1-backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/api
+    env:
+      CLOUDFLARE_EMAIL: ${{ secrets.CF_EMAIL }}
+      CLOUDFLARE_API_KEY: ${{ secrets.CF_GLOBAL_API_KEY }}
+      CI: "true"
+      DB_NAME: parthub-db
+      BUCKET: parthub-media
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Export the database
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4 d1 export "$DB_NAME" --remote --output=backup.sql
+          lines=$(wc -l < backup.sql)
+          echo "rows of SQL: $lines"
+          # An export without the core tables is not a backup: fail loudly.
+          for t in users sellers parts orders order_items; do
+            grep -q "CREATE TABLE.*\b$t\b" backup.sql || { echo "::error::table $t missing from the export"; exit 1; }
+          done
+          gzip -9 backup.sql
+          echo "KEY=backups/d1/parthub-db-$(date -u +%Y-%m-%d-%H%M).sql.gz" >> "$GITHUB_ENV"
+      - name: Store it in R2 (private)
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4 r2 object put "$BUCKET/$KEY" --file=backup.sql.gz --content-type=application/gzip --remote
+          echo "Stored $KEY ($(du -h backup.sql.gz | cut -f1))"
+          rm -f backup.sql.gz

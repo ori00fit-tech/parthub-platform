@@ -42,7 +42,7 @@ Status words used below:
 | Performance | IMPLEMENTED | Indexes on hot paths (verify step), image limit of 5 MB, pagination capped at 100. | No measurement yet (no load test, no p95). Images are served at full size (no resizing). |
 | SEO | TESTED, PROVEN | Titles, meta, canonical, Open Graph, robots, dynamic sitemap, JSON-LD (Product, Offer, Breadcrumb) in the server HTML, soft-404 handled. | — |
 | Testing | TESTED | 37 API suites in CI, including races, lifecycle, security, carriers and WhatsApp. Playwright is used by hand for screenshots. | **No E2E suite in CI** (browser flows: sign up → order → seller ships → delivered). No front-end unit tests. |
-| Deployment | WIRED, PROVEN | CI (typecheck, lint, tests, 3 builds) → Deploy API runs the D1 migrations first, then a schema verify gate, then Pages. | **Backup and restore are not documented** (D1 Time Travel exists but no procedure). No rollback procedure written (`wrangler rollback`, Pages rollback). Versions are not tagged per release. |
+| Deployment | WIRED, PROVEN | CI (typecheck, lint, tests, 3 builds) → Deploy API runs the D1 migrations first, then a schema verify gate, then Pages. | Backup, restore and rollback: `infra/docs/operations-runbook.md` and a weekly export (`d1-backup.yml`), added for v0.1.1. Versions are not tagged per release. |
 | Documentation | IMPLEMENTED | `infra/docs/*` (carriers, WhatsApp, revenue, shipping, assets inventory…). | The README is out of date (KV, and earlier wording). No CHANGELOG. |
 | Legal and company | IMPLEMENTED | Terms, privacy, seller agreement, returns policy, versioned acceptance. The company block (`legal/company.js`) stays empty until PartHub SARL is registered. | Fill once registered; CNDP filing. |
 
