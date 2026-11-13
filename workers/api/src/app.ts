@@ -30,7 +30,7 @@ app.use(
     origin: (origin, c) => allowedOrigin(origin, (c.env || {}) as Record<string, string>),
     maxAge: 86400,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-PartHub-Lang"],
+    allowHeaders: ["Content-Type", "Authorization", "X-PartHub-Lang", "Idempotency-Key"],
   })
 );
 

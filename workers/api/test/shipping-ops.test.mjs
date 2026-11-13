@@ -28,6 +28,8 @@ const DB = {
   },
 };
 const env = { DB, JWT_SECRET: "s" };
+import { guardOff } from "./_guard-off.mjs";
+guardOff(app, sql, env);
 const tok = async (p) => "Bearer " + (await signToken(p, "s"));
 const call = async (m, u, auth, body) => {
   const r = await app.request(u, {
