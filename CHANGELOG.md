@@ -55,7 +55,8 @@ known limits: `infra/docs/release-v0.1.1-readiness.md`.
   window or money owed are open. Public page `/delete-account` (app stores).
 - CORS allow-list, security headers and HSTS, production guard on scripts.
 - JSON error handler with request id; admin audit log of every change.
-- CI: typecheck, lint, 40+ API test suites, builds. Deploy runs migrations
+- CI: typecheck, lint, 40+ API test suites, builds; browser E2E across the
+  three sites against the real API on a fresh local database. Deploy runs migrations
   first, then a schema verify gate.
 - Weekly D1 backup to private R2; runbook for restore, rollback and
   incidents (`infra/docs/operations-runbook.md`).

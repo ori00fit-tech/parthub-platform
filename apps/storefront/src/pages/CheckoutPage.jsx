@@ -530,8 +530,9 @@ export default function CheckoutPage() {
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Full name")}</label>
+              <label htmlFor="checkout-buyer-name" className="mb-1.5 block text-sm font-medium text-ink-2">{t("Full name")}</label>
               <input
+                id="checkout-buyer-name"
                 value={form.buyer_name}
                 onChange={setField("buyer_name")}
                 autoComplete="name"
@@ -542,8 +543,9 @@ export default function CheckoutPage() {
 
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Phone")}</label>
+              <label htmlFor="checkout-buyer-phone" className="mb-1.5 block text-sm font-medium text-ink-2">{t("Phone")}</label>
               <input
+                id="checkout-buyer-phone"
                 value={form.buyer_phone}
                 onChange={setField("buyer_phone")}
                 type="tel" inputMode="tel" autoComplete="tel" dir="ltr"
@@ -555,8 +557,9 @@ export default function CheckoutPage() {
             {needsAddress ? (
               <>
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Address line 1")}</label>
+              <label htmlFor="checkout-address-line1" className="mb-1.5 block text-sm font-medium text-ink-2">{t("Address line 1")}</label>
               <input
+                id="checkout-address-line1"
                 value={form.address_line1}
                 onChange={setField("address_line1")}
                 autoComplete="address-line1"
@@ -566,8 +569,9 @@ export default function CheckoutPage() {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Address line 2 (optional)")}</label>
+              <label htmlFor="checkout-address-line2" className="mb-1.5 block text-sm font-medium text-ink-2">{t("Address line 2 (optional)")}</label>
               <input
+                id="checkout-address-line2"
                 value={form.address_line2}
                 onChange={setField("address_line2")}
                 autoComplete="address-line2"
@@ -577,8 +581,9 @@ export default function CheckoutPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("City")}</label>
+              <label htmlFor="checkout-city" className="mb-1.5 block text-sm font-medium text-ink-2">{t("City")}</label>
               <input
+                id="checkout-city"
                 value={form.city}
                 onChange={setField("city")}
                 autoComplete="address-level2"
@@ -588,8 +593,9 @@ export default function CheckoutPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("State / Region")}</label>
+              <label htmlFor="checkout-state" className="mb-1.5 block text-sm font-medium text-ink-2">{t("State / Region")}</label>
               <input
+                id="checkout-state"
                 value={form.state}
                 onChange={setField("state")}
                 autoComplete="address-level1"
@@ -599,8 +605,9 @@ export default function CheckoutPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Postal code")}</label>
+              <label htmlFor="checkout-postal-code" className="mb-1.5 block text-sm font-medium text-ink-2">{t("Postal code")}</label>
               <input
+                id="checkout-postal-code"
                 value={form.postal_code}
                 onChange={setField("postal_code")}
                 autoComplete="postal-code" inputMode="numeric"
@@ -610,8 +617,9 @@ export default function CheckoutPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Country")}</label>
+              <label htmlFor="checkout-country" className="mb-1.5 block text-sm font-medium text-ink-2">{t("Country")}</label>
               <input
+                id="checkout-country"
                 value={form.country}
                 onChange={setField("country")}
                 autoComplete="country"
@@ -624,8 +632,9 @@ export default function CheckoutPage() {
             ) : null}
 
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-ink-2">{t("Order notes (optional)")}</label>
+              <label htmlFor="checkout-notes" className="mb-1.5 block text-sm font-medium text-ink-2">{t("Order notes (optional)")}</label>
               <textarea
+                id="checkout-notes"
                 value={form.notes}
                 onChange={setField("notes")}
                 rows={4}

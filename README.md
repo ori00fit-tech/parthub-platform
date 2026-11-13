@@ -77,6 +77,7 @@ packages/
   shared/           API client, translations of server messages, icons, brand,
                     legal texts and company details, account forms, shipment labels
   utils/, config/   small helpers, shared Vite / Tailwind / Prettier config
+e2e/                browser scenarios across the three sites (Playwright)
 infra/
   d1/schema.sql     the full current schema (what a new database is created from)
   d1/migrations/    numbered, additive migrations applied to production
@@ -179,7 +180,20 @@ needed). They cover the order lifecycle, stock races, the duplicate-order
 guard, pickup, shipping and carriers, claims, commissions and invoices,
 WhatsApp (webhook, templates, languages), security headers and CORS,
 sessions and passwords, the audit log, SEO routes and more. CI runs all
-of the above on every pull request. There is no browser E2E suite in CI yet.
+of the above on every pull request.
+
+**End-to-end** (`e2e/`, workflow `E2E`): the real API (`wrangler dev`, local
+D1 seeded fresh by `e2e/scripts/start-api.mjs`) and the three sites built
+against it, driven by Chromium: a new buyer orders → the seller confirms,
+ships, records the carrier's update, delivers → the buyer sees it
+delivered → PartHub approves a part and the activity log shows it; plus
+sign-in errors, forgot password, the deletion page, Arabic RTL, and a buyer
+kept out of the seller portal. About 30 seconds.
+
+```bash
+pnpm --filter @parthub/e2e exec playwright install chromium   # once
+pnpm --filter @parthub/e2e test                                # starts everything itself
+```
 
 ## Configuration
 
