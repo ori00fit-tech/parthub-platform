@@ -728,3 +728,21 @@ CREATE INDEX IF NOT EXISTS idx_whatsapp_notifications_template ON whatsapp_notif
 -- See migrations/0030_order_guard.sql
 CREATE UNIQUE INDEX IF NOT EXISTS uq_orders_buyer_idempotency ON orders(buyer_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_orders_buyer_created ON orders(buyer_id, created_at);
+
+-- See migrations/0031_admin_audit_log.sql
+CREATE TABLE IF NOT EXISTS admin_audit_log (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  admin_id     INTEGER NOT NULL REFERENCES users(id),
+  method       TEXT NOT NULL,                 -- POST | PUT | PATCH | DELETE
+  route        TEXT NOT NULL,                 -- the route pattern, e.g. /api/v1/admin/sellers/:id/status
+  path         TEXT NOT NULL,                 -- the path called, e.g. /api/v1/admin/sellers/12/status
+  target_type  TEXT,                          -- sellers, parts, orders, issues, ...
+  target_id    TEXT,
+  body         TEXT,                          -- request body, secrets removed, at most 2,000 characters
+  status       INTEGER NOT NULL,              -- HTTP status of the answer
+  ip           TEXT,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit_log(created_at);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_target ON admin_audit_log(target_type, target_id);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_admin ON admin_audit_log(admin_id, created_at);

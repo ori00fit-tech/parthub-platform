@@ -8,6 +8,7 @@ import { dbAll, dbRun, dbFirst, dbCount } from "../utils/db";
 import { parsePagination } from "../utils/pagination";
 import { notifyBackInStock } from "../utils/stock-alerts";
 import { runInBackground } from "../utils/whatsapp";
+import { auditAdminChanges } from "../utils/audit";
 import { waClaimEvent, waOrderStepAllSellers, waPartsReviewed, waShipmentEvent, waStoreStatus } from "../utils/wa-events";
 import { TEMPLATE_STATUSES, submitTemplates, syncTemplates, templateCenter } from "../utils/wa-meta";
 import { WA_LANGS, WA_TEMPLATE_BY_NAME } from "../utils/wa-templates";
@@ -27,7 +28,31 @@ import { PAYMENT_METHODS, cancelInvoice, invoiceDraft, invoicePayments, issueInv
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
-adminRoutes.use("*", authMiddleware, adminGuard);
+adminRoutes.use("*", authMiddleware, adminGuard, auditAdminChanges);
+
+// GET /api/v1/admin/audit-log?admin_id=&target_type=&target_id=&q=&page=
+// Every change made from the admin, newest first (utils/audit.ts).
+adminRoutes.get("/audit-log", async (c) => {
+  const q = c.req.query();
+  const { page, limit, offset } = parsePagination(q);
+  const where: string[] = [];
+  const params: unknown[] = [];
+  if (Number(q["admin_id"]) > 0) { where.push("l.admin_id = ?"); params.push(Number(q["admin_id"])); }
+  if (q["target_type"]) { where.push("l.target_type = ?"); params.push(String(q["target_type"]).slice(0, 40)); }
+  if (q["target_id"]) { where.push("l.target_id = ?"); params.push(String(q["target_id"]).slice(0, 40)); }
+  if (q["q"]) { where.push("(l.path LIKE ? OR l.body LIKE ?)"); const s = `%${String(q["q"]).slice(0, 60)}%`; params.push(s, s); }
+  const clause = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const total = await dbCount(c.env.DB, `SELECT COUNT(*) as total FROM admin_audit_log l ${clause}`, params);
+  const rows = await dbAll(
+    c.env.DB,
+    `SELECT l.id, l.admin_id, u.name AS admin_name, u.email AS admin_email, l.method, l.route, l.path, l.target_type, l.target_id,
+            l.body, l.status, l.ip, l.created_at
+     FROM admin_audit_log l LEFT JOIN users u ON u.id = l.admin_id ${clause}
+     ORDER BY l.id DESC LIMIT ? OFFSET ?`,
+    [...params, limit, offset]
+  );
+  return paginated(c, rows, { page, limit, total });
+});
 
 // GET /api/v1/admin/dashboard
 adminRoutes.get("/dashboard", async (c) => {

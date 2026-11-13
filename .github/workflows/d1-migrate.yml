@@ -137,6 +137,9 @@ jobs:
       - name: 0030 duplicate-order guard (idempotency key, cart hash)
         run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0030_order_guard.sql"
 
+      - name: 0031 admin audit log
+        run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0031_admin_audit_log.sql"
+
       # Fails the job (and the API deploy waiting for it) when the schema is
       # not what the API needs; only warns while D1's daily read limit is hit.
       - name: Verify

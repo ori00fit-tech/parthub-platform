@@ -782,5 +782,13 @@ export default {
   "Record": "تسجيل",
   "Parcel going back (to the buyer)": "الطرد في طريق العودة (للمشتري)",
   "Late shipment (buyer and seller)": "شحنة متأخرة (للمشتري والبائع)",
+  "Activity log": "سجل العمليات",
+  "Every change made from the admin: who, what, on which record, and whether it worked. Passwords and secrets are never stored. Nobody can edit this log.": "كل تغيير يتم من لوحة الإدارة: من قام به، وماذا، وعلى أي سجل، وهل نجح. كلمات المرور والأسرار لا تُحفظ أبداً. ولا يمكن لأحد تعديل هذا السجل.",
+  "Record type": "نوع السجل",
+  "Record id": "رقم السجل",
+  "Filter": "تصفية",
+  "Done": "تم",
+  "Refused ({status})": "مرفوض ({status})",
+  "Nothing recorded yet.": "لا شيء مسجّل بعد.",
   "{n} without a matching order": "{n} بلا طلب مطابق",
 };
