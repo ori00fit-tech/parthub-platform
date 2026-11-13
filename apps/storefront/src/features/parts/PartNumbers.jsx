@@ -46,7 +46,7 @@ export function OtherOffers({ offers = [] }) {
         <li key={o.id}>
           <Link to={`/parts/${o.slug}`} className="flex items-center gap-3 rounded-2xl border border-line bg-surface-2 p-3 transition hover:border-line-strong">
             <div className="media-well flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-xl">
-              {o.image_url ? <img src={mediaUrl(o.image_url)} alt="" className="h-full w-full object-cover" /> : <Icon name="part" className="h-6 w-6 text-faint" />}
+              {o.image_url ? <img src={mediaUrl(o.image_url, 160)} alt="" className="h-full w-full object-cover" /> : <Icon name="part" className="h-6 w-6 text-faint" />}
             </div>
             <div className="min-w-0 flex-1">
               <p dir="auto" className="line-clamp-1 text-sm font-semibold text-ink">{o.title}</p>

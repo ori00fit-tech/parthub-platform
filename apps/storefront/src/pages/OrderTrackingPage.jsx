@@ -275,7 +275,7 @@ export default function OrderTrackingPage() {
                 <div className="flex items-center gap-3">
                   <div className="media-well flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-lg">
                     {item.thumbnail ? (
-                      <img src={mediaUrl(item.thumbnail)} alt="" className="h-full w-full object-cover" />
+                      <img src={mediaUrl(item.thumbnail, 160)} alt="" className="h-full w-full object-cover" />
                     ) : (
                       <Icon name="part" className="h-6 w-6 text-faint" />
                     )}

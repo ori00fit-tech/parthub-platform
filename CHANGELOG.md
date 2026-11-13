@@ -41,6 +41,16 @@ known limits: `infra/docs/release-v0.1.1-readiness.md`.
 - 25 Utility templates and 1 Authentication template (reset code) in ar/fr/en, sent in each person's language with
   fallback; submitted to and synced from Meta from the admin.
 
+### Photos
+- Fix: photos were broken on the part page, the store page, the comparison
+  and the cart (storefront), the inventory (seller portal) and the part
+  review page (admin): the stored path was loaded from the site instead of
+  the API. One helper for every photo, and the storefront now also serves
+  /api/v1/media/uploads/* (so any stored path works there).
+- Smaller copies when Cloudflare image resizing is on (list 480 px,
+  thumbnails 160 px, part page 1200 px; WebP/AVIF when the phone supports
+  it), with a fallback to the original. Off until the owner enables it.
+
 ### Devices
 - Every sign-in is a device: "My devices" in the three sites, sign one out
   at once, or every device. "Sign out" now signs out this device only.

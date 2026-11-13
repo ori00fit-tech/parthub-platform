@@ -4,6 +4,7 @@ import { api } from "../lib/api";
 import { formatMoney } from "@parthub/shared";
 import { statusLabel, useT } from "../i18n";
 import { Icon } from "@parthub/shared/icons";
+import { mediaUrl } from "../lib/requests";
 
 function normalizeItems(payload) {
   const list =
@@ -282,7 +283,7 @@ export default function PartsPage() {
                   <div className="bg-gray-100">
                     {part.image_url ? (
                       <img
-                        src={part.image_url}
+                        src={mediaUrl(part.image_url, 160)}
                         alt={part.title}
                         className="h-full w-full object-cover"
                       />

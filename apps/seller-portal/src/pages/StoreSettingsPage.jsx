@@ -378,7 +378,7 @@ export default function StoreSettingsPage() {
             <div className="mt-5 overflow-hidden rounded-3xl border border-gray-200 bg-white">
               <div className="h-28 bg-gray-100">
                 {form.banner_url ? (
-                  <img src={mediaUrl(form.banner_url)} alt={t("Store banner")} className="h-full w-full object-cover" />
+                  <img src={mediaUrl(form.banner_url, 1200)} alt={t("Store banner")} className="h-full w-full object-cover" />
                 ) : null}
               </div>
 
@@ -386,7 +386,7 @@ export default function StoreSettingsPage() {
                 <div className="flex items-start gap-4">
                   <div className="h-16 w-16 overflow-hidden rounded-2xl bg-gray-100">
                     {form.logo_url ? (
-                      <img src={mediaUrl(form.logo_url)} alt={t("Store logo")} className="h-full w-full object-cover" />
+                      <img src={mediaUrl(form.logo_url, 240)} alt={t("Store logo")} className="h-full w-full object-cover" />
                     ) : null}
                   </div>
 

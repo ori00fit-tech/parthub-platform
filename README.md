@@ -228,6 +228,21 @@ a scoped API token), `VITE_API_BASE_URL`.
 No secret is ever committed. Their owners and rotation:
 [`infra/docs/assets-inventory.md`](infra/docs/assets-inventory.md).
 
+## Photos
+
+Photos are stored in R2 and served by the API at `/api/v1/media/uploads/…`;
+the API stores them as paths. Pages always go through `mediaSrc(path,
+width)` (`packages/shared/src/lib/images.ts`, wrapped by `mediaUrl` in the
+apps): it adds the API's address and, when resizing is on, asks Cloudflare
+for a copy no wider than `width`. The storefront also serves
+`/api/v1/media/uploads/*` itself (Pages Function), so a bare path works there.
+
+**Turning resizing on** (owner, once): Cloudflare › parthub.autos › Images ›
+Transformations › enable for the zone; then GitHub › Settings › Variables ›
+Actions › `IMAGE_RESIZING` = `1`, and re-run Deploy Pages. Free up to 5,000
+different copies a month (PartHub needs a few hundred). If resizing is
+switched off later, the pages fall back to the original photos.
+
 ## Database changes
 
 `infra/d1/schema.sql` is the full schema; production evolves only through

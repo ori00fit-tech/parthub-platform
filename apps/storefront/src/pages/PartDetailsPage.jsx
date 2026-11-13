@@ -12,6 +12,7 @@ import { RatingSummary, ReviewList } from "../features/reviews/Reviews";
 import { usePageMeta } from "../lib/pageMeta";
 import { OtherOffers, PartNumbersList } from "../features/parts/PartNumbers";
 import { Icon } from "@parthub/shared/icons";
+import { mediaUrl } from "../lib/media";
 
 function normalizeGallery(part) {
   const candidates = [
@@ -351,7 +352,7 @@ export default function PartDetailsPage() {
           <div className="overflow-hidden rounded-3xl border border-line bg-surface shadow-sm">
             {activeImage ? (
               <img
-                src={activeImage.url}
+                src={mediaUrl(activeImage.url, 1200)}
                 alt={activeImage.alt}
                 className="h-[320px] w-full object-cover sm:h-[420px]"
               />
@@ -377,7 +378,7 @@ export default function PartDetailsPage() {
                   ].join(" ")}
                 >
                   <img
-                    src={image.url}
+                    src={mediaUrl(image.url, 160)}
                     alt={image.alt}
                     className="h-20 w-full object-cover"
                   />
@@ -829,7 +830,7 @@ export default function PartDetailsPage() {
                     <div className="bg-surface-2">
                       {item.image_url ? (
                         <img
-                          src={item.image_url}
+                          src={mediaUrl(item.image_url, 320)}
                           alt={item.title}
                           className="h-36 w-full object-cover"
                         />

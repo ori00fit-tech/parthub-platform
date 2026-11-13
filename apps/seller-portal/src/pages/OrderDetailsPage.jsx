@@ -506,7 +506,7 @@ export default function OrderDetailsPage() {
                 <li key={item.id} className="flex items-center gap-3 py-3">
                   <div className="flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-xl bg-gray-100">
                     {item.image_url ? (
-                      <img src={mediaUrl(item.image_url)} alt="" className="h-full w-full object-cover" />
+                      <img src={mediaUrl(item.image_url, 160)} alt="" className="h-full w-full object-cover" />
                     ) : (
                       <Icon name="part" className="h-6 w-6 text-gray-400" />
                     )}

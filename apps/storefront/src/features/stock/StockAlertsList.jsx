@@ -66,7 +66,7 @@ export default function StockAlertsList() {
                 ].join(" ")}
               >
                 <Link to={`/parts/${a.slug}`} className="media-well flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-lg">
-                  {a.image_url ? <img src={mediaUrl(a.image_url)} alt="" className="h-full w-full object-cover" /> : <Icon name="part" className="h-6 w-6 text-faint" />}
+                  {a.image_url ? <img src={mediaUrl(a.image_url, 160)} alt="" className="h-full w-full object-cover" /> : <Icon name="part" className="h-6 w-6 text-faint" />}
                 </Link>
                 <div className="min-w-0 flex-1">
                   <Link to={`/parts/${a.slug}`} className="line-clamp-2 text-sm font-semibold text-ink hover:text-link">

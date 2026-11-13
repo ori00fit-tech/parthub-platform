@@ -86,7 +86,7 @@ export default function MyRequestsPage() {
               >
                 <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface-2">
                   {r.images?.[0] ? (
-                    <img src={mediaUrl(r.images[0])} alt="" loading="lazy" className="h-full w-full object-cover" />
+                    <img src={mediaUrl(r.images[0], 320)} alt="" loading="lazy" className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center"><Icon name="part" className="h-6 w-6 text-faint" /></div>
                   )}

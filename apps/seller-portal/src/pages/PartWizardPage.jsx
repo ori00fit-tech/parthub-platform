@@ -515,7 +515,7 @@ export default function PartWizardPage() {
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
               {form.photos.map((photo, i) => (
                 <figure key={photo.url} className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
-                  <img src={mediaUrl(photo.url)} alt="" className="aspect-square w-full object-cover" />
+                  <img src={mediaUrl(photo.url, 320)} alt="" className="aspect-square w-full object-cover" />
                   {i === 0 ? (
                     <span className="absolute start-1.5 top-1.5 rounded-md bg-blue-600 px-1.5 py-0.5 text-[10px] font-bold text-white">{t("Main")}</span>
                   ) : null}
@@ -642,7 +642,7 @@ export default function PartWizardPage() {
             <h2 className="text-lg font-bold text-gray-900">{t("Check and publish")}</h2>
             <div className="flex gap-4">
               <div className="h-24 w-24 flex-none overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
-                {form.photos[0] ? <img src={mediaUrl(form.photos[0].url)} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-gray-400"><Icon name="part" className="h-9 w-9" /></div>}
+                {form.photos[0] ? <img src={mediaUrl(form.photos[0].url, 160)} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-gray-400"><Icon name="part" className="h-9 w-9" /></div>}
               </div>
               <div className="min-w-0">
                 <p className="font-semibold text-gray-900">{form.title}</p>

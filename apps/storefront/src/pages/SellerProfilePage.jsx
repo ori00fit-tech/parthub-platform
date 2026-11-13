@@ -5,6 +5,7 @@ import { formatPrice } from "../lib/formatters";
 import { t, useT } from "../i18n";
 import { RatingSummary, ReviewList } from "../features/reviews/Reviews";
 import { usePageMeta } from "../lib/pageMeta";
+import { mediaUrl } from "../lib/media";
 
 function getSellerBadges(seller) {
   const badges = [];
@@ -269,7 +270,7 @@ export default function SellerProfilePage() {
                   <div className="bg-surface-2">
                     {part.image_url ? (
                       <img
-                        src={part.image_url}
+                        src={mediaUrl(part.image_url, 480)}
                         alt={part.title}
                         className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                       />

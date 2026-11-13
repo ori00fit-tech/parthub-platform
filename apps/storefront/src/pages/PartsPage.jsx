@@ -973,7 +973,7 @@ export default function PartsPage() {
                       <div className="media-well relative flex aspect-[4/3] max-w-full items-center justify-center overflow-hidden border-b border-line">
                         {part.image_url ? (
                           <img
-                            src={mediaUrl(part.image_url)}
+                            src={mediaUrl(part.image_url, 480)}
                             alt=""
                             loading="lazy"
                             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"

@@ -180,7 +180,7 @@ export default function LandingPage() {
               >
                 <div className="media-well flex aspect-[4/3] items-center justify-center overflow-hidden border-b border-line">
                   {part.image_url ? (
-                    <img src={mediaUrl(part.image_url)} alt={part.title} loading="lazy" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
+                    <img src={mediaUrl(part.image_url, 480)} alt={part.title} loading="lazy" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
                   ) : (
                     <Icon name="part" className="h-10 w-10 text-faint" />
                   )}

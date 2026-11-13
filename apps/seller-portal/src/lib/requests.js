@@ -1,10 +1,10 @@
-import { BASE_URL } from "./api";
+import { mediaSrc } from "@parthub/shared";
 import { t } from "../i18n";
 
 // Uploaded media is served by the API (/api/v1/media/...).
-export function mediaUrl(path) {
-  if (!path) return "";
-  return path.startsWith("/") ? `${BASE_URL}${path}` : path;
+// width: the largest size the page shows (a smaller copy when resizing is on).
+export function mediaUrl(path, width) {
+  return mediaSrc(path, width);
 }
 
 export { formatMoney as formatMAD } from "@parthub/shared";
