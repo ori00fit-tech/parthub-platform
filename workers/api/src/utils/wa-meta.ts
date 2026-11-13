@@ -89,37 +89,47 @@ export async function submitTemplates(
   if (!canManageTemplates(env)) return { ok: false, error: "WHATSAPP_BUSINESS_ACCOUNT_ID is not set", submitted: [], remaining: 0 };
   const synced = await syncTemplates(env);
   if (!synced.ok) return { ok: false, error: synced.error || "Could not read Meta's templates", submitted: [], remaining: 0 };
-  const rows = await env.DB.prepare("SELECT name, language, source, status FROM whatsapp_templates").all<{ name: string; language: string; source: string; status: string }>();
+  const rows = await env.DB.prepare("SELECT name, language, source, status, meta_id FROM whatsapp_templates").all<{ name: string; language: string; source: string; status: string; meta_id: string | null }>();
   const inMeta = new Set((rows.results || []).filter((r) => r.source === "meta").map((r) => `${r.name}|${asLang(r.language)}`));
+  // Rejected or paused by Meta: submitting it on its own sends the catalog's
+  // current text as an edit of that template (same name and language).
+  const editable = new Map(
+    (rows.results || [])
+      .filter((r) => r.source === "meta" && r.meta_id && (r.status === "rejected" || r.status === "paused"))
+      .map((r) => [`${r.name}|${asLang(r.language)}`, r.meta_id as string])
+  );
   // Refused at submission: retried only when that template is submitted
   // on its own (after its text is fixed), so a batch run always ends.
   const refused = new Set((rows.results || []).filter((r) => r.status === "error").map((r) => `${r.name}|${asLang(r.language)}`));
-  const todo: Array<{ name: string; lang: WaLang }> = [];
+  const todo: Array<{ name: string; lang: WaLang; editId?: string }> = [];
   for (const t of WA_TEMPLATES) {
     if (only?.name && t.name !== only.name) continue;
     for (const lang of WA_LANGS) {
       if (only?.language && lang !== only.language) continue;
       const key = `${t.name}|${lang}`;
       if (!inMeta.has(key) && (only?.name || !refused.has(key))) todo.push({ name: t.name, lang });
+      else if (only?.name && editable.has(key)) todo.push({ name: t.name, lang, editId: editable.get(key) as string });
     }
   }
   const urls = siteUrls(env);
   const submitted: Array<{ name: string; language: string; status: string; error?: string }> = [];
-  for (const { name, lang } of todo.slice(0, SUBMIT_BATCH)) {
+  for (const { name, lang, editId } of todo.slice(0, SUBMIT_BATCH)) {
     const def = WA_TEMPLATE_BY_NAME[name];
     if (!def) continue;
-    const res = await graph(env, `${env.WHATSAPP_BUSINESS_ACCOUNT_ID}/message_templates`, {
-      method: "POST",
-      body: JSON.stringify(metaTemplatePayload(def, lang, urls)),
-    });
-    const status = res.ok ? String(res.body?.status || "pending").toLowerCase() : "error";
+    const payload = metaTemplatePayload(def, lang, urls);
+    const res = editId
+      ? await graph(env, editId, { method: "POST", body: JSON.stringify({ category: payload.category, components: payload.components }) })
+      : await graph(env, `${env.WHATSAPP_BUSINESS_ACCOUNT_ID}/message_templates`, { method: "POST", body: JSON.stringify(payload) });
+    if (res.ok && editId) res.body = { id: editId, status: "PENDING", category: payload.category };
+    // An edit refused keeps Meta's template as it was: rejected, not "error".
+    const status = res.ok ? String(res.body?.status || "pending").toLowerCase() : editId ? "rejected" : "error";
     await env.DB.prepare(
       `INSERT INTO whatsapp_templates (name, language, status, category, reason, meta_id, source, updated_at)
        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, datetime('now'))
        ON CONFLICT(name, language) DO UPDATE SET status = excluded.status, category = excluded.category, reason = excluded.reason,
          meta_id = excluded.meta_id, source = excluded.source, updated_at = excluded.updated_at`
     )
-      .bind(name, lang, status, res.ok ? res.body?.category || def.category : null, res.ok ? null : res.error || null, res.ok ? res.body?.id || null : null, res.ok ? "meta" : "manual")
+      .bind(name, lang, status, res.ok ? res.body?.category || def.category : null, res.ok ? null : res.error || null, res.ok ? res.body?.id || null : editId || null, res.ok || editId ? "meta" : "manual")
       .run();
     submitted.push(res.ok ? { name, language: lang, status } : { name, language: lang, status, error: res.error || "Meta refused it" });
   }
