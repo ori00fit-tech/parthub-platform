@@ -1,4 +1,7 @@
-# PartHub v0.1.0 — readiness audit
+# PartHub v0.1.1 — readiness audit
+
+> Decision (owner, 13 Nov): the release is **v0.1.1**; the old `v0.1.0` tag
+> (UK prototype) stays as history. Progress on the backlog is in §7.
 
 Read-only audit of `main` at `ffc44ac` (PR #57), 13 November 2026.
 Nothing was merged, deployed, migrated or changed in production to write it.
@@ -46,7 +49,7 @@ Status words used below:
 | Documentation | IMPLEMENTED | `infra/docs/*` (carriers, WhatsApp, revenue, shipping, assets inventory…). | The README is out of date (KV, and earlier wording). No CHANGELOG. |
 | Legal and company | IMPLEMENTED | Terms, privacy, seller agreement, returns policy, versioned acceptance. The company block (`legal/company.js`) stays empty until PartHub SARL is registered. | Fill once registered; CNDP filing. |
 
-## 3. Backlog for v0.1.0 (by severity)
+## 3. Backlog for v0.1.1 (by severity)
 
 **P0 — before calling anything a release (owner actions, no code)**
 1. Confirm the `admin@parthub.local` password was changed, or deactivate that account after creating a real admin.
@@ -71,7 +74,7 @@ Status words used below:
 **P3 — later**
 Full-text search, load test and p95 targets, admin roles, carrier API integrations, a settlement ledger, the lint warning in `utils/part-import.ts`.
 
-## 4. Acceptance criteria for v0.1.0
+## 4. Acceptance criteria for v0.1.1
 - P0 done and P1 done, or explicitly accepted by the owner as known limits.
 - CI green; the full order lifecycle proven once in production (a real or staff order: placed → confirmed → shipped → delivered), with its WhatsApp messages once templates are approved.
 - Migrations, deploy, backup / restore and rollback written down.
@@ -82,5 +85,16 @@ The tag `v0.1.0` marks the first UK prototype commit (29 March). Options:
 - **A (recommended)**: rename it to `v0.0.0-uk-prototype` (delete `v0.1.0`, push the new name) and use `v0.1.0` for this release. Needs the owner's explicit approval: it changes a published tag.
 - **B**: keep it and release as `v0.2.0`.
 
-## 6. Mobile apps (after v0.1.0)
+## 6. Mobile apps (after v0.1.1)
 One API for web and apps (already so). React Native + Expo for buyer and seller, admin stays on the web. Prerequisites are P2 items 1–3 above, plus push notifications (Expo push) as a cheaper channel than WhatsApp templates for logged-in app users.
+
+## 7. Progress on the backlog (branch `ccr-15671f9d-hw1efd`)
+| Item | State |
+|---|---|
+| P1.1 duplicate / fake orders | Done: idempotency key, same-cart window, open-orders cap, limits per account and phone (migration 0030, `order-guard.test.mjs`) |
+| P1.2 forgot password | Waiting for the owner's choice (e-mail or WhatsApp code) |
+| P1.3 JSON error handler | Done: request id, no internals, 400 on bad JSON (`errors.test.mjs`) |
+| P1.4 admin audit log | Done: every admin change, Activity log page (migration 0031, `audit.test.mjs`) |
+| P1.5 backup / restore / rollback | Done: `d1-backup.yml` weekly, `operations-runbook.md` |
+| P1.6 release hygiene | Versions 0.1.1, `/health` shows it, CHANGELOG, README corrected. Left to the owner: protect `main`, delete the merged branch `ccr-5e78bfde-687nv2`, tag `v0.1.1` after the release checks |
+| P0 (owner) | Admin password, Meta app secret rotation, Worker Logs: to confirm |

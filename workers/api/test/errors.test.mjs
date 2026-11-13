@@ -61,6 +61,13 @@ check("logged_with_id", logs.some((l) => l.includes("8f1a2b3c4d5e6f70") && l.inc
 r = await app.request("/api/v1/nope", {}, env);
 check("not_found_json", r.status === 404 && (await r.json()).error === "Route not found");
 
+// The version shown by /health is the packages' version.
+const pkgs = ["package.json", "workers/api/package.json", "apps/storefront/package.json", "apps/seller-portal/package.json", "apps/admin/package.json", "packages/shared/package.json"]
+  .map((f) => JSON.parse(readFileSync(ROOT + f, "utf8")).version);
+r = await app.request("/api/v1/health", {}, env);
+j = await r.json();
+check("version_everywhere", new Set(pkgs).size === 1 && j.data.version === pkgs[0], [pkgs, j.data?.version]);
+
 console.log(results);
 const fails = Object.values(results).filter((v) => v !== "PASS").length;
 console.log(fails ? `${fails} FAIL` : "ALL PASS");

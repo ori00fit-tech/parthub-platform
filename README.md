@@ -1,6 +1,9 @@
 # PartHub Platform
 
-PartHub Platform is a Cloudflare-powered automotive parts marketplace monorepo. It brings together a buyer-facing storefront, a seller portal, an admin dashboard, and a Hono API worker into a single pnpm workspace-based project.
+**Version 0.1.1** (release candidate) — see `CHANGELOG.md` and
+`infra/docs/release-v0.1.1-readiness.md`.
+
+PartHub Platform is a Cloudflare-powered automotive parts marketplace monorepo for Morocco (Arabic, French, English; cash on delivery). It brings together a buyer-facing storefront, a seller portal, an admin dashboard, and a Hono API worker into a single pnpm workspace-based project.
 
 ## Overview
 
@@ -13,7 +16,7 @@ The system is organized around:
 - Admin: platform operations, seller oversight, analytics, and management tools
 - API Worker: Hono-based backend for marketplace logic and platform services
 - Shared Packages: reusable frontend and business logic
-- Infrastructure: Cloudflare D1, R2, KV, and deployment configuration
+- Infrastructure: Cloudflare D1, R2, Pages, and deployment configuration
 
 ## Architecture
 
@@ -23,7 +26,7 @@ The system is organized around:
 | API | Hono on Cloudflare Workers |
 | Database | Cloudflare D1 (SQLite) |
 | File storage | Cloudflare R2 |
-| Cache / KV | Cloudflare KV |
+| Cache / KV | Not used (KV is commented out in `wrangler.toml`) |
 | Monorepo tooling | pnpm workspaces + Turborepo |
 | CI | GitHub Actions |
 
@@ -195,8 +198,9 @@ This backend supports catalog browsing, seller workflows, admin operations, orde
 
 The shared package exposes shared frontend-facing and business logic resources, including:
 
-- icons
-- legal content
+- icons (`@parthub/shared/icons`) and brand (`/brand`)
+- legal content and company details (`/legal`)
+- the account forms (`/account`), the API client, server-message translations
 - shared types and exported modules
 
 ### `packages/utils`
@@ -223,7 +227,14 @@ The platform expects Cloudflare R2 for media assets and object storage.
 
 ### Cloudflare KV
 
-KV is configured as part of the platform environment and is referenced in the environment example file.
+Not used today: the API runs on D1 and R2 only. The `[[kv_namespaces]]`
+block in `workers/api/wrangler.toml` is commented out.
+
+### Operations
+
+Backup, restore, rollback and incidents: `infra/docs/operations-runbook.md`.
+Other guides in `infra/docs/` (carriers, WhatsApp templates, revenue,
+shipping, part import, vehicle catalog, assets inventory).
 
 ## Local Development
 
@@ -320,18 +331,17 @@ The repository includes GitHub Actions workflows for continuous integration and 
 
 Key workflows:
 
-- `.github/workflows/ci.yml` — lint and build validation
+- `.github/workflows/ci.yml` — typecheck, lint, API tests, the three builds
 - `.github/workflows/deploy-api.yml` — API deployment
 - `.github/workflows/deploy-pages.yml` — frontend deployment
 - `.github/workflows/d1-migrate.yml` — database migration automation
 - `.github/workflows/deploy-notes.yml` — deployment note automation
+- `.github/workflows/d1-backup.yml` — weekly database export to private R2
+- `.github/workflows/prod-health.yml` — daily production health check
 
-The CI workflow runs builds for:
-
-- storefront
-- seller portal
-- admin
-- API typecheck
+The CI workflow runs the API typecheck, lint, the API test suites
+(`workers/api/test`, in-memory SQLite) and the builds of the storefront,
+seller portal and admin.
 
 ## Build and Quality Commands
 
@@ -347,6 +357,10 @@ pnpm format
 ```
 
 ## Deployment
+
+Merging to `main` deploys: Deploy API (D1 migrations first, then a schema
+verify gate, then the Worker), then Deploy Pages. Manual deploys and
+rollbacks: `infra/docs/operations-runbook.md`.
 
 ### API Worker
 

@@ -1,3 +1,4 @@
+import { VERSION } from "../version";
 import { Hono } from "hono";
 import type { Env, HonoVariables } from "../types";
 
@@ -23,6 +24,7 @@ healthRoutes.get("/", async (c) => {
       data: {
         status: db.ok ? "ok" : "degraded",
         service: "parthub-api",
+        version: VERSION,
         env: c.env.APP_ENV,
         database: db,
         timestamp: new Date().toISOString(),
