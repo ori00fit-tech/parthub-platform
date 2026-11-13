@@ -6,6 +6,9 @@ dist/
 .env
 .env.*
 !.env.example
+# Local Worker secrets (wrangler dev)
+.dev.vars
+.dev.vars.*
 .DS_Store
 *.log
 coverage/

@@ -19,13 +19,24 @@ else
   echo -e "${BLUE}Running in LOCAL mode${NC}"
 fi
 
+# From the API folder (its wrangler.toml names the database), with the
+# Wrangler installed in it.
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT/workers/api"
+WRANGLER="npx --no-install wrangler"
+
 echo -e "${BLUE}Applying schema...${NC}"
-wrangler d1 execute $DB_NAME $LOCAL_FLAG --file=infra/d1/schema.sql
+$WRANGLER d1 execute $DB_NAME $LOCAL_FLAG --file="$ROOT/infra/d1/schema.sql"
 
 echo -e "${BLUE}Applying indexes...${NC}"
-wrangler d1 execute $DB_NAME $LOCAL_FLAG --file=infra/d1/indexes.sql
+$WRANGLER d1 execute $DB_NAME $LOCAL_FLAG --file="$ROOT/infra/d1/indexes.sql"
 
 echo -e "${BLUE}Applying seed data...${NC}"
-wrangler d1 execute $DB_NAME $LOCAL_FLAG --file=infra/d1/seed.sql
+$WRANGLER d1 execute $DB_NAME $LOCAL_FLAG --file="$ROOT/infra/d1/seed.sql"
+
+if [[ "$LOCAL_FLAG" == "--local" ]]; then
+  echo -e "${BLUE}Applying the vehicle catalog (Morocco)...${NC}"
+  $WRANGLER d1 execute $DB_NAME $LOCAL_FLAG --file="$ROOT/infra/d1/migrations/0017_seed_vehicle_catalog.sql"
+fi
 
 echo -e "${GREEN}D1 seeded successfully!${NC}"
