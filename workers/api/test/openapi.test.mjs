@@ -128,6 +128,8 @@ await contract("PATCH", `/api/v1/marketplace/me/orders/${created.data.id}/status
 await contract("POST", `/api/v1/marketplace/me/orders/${created.data.id}/shipment`, "/api/v1/marketplace/me/orders/:id/shipment", seller, { status: "out_for_delivery" });
 await contract("POST", `/api/v1/marketplace/me/orders/${created.data.id}/shipment`, "/api/v1/marketplace/me/orders/:id/shipment", seller, { status: "teleported" });
 await contract("GET", "/api/v1/marketplace/me/parts", "/api/v1/marketplace/me/parts", seller);
+await contract("GET", "/api/v1/marketplace/me/shipping", "/api/v1/marketplace/me/shipping", seller);
+await contract("PUT", "/api/v1/marketplace/me/shipping", "/api/v1/marketplace/me/shipping", seller, { carriers: [{ code: "amana", account_ref: "C-1" }], default_carrier: "amana", free_delivery_over: "500", delivery_days_local: 1, delivery_days_national: 3 });
 await contract("GET", "/api/v1/marketplace/parts/1/images", "/api/v1/marketplace/parts/:id/images", seller);
 await contract("POST", "/api/v1/auth/forgot", "/api/v1/auth/forgot", null, { identifier: "nobody@x.ma" });
 await contract("GET", "/api/v1/auth/delete-account", "/api/v1/auth/delete-account", buyer);

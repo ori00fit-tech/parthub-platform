@@ -37,6 +37,14 @@ Admin › **Carriers**.
   same, delivered with the cash collected included, from Admin › Carriers ›
   Late shipments (`POST /api/v1/admin/orders/:id/shipment`). Same timeline,
   same effects as the webhook (returned: lines cancelled, stock back once).
+- **The seller's own choices** (seller portal › Store › "Shipping: my
+  carriers and options", `GET/PUT /api/v1/marketplace/me/shipping`,
+  migration 0037): the carriers they work with (their customer number at
+  each, one by default). The ship form offers only those, default
+  preselected; with none chosen, every active carrier. Also: **free
+  delivery from an amount** (the fee is 0 when the buyer's parts from that
+  store reach it: checkout and order charge the same) and **delivery times**
+  in their city / elsewhere, shown on the part page and at checkout.
 - **What each status sends on WhatsApp** (`utils/wa-events.ts`,
   `whatsapp-templates.md`):
   | Status | Buyer | Seller |

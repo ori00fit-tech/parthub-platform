@@ -162,6 +162,17 @@ export default function OrderDetailsPage() {
       .catch(() => {});
   }, []);
 
+  // The seller's own carriers (Store › Shipping), default first, when chosen.
+  const choices = order?.ship_choices?.carriers;
+  const shipOptions = choices?.length
+    ? choices.map((c) => [c.code, c.code === "own" ? "My own driver" : c.code === "other" ? "Other carrier" : c.name])
+    : carriers;
+  const defaultCarrier = order?.ship_choices?.default_carrier;
+  useEffect(() => {
+    if (defaultCarrier) setCarrier(defaultCarrier);
+    else if (choices?.length) setCarrier(choices[0].code);
+  }, [defaultCarrier, choices?.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const pickupOrder = order?.fulfillment === "pickup" || order?.fulfillment === "courier";
 
   // What the carrier says, for carriers that send PartHub nothing.
@@ -385,7 +396,7 @@ export default function OrderDetailsPage() {
                     onChange={(e) => setCarrier(e.target.value)}
                     className="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
                   >
-                    {carriers.map(([value, label]) => (
+                    {shipOptions.map(([value, label]) => (
                       <option key={value} value={value}>{t(label)}</option>
                     ))}
                   </select>

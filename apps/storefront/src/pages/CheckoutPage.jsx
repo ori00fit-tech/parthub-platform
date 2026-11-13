@@ -52,7 +52,8 @@ export default function CheckoutPage() {
 
   // How the buyer gets each seller's parts: delivery, pickup at the store,
   // or someone they send (API: GET /api/v1/commerce/fulfillment-options).
-  const partIds = items.map((item) => item.part_id || item.id).filter(Boolean).join(",");
+  // part:quantity, so the seller's free delivery is known for this cart.
+  const partIds = items.map((item) => [item.part_id || item.id, Number(item.quantity || 1)]).filter(([id]) => id).map(([id, q]) => `${id}:${q}`).join(",");
   const [groups, setGroups] = useState(null);
   const [choice, setChoice] = useState({}); // seller_id → method
   const [collector, setCollector] = useState({}); // seller_id → { name, phone }
@@ -468,6 +469,18 @@ export default function CheckoutPage() {
                                     ? t("The part is kept for you 3 days. Inspect it at the store and pay only if it's right.")
                                     : t("A driver or a relative collects it with your pickup code.")}
                               </span>
+                              {m === "delivery" && g.delivery_days ? (
+                                <span className="mt-1 block text-xs font-semibold text-ink-2">
+                                  {Number(g.delivery_days) === 1 ? t("Delivered in about 1 day") : t("Delivered in about {n} days", { n: g.delivery_days })}
+                                </span>
+                              ) : null}
+                              {m === "delivery" && g.free_delivery_over ? (
+                                <span className={["mt-1 block text-xs", Number(g.delivery_fee) === 0 ? "font-semibold text-emerald-700" : "text-ink-2"].join(" ")}>
+                                  {Number(g.delivery_fee) === 0
+                                    ? t("Free delivery: your order from this store is over {amount}", { amount: formatPrice(g.free_delivery_over) })
+                                    : t("Free delivery from {amount} at this store", { amount: formatPrice(g.free_delivery_over) })}
+                                </span>
+                              ) : null}
                               {m === "delivery" && g.city && Number(g.delivery_fee_local) !== Number(g.delivery_fee_national) ? (
                                 <span className="mt-1 block text-xs text-ink-2">
                                   {t("{local} in {city}, {national} elsewhere", {

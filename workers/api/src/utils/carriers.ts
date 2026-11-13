@@ -435,3 +435,48 @@ export async function shipmentTimeline(DB: D1Database, shipmentIds: number[]) {
   ).bind(...shipmentIds).all<{ shipment_id: number; status: string; carrier_status: string | null; note: string | null; occurred_at: string; source: string }>();
   return res.results || [];
 }
+
+// ── A seller's carriers (migrations/0037) ──────────────────────────────
+// The delivery companies the seller works with (their customer number
+// there, and the default one). The ship form offers these first; with
+// none chosen, every active carrier.
+export type SellerCarrier = { code: string; name: string; kind: string; chosen: boolean; account_ref: string | null; is_default: boolean };
+
+export async function sellerCarriers(DB: D1Database, sellerId: number): Promise<SellerCarrier[]> {
+  const rows = await DB.prepare(
+    `select c.code, c.name, c.kind, sc.carrier is not null as chosen, sc.account_ref, coalesce(sc.is_default, 0) as is_default
+     from carriers c left join seller_carriers sc on sc.carrier = c.code and sc.seller_id = ?1
+     where c.active = 1 order by c.sort_order, c.name`
+  ).bind(sellerId).all<{ code: string; name: string; kind: string; chosen: number; account_ref: string | null; is_default: number }>();
+  return (rows.results || []).map((r) => ({ ...r, chosen: Boolean(r.chosen), is_default: Boolean(r.is_default) }));
+}
+
+// What the ship form shows: the seller's carriers (default first), or all.
+export async function shipChoices(DB: D1Database, sellerId: number): Promise<{ carriers: Array<{ code: string; name: string }>; default_carrier: string | null }> {
+  const all = await sellerCarriers(DB, sellerId);
+  const mine = all.filter((c) => c.chosen);
+  const list = (mine.length ? mine : all).sort((a, b) => Number(b.is_default) - Number(a.is_default));
+  return { carriers: list.map(({ code, name }) => ({ code, name })), default_carrier: mine.find((c) => c.is_default)?.code ?? null };
+}
+
+// Saves the seller's choice: [{ code, account_ref }] and the default.
+export async function saveSellerCarriers(
+  DB: D1Database,
+  sellerId: number,
+  chosen: Array<{ code: string; account_ref: string | null }>,
+  defaultCode: string | null
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const active = new Set((await listCarriers(DB, true)).map((c) => c.code));
+  const clean = chosen.filter((c, i, a) => active.has(c.code) && a.findIndex((x) => x.code === c.code) === i).slice(0, 20);
+  if (chosen.length && clean.length !== chosen.length) return { ok: false, error: "Unknown carrier" };
+  if (defaultCode && !clean.some((c) => c.code === defaultCode)) return { ok: false, error: "The default carrier must be one of yours" };
+  await DB.batch([
+    DB.prepare("delete from seller_carriers where seller_id = ?1").bind(sellerId),
+    ...clean.map((c) =>
+      DB.prepare("insert into seller_carriers (seller_id, carrier, account_ref, is_default) values (?1, ?2, ?3, ?4)")
+        .bind(sellerId, c.code, c.account_ref, c.code === defaultCode ? 1 : 0)
+    ),
+  ]);
+  return { ok: true };
+}
+

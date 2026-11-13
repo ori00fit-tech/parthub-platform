@@ -1191,5 +1191,11 @@ export default {
   "Sign out everywhere (all devices, this one too)": "تسجيل الخروج من كل الأجهزة (بما فيها هذا الجهاز)",
   "Device not found": "الجهاز غير موجود",
   "Device signed out": "تم إخراج الجهاز",
+  "Delivered in about 1 day": "التوصيل خلال يوم تقريباً",
+  "Delivered in about {n} days": "التوصيل خلال {n} أيام تقريباً",
+  "Free delivery: your order from this store is over {amount}": "توصيل مجاني: طلبك من هذا المتجر تجاوز {amount}",
+  "Free delivery from {amount} at this store": "توصيل مجاني ابتداءً من {amount} في هذا المتجر",
+  "{local} day(s) in {city}, {national} elsewhere": "{local} يوم في {city}، و{national} في باقي المدن",
+  "Delivered in about {n} day(s)": "التوصيل خلال {n} يوم تقريباً",
   "{n} failed attempt(s)": "{n} محاولة فاشلة",
 };

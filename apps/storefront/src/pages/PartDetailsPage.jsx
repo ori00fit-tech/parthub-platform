@@ -486,6 +486,18 @@ export default function PartDetailsPage() {
                     {t("Delivery across Morocco, cash on delivery")}
                   </li>
                 ) : null}
+                {Number(part.can_deliver) && part.seller_delivery_days_local ? (
+                  <li className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-ink-2">
+                    {part.seller_location && part.seller_delivery_days_national && part.seller_delivery_days_national !== part.seller_delivery_days_local
+                      ? t("{local} day(s) in {city}, {national} elsewhere", { local: part.seller_delivery_days_local, national: part.seller_delivery_days_national, city: String(part.seller_location).split(",")[0] })
+                      : t("Delivered in about {n} day(s)", { n: part.seller_delivery_days_national || part.seller_delivery_days_local })}
+                  </li>
+                ) : null}
+                {Number(part.can_deliver) && part.seller_free_delivery_over ? (
+                  <li className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1.5 text-emerald-800">
+                    {t("Free delivery from {amount} at this store", { amount: formatPrice(part.seller_free_delivery_over) })}
+                  </li>
+                ) : null}
                 {Number(part.can_pickup) ? (
                   <li className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1.5 text-emerald-800">
                     <Icon name="store" className="h-4 w-4" />
