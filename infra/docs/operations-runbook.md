@@ -9,7 +9,7 @@ in `scripts/` that change production ask for `CONFIRM_PRODUCTION=parthub-db`.
 | Layer | Protection | How far back |
 |---|---|---|
 | D1 database `parthub-db` | **Time Travel** (built into D1, always on): restore to any minute | 30 days (Workers Paid), 7 days (Free) |
-| D1 database | **Weekly export** (`.github/workflows/d1-backup.yml`): full SQL, gzipped, in R2 `parthub-media/backups/d1/` | As long as the files are kept (lifecycle rule below) |
+| D1 database | **Weekly export** (`.github/workflows/d1-backup.yml`): full SQL, **restored into a scratch database and checked** (tables, rows, integrity) before it is stored gzipped in R2 `parthub-media/backups/d1/` | As long as the files are kept (lifecycle rule below) |
 | R2 photos `parthub-media` | None automatic: deleting a photo deletes it. The API never deletes a stored file when a part is edited. | — |
 | API Worker `parthub-api` | Cloudflare keeps the previous deployments: **rollback** in one command | Recent versions |
 | Sites (Pages) | Every deployment is kept: **rollback** in the dashboard | All deployments |
@@ -52,6 +52,12 @@ npx wrangler d1 execute parthub-db-restore --remote --file=restore.sql
 
 Delete `restore.sql` from your computer afterwards: it holds personal data
 (law 09-08).
+
+**Restore drill (every 3 months, 15 minutes)**: run the D1 backup workflow
+by hand, then restore its file into `parthub-db-restore` as above, count
+users / orders / parts against production, and delete the drill database
+(`npx wrangler d1 delete parthub-db-restore`). Note the date here:
+- (no drill yet)
 
 ## 3. Roll back a bad release
 

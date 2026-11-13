@@ -2,6 +2,7 @@ import app from "./app";
 import type { Env } from "./types";
 import { accrueCommissions } from "./utils/commissions";
 import { notifyLateShipments } from "./utils/shipping-delays";
+import { retryWhatsApp } from "./utils/wa-notify";
 
 // fetch: the API. scheduled: daily jobs (wrangler.toml [triggers]).
 export default {
@@ -9,7 +10,13 @@ export default {
   // Records the commission of sales whose returns window ended, so the
   // ledger never depends on someone opening a page (same rows either way),
   // and checks for late shipments.
-  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    // Every 15 minutes: WhatsApp messages waiting for an approved template
+    // or refused once (utils/wa-notify.ts).
+    if (event.cron === "*/15 * * * *") {
+      ctx.waitUntil(retryWhatsApp(env).catch((err) => console.warn(`[whatsapp retry] ${err instanceof Error ? err.message : String(err)}`)));
+      return;
+    }
     ctx.waitUntil(
       (async () => {
         for (let pass = 0; pass < 20; pass++) {

@@ -9,6 +9,7 @@ import { parsePagination } from "../utils/pagination";
 import { notifyBackInStock } from "../utils/stock-alerts";
 import { runInBackground } from "../utils/whatsapp";
 import { auditAdminChanges } from "../utils/audit";
+import { retryWhatsApp } from "../utils/wa-notify";
 import { waClaimEvent, waOrderStepAllSellers, waPartsReviewed, waShipmentEvent, waStoreStatus } from "../utils/wa-events";
 import { TEMPLATE_STATUSES, submitTemplates, syncTemplates, templateCenter } from "../utils/wa-meta";
 import { WA_LANGS, WA_TEMPLATE_BY_NAME } from "../utils/wa-templates";
@@ -120,7 +121,7 @@ adminRoutes.get("/sellers", async (c) => {
     c.env.DB,
     `SELECT s.*, u.email, u.phone as user_phone FROM sellers s
      JOIN users u ON u.id = s.user_id ${where}
-     ORDER BY s.created_at DESC LIMIT ? OFFSET ?`,
+     ORDER BY s.created_at DESC, s.id DESC LIMIT ? OFFSET ?`,
     [...params, limit, offset]
   );
   return paginated(c, sellers, { page, limit, total });
@@ -139,7 +140,7 @@ adminRoutes.get("/sellers/:id", async (c) => {
   if (!seller) return fail(c, "Seller not found", 404);
   const parts = await dbAll(
     c.env.DB,
-    "SELECT id, slug, title, price, status, quantity, moderation_note FROM parts WHERE seller_id = ? ORDER BY created_at DESC LIMIT 100",
+    "SELECT id, slug, title, price, status, quantity, moderation_note FROM parts WHERE seller_id = ? ORDER BY created_at DESC, id DESC LIMIT 100",
     [id]
   );
   return ok(c, { ...seller, parts });
@@ -325,7 +326,7 @@ adminRoutes.get("/parts", async (c) => {
      JOIN sellers s ON s.id = p.seller_id
      LEFT JOIN categories cat ON cat.id = p.category_id
      ${where}
-     ORDER BY p.created_at DESC LIMIT ? OFFSET ?`,
+     ORDER BY p.created_at DESC, p.id DESC LIMIT ? OFFSET ?`,
     [...params, limit, offset]
   );
   return paginated(c, parts, { page, limit, total });
@@ -379,7 +380,7 @@ adminRoutes.get("/orders", async (c) => {
     c.env.DB,
     `SELECT o.*, u.name as buyer_name, u.email as buyer_email
      FROM orders o JOIN users u ON u.id = o.buyer_id
-     ORDER BY o.created_at DESC LIMIT ? OFFSET ?`,
+     ORDER BY o.created_at DESC, o.id DESC LIMIT ? OFFSET ?`,
     [limit, offset]
   );
   return paginated(c, orders, { page, limit, total });
@@ -766,7 +767,7 @@ adminRoutes.get("/reviews", async (c) => {
      JOIN users u ON u.id = r.buyer_id
      JOIN parts p ON p.id = r.part_id
      WHERE r.status = 'pending'
-     ORDER BY r.created_at DESC LIMIT ? OFFSET ?`,
+     ORDER BY r.created_at DESC, r.id DESC LIMIT ? OFFSET ?`,
     [limit, offset]
   );
   return paginated(c, reviews, { page, limit, total });
@@ -1149,6 +1150,8 @@ adminRoutes.get("/whatsapp/templates", async (c) => ok(c, await templateCenter(c
 adminRoutes.post("/whatsapp/templates/sync", async (c) => {
   const res = await syncTemplates(c.env);
   if (!res.ok) return fail(c, res.error || "Could not read Meta's templates", 502);
+  // Templates just approved: send what was waiting for them.
+  runInBackground(c, retryWhatsApp(c.env));
   return ok(c, { found: res.found, ...(await templateCenter(c.env)) });
 });
 

@@ -79,7 +79,7 @@ jobs:
         if: steps.pick.outputs.run == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22" # same as CI
 
       - name: Setup pnpm
         if: steps.pick.outputs.run == 'true'

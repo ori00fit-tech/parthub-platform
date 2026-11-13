@@ -100,7 +100,7 @@ console.log(Object.values(results).every((v) => v === "PASS") ? "ALL PASS" : "SO
     admin_part_404: (await call("GET", "/api/v1/admin/parts/999", admin))[0] === 404,
   };
   const [s2, p2] = await call("GET", "/api/v1/admin/sellers/1", admin);
-  r2.admin_seller_detail = s2 === 200 && p2.data.user_email === "s@x" && Array.isArray(p2.data.parts) && p2.data.parts[0].moderation_note?.startsWith("Photos");
+  r2.admin_seller_detail = s2 === 200 && p2.data.user_email === "s@x" && Array.isArray(p2.data.parts) && p2.data.parts.find((x) => x.id === 1)?.moderation_note?.startsWith("Photos");
   r2.admin_seller_404 = (await call("GET", "/api/v1/admin/sellers/999", admin))[0] === 404;
   r2.detail_admin_only = (await call("GET", "/api/v1/admin/parts/1", seller))[0] === 403;
   console.log(r2, Object.values(r2).every(Boolean) ? "DETAIL ALL PASS" : "DETAIL FAILED");

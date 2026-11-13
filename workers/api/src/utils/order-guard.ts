@@ -5,15 +5,15 @@
 //  1. Idempotency-Key (one per checkout attempt, sent by the site): the
 //     same key again returns the first order. A unique index makes two
 //     simultaneous requests with one key end with one order.
-//  2. Same cart + phone within DUPLICATE_MINUTES: returns that order
-//     (clients without the key, two tabs).
+//  2. Same cart + phone while that order still waits for the seller:
+//     returns it (clients without the key, two tabs). A partial unique
+//     index (migrations/0032) makes it hold for simultaneous requests too.
 //  3. At most MAX_OPEN_ORDERS orders waiting for a seller's confirmation.
 //  4. Rate limits per buyer and per phone (several accounts, one phone).
 // ============================================================
 import { LIMITS, blockedFor, recordAttempt } from "./rate-limit";
 import { normalizeWhatsAppNumber } from "./whatsapp";
 
-export const DUPLICATE_MINUTES = 10;
 export const MAX_OPEN_ORDERS = 5; // ORDER_MAX_OPEN (Worker var) overrides it
 
 // A key from the client: letters, digits, - and _, 8 to 100 characters.
@@ -52,9 +52,8 @@ export async function checkNewOrder(
     if (same) return { kind: "existing", reference: same.reference, why: "same_key" };
   }
   const recent = await DB.prepare(
-    `select reference from orders where buyer_id = ?1 and cart_hash = ?2 and status = 'pending'
-       and created_at >= datetime('now', ?3) order by id desc limit 1`
-  ).bind(buyerId, hash, `-${DUPLICATE_MINUTES} minutes`).first<{ reference: string }>();
+    `select reference from orders where buyer_id = ?1 and cart_hash = ?2 and status = 'pending' order by id desc limit 1`
+  ).bind(buyerId, hash).first<{ reference: string }>();
   if (recent) return { kind: "existing", reference: recent.reference, why: "same_cart" };
 
   const keys = orderLimitKeys(buyerId, phone);
@@ -68,6 +67,18 @@ export async function checkNewOrder(
     return { kind: "refused", status: 409, message: `You already have ${maxOpen} orders waiting for the sellers' confirmation. Wait for them, or cancel one.` };
   }
   return { kind: "ok" };
+}
+
+// The order another simultaneous request wrote (same key, or same cart
+// still pending), after the unique index refused ours.
+export async function existingAfterConflict(DB: D1Database, buyerId: number, key: string | null, hash: string) {
+  if (key) {
+    const byKey = await DB.prepare("select * from orders where buyer_id = ?1 and idempotency_key = ?2").bind(buyerId, key).first();
+    if (byKey) return { order: byKey, why: "same_key" as const };
+  }
+  const byCart = await DB.prepare("select * from orders where buyer_id = ?1 and cart_hash = ?2 and status = 'pending' order by id desc limit 1")
+    .bind(buyerId, hash).first();
+  return byCart ? { order: byCart, why: "same_cart" as const } : null;
 }
 
 // After an order is written: counts it against both limits.

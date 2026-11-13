@@ -78,6 +78,18 @@ check("filter_admin", r.data.every((x) => x.admin_id === 1) && r.data.length ===
 [st] = await call("GET", "/api/v1/admin/audit-log", s1);
 check("log_admin_only", st === 403, st);
 
+// The log cannot be written → the change is refused, nothing changed.
+const realPrepare = DB.prepare;
+DB.prepare = (q) => { if (/INSERT INTO admin_audit_log/.test(q)) throw new Error("D1_ERROR: full"); return realPrepare(q); };
+[st, r] = await call("PATCH", "/api/v1/admin/sellers/1/status", a1, { status: "rejected", reason: "Documents missing, please resend" });
+DB.prepare = realPrepare;
+check("fail_closed", st === 503 && sql.prepare("select status from sellers where id = 1").get().status !== "rejected", [st, r]);
+// A change that crashes keeps its log row (status 500 recorded by the error handler's answer).
+const n0 = log().length;
+const realBatch = DB.batch;
+await call("PATCH", "/api/v1/admin/sellers/1/status", a1, { status: "active" });
+check("logged_before_and_after", log().length === n0 + 1 && log().at(-1).status === 200);
+
 console.log(results);
 const fails = Object.values(results).filter((v) => v !== "PASS").length;
 console.log(fails ? `${fails} FAIL` : "ALL PASS");

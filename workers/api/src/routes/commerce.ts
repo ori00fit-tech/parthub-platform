@@ -10,7 +10,7 @@ import { shipmentTimeline, trackingUrl } from "../utils/carriers";
 import { runInBackground } from "../utils/whatsapp";
 import { notifySellersOfNewOrder } from "../utils/request-notifications";
 import { waClaimEvent, waOrderReceived } from "../utils/wa-events";
-import { cartHash, checkNewOrder, countOrder, readIdempotencyKey } from "../utils/order-guard";
+import { cartHash, checkNewOrder, countOrder, existingAfterConflict, readIdempotencyKey } from "../utils/order-guard";
 import { ISSUE_REASONS, type IssueRow, canEscalate, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, reportWindow, updateIssue } from "../utils/issues";
 
 const MAX_REVIEW_LENGTH = 1000;
@@ -248,11 +248,11 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
     if (/NOT NULL constraint failed: parts\.quantity/i.test(message)) {
       return fail(c, "Some items are no longer in stock, please review your cart", 409);
     }
-    // The same key at the same moment: the other request wrote the order
-    // (the batch rolled back, stock included).
-    if (idempotencyKey && /UNIQUE constraint failed: orders\.buyer_id/i.test(message)) {
-      const first = await dbFirst(c.env.DB, "SELECT * FROM orders WHERE buyer_id = ? AND idempotency_key = ?", [buyerId, idempotencyKey]);
-      if (first) return c.json({ success: true, data: first, meta: { duplicate: "same_key" } }, 200);
+    // Same key, or same cart, at the same moment: the other request wrote
+    // the order (this batch rolled back, stock included).
+    if (/UNIQUE constraint failed: orders\.buyer_id/i.test(message)) {
+      const found = await existingAfterConflict(c.env.DB, Number(buyerId), idempotencyKey, hash);
+      if (found) return c.json({ success: true, data: found.order, meta: { duplicate: found.why } }, 200);
     }
     throw err;
   }
@@ -271,7 +271,7 @@ commerceRoutes.get("/orders", authMiddleware, async (c) => {
   const buyerId = c.get("user_id");
   const orders = await dbAll(
     c.env.DB,
-    "SELECT * FROM orders WHERE buyer_id = ? ORDER BY created_at DESC",
+    "SELECT * FROM orders WHERE buyer_id = ? ORDER BY created_at DESC, id DESC",
     [buyerId]
   );
   return ok(c, orders);
@@ -473,7 +473,7 @@ commerceRoutes.post("/reviews", authMiddleware, async (c) => {
     `SELECT oi.id FROM order_items oi
      JOIN orders o ON o.id = oi.order_id
      WHERE oi.part_id = ? AND o.buyer_id = ? AND oi.status = 'delivered'
-     ORDER BY o.created_at DESC LIMIT 1`,
+     ORDER BY o.created_at DESC, o.id DESC LIMIT 1`,
     [partId, buyerId]
   );
   if (!orderItem) return fail(c, "You can rate a part once your order is delivered", 403);

@@ -64,15 +64,47 @@ export async function chooseLanguage(
   return { lang: null, reason: `No approved language (${rows.map((r) => `${r.language}: ${r.status}`).join(", ")})` };
 }
 
-async function finish(env: Env, n: Notice, values: { sent: boolean; status: string; lang: string | null; id?: string | null | undefined; error?: string | null | undefined }) {
+type Payload = { number: string; locale: string | null; params: Record<WaLang, string[]>; button: string | null };
+type Row = { id: number; kind: string; template: string; created_at: string; attempts: number; payload: Payload };
+
+async function finish(env: Env, id: number, values: { sent: boolean; status: string; lang: string | null; msgId?: string | null | undefined; error?: string | null | undefined; tried: boolean }) {
   await env.DB.prepare(
-    `update whatsapp_notifications set sent = ?4, status = ?5, status_at = datetime('now'), template = ?6, language = ?7,
-       wa_message_id = coalesce(?8, wa_message_id), error = ?9
-     where kind = ?1 and ref_id = ?2 and recipient = ?3`
+    `update whatsapp_notifications set sent = ?2, status = ?3, status_at = datetime('now'), language = ?4,
+       wa_message_id = coalesce(?5, wa_message_id), error = ?6, attempts = attempts + ?7
+     where id = ?1`
   )
-    .bind(n.kind, n.refId, n.recipient, values.sent ? 1 : 0, values.status, n.template, values.lang, values.id ?? null, values.error ?? null)
+    .bind(id, values.sent ? 1 : 0, values.status, values.lang, values.msgId ?? null, values.error ?? null, values.tried ? 1 : 0)
     .run();
 }
+
+// One try: STOP, then the language, then Meta. Used by notify() and the retries.
+async function attempt(env: Env, row: Row): Promise<boolean> {
+  const p = row.payload;
+  if (await isOptedOut(env, p.number)) {
+    await finish(env, row.id, { sent: false, status: "skipped", lang: null, error: OPTED_OUT, tried: false });
+    return false;
+  }
+  const choice = await chooseLanguage(env, row.template, p.locale);
+  if (!choice.lang) {
+    // Not a try: retried once Meta approves a language.
+    await finish(env, row.id, { sent: false, status: "skipped", lang: null, error: choice.reason, tried: false });
+    return false;
+  }
+  const lang = (asLang(choice.lang) || "fr") as WaLang;
+  const res = await sendTemplateMessage(env, p.number, row.template, choice.lang, p.params[lang] || p.params.fr, p.button || undefined);
+  if (!res.ok) console.warn(`[whatsapp] ${row.template}/${choice.lang} → ${res.error}`);
+  await finish(env, row.id, {
+    sent: res.ok,
+    status: res.ok ? "sent" : "failed",
+    lang: choice.lang,
+    msgId: res.ok ? res.id || null : null,
+    error: res.ok ? null : res.error || "Meta refused the message",
+    tried: true,
+  });
+  return res.ok;
+}
+
+const OPTED_OUT = "Opted out (STOP)";
 
 // Returns true when Meta accepted the message.
 export async function notify(env: Env, n: Notice): Promise<boolean> {
@@ -80,38 +112,71 @@ export async function notify(env: Env, n: Notice): Promise<boolean> {
     if (!isWhatsAppConfigured(env)) return false;
     const number = normalizeWhatsAppNumber(n.phone);
     if (!number) return false;
+    // Everything needed to send it later too (a retry recomputes nothing).
+    const params = Object.fromEntries(WA_LANGS.map((l) => [l, typeof n.params === "function" ? n.params(l) : n.params])) as Record<WaLang, string[]>;
+    const payload: Payload = { number, locale: asLang(n.locale), params, button: n.buttonPath ?? null };
     const claim = await env.DB.prepare(
-      "insert or ignore into whatsapp_notifications (kind, ref_id, recipient, template) values (?1, ?2, ?3, ?4)"
+      "insert or ignore into whatsapp_notifications (kind, ref_id, recipient, template, payload) values (?1, ?2, ?3, ?4, ?5)"
     )
-      .bind(n.kind, n.refId, n.recipient, n.template)
+      .bind(n.kind, n.refId, n.recipient, n.template, JSON.stringify(payload))
       .run();
     if (!Number(claim.meta?.changes)) return false; // already sent (or being sent)
-
-    if (await isOptedOut(env, number)) {
-      await finish(env, n, { sent: false, status: "skipped", lang: null, error: "Opted out (STOP)" });
-      return false;
-    }
-    const choice = await chooseLanguage(env, n.template, n.locale);
-    if (!choice.lang) {
-      await finish(env, n, { sent: false, status: "skipped", lang: null, error: choice.reason });
-      return false;
-    }
-    const lang = (asLang(choice.lang) || "fr") as WaLang;
-    const params = typeof n.params === "function" ? n.params(lang) : n.params;
-    const res = await sendTemplateMessage(env, number, n.template, choice.lang, params, n.buttonPath);
-    if (!res.ok) console.warn(`[whatsapp] ${n.template}/${choice.lang} → ${res.error}`);
-    await finish(env, n, {
-      sent: res.ok,
-      status: res.ok ? "sent" : "failed",
-      lang: choice.lang,
-      id: res.ok ? res.id || null : null,
-      error: res.ok ? null : res.error || "Meta refused the message",
-    });
-    return res.ok;
+    const id = Number(claim.meta?.last_row_id);
+    return attempt(env, { id, kind: n.kind, template: n.template, created_at: "", attempts: 0, payload });
   } catch (err) {
     console.warn(`[whatsapp] ${n.template}: ${err instanceof Error ? err.message : String(err)}`);
     return false;
   }
+}
+
+// ── Retries ────────────────────────────────────────────────────────────
+// A message skipped because no language was approved yet, or refused by
+// Meta, is tried again (cron every 15 minutes, and right after the admin
+// reads the templates' status) while it still makes sense: each kind has
+// its own shelf life ("out for delivery today" is wrong the next day).
+export const MAX_ATTEMPTS = 3;
+const SHELF_HOURS: Record<string, number> = {
+  out_for_delivery: 8,
+  delivery_attempt_failed: 24,
+  order_received: 24,
+  order_confirmed: 48,
+  pickup_ready: 48,
+  password_changed: 24,
+  new_request: 24,
+  new_offer: 72,
+  back_in_stock: 72,
+};
+const DEFAULT_SHELF_HOURS = 48;
+
+export function shelfHours(kind: string): number {
+  return SHELF_HOURS[kind] ?? (kind.startsWith("shipping_delayed") ? 24 : DEFAULT_SHELF_HOURS);
+}
+
+export async function retryWhatsApp(env: Env, limit = 40): Promise<{ tried: number; sent: number }> {
+  const out = { tried: 0, sent: 0 };
+  if (!isWhatsAppConfigured(env)) return out;
+  const rows = await env.DB.prepare(
+    `select id, kind, template, created_at, attempts, payload from whatsapp_notifications
+     where status in ('skipped', 'failed') and payload is not null and attempts < ?1
+       and coalesce(error, '') != ?2 and created_at >= datetime('now', '-72 hours')
+     order by id limit ?3`
+  )
+    .bind(MAX_ATTEMPTS, OPTED_OUT, limit)
+    .all<{ id: number; kind: string; template: string; created_at: string; attempts: number; payload: string }>();
+  const now = Date.now();
+  for (const r of rows.results || []) {
+    const age = (now - Date.parse(`${r.created_at.replace(" ", "T")}Z`)) / 3_600_000;
+    if (age > shelfHours(r.kind)) continue;
+    let payload: Payload;
+    try {
+      payload = JSON.parse(r.payload) as Payload;
+    } catch {
+      continue;
+    }
+    out.tried++;
+    if (await attempt(env, { ...r, payload })) out.sent++;
+  }
+  return out;
 }
 
 // Money in centimes → "520.00 MAD".

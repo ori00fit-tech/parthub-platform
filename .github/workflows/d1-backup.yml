@@ -1,7 +1,8 @@
 name: D1 backup
 
 # A full SQL export of the production database every Sunday (and on
-# demand), gzipped into the private R2 bucket under backups/d1/. The API
+# demand), restored into a scratch SQLite database to prove it works, then
+# gzipped into the private R2 bucket under backups/d1/. The API
 # never serves that prefix (routes/media.ts serves uploads/ images only).
 # Restore and the other recovery paths: infra/docs/operations-runbook.md.
 
@@ -33,7 +34,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "22" # same as CI
       - name: Export the database
         run: |
           set -euo pipefail
@@ -44,6 +45,9 @@ jobs:
           for t in users sellers parts orders order_items; do
             grep -q "CREATE TABLE.*\b$t\b" backup.sql || { echo "::error::table $t missing from the export"; exit 1; }
           done
+          # A dump is only a backup if it restores: load it into an empty
+          # SQLite database and check the tables and rows came back.
+          node ../../.github/scripts/d1-restore-check.mjs backup.sql
           gzip -9 backup.sql
           echo "KEY=backups/d1/parthub-db-$(date -u +%Y-%m-%d-%H%M).sql.gz" >> "$GITHUB_ENV"
       - name: Store it in R2 (private)
