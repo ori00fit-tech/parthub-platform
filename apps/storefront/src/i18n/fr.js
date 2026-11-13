@@ -1189,5 +1189,11 @@ export default {
   "Sign out everywhere (all devices, this one too)": "Se déconnecter partout (tous les appareils, celui-ci aussi)",
   "Device not found": "Appareil introuvable",
   "Device signed out": "Appareil déconnecté",
+  "Delivered in about 1 day": "Livré en 1 jour environ",
+  "Delivered in about {n} days": "Livré en {n} jours environ",
+  "Free delivery: your order from this store is over {amount}": "Livraison gratuite : votre commande chez ce vendeur dépasse {amount}",
+  "Free delivery from {amount} at this store": "Livraison gratuite dès {amount} chez ce vendeur",
+  "{local} day(s) in {city}, {national} elsewhere": "{local} jour(s) à {city}, {national} ailleurs",
+  "Delivered in about {n} day(s)": "Livré en {n} jour(s) environ",
   "{n} failed attempt(s)": "{n} tentative(s) échouée(s)",
 };

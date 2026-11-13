@@ -154,9 +154,20 @@ const schemas: Record<string, Schema> = {
   FulfillmentOptions: obj(
     {
       flat_fee: int,
-      groups: arr(obj({ seller_id: int, seller_name: str, methods: arr(str), delivery_fee: int, part_ids: arr(int), pickup: nul(anyObj) }, ["seller_id", "methods"])),
+      groups: arr(obj({
+        seller_id: int, seller_name: str, methods: arr(str),
+        delivery_fee: { ...int, description: "For this cart (0 when it reaches free_delivery_over)." },
+        free_delivery_over: nul(int), delivery_days: nul(int), part_ids: arr(int), pickup: nul(anyObj),
+      }, ["seller_id", "methods", "delivery_fee"])),
     },
     ["groups"]
+  ),
+  SellerShipping: obj(
+    {
+      carriers: arr(obj({ code: str, name: str, kind: str, chosen: bool, account_ref: nul(str), is_default: bool }, ["code", "name", "chosen", "is_default"])),
+      free_delivery_over: nul(int), delivery_days_local: nul(int), delivery_days_national: nul(int),
+    },
+    ["carriers"]
   ),
 };
 
@@ -216,7 +227,7 @@ const P: Record<string, Partial<Record<"get" | "post" | "put" | "patch" | "delet
 
   // Buying
   "/api/v1/commerce/shipping": { get: { tag: "Buying", summary: "Delivery fee rules", data: anyObj } },
-  "/api/v1/commerce/fulfillment-options": { get: { tag: "Buying", summary: "How each seller of a cart can deliver (delivery, pickup, courier) and the fees", query: ["parts", "city"], data: ref("FulfillmentOptions") } },
+  "/api/v1/commerce/fulfillment-options": { get: { tag: "Buying", summary: "How each seller of a cart can deliver, the fees, free delivery and delivery times. parts=12:2,15:1 (part:quantity)", query: ["parts", "city"], data: ref("FulfillmentOptions") } },
   "/api/v1/commerce/orders": {
     get: { tag: "Buying", summary: "My orders", auth: true, data: arr(ref("Order")) },
     post: { tag: "Buying", summary: "Place an order (cash on delivery). Send Idempotency-Key: a retry returns the same order (200).", auth: true, status: 201, body: ref("NewOrder"), data: ref("Order") },
@@ -259,6 +270,14 @@ const P: Record<string, Partial<Record<"get" | "post" | "put" | "patch" | "delet
   "/api/v1/marketplace/me/agreement": { post: { tag: "Selling", summary: "Accept the seller agreement", auth: true, data: anyObj } },
   "/api/v1/marketplace/me/readiness": { get: { tag: "Selling", summary: "What my store still needs to sell", auth: true, data: anyObj } },
   "/api/v1/marketplace/me/fulfillment": { put: { tag: "Selling", summary: "Delivery / pickup settings and fees", auth: true, body: anyObj, data: anyObj } },
+  "/api/v1/marketplace/me/shipping": {
+    get: { tag: "Selling", summary: "My carriers (every active one, mine marked, my customer number, my default), free delivery, delivery times", auth: true, data: ref("SellerShipping") },
+    put: {
+      tag: "Selling", summary: "Save my carriers and shipping choices", auth: true,
+      body: obj({ carriers: arr(obj({ code: str, account_ref: str }, ["code"])), default_carrier: nul(str), free_delivery_over: { anyOf: [num, str, { type: "null" }], description: "MAD; empty = never" }, delivery_days_local: { anyOf: [int, str, { type: "null" }] }, delivery_days_national: { anyOf: [int, str, { type: "null" }] } }),
+      data: ref("SellerShipping"),
+    },
+  },
   "/api/v1/marketplace/dashboard": { get: { tag: "Selling", summary: "Dashboard numbers", auth: true, data: anyObj } },
   "/api/v1/marketplace/me/insights": { get: { tag: "Selling", summary: "Views and searches", auth: true, data: anyObj } },
   "/api/v1/marketplace/me/statement": { get: { tag: "Selling", summary: "Sales and commissions of a month", auth: true, data: anyObj } },

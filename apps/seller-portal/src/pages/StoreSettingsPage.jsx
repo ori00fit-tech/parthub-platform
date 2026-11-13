@@ -9,6 +9,7 @@ import { useT } from "../i18n";
 import ChangePasswordForm, { DevicesList } from "@parthub/shared/account";
 import { LinkedText } from "../components/legal/LegalDocument";
 import FulfillmentSettings from "../components/store/FulfillmentSettings";
+import ShippingSettings from "../components/store/ShippingSettings";
 
 function slugify(value) {
   return String(value || "")
@@ -362,6 +363,7 @@ export default function StoreSettingsPage() {
           </div>
         </form>
         {hasStore ? <FulfillmentSettings /> : null}
+        {hasStore ? <ShippingSettings /> : null}
         </div>
 
         <div className="space-y-4">

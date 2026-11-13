@@ -41,6 +41,14 @@ known limits: `infra/docs/release-v0.1.1-readiness.md`.
 - 25 Utility templates and 1 Authentication template (reset code) in ar/fr/en, sent in each person's language with
   fallback; submitted to and synced from Meta from the admin.
 
+### Sellers and shipping
+- Each seller chooses their carriers (customer number, default one): the
+  ship form offers those first, default preselected.
+- Free delivery from an amount the seller sets, charged the same at
+  checkout and in the order; delivery times (their city / elsewhere) shown
+  on the part page and at checkout. Checkout sends quantities
+  (`parts=id:qty`) so free delivery is known for the cart.
+
 ### Cash on delivery
 - Fix (found by the production pilot of 13 Nov): a delivered order stayed
   "unpaid" and the admin's revenue stayed at 0 MAD. A delivered order is now

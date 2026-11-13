@@ -5,7 +5,7 @@ import { ok, created, fail, notFound } from "../utils/response";
 import { dbFirst, dbAll, dbRun } from "../utils/db";
 import { logOrderEvent, refreshOrderStatus, setLineStatus } from "../utils/fulfillment";
 import { type Fulfillment, FULFILLMENTS, allowedMethods, generatePickupCode, isPickup, loadSellerFulfillment } from "../utils/pickup";
-import { deliveryFee } from "../utils/shipping";
+import { deliveryDays, deliveryFee } from "../utils/shipping";
 import { shipmentTimeline, trackingUrl } from "../utils/carriers";
 import { runInBackground } from "../utils/whatsapp";
 import { notifySellersOfNewOrder } from "../utils/request-notifications";
@@ -49,11 +49,17 @@ commerceRoutes.get("/shipping", (c) =>
 // them (delivery, pickup at the store, courier sent by the buyer) and each
 // seller's delivery fee to that city (utils/shipping.ts).
 commerceRoutes.get("/fulfillment-options", async (c) => {
-  const ids = [...new Set(String(c.req.query("parts") || "").split(",").map(Number).filter((n) => Number.isInteger(n) && n > 0))].slice(0, MAX_ORDER_LINES);
+  // parts=12,15 or parts=12:2,15:1 (part:quantity, for free delivery).
+  const qty = new Map<number, number>();
+  for (const token of String(c.req.query("parts") || "").split(",")) {
+    const [id, q] = token.split(":").map(Number);
+    if (Number.isInteger(id) && id! > 0) qty.set(id!, Number.isInteger(q) && q! > 0 ? Math.min(q!, MAX_QTY_PER_LINE) : 1);
+  }
+  const ids = [...qty.keys()].slice(0, MAX_ORDER_LINES);
   if (!ids.length) return ok(c, []);
-  const parts = await dbAll<{ id: number; seller_id: number; delivery_available: number }>(
+  const parts = await dbAll<{ id: number; seller_id: number; delivery_available: number; price: number }>(
     c.env.DB,
-    `SELECT id, seller_id, delivery_available FROM parts WHERE id IN (${ids.map(() => "?").join(",")})`,
+    `SELECT id, seller_id, delivery_available, price FROM parts WHERE id IN (${ids.map(() => "?").join(",")})`,
     ids
   );
   const sellers = await loadSellerFulfillment(c.env.DB, parts.map((p) => p.seller_id));
@@ -61,8 +67,11 @@ commerceRoutes.get("/fulfillment-options", async (c) => {
   const flat = shippingFee(c.env);
   const groups = [...sellers.values()].map((s) => {
     const mine = parts.filter((p) => p.seller_id === s.id);
+    const subtotal = mine.reduce((sum, p) => sum + Number(p.price) * (qty.get(p.id) || 1), 0);
     return {
-      delivery_fee: deliveryFee(s, city, flat),
+      delivery_fee: deliveryFee(s, city, flat, subtotal),
+      free_delivery_over: s.free_delivery_over ?? null,
+      delivery_days: deliveryDays(s, city),
       delivery_fee_local: s.delivery_fee_local ?? flat,
       delivery_fee_national: s.delivery_fee_national ?? flat,
       seller_id: s.id,
@@ -186,7 +195,8 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
   const flat = shippingFee(c.env);
   const fees = new Map<number, number>();
   for (const [sellerId, p] of plan) {
-    fees.set(sellerId, p.method === "delivery" ? deliveryFee(sellers.get(sellerId)!, typeof addr.city === "string" ? addr.city : "", flat) : 0);
+    const sellerSubtotal = resolvedItems.filter((i) => i.seller_id === sellerId).reduce((sum, i) => sum + i.subtotal, 0);
+    fees.set(sellerId, p.method === "delivery" ? deliveryFee(sellers.get(sellerId)!, typeof addr.city === "string" ? addr.city : "", flat, sellerSubtotal) : 0);
   }
   const shipping_fee = [...fees.values()].reduce((a, b) => a + b, 0);
   const total = subtotal + shipping_fee;

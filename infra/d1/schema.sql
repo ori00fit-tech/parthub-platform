@@ -46,6 +46,9 @@ CREATE TABLE IF NOT EXISTS sellers (
   pickup_hours TEXT,
   delivery_fee_local INTEGER,     -- centimes, NULL = platform fee (see migrations/0022)
   delivery_fee_national INTEGER,
+  free_delivery_over INTEGER,               -- free delivery from this amount (migrations/0037)
+  delivery_days_local INTEGER,              -- days to deliver: in the seller's city
+  delivery_days_national INTEGER,           -- elsewhere in Morocco
   status      TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','active','suspended','rejected')),
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
@@ -801,3 +804,13 @@ CREATE TABLE IF NOT EXISTS sessions (
   revoked_reason     TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id, revoked_at);
+
+-- See migrations/0037_seller_shipping.sql
+CREATE TABLE IF NOT EXISTS seller_carriers (
+  seller_id   INTEGER NOT NULL REFERENCES sellers(id) ON DELETE CASCADE,
+  carrier     TEXT NOT NULL REFERENCES carriers(code),
+  account_ref TEXT,                         -- the seller's customer number at the carrier
+  is_default  INTEGER NOT NULL DEFAULT 0,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (seller_id, carrier)
+);

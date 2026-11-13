@@ -155,6 +155,9 @@ jobs:
       - name: 0036 cash on delivery: delivered orders are paid
         run: ../../.github/scripts/d1-exec-retry.sh --file="$MIGRATIONS/0036_cod_paid.sql"
 
+      - name: 0037 seller shipping choices (carriers, free delivery, delivery times)
+        run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0037_seller_shipping.sql"
+
       # Fails the job (and the API deploy waiting for it) when the schema is
       # not what the API needs; only warns while D1's daily read limit is hit.
       - name: Verify

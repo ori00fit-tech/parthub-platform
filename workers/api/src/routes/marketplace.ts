@@ -15,9 +15,9 @@ import { runInBackground } from "../utils/whatsapp";
 import { waClaimEvent, waOrderStep, waShipmentEvent } from "../utils/wa-events";
 import { MAX_IMPORT_ROWS, applyImport, planImport } from "../utils/part-import";
 import { MAX_CODE_ATTEMPTS, holdUntil, isPickup, nextStatuses, sameCode } from "../utils/pickup";
-import { cleanTracking, readFeeMad } from "../utils/shipping";
+import { cleanTracking, readDays, readFeeMad } from "../utils/shipping";
 import { accessToken } from "../utils/sessions";
-import { MANUAL_SHIPMENT_STATUSES, noteShipment, recordManualEvent, shipmentTimeline, trackingUrl, validCarrier } from "../utils/carriers";
+import { MANUAL_SHIPMENT_STATUSES, noteShipment, recordManualEvent, saveSellerCarriers, sellerCarriers, shipChoices, shipmentTimeline, trackingUrl, validCarrier } from "../utils/carriers";
 import { type ShipmentStatus } from "../utils/carriers";
 import { readPartValues } from "../utils/part-values";
 import { RATE_NOTICE_DAYS, accrueCommissions, commissionRateBps, currentPeriod, readPeriod, upcomingRates } from "../utils/commissions";
@@ -972,6 +972,51 @@ marketplaceRoutes.put("/me/fulfillment", authMiddleware, async (c) => {
   return c.json(success(row, { message: "Fulfilment options saved" }));
 });
 
+// GET /api/v1/marketplace/me/shipping — my carriers (every active one, with
+// mine marked, my customer number, my default), free delivery, delivery times.
+marketplaceRoutes.get("/me/shipping", authMiddleware, async (c) => {
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const s = await c.env.DB.prepare("select free_delivery_over, delivery_days_local, delivery_days_national from sellers where id = ?1")
+    .bind(sellerId).first<{ free_delivery_over: number | null; delivery_days_local: number | null; delivery_days_national: number | null }>();
+  return c.json(success({ carriers: await sellerCarriers(c.env.DB, sellerId), ...s }));
+});
+
+// PUT /api/v1/marketplace/me/shipping { carriers: [{ code, account_ref }],
+// default_carrier, free_delivery_over (MAD, empty = never),
+// delivery_days_local, delivery_days_national (1–30, empty = not said) }
+marketplaceRoutes.put("/me/shipping", authMiddleware, async (c) => {
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const list = Array.isArray(body.carriers) ? body.carriers : [];
+  const chosen = list
+    .map((x): Record<string, unknown> => (x && typeof x === "object" ? (x as Record<string, unknown>) : { code: x }))
+    .map((x) => ({
+      code: String(x.code || "").trim().toLowerCase(),
+      account_ref: typeof x.account_ref === "string" ? x.account_ref.trim().slice(0, 60) || null : null,
+    }))
+    .filter((x) => x.code);
+  const def = typeof body.default_carrier === "string" && body.default_carrier ? body.default_carrier.trim().toLowerCase() : null;
+  // Free delivery from (MAD): up to 100,000 MAD; empty = never.
+  let free: number | null = null;
+  if (body.free_delivery_over !== undefined && body.free_delivery_over !== null && String(body.free_delivery_over).trim() !== "") {
+    const n = Number(String(body.free_delivery_over).replace(",", ".").trim());
+    if (!Number.isFinite(n) || n <= 0 || n > 100000) return c.json(failure("INVALID_FREE_DELIVERY", "Free delivery must start from an amount between 1 and 100000 MAD"), 400);
+    free = Math.round(n * 100);
+  }
+  const daysLocal = readDays(body.delivery_days_local);
+  const daysNational = readDays(body.delivery_days_national);
+  if (daysLocal === "invalid" || daysNational === "invalid") return c.json(failure("INVALID_DAYS", "Delivery times must be between 1 and 30 days"), 400);
+  const saved = await saveSellerCarriers(c.env.DB, sellerId, chosen, def);
+  if (!saved.ok) return c.json(failure("INVALID_CARRIER", saved.error), 400);
+  await c.env.DB.prepare(
+    "update sellers set free_delivery_over = ?2, delivery_days_local = ?3, delivery_days_national = ?4, updated_at = datetime('now') where id = ?1"
+  ).bind(sellerId, free, daysLocal, daysNational).run();
+  const s = await c.env.DB.prepare("select free_delivery_over, delivery_days_local, delivery_days_national from sellers where id = ?1").bind(sellerId).first();
+  return c.json(success({ carriers: await sellerCarriers(c.env.DB, sellerId), ...s }, { message: "Shipping saved" }));
+});
+
 // PUT /api/v1/marketplace/me/parts/:id/fulfillment { delivery_available } —
 // false = pickup only (engines, gearboxes, body panels...).
 marketplaceRoutes.put("/me/parts/:id/fulfillment", authMiddleware, async (c) => {
@@ -1553,6 +1598,8 @@ async function loadSellerOrder(DB: D1Database, sellerId: number, orderId: number
     amount_to_collect: shipment ? (openTotal ? openTotal + Number(shipment.fee || 0) : 0) : null,
     total: lines.reduce((sum, l) => sum + Number(l.subtotal || 0), 0),
     next_statuses: nextStatuses(status, fulfillment, SELLER_NEXT),
+    // The ship form: the seller's carriers (default first), or every carrier.
+    ship_choices: await shipChoices(DB, sellerId),
     fulfillment,
     pickup_until: isPickup(fulfillment) ? first?.pickup_until ?? null : null,
     pickup_code_locked: isPickup(fulfillment) && Math.max(0, ...lines.map((l) => Number(l.pickup_attempts || 0))) >= MAX_CODE_ATTEMPTS,
