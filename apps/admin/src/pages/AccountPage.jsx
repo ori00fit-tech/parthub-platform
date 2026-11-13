@@ -1,4 +1,4 @@
-import ChangePasswordForm from "@parthub/shared/account";
+import ChangePasswordForm, { DevicesList } from "@parthub/shared/account";
 import { ADMIN_TOKEN_KEY } from "@parthub/shared";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
@@ -8,7 +8,7 @@ import { useT } from "../i18n";
 // /api/v1/auth/password; other devices are signed out).
 export default function AccountPage() {
   const t = useT();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   return (
     <section className="space-y-6 pb-16">
       <div className="rounded-[28px] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-700 p-6 text-white shadow-lg sm:p-8">
@@ -32,6 +32,13 @@ export default function AccountPage() {
               }
             }}
           />
+        </div>
+      </div>
+      <div className="rounded-3xl border border-gray-800 bg-gray-900 p-6">
+        <h2 className="text-lg font-bold text-white">{t("My devices")}</h2>
+        <p className="mt-1 text-sm text-gray-400">{t("Where your account is signed in. Sign out a device you do not recognise.")}</p>
+        <div className="mt-4">
+          <DevicesList t={t} tone="dark" get={(p) => api.get(p).then((r) => r?.data)} del={(p) => api.delete(p)} post={(p, b) => api.post(p, b)} onEverywhere={logout} />
         </div>
       </div>
     </section>

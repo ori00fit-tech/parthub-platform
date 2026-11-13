@@ -1,5 +1,5 @@
-import ChangePasswordForm, { DeletionCancelledNotice } from "@parthub/shared/account";
-import { apiPost } from "../lib/api";
+import ChangePasswordForm, { DeletionCancelledNotice, DevicesList } from "@parthub/shared/account";
+import { apiDelete, apiGet, apiPost } from "../lib/api";
 import { Link } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
 import { useCart } from "../features/cart/CartContext";
@@ -222,6 +222,19 @@ export default function AccountPage() {
             t={t}
             submit={(current, next) => apiPost("/api/v1/auth/password", { current_password: current, new_password: next }, { auth: true }).then((r) => r?.data)}
             onToken={replaceToken}
+          />
+        </div>
+      </div>
+      <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-ink">{t("My devices")}</h2>
+        <p className="mt-1 text-sm text-muted">{t("Where your account is signed in. Sign out a device you do not recognise.")}</p>
+        <div className="mt-3">
+          <DevicesList
+            t={t}
+            get={(p) => apiGet(p, undefined, { auth: true }).then((r) => r?.data)}
+            del={(p) => apiDelete(p, { auth: true })}
+            post={(p, b) => apiPost(p, b, { auth: true })}
+            onEverywhere={logout}
           />
         </div>
       </div>

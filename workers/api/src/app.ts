@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { HTTPException } from "hono/http-exception";
+import { openApiSpec } from "./openapi";
 import { authRoutes } from "./routes/auth";
 import { vehiclesRoutes } from "./routes/vehicles";
 import { catalogRoutes } from "./routes/catalog";
@@ -61,7 +62,35 @@ app.get("/health", async (c) => {
   return c.json({ ok: db.ok, service: "parthub-api", database: db.ok ? "ok" : "down" }, db.ok ? 200 : 503);
 });
 
+// One envelope for every JSON answer (apps rely on it, see openapi.ts):
+// older routes answer { ok, … }, newer ones { success, … }; each answer now
+// carries both, same value. Additive: nothing the sites read changes.
+app.use("*", async (c, next) => {
+  await next();
+  if (!(c.res.headers.get("content-type") || "").includes("application/json")) return;
+  let body: unknown;
+  try {
+    body = await c.res.clone().json();
+  } catch {
+    return;
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body)) return;
+  const b = body as Record<string, unknown>;
+  const s = typeof b.success === "boolean";
+  const o = typeof b.ok === "boolean";
+  if (s === o) return; // both already, or neither (not an API envelope)
+  const flag = s ? b.success : b.ok;
+  const headers = new Headers(c.res.headers);
+  headers.delete("content-length");
+  c.res = new Response(JSON.stringify({ success: flag, ok: flag, ...b }), { status: c.res.status, headers });
+});
+
 app.route("/api/v1/health", healthRoutes);
+// The apps' contract (src/openapi.ts).
+app.get("/api/v1/openapi.json", (c) => {
+  c.header("Cache-Control", "public, max-age=300");
+  return c.json(openApiSpec());
+});
 app.route("/api/v1/auth", authRoutes);
 app.route("/api/v1/vehicles", vehiclesRoutes);
 app.route("/api/v1/catalog", catalogRoutes);

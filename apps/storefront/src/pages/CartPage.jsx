@@ -3,6 +3,7 @@ import { useCart } from "../features/cart/CartContext";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import { formatPrice } from "../lib/formatters";
 import { useT } from "../i18n";
+import { mediaUrl } from "../lib/media";
 
 function getVehicleLabel(vehicle) {
   if (!vehicle) return "";
@@ -101,7 +102,7 @@ export default function CartPage() {
                 <div className="h-24 w-full overflow-hidden rounded-2xl bg-surface-2 sm:w-28">
                   {item.image_url || item.thumbnail ? (
                     <img
-                      src={item.image_url || item.thumbnail}
+                      src={mediaUrl(item.image_url || item.thumbnail, 160)}
                       alt={item.title}
                       className="h-full w-full object-cover"
                     />

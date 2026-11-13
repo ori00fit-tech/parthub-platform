@@ -5,6 +5,7 @@ import { reasonPromptFor, useReasonDialog } from "../components/ReasonDialog";
 import { formatMoney } from "@parthub/shared";
 import { statusLabel, useT } from "../i18n";
 import { notifyPendingChanged } from "../lib/pending";
+import { mediaSrc } from "@parthub/shared";
 
 function statusClasses(status) {
   switch (status) {
@@ -199,7 +200,7 @@ export default function PartDetailsPage() {
                 {images.map((image) => (
                   <div key={image.id} className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
                     {image.url ? (
-                      <img src={image.url} alt={image.alt_text || part.title} className="h-52 w-full object-cover" />
+                      <img src={mediaSrc(image.url, 640)} alt={image.alt_text || part.title} className="h-52 w-full object-cover" />
                     ) : null}
                     <div className="p-4 text-xs text-gray-500">
                       {t("featured: {value}", { value: Number(image.is_featured) ? t("yes") : t("no") })}

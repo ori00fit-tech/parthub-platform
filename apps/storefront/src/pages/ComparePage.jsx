@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import { Link } from "react-router-dom";
 import { formatPrice } from "../lib/formatters";
 import { t, useT } from "../i18n";
+import { mediaUrl } from "../lib/media";
 
 function readCompareItems() {
   try {
@@ -115,7 +116,7 @@ export default function ComparePage() {
               <div className="mt-4 overflow-hidden rounded-2xl bg-surface-2">
                 {item.image_url ? (
                   <img
-                    src={item.image_url}
+                    src={mediaUrl(item.image_url, 320)}
                     alt={item.title}
                     className="h-36 w-full object-cover"
                   />

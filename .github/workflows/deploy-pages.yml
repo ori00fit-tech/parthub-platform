@@ -98,6 +98,9 @@ jobs:
           VITE_SELLER_API_BASE_URL: ${{ env.API_BASE_URL }}
           VITE_ADMIN_API_BASE_URL: ${{ env.API_BASE_URL }}
           VITE_SELLER_PORTAL_URL: ${{ env.SELLER_PORTAL_URL }}
+          # Smaller photo copies (Cloudflare Image Transformations on the zone):
+          # set the repository variable IMAGE_RESIZING to 1 once it is enabled.
+          VITE_IMAGE_RESIZING: ${{ vars.IMAGE_RESIZING }}
         run: pnpm --filter "${{ matrix.package }}" build
 
       # The storefront's Pages Functions (SEO) read the API and canonical

@@ -128,7 +128,7 @@ export default function RequestsInboxPage() {
                 <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100">
                   {r.images?.[0] ? (
                     <>
-                      <img src={mediaUrl(r.images[0])} alt="" loading="lazy" className="h-full w-full object-cover" />
+                      <img src={mediaUrl(r.images[0], 320)} alt="" loading="lazy" className="h-full w-full object-cover" />
                       {r.images.length > 1 ? (
                         <span className="absolute bottom-0.5 end-0.5 rounded bg-slate-950/70 px-1 text-[10px] font-bold text-white">
                           +{r.images.length - 1}

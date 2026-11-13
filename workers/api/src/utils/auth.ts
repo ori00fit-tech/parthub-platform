@@ -5,6 +5,7 @@ export interface JwtPayload {
   role: "buyer" | "seller" | "admin";
   seller_id?: number;
   tv?: number; // users.token_version when issued (see middlewares/auth.ts)
+  sid?: string; // the session (device), see utils/sessions.ts
   exp: number;
   iat: number;
 }

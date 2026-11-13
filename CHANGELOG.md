@@ -41,6 +41,30 @@ known limits: `infra/docs/release-v0.1.1-readiness.md`.
 - 25 Utility templates and 1 Authentication template (reset code) in ar/fr/en, sent in each person's language with
   fallback; submitted to and synced from Meta from the admin.
 
+### Photos
+- Fix: photos were broken on the part page, the store page, the comparison
+  and the cart (storefront), the inventory (seller portal) and the part
+  review page (admin): the stored path was loaded from the site instead of
+  the API. One helper for every photo, and the storefront now also serves
+  /api/v1/media/uploads/* (so any stored path works there).
+- Smaller copies when Cloudflare image resizing is on (list 480 px,
+  thumbnails 160 px, part page 1200 px; WebP/AVIF when the phone supports
+  it), with a fallback to the original. Off until the owner enables it.
+
+### Devices
+- Every sign-in is a device: "My devices" in the three sites, sign one out
+  at once, or every device. "Sign out" now signs out this device only.
+- Apps: 15-minute access token + 60-day refresh token that changes at every
+  use; reusing an old one ends the session (stolen copy). A password change
+  keeps the current device and ends the others.
+
+### API contract
+- OpenAPI 3.1 at `/api/v1/openapi.json` for the sites and the mobile apps
+  (≈95 operations), kept true by a test (coverage both ways, real answers
+  checked against the schemas). Every answer carries `success` and `ok`.
+- Buyer order answers no longer include internal guard fields; 500 answers
+  never carry the database's own error text.
+
 ### Security and operations
 - PBKDF2 passwords, session revocation, rate limits on sign-in, sign-up,
   password change and orders; password policy refusing known passwords;
@@ -55,7 +79,8 @@ known limits: `infra/docs/release-v0.1.1-readiness.md`.
   window or money owed are open. Public page `/delete-account` (app stores).
 - CORS allow-list, security headers and HSTS, production guard on scripts.
 - JSON error handler with request id; admin audit log of every change.
-- CI: typecheck, lint, 40+ API test suites, builds. Deploy runs migrations
+- CI: typecheck, lint, 40+ API test suites, builds; browser E2E across the
+  three sites against the real API on a fresh local database. Deploy runs migrations
   first, then a schema verify gate.
 - Weekly D1 backup to private R2; runbook for restore, rollback and
   incidents (`infra/docs/operations-runbook.md`).

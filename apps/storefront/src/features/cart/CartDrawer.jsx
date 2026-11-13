@@ -179,7 +179,7 @@ export default function CartDrawer() {
                 <div key={item.part_id} className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 rounded-xl border border-line bg-surface p-3">
                   <Link to={`/parts/${item.slug}`} className="media-well flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-lg">
                     {item.thumbnail ? (
-                      <img src={mediaUrl(item.thumbnail)} alt="" className="h-full w-full object-cover" />
+                      <img src={mediaUrl(item.thumbnail, 160)} alt="" className="h-full w-full object-cover" />
                     ) : (
                       <Icon name="part" className="h-7 w-7 text-faint" />
                     )}

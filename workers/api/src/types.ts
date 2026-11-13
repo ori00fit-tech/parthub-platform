@@ -24,4 +24,5 @@ export type HonoVariables = {
   user_id: number;
   user_role: UserRole;
   seller_id: number | null;
+  session_id: string | null; // the device's session, when the token has one
 };

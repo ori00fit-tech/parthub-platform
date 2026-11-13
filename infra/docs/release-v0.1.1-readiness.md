@@ -46,7 +46,7 @@ Status words used below:
 | Errors and monitoring | Partial | `/health` with a database check, daily prod-health workflow. JSON errors with a `request_id`: done. **Worker Logs must be switched on** by the owner (Observability). |
 | Performance | IMPLEMENTED | Indexes on hot paths (verify step), image limit of 5 MB, pagination capped at 100. | No measurement yet (no load test, no p95). Images are served at full size (no resizing). |
 | SEO | TESTED, PROVEN | Titles, meta, canonical, Open Graph, robots, dynamic sitemap, JSON-LD (Product, Offer, Breadcrumb) in the server HTML, soft-404 handled. | — |
-| Testing | TESTED | 37 API suites in CI, including races, lifecycle, security, carriers and WhatsApp. Playwright is used by hand for screenshots. **No E2E suite in CI** (browser flows: sign up → order → seller ships → delivered). No front-end unit tests. |
+| Testing | TESTED | 37 API suites in CI, including races, lifecycle, security, carriers and WhatsApp. Playwright is used by hand for screenshots. E2E in CI: done (`e2e/`, 9 scenarios across the three sites, real API on a fresh local D1). No front-end unit tests. |
 | Deployment | WIRED, PROVEN | CI (typecheck, lint, tests, 3 builds) → Deploy API runs the D1 migrations first, then a schema verify gate, then Pages. | Weekly export, **restored and checked before it is stored**; runbook with a quarterly restore drill into a separate database (not done yet). Node 22 and the lockfile in every workflow. Left: a scoped Cloudflare token instead of the global key; `main` protection; tag on release. |
 | Documentation | IMPLEMENTED | `infra/docs/*` (carriers, WhatsApp, revenue, shipping, assets inventory…). README rewritten, CHANGELOG added, local set-up verified end to end. |
 | Legal and company | IMPLEMENTED | Terms, privacy, seller agreement, returns policy, versioned acceptance. The company block (`legal/company.js`) stays empty until PartHub SARL is registered. | Fill once registered; CNDP filing. |
@@ -100,6 +100,10 @@ One API for web and apps (already so). React Native + Expo for buyer and seller,
 | P1.5 backup / restore / rollback | Done: `d1-backup.yml` weekly, `operations-runbook.md` |
 | P1.6 release hygiene | Versions 0.1.1, `/health` shows it, CHANGELOG, README corrected. Left to the owner: protect `main`, delete the merged branch `ccr-5e78bfde-687nv2`, tag `v0.1.1` after the release checks |
 | P2.1 account deletion | Done: owner chose to keep accounts as long as possible → closed at once, 30 days to come back, then personal data erased, business records kept anonymous (migration 0034, `account-deletion.test.mjs`). Store link for Google Play: `https://parthub.autos/delete-account` |
+| P2.4 E2E in CI | Done: workflow `E2E` (9 scenarios, about 30 s). It found and fixed a real defect: the checkout's labels were not linked to their fields (screen readers, autofill) |
+| P2.3 OpenAPI | Done: `/api/v1/openapi.json`, `openapi.test.mjs` (both-way coverage + real answers validated with ajv). Envelope unified (`success` and `ok`). Found and fixed: internal fields in buyer order answers, database error text in 16 error answers |
+| P2.2 refresh tokens, per-device sessions | Done: sessions table, sid in tokens, app refresh rotation with reuse detection, My devices in the three sites (migration 0035, `devices.test.mjs`) |
+| P2.5 image resizing | Done (code): one photo helper, Cloudflare transformations behind IMAGE_RESIZING (owner turns it on). Found and fixed: photos broken in production on the part and store pages (and 4 other places); E2E now uploads a real photo and checks it shows |
 | P0 (owner) | Admin password, Meta app secret rotation, Worker Logs: to confirm |
 
 ## 8. Second audit (external review of `main` at `52e0bfe`) — findings and fixes

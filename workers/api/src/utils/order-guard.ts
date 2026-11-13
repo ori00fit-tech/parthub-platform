@@ -14,6 +14,11 @@
 import { LIMITS, blockedFor, recordAttempt } from "./rate-limit";
 import { normalizeWhatsAppNumber } from "./whatsapp";
 
+// What a buyer sees of an order (never the guard's own columns:
+// idempotency_key, cart_hash — the latter holds the phone).
+export const ORDER_COLUMNS =
+  "id, reference, buyer_id, status, payment_status, shipping_status, subtotal, shipping_fee, discount, total, notes, delivered_at, created_at, updated_at";
+
 export const MAX_OPEN_ORDERS = 5; // ORDER_MAX_OPEN (Worker var) overrides it
 
 // A key from the client: letters, digits, - and _, 8 to 100 characters.
@@ -73,10 +78,10 @@ export async function checkNewOrder(
 // still pending), after the unique index refused ours.
 export async function existingAfterConflict(DB: D1Database, buyerId: number, key: string | null, hash: string) {
   if (key) {
-    const byKey = await DB.prepare("select * from orders where buyer_id = ?1 and idempotency_key = ?2").bind(buyerId, key).first();
+    const byKey = await DB.prepare(`select ${ORDER_COLUMNS} from orders where buyer_id = ?1 and idempotency_key = ?2`).bind(buyerId, key).first();
     if (byKey) return { order: byKey, why: "same_key" as const };
   }
-  const byCart = await DB.prepare("select * from orders where buyer_id = ?1 and cart_hash = ?2 and status = 'pending' order by id desc limit 1")
+  const byCart = await DB.prepare(`select ${ORDER_COLUMNS} from orders where buyer_id = ?1 and cart_hash = ?2 and status = 'pending' order by id desc limit 1`)
     .bind(buyerId, hash).first();
   return byCart ? { order: byCart, why: "same_cart" as const } : null;
 }

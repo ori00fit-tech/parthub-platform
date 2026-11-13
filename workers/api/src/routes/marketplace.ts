@@ -16,12 +16,14 @@ import { waClaimEvent, waOrderStep, waShipmentEvent } from "../utils/wa-events";
 import { MAX_IMPORT_ROWS, applyImport, planImport } from "../utils/part-import";
 import { MAX_CODE_ATTEMPTS, holdUntil, isPickup, nextStatuses, sameCode } from "../utils/pickup";
 import { cleanTracking, readFeeMad } from "../utils/shipping";
+import { accessToken } from "../utils/sessions";
 import { MANUAL_SHIPMENT_STATUSES, noteShipment, recordManualEvent, shipmentTimeline, trackingUrl, validCarrier } from "../utils/carriers";
 import { type ShipmentStatus } from "../utils/carriers";
 import { readPartValues } from "../utils/part-values";
 import { RATE_NOTICE_DAYS, accrueCommissions, commissionRateBps, currentPeriod, readPeriod, upcomingRates } from "../utils/commissions";
 import { invoicePayments, ledgerTotals, listInvoices } from "../utils/invoices";
 import { RETURN_WINDOW_DAYS } from "../utils/issues";
+import { internalError } from "../utils/response";
 
 export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -104,10 +106,11 @@ function cleanPhone(value: unknown): string | null | "invalid" {
 
 // A token that carries the seller id, so a seller who just created their
 // store doesn't have to sign in again.
-async function sellerSessionToken(env: Env, userId: number, sellerId: number) {
+async function sellerSessionToken(env: Env, userId: number, sellerId: number, sid: string | null = null) {
   if (!env.JWT_SECRET) return null;
   const row = await env.DB.prepare("select token_version from users where id = ?1").bind(userId).first<{ token_version: number }>();
-  return signToken({ user_id: userId, role: "seller", seller_id: sellerId, tv: Number(row?.token_version || 0) }, env.JWT_SECRET);
+  const tv = Number(row?.token_version || 0);
+  return sid ? accessToken(env, { id: userId, role: "seller", seller_id: sellerId, token_version: tv }, sid) : signToken({ user_id: userId, role: "seller", seller_id: sellerId, tv }, env.JWT_SECRET);
 }
 
 async function getPartById(DB: D1Database, id: number) {
@@ -262,7 +265,7 @@ marketplaceRoutes.post("/parts", authMiddleware, sellerGuard, async (c) => {
     return c.json(
       failure(
         "CREATE_PART_FAILED",
-        error instanceof Error ? error.message : "Unknown create part error"
+        internalError(error)
       ),
       500
     );
@@ -302,7 +305,7 @@ marketplaceRoutes.get("/parts/:id", async (c) => {
     return c.json(
       failure(
         "GET_PART_FAILED",
-        error instanceof Error ? error.message : "Unknown get part error"
+        internalError(error)
       ),
       500
     );
@@ -407,7 +410,7 @@ marketplaceRoutes.put("/parts/:id", authMiddleware, sellerGuard, async (c) => {
     return c.json(
       failure(
         "UPDATE_PART_FAILED",
-        error instanceof Error ? error.message : "Unknown update error"
+        internalError(error)
       ),
       500
     );
@@ -504,7 +507,7 @@ marketplaceRoutes.post("/parts/:id/images", authMiddleware, sellerGuard, async (
     return c.json(
       failure(
         "ADD_IMAGE_FAILED",
-        error instanceof Error ? error.message : "Unknown add image error"
+        internalError(error)
       ),
       500
     );
@@ -565,7 +568,7 @@ marketplaceRoutes.put("/parts/:id/images/:imageId/feature", authMiddleware, sell
     return c.json(
       failure(
         "FEATURE_IMAGE_FAILED",
-        error instanceof Error ? error.message : "Unknown feature image error"
+        internalError(error)
       ),
       500
     );
@@ -620,7 +623,7 @@ marketplaceRoutes.delete("/parts/:id/images/:imageId", authMiddleware, sellerGua
     return c.json(
       failure(
         "DELETE_IMAGE_FAILED",
-        error instanceof Error ? error.message : "Unknown delete image error"
+        internalError(error)
       ),
       500
     );
@@ -856,7 +859,7 @@ marketplaceRoutes.post("/onboarding", authMiddleware, async (c) => {
   await c.env.DB.prepare("update users set role = 'seller' where id = ?1 and role = 'buyer'")
     .bind(userId)
     .run();
-  const access_token = await sellerSessionToken(c.env, Number(userId), sellerId);
+  const access_token = await sellerSessionToken(c.env, Number(userId), sellerId, c.get("session_id"));
 
   const seller = await c.env.DB.prepare(`
     select
@@ -1139,7 +1142,7 @@ marketplaceRoutes.post("/me/parts", authMiddleware, async (c) => {
     return c.json(
       failure(
         "CREATE_SELLER_PART_FAILED",
-        error instanceof Error ? error.message : "Unknown create seller part error"
+        internalError(error)
       ),
       500
     );
@@ -1173,7 +1176,7 @@ marketplaceRoutes.post("/me/parts/import", authMiddleware, async (c) => {
     const count = (a: string) => results.filter((r) => r.action === a).length;
     return c.json(success(results, { dry_run: dryRun, created: count("create"), updated: count("update"), errors: count("error") }));
   } catch (error) {
-    return c.json(failure("IMPORT_FAILED", error instanceof Error ? error.message : "Import failed"), 500);
+    return c.json(failure("IMPORT_FAILED", internalError(error)), 500);
   }
 });
 
@@ -1241,7 +1244,7 @@ marketplaceRoutes.get("/me/parts/:id", authMiddleware, async (c) => {
     return c.json(
       failure(
         "GET_SELLER_PART_FAILED",
-        error instanceof Error ? error.message : "Unknown get seller part error"
+        internalError(error)
       ),
       500
     );
@@ -1393,7 +1396,7 @@ marketplaceRoutes.put("/me/parts/:id", authMiddleware, async (c) => {
     return c.json(
       failure(
         "UPDATE_SELLER_PART_FAILED",
-        error instanceof Error ? error.message : "Unknown update seller part error"
+        internalError(error)
       ),
       500
     );
@@ -1856,7 +1859,7 @@ marketplaceRoutes.get("/me/reviews", authMiddleware, async (c) => {
     return c.json(
       failure(
         "GET_SELLER_REVIEWS_FAILED",
-        error instanceof Error ? error.message : "Unknown seller reviews error"
+        internalError(error)
       ),
       500
     );
@@ -1929,7 +1932,7 @@ marketplaceRoutes.get("/me/parts/:id/compatibility", authMiddleware, async (c) =
     return c.json(
       failure(
         "GET_COMPATIBILITY_FAILED",
-        error instanceof Error ? error.message : "Unknown compatibility error"
+        internalError(error)
       ),
       500
     );
@@ -2107,7 +2110,7 @@ marketplaceRoutes.post("/me/parts/:id/compatibility", authMiddleware, async (c) 
     return c.json(
       failure(
         "ADD_COMPATIBILITY_FAILED",
-        error instanceof Error ? error.message : "Unknown add compatibility error"
+        internalError(error)
       ),
       500
     );
@@ -2163,7 +2166,7 @@ marketplaceRoutes.delete("/me/parts/:id/compatibility/:compatibilityId", authMid
     return c.json(
       failure(
         "DELETE_COMPATIBILITY_FAILED",
-        error instanceof Error ? error.message : "Unknown delete compatibility error"
+        internalError(error)
       ),
       500
     );

@@ -159,7 +159,7 @@ export default function RequestDetailsPage() {
               <div className="grid grid-cols-3 gap-3">
                 {request.images.map((src) => (
                   <a key={src} href={mediaUrl(src)} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
-                    <img src={mediaUrl(src)} alt="" loading="lazy" className="h-full w-full object-cover transition hover:scale-105" />
+                    <img src={mediaUrl(src, 640)} alt="" loading="lazy" className="h-full w-full object-cover transition hover:scale-105" />
                   </a>
                 ))}
               </div>

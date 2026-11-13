@@ -88,7 +88,7 @@ export default function PartPhotos({ partId }) {
         {loading ? <div className="aspect-square animate-pulse rounded-2xl bg-gray-100" /> : null}
         {photos.map((photo, i) => (
           <figure key={photo.id} className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
-            <img src={mediaUrl(photo.url)} alt="" className="aspect-square w-full object-cover" />
+            <img src={mediaUrl(photo.url, 320)} alt="" className="aspect-square w-full object-cover" />
             {i === 0 ? (
               <span className="absolute start-1.5 top-1.5 rounded-md bg-blue-600 px-1.5 py-0.5 text-[10px] font-bold text-white">{t("Main")}</span>
             ) : null}

@@ -77,6 +77,7 @@ packages/
   shared/           API client, translations of server messages, icons, brand,
                     legal texts and company details, account forms, shipment labels
   utils/, config/   small helpers, shared Vite / Tailwind / Prettier config
+e2e/                browser scenarios across the three sites (Playwright)
 infra/
   d1/schema.sql     the full current schema (what a new database is created from)
   d1/migrations/    numbered, additive migrations applied to production
@@ -89,8 +90,8 @@ scripts/            local / remote database helpers, checks (production ones ask
 ## The API in short
 
 All routes are under `/api/v1`. Responses are JSON:
-`{ "success": true, "data": …, "meta"?: … }` or
-`{ "success": false, "error": "English message", "request_id"? }`.
+`{ "success": true, "ok": true, "data": …, "meta"?: …, "pagination"?: … }` or
+`{ "success": false, "ok": false, "error": "English message" | { code, message }, "request_id"? }`.
 The sites translate the English messages (`packages/shared/src/i18n/server-messages.ts`).
 
 | Group | What |
@@ -108,9 +109,11 @@ The sites translate the English messages (`packages/shared/src/i18n/server-messa
 | `/admin`, `/admin/analytics` | Everything the admin does (admins only; every change is logged) |
 
 Conventions:
-- **Auth**: `Authorization: Bearer <JWT>` (7 days). The role and store are read
-  from the database on each call; signing out or changing the password
-  revokes every session (`users.token_version`).
+- **Auth**: `Authorization: Bearer <JWT>`. Every sign-in is a device
+  (`/auth/sessions`). Sites: 7-day token. Apps (`client: "app"` at sign-in):
+  15-minute token + rotating 60-day refresh token (`/auth/refresh`). The role
+  and store are read from the database on each call; a password change or
+  "sign out everywhere" revokes every device (`users.token_version`).
 - **Language**: the sites send `X-PartHub-Lang: ar|fr|en`; it is stored on the
   account and used for WhatsApp messages.
 - **Checkout**: send an `Idempotency-Key` (one per checkout): a retry returns
@@ -119,7 +122,12 @@ Conventions:
 - **Errors**: unexpected ones return 500 with a `request_id`, also in the
   `X-Request-Id` header and the Worker logs.
 
-There is no OpenAPI file yet (planned before the mobile apps).
+**The contract for the apps**: `GET /api/v1/openapi.json` (OpenAPI 3.1,
+from `workers/api/src/openapi.ts`): every route the sites and the mobile
+apps use, not the admin nor the webhooks. `test/openapi.test.mjs` fails when
+a route is added without documenting it, when a documented route no longer
+exists, or when a real answer no longer matches its schema. Every answer
+carries both `success` and `ok` (same value).
 
 ## Local development
 
@@ -179,7 +187,20 @@ needed). They cover the order lifecycle, stock races, the duplicate-order
 guard, pickup, shipping and carriers, claims, commissions and invoices,
 WhatsApp (webhook, templates, languages), security headers and CORS,
 sessions and passwords, the audit log, SEO routes and more. CI runs all
-of the above on every pull request. There is no browser E2E suite in CI yet.
+of the above on every pull request.
+
+**End-to-end** (`e2e/`, workflow `E2E`): the real API (`wrangler dev`, local
+D1 seeded fresh by `e2e/scripts/start-api.mjs`) and the three sites built
+against it, driven by Chromium: a new buyer orders → the seller confirms,
+ships, records the carrier's update, delivers → the buyer sees it
+delivered → PartHub approves a part and the activity log shows it; plus
+sign-in errors, forgot password, the deletion page, Arabic RTL, and a buyer
+kept out of the seller portal. About 30 seconds.
+
+```bash
+pnpm --filter @parthub/e2e exec playwright install chromium   # once
+pnpm --filter @parthub/e2e test                                # starts everything itself
+```
 
 ## Configuration
 
@@ -206,6 +227,21 @@ a scoped API token), `VITE_API_BASE_URL`.
 
 No secret is ever committed. Their owners and rotation:
 [`infra/docs/assets-inventory.md`](infra/docs/assets-inventory.md).
+
+## Photos
+
+Photos are stored in R2 and served by the API at `/api/v1/media/uploads/…`;
+the API stores them as paths. Pages always go through `mediaSrc(path,
+width)` (`packages/shared/src/lib/images.ts`, wrapped by `mediaUrl` in the
+apps): it adds the API's address and, when resizing is on, asks Cloudflare
+for a copy no wider than `width`. The storefront also serves
+`/api/v1/media/uploads/*` itself (Pages Function), so a bare path works there.
+
+**Turning resizing on** (owner, once): Cloudflare › parthub.autos › Images ›
+Transformations › enable for the zone; then GitHub › Settings › Variables ›
+Actions › `IMAGE_RESIZING` = `1`, and re-run Deploy Pages. Free up to 5,000
+different copies a month (PartHub needs a few hundred). If resizing is
+switched off later, the pages fall back to the original photos.
 
 ## Database changes
 

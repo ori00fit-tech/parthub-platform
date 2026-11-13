@@ -17,6 +17,7 @@ export * from "./lib/formatters";
 export * from "./lib/money";
 export * from "./lib/issues";
 export * from "./lib/shipments";
+export * from "./lib/images";
 
 // API
 export * from "./api/client";

@@ -1,0 +1,57 @@
+name: E2E
+
+# The three sites and the real API (wrangler dev, local D1, fresh data),
+# driven by a browser: a buyer orders, the seller ships and delivers, the
+# buyer sees it, PartHub approves a part; accounts and languages.
+# Nothing touches production. Scenarios: e2e/tests.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22" # same as CI
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install the browser
+        run: pnpm --filter @parthub/e2e exec playwright install --with-deps chromium
+
+      - name: Run the scenarios
+        env:
+          CI: "true"
+        run: pnpm --filter @parthub/e2e test
+
+      - name: Report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7

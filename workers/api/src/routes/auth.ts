@@ -10,6 +10,7 @@ import { runInBackground } from "../utils/whatsapp";
 import { waPasswordChanged } from "../utils/wa-events";
 import { applyReset, checkCode, checkLink, findAccount, sendResetCode } from "../utils/password-reset";
 import { GRACE_DAYS, cancelDeletion, deletionBlockers, requestDeletion } from "../utils/account-deletion";
+import { accessToken, listSessions, refreshSession, revokeSession, startSession } from "../utils/sessions";
 import { LIMITS, blockedFor, clearAttempts, clientIp, pruneAttempts, recordAttempt } from "../utils/rate-limit";
 
 const TOO_MANY = "Too many attempts. Try again in a few minutes.";
@@ -66,7 +67,7 @@ authRoutes.post("/register", async (c) => {
 });
 
 authRoutes.post("/login", async (c) => {
-  const body = await c.req.json<{ email: string; password: string }>();
+  const body = await c.req.json<{ email: string; password: string; client?: string; device_name?: string; platform?: string }>();
 
   if (!body.email || !body.password) {
     return fail(c, "email and password are required");
@@ -125,20 +126,20 @@ authRoutes.post("/login", async (c) => {
     ]);
   }
 
-  const tv = Number(user.token_version || 0);
-  const payload =
-    user.seller_id != null
-      ? { user_id: user.id, role: user.role, seller_id: user.seller_id, tv }
-      : { user_id: user.id, role: user.role, tv };
-
   if (!c.env.JWT_SECRET) {
     return fail(c, "JWT_SECRET is not configured", 500);
   }
 
-  const token = await signToken(payload, c.env.JWT_SECRET);
+  // A session for this device (utils/sessions.ts): the sites get a 7-day
+  // token; an app (client: "app") a 15-minute token and a refresh token.
+  const session = await startSession(
+    c.env,
+    { id: user.id, role: user.role, seller_id: user.seller_id, token_version: Number(user.token_version || 0) },
+    { client: body.client === "app" ? "app" : "web", deviceName: body.device_name, platform: body.platform, userAgent: c.req.header("User-Agent"), ip: clientIp(c.req.raw.headers) }
+  );
 
   return ok(c, {
-    access_token: token,
+    ...session,
     // The password still works but would be refused today (e.g. an old
     // sample password): the apps ask to change it.
     password_weak: Boolean(passwordProblem(body.password, { email: user.email, name: user.name, role: user.role })),
@@ -167,9 +168,48 @@ authRoutes.get("/me", authMiddleware, async (c) => {
 
 // Signing out ends every session of this account (all devices): the
 // tokens issued before carry the old token_version.
+// POST /api/v1/auth/logout { everywhere? } — signs this device out; with
+// everywhere: true (or a token from before devices existed) every device.
 authRoutes.post("/logout", authMiddleware, async (c) => {
+  const body = await c.req.json<{ everywhere?: unknown }>().catch(() => ({}) as { everywhere?: unknown });
+  const sid = c.get("session_id");
+  if (sid && body.everywhere !== true) {
+    await revokeSession(c.env.DB, sid, "signed out");
+    return ok(c, { message: "Logged out" });
+  }
   await dbRun(c.env.DB, "UPDATE users SET token_version = token_version + 1, updated_at = datetime('now') WHERE id = ?", [c.get("user_id")]);
   return ok(c, { message: "Logged out" });
+});
+
+// POST /api/v1/auth/refresh { refresh_token } — apps: a new access token
+// and a new refresh token (the old one stops working; reusing it ends the session).
+authRoutes.post("/refresh", async (c) => {
+  const body = await c.req.json<{ refresh_token?: unknown }>().catch(() => ({}) as { refresh_token?: unknown });
+  const ipKey = `refresh:ip:${clientIp(c.req.raw.headers)}`;
+  if (await blockedFor(c.env.DB, [ipKey])) return fail(c, TOO_MANY, 429);
+  const res = await refreshSession(c.env, typeof body.refresh_token === "string" ? body.refresh_token : "");
+  if (!res.ok) {
+    await recordAttempt(c.env.DB, ipKey, LIMITS.loginIp);
+    return fail(c, res.error, 401);
+  }
+  const { ok: _ok, ...tokens } = res;
+  return ok(c, tokens);
+});
+
+// GET /api/v1/auth/sessions — my devices (this one marked).
+authRoutes.get("/sessions", authMiddleware, async (c) => {
+  const userId = Number(c.get("user_id"));
+  const tv = await dbFirst<{ token_version: number }>(c.env.DB, "SELECT token_version FROM users WHERE id = ?", [userId]);
+  const current = c.get("session_id");
+  const rows = await listSessions(c.env.DB, userId, Number(tv?.token_version || 0));
+  return ok(c, rows.map((r) => ({ ...r, current: r.id === current })));
+});
+
+// DELETE /api/v1/auth/sessions/:id — sign one device out (at once).
+authRoutes.delete("/sessions/:id", authMiddleware, async (c) => {
+  const done = await revokeSession(c.env.DB, c.req.param("id"), "signed out from another device", Number(c.get("user_id")));
+  if (!done) return fail(c, "Device not found", 404);
+  return ok(c, { message: "Device signed out" });
 });
 
 // POST /api/v1/auth/password { current_password, new_password }
@@ -212,8 +252,11 @@ authRoutes.post("/password", authMiddleware, async (c) => {
   ]);
   // A WhatsApp warning too: if it was not them, they know at once.
   runInBackground(c, waPasswordChanged(c.env, user.id, tv));
-  const payload = user.seller_id != null ? { user_id: user.id, role: user.role, seller_id: user.seller_id, tv } : { user_id: user.id, role: user.role, tv };
-  return ok(c, { access_token: await signToken(payload, c.env.JWT_SECRET), message: "Password changed. Other devices are signed out." });
+  // This device stays signed in: its session follows the new version.
+  const sid = c.get("session_id");
+  if (sid) await dbRun(c.env.DB, "UPDATE sessions SET token_version = ? WHERE id = ?", [tv, sid]);
+  const token = await accessToken(c.env, { id: user.id, role: user.role, seller_id: user.seller_id, token_version: tv }, sid);
+  return ok(c, { access_token: token, message: "Password changed. Other devices are signed out." });
 });
 
 // ── Forgot password (utils/password-reset.ts) ──────────────────────────
