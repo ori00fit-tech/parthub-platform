@@ -15,7 +15,7 @@ SHIPPING_FEE_CENTIMES = "3500"
 
 # Daily jobs (src/index.ts "scheduled"): commission ledger. 03:17 UTC.
 [triggers]
-crons = ["17 3 * * *"]
+crons = ["17 3 * * *", "*/15 * * * *"] # daily jobs; WhatsApp retries (src/index.ts)
 
 [[d1_databases]]
 binding = "DB"

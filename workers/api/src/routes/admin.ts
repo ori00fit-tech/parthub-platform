@@ -9,6 +9,7 @@ import { parsePagination } from "../utils/pagination";
 import { notifyBackInStock } from "../utils/stock-alerts";
 import { runInBackground } from "../utils/whatsapp";
 import { auditAdminChanges } from "../utils/audit";
+import { retryWhatsApp } from "../utils/wa-notify";
 import { waClaimEvent, waOrderStepAllSellers, waPartsReviewed, waShipmentEvent, waStoreStatus } from "../utils/wa-events";
 import { TEMPLATE_STATUSES, submitTemplates, syncTemplates, templateCenter } from "../utils/wa-meta";
 import { WA_LANGS, WA_TEMPLATE_BY_NAME } from "../utils/wa-templates";
@@ -1149,6 +1150,8 @@ adminRoutes.get("/whatsapp/templates", async (c) => ok(c, await templateCenter(c
 adminRoutes.post("/whatsapp/templates/sync", async (c) => {
   const res = await syncTemplates(c.env);
   if (!res.ok) return fail(c, res.error || "Could not read Meta's templates", 502);
+  // Templates just approved: send what was waiting for them.
+  runInBackground(c, retryWhatsApp(c.env));
   return ok(c, { found: res.found, ...(await templateCenter(c.env)) });
 });
 
