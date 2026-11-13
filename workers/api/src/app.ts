@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
+import { HTTPException } from "hono/http-exception";
 import { authRoutes } from "./routes/auth";
 import { vehiclesRoutes } from "./routes/vehicles";
 import { catalogRoutes } from "./routes/catalog";
@@ -30,7 +31,7 @@ app.use(
     origin: (origin, c) => allowedOrigin(origin, (c.env || {}) as Record<string, string>),
     maxAge: 86400,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-PartHub-Lang"],
+    allowHeaders: ["Content-Type", "Authorization", "X-PartHub-Lang", "Idempotency-Key"],
   })
 );
 
@@ -77,6 +78,20 @@ app.route("/api/v1/whatsapp", whatsappRoutes);
 app.route("/api/v1/requests", requestsRoutes);
 app.route("/api/v1/stock-alerts", stockAlertsRoutes);
 app.route("/api/v1/carriers", carriersRoutes);
+
+// Every unexpected error: JSON (the sites and apps read it), a short id to
+// find it in the Worker logs, never the internals. A body that is not
+// JSON is the client's mistake (400), not ours.
+app.onError((err, c) => {
+  if (err instanceof HTTPException) return err.getResponse();
+  const requestId = (c.req.header("cf-ray") || crypto.randomUUID()).split("-")[0]!.slice(0, 16);
+  c.header("X-Request-Id", requestId);
+  if (err instanceof SyntaxError && /JSON/i.test(err.message)) {
+    return c.json({ success: false, error: "The request body must be valid JSON", request_id: requestId }, 400);
+  }
+  console.error(`[error] ${requestId} ${c.req.method} ${new URL(c.req.url).pathname}: ${err instanceof Error ? err.stack || err.message : String(err)}`);
+  return c.json({ success: false, error: "Something went wrong. Please try again.", request_id: requestId }, 500);
+});
 
 app.notFound((c) => {
   return c.json(

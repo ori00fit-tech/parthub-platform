@@ -10,6 +10,8 @@ export const LIMITS = {
   loginIp: { max: 30, windowMinutes: 15, blockMinutes: 15 }, // one network (shared mobile IPs: higher)
   registerIp: { max: 10, windowMinutes: 60, blockMinutes: 60 },
   passwordUser: { max: 5, windowMinutes: 15, blockMinutes: 15 }, // wrong current password, one account
+  ordersBuyer: { max: 8, windowMinutes: 60, blockMinutes: 60 }, // orders placed, one account
+  ordersPhone: { max: 12, windowMinutes: 1440, blockMinutes: 720 }, // orders placed, one phone (several accounts)
 } satisfies Record<string, Limit>;
 
 const sqlTime = (d: Date) => d.toISOString().slice(0, 19).replace("T", " ");

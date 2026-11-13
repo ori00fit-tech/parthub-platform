@@ -10,6 +10,7 @@ import { shipmentTimeline, trackingUrl } from "../utils/carriers";
 import { runInBackground } from "../utils/whatsapp";
 import { notifySellersOfNewOrder } from "../utils/request-notifications";
 import { waClaimEvent, waOrderReceived } from "../utils/wa-events";
+import { cartHash, checkNewOrder, countOrder, readIdempotencyKey } from "../utils/order-guard";
 import { ISSUE_REASONS, type IssueRow, canEscalate, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, reportWindow, updateIssue } from "../utils/issues";
 
 const MAX_REVIEW_LENGTH = 1000;
@@ -116,6 +117,17 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
     requested.set(partId, (requested.get(partId) ?? 0) + qty);
   }
 
+  // Double taps, retries, fake orders (utils/order-guard.ts).
+  const idempotencyKey = readIdempotencyKey(c.req.header("Idempotency-Key"));
+  const hash = cartHash(requested, addr.phone);
+  const maxOpen = Number(c.env.ORDER_MAX_OPEN) > 0 ? Number(c.env.ORDER_MAX_OPEN) : undefined;
+  const guard = await checkNewOrder(c.env.DB, Number(buyerId), idempotencyKey, hash, addr.phone, maxOpen);
+  if (guard.kind === "refused") return fail(c, guard.message, guard.status);
+  if (guard.kind === "existing") {
+    const first = await dbFirst(c.env.DB, "SELECT * FROM orders WHERE reference = ?", [guard.reference]);
+    return c.json({ success: true, data: first, meta: { duplicate: guard.why } }, 200);
+  }
+
   let subtotal = 0;
   const resolvedItems: Array<{
     part_id: number; seller_id: number; title: string;
@@ -194,9 +206,9 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
       ).bind(item.quantity, item.part_id)
     ),
     db.prepare(
-      `INSERT INTO orders (buyer_id, reference, subtotal, shipping_fee, total, status, payment_status, shipping_status, notes)
-       VALUES (?, ?, ?, ?, ?, 'pending', 'unpaid', 'pending', ?)`
-    ).bind(buyerId, ref, subtotal, shipping_fee, total, body.notes ?? null),
+      `INSERT INTO orders (buyer_id, reference, subtotal, shipping_fee, total, status, payment_status, shipping_status, notes, idempotency_key, cart_hash)
+       VALUES (?, ?, ?, ?, ?, 'pending', 'unpaid', 'pending', ?, ?, ?)`
+    ).bind(buyerId, ref, subtotal, shipping_fee, total, body.notes ?? null, idempotencyKey, hash),
     db.prepare(
       `INSERT INTO order_addresses (order_id, full_name, phone, address_line1, address_line2, city, state, postal_code, country)
        VALUES (${orderIdSql}, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -236,8 +248,15 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
     if (/NOT NULL constraint failed: parts\.quantity/i.test(message)) {
       return fail(c, "Some items are no longer in stock, please review your cart", 409);
     }
+    // The same key at the same moment: the other request wrote the order
+    // (the batch rolled back, stock included).
+    if (idempotencyKey && /UNIQUE constraint failed: orders\.buyer_id/i.test(message)) {
+      const first = await dbFirst(c.env.DB, "SELECT * FROM orders WHERE buyer_id = ? AND idempotency_key = ?", [buyerId, idempotencyKey]);
+      if (first) return c.json({ success: true, data: first, meta: { duplicate: "same_key" } }, 200);
+    }
     throw err;
   }
+  await countOrder(c.env.DB, Number(buyerId), addr.phone);
 
   const order = await dbFirst<{ id: number }>(c.env.DB, "SELECT * FROM orders WHERE reference = ?", [ref]);
   // Each seller hears about the order on WhatsApp (after the response,

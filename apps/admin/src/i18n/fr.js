@@ -782,5 +782,13 @@ export default {
   "Record": "Enregistrer",
   "Parcel going back (to the buyer)": "Colis en retour (à l'acheteur)",
   "Late shipment (buyer and seller)": "Expédition en retard (acheteur et vendeur)",
+  "Activity log": "Journal d'activité",
+  "Every change made from the admin: who, what, on which record, and whether it worked. Passwords and secrets are never stored. Nobody can edit this log.": "Chaque modification faite depuis l'admin : qui, quoi, sur quel enregistrement, et si elle a réussi. Les mots de passe et secrets ne sont jamais enregistrés. Personne ne peut modifier ce journal.",
+  "Record type": "Type d'enregistrement",
+  "Record id": "N° d'enregistrement",
+  "Filter": "Filtrer",
+  "Done": "Fait",
+  "Refused ({status})": "Refusé ({status})",
+  "Nothing recorded yet.": "Rien d'enregistré pour l'instant.",
   "{n} without a matching order": "{n} sans commande correspondante",
 };

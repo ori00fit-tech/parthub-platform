@@ -21,6 +21,7 @@ import InvoicesPage from "./pages/InvoicesPage";
 import CarriersPage from "./pages/CarriersPage";
 import WhatsAppPage from "./pages/WhatsAppPage";
 import WhatsAppTemplatesPage from "./pages/WhatsAppTemplatesPage";
+import AuditLogPage from "./pages/AuditLogPage";
 import InvestorPage from "./pages/InvestorPage";
 import AccountPage from "./pages/AccountPage";
 
@@ -56,6 +57,7 @@ function AppRoutes() {
         <Route path="/carriers" element={<CarriersPage />} />
         <Route path="/whatsapp" element={<WhatsAppPage />} />
         <Route path="/whatsapp/templates" element={<WhatsAppTemplatesPage />} />
+        <Route path="/audit-log" element={<AuditLogPage />} />
         <Route path="/investor" element={<InvestorPage />} />
         <Route path="/account" element={<AccountPage />} />
         <Route path="*" element={<NotFoundPage />} />

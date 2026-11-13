@@ -26,6 +26,7 @@ const navItems = [
   { to: "/revenue", label: "Revenue", icon: "revenue" },
   { to: "/invoices", label: "Invoices", icon: "statement" },
   { to: "/investor", label: "Investor metrics", icon: "insights" },
+  { to: "/audit-log", label: "Activity log", icon: "statement" },
 ];
 
 function isActivePath(itemTo, pathname) {

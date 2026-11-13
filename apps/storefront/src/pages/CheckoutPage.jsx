@@ -35,6 +35,11 @@ export default function CheckoutPage() {
 
   // Delivery fee comes from the API so the total shown is the total charged.
   const [shippingFee, setShippingFee] = useState(null);
+  // One key per checkout: a double tap or a retry on a bad connection
+  // returns the same order instead of a second one (API: utils/order-guard.ts).
+  const [checkoutKey] = useState(() =>
+    globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
+  );
   useEffect(() => {
     let active = true;
     apiGet("/api/v1/commerce/shipping")
@@ -257,7 +262,9 @@ export default function CheckoutPage() {
       const response = await apiPost(
         "/api/v1/commerce/orders",
         payload,
-        freshToken ? { headers: { Authorization: `Bearer ${freshToken}` } } : { auth: true }
+        freshToken
+          ? { headers: { Authorization: `Bearer ${freshToken}`, "Idempotency-Key": checkoutKey } }
+          : { auth: true, headers: { "Idempotency-Key": checkoutKey } }
       );
       const orderId = response?.data?.reference || response?.data?.id || null;
 
