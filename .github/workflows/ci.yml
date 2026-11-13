@@ -40,6 +40,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # A workflow file GitHub cannot read never runs (and Deploy API waits
+      # for the migrations): check every one parses (Nov 2026: a ':' in a
+      # step name stopped migrations and API deploys for two merges).
+      - name: Workflow files are valid YAML
+        run: node .github/scripts/check-workflows.mjs
+
       # @parthub/shared is used from source (no build step).
       - name: Typecheck API
         run: pnpm --filter @parthub/api typecheck
