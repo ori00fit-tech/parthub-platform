@@ -14,6 +14,7 @@ export function onRequestGet({ request }) {
     "Disallow: /auth",
     "Disallow: /forgot-password",
     "Disallow: /reset-password",
+    "Disallow: /delete-account",
     "Disallow: /compare",
     "",
     `Sitemap: ${base}/sitemap.xml`,

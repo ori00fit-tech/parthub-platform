@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS users (
   terms_accepted_at TEXT,                   -- terms of use (see migrations/0013)
   terms_version  TEXT,
   locale         TEXT,                      -- ar | fr | en (see migrations/0028)
+  deletion_requested_at TEXT,               -- account deletion asked (migrations/0034)
+  deleted_at     TEXT,                      -- personal data erased
   created_at     TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -767,3 +769,16 @@ CREATE TABLE IF NOT EXISTS password_resets (
 );
 CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_password_resets_secret ON password_resets(secret_hash);
+
+-- See migrations/0034_account_deletion.sql
+CREATE TABLE IF NOT EXISTS account_deletions (
+  id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id              INTEGER NOT NULL REFERENCES users(id),
+  requested_at         TEXT NOT NULL DEFAULT (datetime('now')),
+  reason               TEXT,
+  seller_status_before TEXT,               -- the store's status, given back on cancel
+  cancelled_at         TEXT,
+  completed_at         TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_account_deletions_user ON account_deletions(user_id, requested_at);
+CREATE INDEX IF NOT EXISTS idx_users_deletion ON users(deletion_requested_at) WHERE deletion_requested_at IS NOT NULL;

@@ -1,4 +1,4 @@
-import ChangePasswordForm from "@parthub/shared/account";
+import ChangePasswordForm, { DeletionCancelledNotice } from "@parthub/shared/account";
 import { apiPost } from "../lib/api";
 import { Link } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
@@ -68,6 +68,7 @@ export default function AccountPage() {
 
   return (
     <section className="space-y-6 pb-10">
+      <DeletionCancelledNotice t={t} />
       <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
@@ -224,6 +225,9 @@ export default function AccountPage() {
           />
         </div>
       </div>
+      <p className="text-center text-sm">
+        <Link to="/delete-account" className="font-semibold text-red-700 hover:underline">{t("Delete my account")}</Link>
+      </p>
     </section>
   );
 }

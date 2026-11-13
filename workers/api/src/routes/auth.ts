@@ -9,6 +9,7 @@ import { passwordProblem } from "../utils/password-policy";
 import { runInBackground } from "../utils/whatsapp";
 import { waPasswordChanged } from "../utils/wa-events";
 import { applyReset, checkCode, checkLink, findAccount, sendResetCode } from "../utils/password-reset";
+import { GRACE_DAYS, cancelDeletion, deletionBlockers, requestDeletion } from "../utils/account-deletion";
 import { LIMITS, blockedFor, clearAttempts, clientIp, pruneAttempts, recordAttempt } from "../utils/rate-limit";
 
 const TOO_MANY = "Too many attempts. Try again in a few minutes.";
@@ -95,10 +96,11 @@ authRoutes.post("/login", async (c) => {
     password_hash: string;
     is_active: number;
     token_version: number;
+    deletion_requested_at: string | null;
     seller_id: number | null;
   }>(
     c.env.DB,
-    `SELECT u.id, u.name, u.email, u.phone, u.role, u.password_hash, u.is_active, u.token_version,
+    `SELECT u.id, u.name, u.email, u.phone, u.role, u.password_hash, u.is_active, u.token_version, u.deletion_requested_at,
             s.id as seller_id
      FROM users u
      LEFT JOIN sellers s ON s.user_id = u.id
@@ -112,6 +114,8 @@ authRoutes.post("/login", async (c) => {
   if (!valid) return failed();
   await clearAttempts(c.env.DB, emailKey);
   if (!user.is_active) return fail(c, "Account suspended", 403);
+  // Signing in during the 30 days cancels the account's deletion.
+  const deletionCancelled = user.deletion_requested_at ? await cancelDeletion(c.env.DB, user.id) : false;
 
   // Transparently upgrade legacy (unsalted SHA-256) hashes to PBKDF2.
   if (needsRehash(user.password_hash)) {
@@ -138,6 +142,7 @@ authRoutes.post("/login", async (c) => {
     // The password still works but would be refused today (e.g. an old
     // sample password): the apps ask to change it.
     password_weak: Boolean(passwordProblem(body.password, { email: user.email, name: user.name, role: user.role })),
+    ...(deletionCancelled ? { deletion_cancelled: true, message: "Welcome back: your account will not be deleted." } : {}),
     user: {
       id: user.id,
       name: user.name,
@@ -271,5 +276,41 @@ authRoutes.post("/reset-link", async (c) => {
   if (!(await applyReset(c.env, link.resetId, user.id, next))) return fail(c, "This link is not valid any more. Ask PartHub for a new one.");
   runInBackground(c, waPasswordChanged(c.env, user.id, Number(user.token_version) + 1));
   return ok(c, { email: user.email, message: "Password changed. Sign in with the new one." });
+});
+
+// ── Account deletion (utils/account-deletion.ts) ───────────────────────
+const BLOCKER_TEXT: Record<string, string> = {
+  admin: "Admin accounts cannot be deleted here",
+  open_orders: "Finish or cancel your open orders first",
+  open_claims: "Close your open claims first",
+  returns_window: "Wait until the 7-day returns window of your last deliveries is over",
+  money_owed: "Pay what is owed to PartHub first",
+};
+
+// GET /api/v1/auth/delete-account — can this account be deleted now?
+authRoutes.get("/delete-account", authMiddleware, async (c) => {
+  const blockers = await deletionBlockers(c.env.DB, Number(c.get("user_id")));
+  return ok(c, { grace_days: GRACE_DAYS, can_delete: blockers.length === 0, blockers: blockers.map((b) => ({ code: b, message: BLOCKER_TEXT[b] })) });
+});
+
+// POST /api/v1/auth/delete-account { password, reason? }
+authRoutes.post("/delete-account", authMiddleware, async (c) => {
+  const userId = Number(c.get("user_id"));
+  const body = await c.req.json<{ password?: unknown; reason?: unknown }>().catch(() => ({}) as Record<string, unknown>);
+  const user = await dbFirst<{ password_hash: string }>(c.env.DB, "SELECT password_hash FROM users WHERE id = ?", [userId]);
+  const key = `pwd:user:${userId}`;
+  if (await blockedFor(c.env.DB, [key])) return fail(c, TOO_MANY, 429);
+  if (!user || typeof body.password !== "string" || !(await verifyPassword(body.password, user.password_hash))) {
+    await recordAttempt(c.env.DB, key, LIMITS.passwordUser);
+    return fail(c, "The current password is wrong");
+  }
+  const blockers = await deletionBlockers(c.env.DB, userId);
+  if (blockers.length) return fail(c, BLOCKER_TEXT[blockers[0]!] || "This account cannot be deleted now", 409);
+  const reason = typeof body.reason === "string" ? body.reason.trim().slice(0, 500) || null : null;
+  await requestDeletion(c.env.DB, userId, reason);
+  return ok(c, {
+    grace_days: GRACE_DAYS,
+    message: `Your account is closed. Its personal data will be erased in ${GRACE_DAYS} days. Sign in before then to keep it.`,
+  });
 });
 

@@ -1,3 +1,4 @@
+import { noteDeletionCancelled } from "@parthub/shared/account";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { BASE_URL, apiGet, apiPost } from "../../lib/api";
 
@@ -81,6 +82,7 @@ export function AuthProvider({ children }) {
       persistSession(nextToken, nextUser);
       setToken(nextToken);
       setUser(nextUser);
+      noteDeletionCancelled(res?.data);
       return res;
     } finally {
       setLoading(false);
