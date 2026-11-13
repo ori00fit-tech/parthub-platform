@@ -782,3 +782,22 @@ CREATE TABLE IF NOT EXISTS account_deletions (
 );
 CREATE INDEX IF NOT EXISTS idx_account_deletions_user ON account_deletions(user_id, requested_at);
 CREATE INDEX IF NOT EXISTS idx_users_deletion ON users(deletion_requested_at) WHERE deletion_requested_at IS NOT NULL;
+
+-- See migrations/0035_sessions.sql
+CREATE TABLE IF NOT EXISTS sessions (
+  id                 TEXT PRIMARY KEY,               -- random, in the token (sid)
+  user_id            INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  client             TEXT NOT NULL CHECK (client IN ('web', 'app')),
+  device_name        TEXT,                           -- "Chrome on Android", or what the app says
+  platform           TEXT,                           -- web | android | ios | other
+  token_version      INTEGER NOT NULL DEFAULT 0,     -- users.token_version when signed in
+  refresh_hash       TEXT,                           -- apps only
+  prev_refresh_hash  TEXT,                           -- the one before: reuse = theft
+  ip                 TEXT,
+  created_at         TEXT NOT NULL DEFAULT (datetime('now')),
+  last_used_at       TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at         TEXT NOT NULL,
+  revoked_at         TEXT,
+  revoked_reason     TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id, revoked_at);

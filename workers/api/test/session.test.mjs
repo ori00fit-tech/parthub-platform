@@ -51,11 +51,16 @@ check("login_ok", st === 200 && (await verifyToken(b.data.access_token, "s")).tv
 [st] = await call("GET", "/api/v1/auth/me", t1);
 check("token_works", st === 200, st);
 
-// Sign out: this token (and every older one) stops working.
+// Sign out (this device): this token stops working, another device keeps going.
+const other = "Bearer " + (await login("b@x"))[1].data.access_token;
 [st] = await call("POST", "/api/v1/auth/logout", t1);
 check("logout_ok", st === 200, st);
 [st, b] = await call("GET", "/api/v1/auth/me", t1);
 check("token_revoked", st === 401, [st, b]);
+check("other_device_still_in", (await call("GET", "/api/v1/auth/me", other))[0] === 200);
+// Sign out everywhere: every token stops (token_version + 1).
+[st] = await call("POST", "/api/v1/auth/logout", other, { everywhere: true });
+check("logout_everywhere", st === 200 && (await call("GET", "/api/v1/auth/me", other))[0] === 401);
 [st, b] = await login("b@x");
 const t2 = "Bearer " + b.data.access_token;
 check("new_login_tv1", (await verifyToken(b.data.access_token, "s")).tv === 1 && (await call("GET", "/api/v1/auth/me", t2))[0] === 200);

@@ -16,6 +16,7 @@ import { waClaimEvent, waOrderStep, waShipmentEvent } from "../utils/wa-events";
 import { MAX_IMPORT_ROWS, applyImport, planImport } from "../utils/part-import";
 import { MAX_CODE_ATTEMPTS, holdUntil, isPickup, nextStatuses, sameCode } from "../utils/pickup";
 import { cleanTracking, readFeeMad } from "../utils/shipping";
+import { accessToken } from "../utils/sessions";
 import { MANUAL_SHIPMENT_STATUSES, noteShipment, recordManualEvent, shipmentTimeline, trackingUrl, validCarrier } from "../utils/carriers";
 import { type ShipmentStatus } from "../utils/carriers";
 import { readPartValues } from "../utils/part-values";
@@ -105,10 +106,11 @@ function cleanPhone(value: unknown): string | null | "invalid" {
 
 // A token that carries the seller id, so a seller who just created their
 // store doesn't have to sign in again.
-async function sellerSessionToken(env: Env, userId: number, sellerId: number) {
+async function sellerSessionToken(env: Env, userId: number, sellerId: number, sid: string | null = null) {
   if (!env.JWT_SECRET) return null;
   const row = await env.DB.prepare("select token_version from users where id = ?1").bind(userId).first<{ token_version: number }>();
-  return signToken({ user_id: userId, role: "seller", seller_id: sellerId, tv: Number(row?.token_version || 0) }, env.JWT_SECRET);
+  const tv = Number(row?.token_version || 0);
+  return sid ? accessToken(env, { id: userId, role: "seller", seller_id: sellerId, token_version: tv }, sid) : signToken({ user_id: userId, role: "seller", seller_id: sellerId, tv }, env.JWT_SECRET);
 }
 
 async function getPartById(DB: D1Database, id: number) {
@@ -857,7 +859,7 @@ marketplaceRoutes.post("/onboarding", authMiddleware, async (c) => {
   await c.env.DB.prepare("update users set role = 'seller' where id = ?1 and role = 'buyer'")
     .bind(userId)
     .run();
-  const access_token = await sellerSessionToken(c.env, Number(userId), sellerId);
+  const access_token = await sellerSessionToken(c.env, Number(userId), sellerId, c.get("session_id"));
 
   const seller = await c.env.DB.prepare(`
     select

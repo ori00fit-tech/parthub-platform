@@ -70,6 +70,10 @@ test("the buyer sees the order delivered, with its history", async ({ page }) =>
   await page.goto(`${URLS.store}/orders/${reference}/tracking`);
   await expect(page.getByText("Delivered").first()).toBeVisible();
   await expect(page.getByText("AM123456789MA").first()).toBeVisible();
+  // The account lists this browser as a device.
+  await page.goto(`${URLS.store}/account`);
+  await expect(page.getByRole("heading", { name: "My devices" })).toBeVisible();
+  await expect(page.getByText("This device")).toBeVisible();
 });
 
 test("PartHub approves a waiting part; the activity log records it", async ({ page }) => {

@@ -149,6 +149,9 @@ jobs:
       - name: 0034 account deletion (30 days to change one's mind)
         run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0034_account_deletion.sql"
 
+      - name: 0035 devices (sessions, refresh tokens for the apps)
+        run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0035_sessions.sql"
+
       # Fails the job (and the API deploy waiting for it) when the schema is
       # not what the API needs; only warns while D1's daily read limit is hit.
       - name: Verify

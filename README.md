@@ -109,9 +109,11 @@ The sites translate the English messages (`packages/shared/src/i18n/server-messa
 | `/admin`, `/admin/analytics` | Everything the admin does (admins only; every change is logged) |
 
 Conventions:
-- **Auth**: `Authorization: Bearer <JWT>` (7 days). The role and store are read
-  from the database on each call; signing out or changing the password
-  revokes every session (`users.token_version`).
+- **Auth**: `Authorization: Bearer <JWT>`. Every sign-in is a device
+  (`/auth/sessions`). Sites: 7-day token. Apps (`client: "app"` at sign-in):
+  15-minute token + rotating 60-day refresh token (`/auth/refresh`). The role
+  and store are read from the database on each call; a password change or
+  "sign out everywhere" revokes every device (`users.token_version`).
 - **Language**: the sites send `X-PartHub-Lang: ar|fr|en`; it is stored on the
   account and used for WhatsApp messages.
 - **Checkout**: send an `Idempotency-Key` (one per checkout): a retry returns

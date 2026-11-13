@@ -25,15 +25,30 @@ export const authMiddleware: MiddlewareHandler<{
   }
 
   const user = await c.env.DB.prepare(
-    `SELECT u.role, u.is_active, u.token_version, u.locale, s.id AS seller_id
+    `SELECT u.role, u.is_active, u.token_version, u.locale, s.id AS seller_id,
+            ss.id AS sid, ss.revoked_at, ss.expires_at, ss.last_used_at
      FROM users u LEFT JOIN sellers s ON s.user_id = u.id
+     LEFT JOIN sessions ss ON ss.id = ?2 AND ss.user_id = u.id
      WHERE u.id = ?1`
   )
-    .bind(payload.user_id)
-    .first<{ role: "buyer" | "seller" | "admin"; is_active: number; token_version: number; locale: string | null; seller_id: number | null }>();
+    .bind(payload.user_id, payload.sid ?? "")
+    .first<{
+      role: "buyer" | "seller" | "admin"; is_active: number; token_version: number; locale: string | null; seller_id: number | null;
+      sid: string | null; revoked_at: string | null; expires_at: string | null; last_used_at: string | null;
+    }>();
 
   if (!user || !Number(user.is_active) || Number(payload.tv ?? 0) !== Number(user.token_version ?? 0)) {
     return c.json({ success: false, error: "Session expired, please sign in again" }, 401);
+  }
+  // A token of a device that was signed out (utils/sessions.ts). Tokens
+  // made before devices existed have no sid and keep working until they expire.
+  const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+  if (payload.sid && (!user.sid || user.revoked_at || (user.expires_at && user.expires_at <= now))) {
+    return c.json({ success: false, error: "Session expired, please sign in again" }, 401);
+  }
+  // "Last used" on the devices list, written at most once an hour.
+  if (user.sid && (!user.last_used_at || user.last_used_at < new Date(Date.now() - 3600_000).toISOString().slice(0, 19).replace("T", " "))) {
+    await c.env.DB.prepare("UPDATE sessions SET last_used_at = datetime('now') WHERE id = ?1").bind(user.sid).run().catch(() => undefined);
   }
 
   // The language the person uses PartHub in (sent by the sites): their
@@ -45,6 +60,7 @@ export const authMiddleware: MiddlewareHandler<{
   }
 
   c.set("user_id", payload.user_id);
+  c.set("session_id", user.sid ?? null);
   c.set("user_role", user.role);
   c.set("seller_id", user.seller_id ?? null);
   return await next();

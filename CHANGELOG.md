@@ -41,6 +41,13 @@ known limits: `infra/docs/release-v0.1.1-readiness.md`.
 - 25 Utility templates and 1 Authentication template (reset code) in ar/fr/en, sent in each person's language with
   fallback; submitted to and synced from Meta from the admin.
 
+### Devices
+- Every sign-in is a device: "My devices" in the three sites, sign one out
+  at once, or every device. "Sign out" now signs out this device only.
+- Apps: 15-minute access token + 60-day refresh token that changes at every
+  use; reusing an old one ends the session (stolen copy). A password change
+  keeps the current device and ends the others.
+
 ### API contract
 - OpenAPI 3.1 at `/api/v1/openapi.json` for the sites and the mobile apps
   (≈95 operations), kept true by a test (coverage both ways, real answers

@@ -6,7 +6,7 @@ import { STATUS_COPY, useReadiness } from "../lib/readiness";
 import { mediaUrl } from "../lib/requests";
 import StoreChecklist, { StoreStatusBanner } from "../components/store/StoreChecklist";
 import { useT } from "../i18n";
-import ChangePasswordForm from "@parthub/shared/account";
+import ChangePasswordForm, { DevicesList } from "@parthub/shared/account";
 import { LinkedText } from "../components/legal/LegalDocument";
 import FulfillmentSettings from "../components/store/FulfillmentSettings";
 
@@ -22,7 +22,7 @@ export default function StoreSettingsPage() {
   const t = useT();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, setSessionToken } = useAuth();
+  const { user, setSessionToken, logout } = useAuth();
   const { readiness, loading: readinessLoading, error: readinessError, reload: reloadReadiness } = useReadiness();
   const hasStore = Boolean(readiness?.seller);
   const isWelcome = searchParams.get("welcome") === "1";
@@ -434,6 +434,13 @@ export default function StoreSettingsPage() {
             submit={(current, next) => api.post("/api/v1/auth/password", { current_password: current, new_password: next }).then((r) => r?.data)}
             onToken={setSessionToken}
           />
+        </div>
+      </div>
+      <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-gray-900">{t("My devices")}</h2>
+        <p className="mt-1 text-sm text-gray-600">{t("Where your account is signed in. Sign out a device you do not recognise.")}</p>
+        <div className="mt-3">
+          <DevicesList t={t} get={(p) => api.get(p).then((r) => r?.data)} del={(p) => api.delete(p)} post={(p, b) => api.post(p, b)} onEverywhere={logout} />
         </div>
       </div>
       <p className="text-center text-sm">

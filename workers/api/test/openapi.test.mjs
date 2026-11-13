@@ -131,6 +131,10 @@ await contract("GET", "/api/v1/marketplace/me/parts", "/api/v1/marketplace/me/pa
 await contract("GET", "/api/v1/marketplace/parts/1/images", "/api/v1/marketplace/parts/:id/images", seller);
 await contract("POST", "/api/v1/auth/forgot", "/api/v1/auth/forgot", null, { identifier: "nobody@x.ma" });
 await contract("GET", "/api/v1/auth/delete-account", "/api/v1/auth/delete-account", buyer);
+const [, appLogin] = await contract("POST", "/api/v1/auth/login", "/api/v1/auth/login", null, { email: "b@x.ma", password: "Riad-Fes-2026-x", client: "app", device_name: "Pixel 8", platform: "android" });
+const [, refreshed] = await contract("POST", "/api/v1/auth/refresh", "/api/v1/auth/refresh", null, { refresh_token: appLogin.data.refresh_token });
+await contract("POST", "/api/v1/auth/refresh", "/api/v1/auth/refresh", null, { refresh_token: "nope.nope" });
+await contract("GET", "/api/v1/auth/sessions", "/api/v1/auth/sessions", `Bearer ${refreshed.data.access_token}`);
 check("answers_match_contract", problems.length === 0, problems);
 check("enough_checked", checked.size >= 25, checked.size);
 

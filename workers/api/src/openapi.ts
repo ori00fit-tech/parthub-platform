@@ -40,7 +40,11 @@ const schemas: Record<string, Schema> = {
   ),
   Session: obj(
     {
-      access_token: { ...str, description: "JWT, 7 days. Send as Authorization: Bearer. Signing out or changing the password revokes every session." },
+      access_token: { ...str, description: "JWT. Send as Authorization: Bearer. Sites: 7 days. Apps (client: app): 15 minutes, then POST /auth/refresh." },
+      expires_in: { ...int, description: "Seconds the access token lives." },
+      session_id: { ...str, description: "This device (GET /auth/sessions)." },
+      refresh_token: { ...str, description: "Apps only, 60 days, changes at every refresh: keep only the newest (secure storage). Using an old one ends the session." },
+      refresh_expires_at: str,
       password_weak: { ...bool, description: "The password would be refused today: ask the person to change it." },
       deletion_cancelled: { ...bool, description: "Signing in cancelled a pending account deletion." },
       user: ref("User"),
@@ -175,9 +179,12 @@ const P: Record<string, Partial<Record<"get" | "post" | "put" | "patch" | "delet
 
   // Accounts
   "/api/v1/auth/register": { post: { tag: "Account", summary: "Create a buyer (or seller) account", status: 201, body: obj({ name: str, email: str, password: str, phone: str, role: { enum: ["buyer", "seller"] }, accept_terms: { const: true } }, ["name", "email", "password", "accept_terms"]), data: anyObj } },
-  "/api/v1/auth/login": { post: { tag: "Account", summary: "Sign in", body: obj({ email: str, password: str }, ["email", "password"]), data: ref("Session") } },
+  "/api/v1/auth/login": { post: { tag: "Account", summary: "Sign in. Apps send client: app (and the device's name and platform) to get a refresh token.", body: obj({ email: str, password: str, client: { enum: ["web", "app"] }, device_name: str, platform: { enum: ["android", "ios", "web", "other"] } }, ["email", "password"]), data: ref("Session") } },
+  "/api/v1/auth/refresh": { post: { tag: "Account", summary: "Apps: a new access token and a new refresh token (the old one stops working)", body: obj({ refresh_token: str }, ["refresh_token"]), data: obj({ access_token: str, expires_in: int, refresh_token: str, refresh_expires_at: str, session_id: str }, ["access_token", "refresh_token"]) } },
+  "/api/v1/auth/sessions": { get: { tag: "Account", summary: "My devices (current: true for this one)", auth: true, data: arr(obj({ id: str, client: { enum: ["web", "app"] }, device_name: nul(str), platform: nul(str), created_at: str, last_used_at: str, expires_at: str, current: bool }, ["id", "client", "current"])) } },
+  "/api/v1/auth/sessions/:id": { delete: { tag: "Account", summary: "Sign one device out, at once", auth: true, data: ref("Message") } },
   "/api/v1/auth/me": { get: { tag: "Account", summary: "The signed-in account", auth: true, data: ref("User") } },
-  "/api/v1/auth/logout": { post: { tag: "Account", summary: "Sign out everywhere (revokes every token)", auth: true, data: ref("Message") } },
+  "/api/v1/auth/logout": { post: { tag: "Account", summary: "Sign this device out; { everywhere: true } signs out every device", auth: true, body: obj({ everywhere: bool }), data: ref("Message") } },
   "/api/v1/auth/password": { post: { tag: "Account", summary: "Change the password (other devices signed out; returns a new token)", auth: true, body: obj({ current_password: str, new_password: str }, ["current_password", "new_password"]), data: obj({ access_token: str, message: str }, ["access_token"]) } },
   "/api/v1/auth/forgot": { post: { tag: "Account", summary: "Forgot password: a 6-digit code on WhatsApp (same answer whether the account exists)", body: obj({ identifier: { ...str, description: "E-mail or phone" } }, ["identifier"]), data: ref("Message") } },
   "/api/v1/auth/reset": { post: { tag: "Account", summary: "New password with the WhatsApp code", body: obj({ identifier: str, code: str, new_password: str }, ["identifier", "code", "new_password"]), data: obj({ email: str, message: str }) } },
