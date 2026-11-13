@@ -3,8 +3,17 @@ name: Deploy API
 on:
   push:
     branches: [main]
+    # The API, and what decides how it is deployed: its migrations and these
+    # workflows (a change to them alone must also deploy, Nov 2026).
     paths:
       - 'workers/api/**'
+      - 'infra/d1/schema.sql'
+      - 'infra/d1/migrations/**'
+      - '.github/workflows/deploy-api.yml'
+      - '.github/workflows/d1-migrate.yml'
+      - '.github/scripts/d1-*'
+  # By hand: Actions > Deploy API > Run workflow.
+  workflow_dispatch:
 
 jobs:
   # The database first: new code may read tables or columns that only the
