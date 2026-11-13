@@ -76,7 +76,7 @@ step of an order, a claim, a store or an account.
 | `parthub_new_order` | Seller | A buyer places an order with the store's parts | {{1}} reference, {{2}} items, {{3}} amount, {{4}} city, {{5}} link | link in text |
 | `parthub_order_received` | Buyer | The buyer places an order | {{1}} reference, {{2}} total | Track the order |
 | `parthub_order_confirmed` | Buyer | The seller confirms the order (delivery) | {{1}} seller, {{2}} reference | Track the order |
-| `parthub_pickup_ready` | Buyer | The seller confirms a pickup order: the part is kept for the buyer | {{1}} reference, {{2}} seller, {{3}} code, {{4}} until, {{5}} address | Track the order |
+| `parthub_pickup_ready` | Buyer | The seller confirms a pickup order: the part is kept for the buyer | {{1}} reference, {{2}} seller, {{3}} until, {{4}} address | Track the order |
 | `parthub_order_shipped` | Buyer | The seller marks the order shipped (carrier and tracking number if given) | {{1}} reference, {{2}} seller, {{3}} carrier, {{4}} tracking | Track the order |
 | `parthub_out_for_delivery` | Buyer | The carrier reports the parcel out for delivery | {{1}} reference, {{2}} amount | Track the order |
 | `parthub_delivery_attempt_failed` | Buyer | The carrier reports a failed delivery attempt | {{1}} reference, {{2}} carrier, {{3}} reason | Track the order |
@@ -94,5 +94,6 @@ step of an order, a claim, a store or an account.
 | `parthub_store_blocked` | Seller | PartHub rejects or suspends the store, with a reason | {{1}} store, {{2}} reason | — |
 | `parthub_parts_reviewed` | Seller | PartHub reviews the store's parts (one message per review batch) | {{1}} approved, {{2}} rejected | Open inventory |
 | `parthub_password_changed` | Account | The account password is changed (all other sessions are signed out) | {{1}} name, {{2}} when | — |
+| `parthub_reset_code` (Authentication) | Account | Someone asks to reset the password of the account (Forgot password) | {{1}} code | Copy code |
 
-Full texts (ar / fr / en): Admin › WhatsApp › Templates, or the catalog file.
+Full texts (ar / fr / en): Admin › WhatsApp › Templates, or the catalog file. The Authentication template is worded by Meta (code, security note, expiry, copy-code button).

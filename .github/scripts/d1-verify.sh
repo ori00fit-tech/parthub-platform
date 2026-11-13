@@ -49,6 +49,7 @@ sql="SELECT
   (SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='uq_orders_buyer_idempotency') AS order_idempotency_index,
   $(tables "'whatsapp_templates'" whatsapp_templates_table),
   $(tables "'admin_audit_log'" admin_audit_table),
+  $(tables "'password_resets'" password_resets_table),
   $(has whatsapp_notifications payload whatsapp_retry_columns),
   $(has shipment_events applied_at shipment_events_applied_column),
   (SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='uq_orders_buyer_cart_pending') AS order_cart_index,
@@ -71,7 +72,7 @@ const raw = require("fs").readFileSync(0, "utf8");
 const json = JSON.parse(raw.slice(raw.indexOf("[")));
 const row = json[0].results[0];
 console.log(JSON.stringify(row, null, 2));
-const exact = { tables_of_6: 6, key_indexes_of_4: 4, part_number_tables_of_3: 3, revenue_tables_of_7: 7, engines_without_source: 0, invoice_unique_index: 1, carrier_tables_of_2: 2, whatsapp_tables_of_2: 2, whatsapp_templates_table: 1, order_idempotency_index: 1, admin_audit_table: 1, order_cart_index: 1 };
+const exact = { tables_of_6: 6, key_indexes_of_4: 4, part_number_tables_of_3: 3, revenue_tables_of_7: 7, engines_without_source: 0, invoice_unique_index: 1, carrier_tables_of_2: 2, whatsapp_tables_of_2: 2, whatsapp_templates_table: 1, order_idempotency_index: 1, admin_audit_table: 1, order_cart_index: 1, password_resets_table: 1 };
 for (const k of Object.keys(row)) if (k.endsWith("_column") || k.endsWith("_columns")) exact[k] = 1;
 const bad = [];
 for (const [k, v] of Object.entries(exact)) if (Number(row[k]) !== v) bad.push(`${k} = ${row[k]} (expected ${v})`);

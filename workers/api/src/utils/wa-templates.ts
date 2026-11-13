@@ -27,7 +27,9 @@ export type WaAudience = "buyer" | "seller" | "account";
 export type WaTemplate = {
   name: string; // Meta template name
   audience: WaAudience;
-  category: "UTILITY";
+  // UTILITY, or AUTHENTICATION (a code: Meta writes the text itself, in
+  // each language, with a security note and a "copy code" button).
+  category: "UTILITY" | "AUTHENTICATION";
   trigger: string; // the event in the code that sends it
   params: Array<{ name: string; example: string }>;
   body: Texts;
@@ -480,6 +482,21 @@ export const WA_TEMPLATES: WaTemplate[] = [
   },
 ];
 
+WA_TEMPLATES.push({
+  name: "parthub_reset_code",
+  audience: "account",
+  category: "AUTHENTICATION",
+  trigger: "Someone asks to reset the password of the account (Forgot password)",
+  params: [{ name: "code", example: "482913" }],
+  // Meta's own wording for Authentication templates (shown here for reference).
+  body: {
+    ar: "{{1}} هو رمز التحقق الخاص بك. لأسباب أمنية، لا تشارك هذا الرمز.",
+    fr: "Votre code de vérification est {{1}}. Pour votre sécurité, ne le partagez pas.",
+    en: "{{1}} is your verification code. For your security, do not share this code.",
+  },
+  button: { site: "storefront", text: { ar: "نسخ الرمز", fr: "Copier le code", en: "Copy code" }, example: "482913" },
+});
+
 export const WA_TEMPLATE_BY_NAME: Record<string, WaTemplate> = Object.fromEntries(WA_TEMPLATES.map((t) => [t.name, t]));
 
 // Short words sent inside a template ({{n}}), in the recipient's language.
@@ -512,6 +529,18 @@ export function waWord(key: string, lang: WaLang): string {
 
 // What PartHub sends to Meta to create one language of a template.
 export function metaTemplatePayload(t: WaTemplate, lang: WaLang, urls: { storefront: string; seller: string }) {
+  if (t.category === "AUTHENTICATION") {
+    return {
+      name: t.name,
+      language: lang,
+      category: t.category,
+      components: [
+        { type: "BODY", add_security_recommendation: true },
+        { type: "FOOTER", code_expiration_minutes: 15 },
+        { type: "BUTTONS", buttons: [{ type: "OTP", otp_type: "COPY_CODE", text: t.button?.text[lang] || "Copy code" }] },
+      ],
+    };
+  }
   const components: Array<Record<string, unknown>> = [
     { type: "BODY", text: t.body[lang], example: { body_text: [t.params.map((p) => p.example)] } },
     { type: "FOOTER", text: WA_FOOTER[lang] },
@@ -529,6 +558,7 @@ export function metaTemplatePayload(t: WaTemplate, lang: WaLang, urls: { storefr
 export function templateProblems(t: WaTemplate): string[] {
   const out: string[] = [];
   if (!/^[a-z0-9_]{1,512}$/.test(t.name)) out.push(`${t.name}: name must be lowercase letters, digits and _`);
+  if (t.category === "AUTHENTICATION") return out; // Meta writes the text
   for (const lang of WA_LANGS) {
     const body = t.body[lang];
     if (!body) {

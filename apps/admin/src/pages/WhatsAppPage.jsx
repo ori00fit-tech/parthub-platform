@@ -66,6 +66,22 @@ function Thread({ phone, onChanged }) {
     }
   }
 
+  // Someone who forgot their password and gets no code: a one-time link
+  // (60 min) for the account with this number, put in the reply.
+  async function resetLink() {
+    setState({ sending: true, error: "" });
+    try {
+      const r = await api.post("/api/v1/admin/password-reset-link", { identifier: phone });
+      const d = r?.data || {};
+      setText(
+        `${t("Hello {name}, here is your link to choose a new PartHub password (valid 60 minutes, once):", { name: d.name || "" })}\n${d.url}`
+      );
+      setState({ sending: false, error: "" });
+    } catch (err) {
+      setState({ sending: false, error: err?.message || t("Something went wrong. Please try again.") });
+    }
+  }
+
   async function handled() {
     await api.post(`/api/v1/admin/whatsapp/conversations/${phone}/handled`, {});
     onChanged();
@@ -95,6 +111,9 @@ function Thread({ phone, onChanged }) {
             {state.sending ? t("Sending…") : t("Send on WhatsApp")}
           </button>
           <button type="button" onClick={handled} className="text-xs font-semibold text-gray-600 hover:underline">{t("Mark handled (no reply)")}</button>
+          <button type="button" onClick={resetLink} disabled={state.sending} className="text-xs font-semibold text-blue-700 hover:underline disabled:opacity-50" title={t("For someone who forgot their password and gets no code")}>
+            {t("Password reset link")}
+          </button>
           {state.error ? <span className="text-sm text-red-700" role="alert">{state.error}</span> : null}
         </div>
       </form>

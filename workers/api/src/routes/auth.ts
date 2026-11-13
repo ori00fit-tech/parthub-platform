@@ -8,6 +8,7 @@ import { LEGAL_VERSION } from "../utils/legal";
 import { passwordProblem } from "../utils/password-policy";
 import { runInBackground } from "../utils/whatsapp";
 import { waPasswordChanged } from "../utils/wa-events";
+import { applyReset, checkCode, checkLink, findAccount, sendResetCode } from "../utils/password-reset";
 import { LIMITS, blockedFor, clearAttempts, clientIp, pruneAttempts, recordAttempt } from "../utils/rate-limit";
 
 const TOO_MANY = "Too many attempts. Try again in a few minutes.";
@@ -208,5 +209,67 @@ authRoutes.post("/password", authMiddleware, async (c) => {
   runInBackground(c, waPasswordChanged(c.env, user.id, tv));
   const payload = user.seller_id != null ? { user_id: user.id, role: user.role, seller_id: user.seller_id, tv } : { user_id: user.id, role: user.role, tv };
   return ok(c, { access_token: await signToken(payload, c.env.JWT_SECRET), message: "Password changed. Other devices are signed out." });
+});
+
+// ── Forgot password (utils/password-reset.ts) ──────────────────────────
+const FORGOT_ANSWER =
+  "If an account matches, a 6-digit code was sent on WhatsApp to its number. No code within 2 minutes? Write to PartHub on WhatsApp.";
+
+// POST /api/v1/auth/forgot { identifier } — e-mail or phone. Same answer
+// whether an account exists or not.
+authRoutes.post("/forgot", async (c) => {
+  const body = await c.req.json<{ identifier?: unknown }>().catch(() => ({}) as { identifier?: unknown });
+  const identifier = typeof body.identifier === "string" ? body.identifier.trim().slice(0, 200) : "";
+  if (!identifier) return fail(c, "Enter your e-mail or phone number");
+  const ipKey = `reset:ip:${clientIp(c.req.raw.headers)}`;
+  if (await blockedFor(c.env.DB, [ipKey])) return fail(c, TOO_MANY, 429);
+  await recordAttempt(c.env.DB, ipKey, LIMITS.resetIp);
+  const account = await findAccount(c.env, identifier);
+  if (account) {
+    const accountKey = `reset:account:${account.id}`;
+    if (!(await blockedFor(c.env.DB, [accountKey]))) {
+      await recordAttempt(c.env.DB, accountKey, LIMITS.resetAccount);
+      await sendResetCode(c.env, account);
+    }
+  }
+  return ok(c, { message: FORGOT_ANSWER });
+});
+
+// POST /api/v1/auth/reset { identifier, code, new_password }
+authRoutes.post("/reset", async (c) => {
+  const body = await c.req.json<{ identifier?: unknown; code?: unknown; new_password?: unknown }>().catch(() => ({}) as Record<string, unknown>);
+  const identifier = typeof body.identifier === "string" ? body.identifier.trim().slice(0, 200) : "";
+  const next = typeof body.new_password === "string" ? body.new_password : "";
+  const account = identifier ? await findAccount(c.env, identifier) : null;
+  if (!account) return fail(c, "This code is wrong or has expired. Ask for a new one.");
+  const weak = passwordProblem(next, { email: account.email, name: account.name, role: account.role as "buyer" | "seller" | "admin" });
+  if (weak) return fail(c, weak);
+  const check = await checkCode(c.env, account, String(body.code ?? ""));
+  if (!check.ok) return fail(c, check.error);
+  if (!(await applyReset(c.env, check.resetId, account.id, next))) return fail(c, "This code is wrong or has expired. Ask for a new one.");
+  runInBackground(c, waPasswordChanged(c.env, account.id, Number(account.token_version) + 1));
+  return ok(c, { email: account.email, message: "Password changed. Sign in with the new one." });
+});
+
+// POST /api/v1/auth/reset-link { token, new_password } — the link an admin sent.
+authRoutes.post("/reset-link", async (c) => {
+  const body = await c.req.json<{ token?: unknown; new_password?: unknown }>().catch(() => ({}) as Record<string, unknown>);
+  const next = typeof body.new_password === "string" ? body.new_password : "";
+  const ipKey = `reset:ip:${clientIp(c.req.raw.headers)}`;
+  if (await blockedFor(c.env.DB, [ipKey])) return fail(c, TOO_MANY, 429);
+  const link = await checkLink(c.env, String(body.token ?? ""));
+  if (!link) {
+    await recordAttempt(c.env.DB, ipKey, LIMITS.resetIp);
+    return fail(c, "This link is not valid any more. Ask PartHub for a new one.");
+  }
+  const user = await dbFirst<{ id: number; name: string; email: string; role: "buyer" | "seller" | "admin"; token_version: number }>(
+    c.env.DB, "SELECT id, name, email, role, token_version FROM users WHERE id = ?", [link.userId]
+  );
+  if (!user) return fail(c, "This link is not valid any more. Ask PartHub for a new one.");
+  const weak = passwordProblem(next, { email: user.email, name: user.name, role: user.role });
+  if (weak) return fail(c, weak);
+  if (!(await applyReset(c.env, link.resetId, user.id, next))) return fail(c, "This link is not valid any more. Ask PartHub for a new one.");
+  runInBackground(c, waPasswordChanged(c.env, user.id, Number(user.token_version) + 1));
+  return ok(c, { email: user.email, message: "Password changed. Sign in with the new one." });
 });
 

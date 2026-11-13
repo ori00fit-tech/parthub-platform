@@ -143,6 +143,9 @@ jobs:
       - name: 0032 reliability (one pending order per cart, WhatsApp retries, carrier events)
         run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0032_reliability.sql"
 
+      - name: 0033 forgot password (codes and reset links)
+        run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0033_password_resets.sql"
+
       # Fails the job (and the API deploy waiting for it) when the schema is
       # not what the API needs; only warns while D1's daily read limit is hit.
       - name: Verify
