@@ -49,6 +49,10 @@ known limits: `infra/docs/release-v0.1.1-readiness.md`.
   number (Authentication template), or a one-time link an admin creates
   from the WhatsApp inbox; no account enumeration, limits, all devices
   signed out after a reset.
+- Account deletion: closed at once, 30 days to change one's mind (signing
+  in cancels it), then personal data erased while orders, invoices and
+  reviews stay without a name; refused while orders, claims, the returns
+  window or money owed are open. Public page `/delete-account` (app stores).
 - CORS allow-list, security headers and HSTS, production guard on scripts.
 - JSON error handler with request id; admin audit log of every change.
 - CI: typecheck, lint, 40+ API test suites, builds. Deploy runs migrations

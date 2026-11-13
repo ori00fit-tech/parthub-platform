@@ -18,6 +18,7 @@ export const ROUTES = [
   "/auth",
   "/forgot-password",
   "/reset-password",
+  "/delete-account",
   "/checkout",
   "/checkout/success",
   "/compare",

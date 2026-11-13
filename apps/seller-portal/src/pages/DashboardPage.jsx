@@ -6,6 +6,7 @@ import { useReadiness } from "../lib/readiness";
 import StoreChecklist, { StoreStatusBanner } from "../components/store/StoreChecklist";
 import SellerTour, { hasSeenTour } from "../components/onboarding/SellerTour";
 import { statusLabel, t, useT } from "../i18n";
+import { DeletionCancelledNotice } from "@parthub/shared/account";
 import { Icon } from "@parthub/shared/icons";
 
 function statCards(stats) {
@@ -87,6 +88,7 @@ export default function DashboardPage() {
 
   return (
     <section className="space-y-6">
+      <DeletionCancelledNotice t={t} />
       <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">

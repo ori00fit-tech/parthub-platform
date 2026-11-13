@@ -1,3 +1,4 @@
+import { noteDeletionCancelled } from "@parthub/shared/account";
 import { createContext, useContext, useState, useEffect } from "react";
 import { api, BASE_URL } from "../lib/api";
 import { SELLER_TOKEN_KEY } from "@parthub/shared";
@@ -29,6 +30,7 @@ export function AuthProvider({ children }) {
     if (res.data.user.role !== "seller") throw new Error("Not a seller account");
     localStorage.setItem(SELLER_TOKEN_KEY, res.data.access_token);
     setUser(res.data.user);
+    noteDeletionCancelled(res.data);
   }
 
   // Seller sign-up: create the account as a seller, then sign in.

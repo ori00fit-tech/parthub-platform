@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { STATUS_COPY, useReadiness } from "../lib/readiness";
@@ -436,6 +436,9 @@ export default function StoreSettingsPage() {
           />
         </div>
       </div>
+      <p className="text-center text-sm">
+        <Link to="/delete-account" className="font-semibold text-red-700 hover:underline">{t("Delete my account")}</Link>
+      </p>
     </section>
   );
 }

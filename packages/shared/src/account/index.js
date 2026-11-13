@@ -3,3 +3,4 @@ export { default } from "./ChangePasswordForm.jsx";
 export { default as ChangePasswordForm } from "./ChangePasswordForm.jsx";
 export { default as ForgotPasswordFlow } from "./ForgotPasswordFlow.jsx";
 export { default as ResetLinkForm } from "./ResetLinkForm.jsx";
+export { default as DeleteAccountPanel, DeletionCancelledNotice, noteDeletionCancelled } from "./DeleteAccountPanel.jsx";

@@ -3,6 +3,7 @@ import type { Env } from "./types";
 import { accrueCommissions } from "./utils/commissions";
 import { notifyLateShipments } from "./utils/shipping-delays";
 import { retryWhatsApp } from "./utils/wa-notify";
+import { eraseDueAccounts } from "./utils/account-deletion";
 
 // fetch: the API. scheduled: daily jobs (wrangler.toml [triggers]).
 export default {
@@ -24,6 +25,8 @@ export default {
         }
       })()
     );
+    // Accounts whose 30 days to change their mind are over: personal data erased.
+    ctx.waitUntil(eraseDueAccounts(env.DB).catch((err) => console.warn(`[account deletion] ${err instanceof Error ? err.message : String(err)}`)));
     // Shipped parcels with no news for days: buyer and seller are told.
     ctx.waitUntil(
       notifyLateShipments(env).catch((err) => console.warn(`[late shipments] ${err instanceof Error ? err.message : String(err)}`))
