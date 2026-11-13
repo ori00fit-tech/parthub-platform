@@ -177,18 +177,20 @@ export const WA_TEMPLATES: WaTemplate[] = [
     name: "parthub_pickup_ready",
     audience: "buyer",
     category: "UTILITY",
+    // No pickup code in the message: Meta classes any message carrying a
+    // code as Authentication (rejected as INCORRECT_CATEGORY). The code is
+    // on the order page, behind the button.
     trigger: "The seller confirms a pickup order: the part is kept for the buyer",
     params: [
       { name: "reference", example: "PH-2026-00042" },
       { name: "seller", example: "Chafik Auto Parts" },
-      { name: "code", example: "482913" },
       { name: "until", example: "15/11/2026" },
       { name: "address", example: "12 Rue Ibn Batouta, Tanger" },
     ],
     body: {
-      ar: "طلبك *{{1}}* جاهز للاستلام عند *{{2}}*.\nرمز الاستلام: *{{3}}* — أعطه للبائع فقط عند استلام القطعة.\nالقطعة محجوزة لك حتى {{4}}.\nالعنوان: {{5}}.\nتدفع عند الاستلام.",
-      fr: "Votre commande *{{1}}* est prête à retirer chez *{{2}}*.\nCode de retrait : *{{3}}* — donnez-le au vendeur seulement en recevant la pièce.\nLa pièce vous est réservée jusqu'au {{4}}.\nAdresse : {{5}}.\nVous payez au retrait.",
-      en: "Your order *{{1}}* is ready for pickup at *{{2}}*.\nPickup code: *{{3}}* — give it to the seller only when you get the part.\nThe part is kept for you until {{4}}.\nAddress: {{5}}.\nYou pay at pickup.",
+      ar: "طلبك *{{1}}* جاهز للاستلام عند *{{2}}*.\nالقطعة محجوزة لك حتى {{3}}.\nالعنوان: {{4}}.\nعند الوصول، اعرض صفحة طلبك على البائع (الزر أدناه)، وتدفع عند الاستلام.",
+      fr: "Votre commande *{{1}}* est prête à retirer chez *{{2}}*.\nLa pièce vous est réservée jusqu'au {{3}}.\nAdresse : {{4}}.\nSur place, montrez la page de votre commande au vendeur (bouton ci-dessous) ; vous payez au retrait.",
+      en: "Your order *{{1}}* is ready for pickup at *{{2}}*.\nThe part is kept for you until {{3}}.\nAddress: {{4}}.\nWhen you get there, show your order page to the seller (button below); you pay at pickup.",
     },
     button: { site: "storefront", text: TRACK, example: "orders/PH-2026-00042/tracking" },
   },
@@ -470,9 +472,10 @@ export const WA_TEMPLATES: WaTemplate[] = [
       { name: "when", example: "12/11/2026 14:05" },
     ],
     body: {
-      ar: "مرحباً {{1}}، تم تغيير كلمة مرور حسابك على PartHub يوم {{2}}.\nإذا لم تقم بذلك، ردّ على هذه الرسالة فوراً.",
-      fr: "Bonjour {{1}}, le mot de passe de votre compte PartHub a été changé le {{2}}.\nSi ce n'est pas vous, répondez tout de suite à ce message.",
-      en: "Hello {{1}}, the password of your PartHub account was changed on {{2}}.\nIf this was not you, reply to this message right away.",
+      // Without the word "password": Meta classed it as Authentication.
+      ar: "مرحباً {{1}}، تم تعديل معلومات الدخول إلى حسابك على PartHub يوم {{2}}، وأُغلقت الجلسات على الأجهزة الأخرى.\nإذا لم تقم بذلك، ردّ على هذه الرسالة فوراً لنحمي حسابك.",
+      fr: "Bonjour {{1}}, les informations de connexion de votre compte PartHub ont été modifiées le {{2}}, et les autres appareils ont été déconnectés.\nSi ce n'est pas vous, répondez tout de suite à ce message pour que nous protégions votre compte.",
+      en: "Hello {{1}}, the sign-in details of your PartHub account were changed on {{2}}, and other devices were signed out.\nIf this was not you, reply to this message right away so we can protect your account.",
     },
   },
 ];

@@ -106,7 +106,7 @@ export async function waOrderStep(
         kind: "pickup_ready",
         refId: o.line_ref,
         template: "parthub_pickup_ready",
-        params: (lang) => [o.reference, o.seller_name, o.pickup_code || waWord("not_given", lang), moroccoDate(o.pickup_until), o.pickup_address || waWord("not_given", lang)],
+        params: (lang) => [o.reference, o.seller_name, moroccoDate(o.pickup_until), o.pickup_address || waWord("not_given", lang)],
       });
     }
     return notify(env, { ...buyer, kind: "order_confirmed", refId: o.line_ref, template: "parthub_order_confirmed", params: [o.seller_name, o.reference] });

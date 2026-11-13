@@ -733,6 +733,7 @@ export default {
   "Last problem": "آخر مشكلة",
   "Hide the texts": "إخفاء النصوص",
   "Show the texts": "عرض النصوص",
+  "Send the corrected text to Meta": "إرسال النص المصحح إلى Meta",
   "Copy text": "نسخ النص",
   "Submit to Meta": "إرسال إلى Meta",
   "Variables (same order in every language)": "المتغيرات (بنفس الترتيب في كل اللغات)",

@@ -71,6 +71,11 @@ function Template({ tpl, canManage, busy, onSubmit, onManual }) {
         {s.skipped ? <span className="text-amber-700"> · {t("{n} not sent", { n: s.skipped })}</span> : null}
       </p>
       {s.last_error ? <p className="mt-1 text-xs text-red-700" dir="auto">{t("Last problem")}: {s.last_error}</p> : null}
+      {canManage && ["ar", "fr", "en"].some((l) => ["rejected", "paused", "error"].includes(tpl.versions[l]?.status)) ? (
+        <button type="button" disabled={busy} onClick={() => onSubmit(tpl.name)} className="mt-3 me-3 h-9 rounded-xl bg-red-600 px-3 text-xs font-semibold text-white hover:bg-red-700 disabled:bg-red-300">
+          {t("Send the corrected text to Meta")}
+        </button>
+      ) : null}
 
       <button type="button" onClick={() => setOpen(!open)} className="mt-3 text-sm font-semibold text-blue-700 hover:underline">
         {open ? t("Hide the texts") : t("Show the texts")}
@@ -93,7 +98,7 @@ function Template({ tpl, canManage, busy, onSubmit, onManual }) {
                     <button type="button" onClick={() => navigator.clipboard?.writeText(tpl.body[l])} className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100">
                       {t("Copy text")}
                     </button>
-                    {canManage && v?.source !== "meta" ? (
+                    {canManage && (v?.source !== "meta" || v?.status === "rejected" || v?.status === "paused") ? (
                       <button type="button" disabled={busy} onClick={() => onSubmit(tpl.name, l)} className="rounded-lg bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:bg-emerald-300">
                         {t("Submit to Meta")}
                       </button>
@@ -182,10 +187,10 @@ export default function WhatsAppTemplatesPage() {
 
   const submitOne = (name, language) =>
     run(async () => {
-      const r = await api.post("/api/v1/admin/whatsapp/templates/submit", { name, language });
+      const r = await api.post("/api/v1/admin/whatsapp/templates/submit", language ? { name, language } : { name });
       setData(r?.data || null);
-      const x = r?.data?.submitted?.[0];
-      setNote(x ? `${name} / ${language}: ${x.error || t(STATUS_LABEL[x.status] || x.status)}` : t("Already in Meta."));
+      const list = r?.data?.submitted || [];
+      setNote(list.length ? list.map((x) => `${name} / ${x.language}: ${x.error || t(STATUS_LABEL[x.status] || x.status)}`).join(" · ") : t("Already in Meta."));
     });
 
   const manual = (name, lang, status) =>

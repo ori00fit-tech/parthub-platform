@@ -58,6 +58,13 @@ globalThis.fetch = async (url, init = {}) => {
   const body = init.body ? JSON.parse(init.body) : null;
   graph.push({ url: u, method: init.method || "GET", body });
   const json = (v, s = 200) => new Response(JSON.stringify(v), { status: s, headers: { "content-type": "application/json" } });
+  if (/graph\.facebook\.com\/v[\d.]+\/tpl_\d+$/.test(u) && init.method === "POST") {
+    const t = metaTemplates.find((x) => u.endsWith(`/${x.id}`));
+    if (!t) return json({ error: { code: 100, message: "Unsupported post request" } }, 400);
+    t.status = "PENDING";
+    t.edited = body;
+    return json({ success: true });
+  }
   if (u.includes("/message_templates")) {
     if ((init.method || "GET") === "GET") return json({ data: metaTemplates });
     if (body.name === "parthub_store_blocked" && body.language === "en") return json({ error: { code: 100, message: "Invalid parameter", error_user_msg: "Body too similar" } }, 400);
@@ -177,7 +184,7 @@ check("pickup_order", pst === 201 && sql.prepare("select fulfillment from order_
 await step(pr.data.id, "confirmed"); await tick();
 m = last("parthub_pickup_ready");
 const pp = bodyParams(m) || [];
-check("pickup_ready", pp[0] === pr.data.reference && pp[1] === "Casa Freins" && /^\d{6}$/.test(pp[2]) && /^\d\d\/\d\d\/\d{4}$/.test(pp[3]) && pp[4].startsWith("12 Rue"), pp);
+check("pickup_ready", pp.length === 4 && pp[0] === pr.data.reference && pp[1] === "Casa Freins" && /^\d\d\/\d\d\/\d{4}$/.test(pp[2]) && pp[3].startsWith("12 Rue"), pp);
 
 // 4. Carrier webhook: out for delivery, failed attempt, delivered (seller hears the cash).
 await call("PUT", "/api/v1/admin/carriers/sendit", admin, { webhook_enabled: true });
@@ -280,6 +287,22 @@ check("single_retry", st === 200 && r.data.submitted.length === 1 && r.data.subm
 const created = creates.find((g) => g.body.name === "parthub_claim_opened" && g.body.language === "ar").body;
 check("submit_payload", created.components[2].buttons[0].url === "https://seller.parthub.autos/{{1}}" && created.components[0].text.includes("{{3}}"), created);
 check("pending_after_submit", sql.prepare("select status from whatsapp_templates where name = 'parthub_order_shipped' and language = 'ar'").get().status === "pending");
+// Rejected by Meta (wrong category) → the template's own submit sends the
+// corrected text as an edit of the same template, not a new one.
+for (const t of metaTemplates.filter((x) => x.name === "parthub_pickup_ready")) { t.status = "REJECTED"; t.rejected_reason = "INCORRECT_CATEGORY"; }
+[st, r] = await call("POST", "/api/v1/admin/whatsapp/templates/sync", admin);
+const pk = r.data.templates.find((t) => t.name === "parthub_pickup_ready");
+check("rejected_reason_shown", pk.versions.fr.status === "rejected" && pk.versions.fr.reason === "INCORRECT_CATEGORY", pk.versions.fr);
+[st, r] = await call("POST", "/api/v1/admin/whatsapp/templates/submit", admin, {});
+check("batch_leaves_rejected", r.data.submitted.length === 0, r.data.submitted);
+const createsBefore = graph.filter((g) => g.method === "POST" && g.url.includes("/message_templates")).length;
+[st, r] = await call("POST", "/api/v1/admin/whatsapp/templates/submit", admin, { name: "parthub_pickup_ready" });
+const edited = metaTemplates.filter((x) => x.name === "parthub_pickup_ready");
+check("rejected_resubmitted_as_edit", st === 200 && r.data.submitted.length === 3 && r.data.submitted.every((x) => x.status === "pending") &&
+  edited.every((x) => x.status === "PENDING" && x.edited.components[0].text.includes("{{4}}") && !x.edited.components[0].text.includes("{{5}}")) &&
+  graph.filter((g) => g.method === "POST" && g.url.includes("/message_templates")).length === createsBefore, [r.data?.submitted, edited.map((x) => x.status)]);
+check("no_code_in_pickup_text", WA_TEMPLATES.find((t) => t.name === "parthub_pickup_ready").params.every((p) => p.name !== "code"));
+
 // Pending everywhere → the event is skipped with the statuses, nothing sent to Meta.
 const sentBefore = sentTo("parthub_order_shipped").length;
 const o6 = await order();
