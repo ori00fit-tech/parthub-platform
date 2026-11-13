@@ -1428,7 +1428,7 @@ marketplaceRoutes.get("/me/parts", authMiddleware, async (c) => {
     left join brands b on b.id = p.brand_id
     left join categories c on c.id = p.category_id
     where p.seller_id = ?1
-    order by p.created_at desc
+    order by p.created_at desc, p.id desc
   `).bind(sellerId).all();
 
   return c.json(success(parts.results || []));
@@ -1467,7 +1467,7 @@ marketplaceRoutes.get("/me/orders", authMiddleware, async (c) => {
     join order_items oi on oi.order_id = o.id and oi.seller_id = ?1
     left join users u on u.id = o.buyer_id
     group by o.id
-    order by o.created_at desc
+    order by o.created_at desc, o.id desc
   `).bind(sellerId).all<Record<string, unknown> & { line_statuses: string | null }>();
 
   const orders = (rows.results || []).map(({ line_statuses, ...o }) => ({
@@ -1628,7 +1628,7 @@ marketplaceRoutes.post("/me/catalog-suggestions", authMiddleware, async (c) => {
 // GET /api/v1/marketplace/me/catalog-suggestions — the seller's suggestions.
 marketplaceRoutes.get("/me/catalog-suggestions", authMiddleware, async (c) => {
   const rows = await c.env.DB.prepare(
-    "select * from catalog_suggestions where user_id = ?1 order by created_at desc limit 50"
+    "select * from catalog_suggestions where user_id = ?1 order by created_at desc, id desc limit 50"
   ).bind(Number(c.get("user_id"))).all();
   return c.json(success(rows.results || []));
 });
@@ -1848,7 +1848,7 @@ marketplaceRoutes.get("/me/reviews", authMiddleware, async (c) => {
       join users u on u.id = r.buyer_id
       join parts p on p.id = r.part_id
       where p.seller_id = ?1
-      order by r.created_at desc
+      order by r.created_at desc, r.id desc
     `).bind(sellerId).all();
 
     return c.json(success(reviews.results || []));

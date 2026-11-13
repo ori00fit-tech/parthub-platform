@@ -121,7 +121,7 @@ adminRoutes.get("/sellers", async (c) => {
     c.env.DB,
     `SELECT s.*, u.email, u.phone as user_phone FROM sellers s
      JOIN users u ON u.id = s.user_id ${where}
-     ORDER BY s.created_at DESC LIMIT ? OFFSET ?`,
+     ORDER BY s.created_at DESC, s.id DESC LIMIT ? OFFSET ?`,
     [...params, limit, offset]
   );
   return paginated(c, sellers, { page, limit, total });
@@ -140,7 +140,7 @@ adminRoutes.get("/sellers/:id", async (c) => {
   if (!seller) return fail(c, "Seller not found", 404);
   const parts = await dbAll(
     c.env.DB,
-    "SELECT id, slug, title, price, status, quantity, moderation_note FROM parts WHERE seller_id = ? ORDER BY created_at DESC LIMIT 100",
+    "SELECT id, slug, title, price, status, quantity, moderation_note FROM parts WHERE seller_id = ? ORDER BY created_at DESC, id DESC LIMIT 100",
     [id]
   );
   return ok(c, { ...seller, parts });
@@ -326,7 +326,7 @@ adminRoutes.get("/parts", async (c) => {
      JOIN sellers s ON s.id = p.seller_id
      LEFT JOIN categories cat ON cat.id = p.category_id
      ${where}
-     ORDER BY p.created_at DESC LIMIT ? OFFSET ?`,
+     ORDER BY p.created_at DESC, p.id DESC LIMIT ? OFFSET ?`,
     [...params, limit, offset]
   );
   return paginated(c, parts, { page, limit, total });
@@ -380,7 +380,7 @@ adminRoutes.get("/orders", async (c) => {
     c.env.DB,
     `SELECT o.*, u.name as buyer_name, u.email as buyer_email
      FROM orders o JOIN users u ON u.id = o.buyer_id
-     ORDER BY o.created_at DESC LIMIT ? OFFSET ?`,
+     ORDER BY o.created_at DESC, o.id DESC LIMIT ? OFFSET ?`,
     [limit, offset]
   );
   return paginated(c, orders, { page, limit, total });
@@ -767,7 +767,7 @@ adminRoutes.get("/reviews", async (c) => {
      JOIN users u ON u.id = r.buyer_id
      JOIN parts p ON p.id = r.part_id
      WHERE r.status = 'pending'
-     ORDER BY r.created_at DESC LIMIT ? OFFSET ?`,
+     ORDER BY r.created_at DESC, r.id DESC LIMIT ? OFFSET ?`,
     [limit, offset]
   );
   return paginated(c, reviews, { page, limit, total });

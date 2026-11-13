@@ -271,7 +271,7 @@ commerceRoutes.get("/orders", authMiddleware, async (c) => {
   const buyerId = c.get("user_id");
   const orders = await dbAll(
     c.env.DB,
-    "SELECT * FROM orders WHERE buyer_id = ? ORDER BY created_at DESC",
+    "SELECT * FROM orders WHERE buyer_id = ? ORDER BY created_at DESC, id DESC",
     [buyerId]
   );
   return ok(c, orders);
@@ -473,7 +473,7 @@ commerceRoutes.post("/reviews", authMiddleware, async (c) => {
     `SELECT oi.id FROM order_items oi
      JOIN orders o ON o.id = oi.order_id
      WHERE oi.part_id = ? AND o.buyer_id = ? AND oi.status = 'delivered'
-     ORDER BY o.created_at DESC LIMIT 1`,
+     ORDER BY o.created_at DESC, o.id DESC LIMIT 1`,
     [partId, buyerId]
   );
   if (!orderItem) return fail(c, "You can rate a part once your order is delivered", 403);

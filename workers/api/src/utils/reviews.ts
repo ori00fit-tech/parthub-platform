@@ -68,7 +68,7 @@ export async function partReviews(env: Env, partId: number, limit = 5): Promise<
     `select r.id, r.rating, r.body, r.is_verified_purchase, r.created_at, u.name as buyer_name
      from reviews r join users u on u.id = r.buyer_id
      where r.part_id = ?1 and r.status = 'approved'
-     order by r.created_at desc limit ?2`
+     order by r.created_at desc, r.id desc limit ?2`
   )
     .bind(partId, limit)
     .all<ReviewRow>();
@@ -83,7 +83,7 @@ export async function sellerReviews(env: Env, sellerId: number, limit = 5): Prom
      join parts p on p.id = r.part_id
      join users u on u.id = r.buyer_id
      where p.seller_id = ?1 and r.status = 'approved'
-     order by r.created_at desc limit ?2`
+     order by r.created_at desc, r.id desc limit ?2`
   )
     .bind(sellerId, limit)
     .all<ReviewRow>();

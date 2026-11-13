@@ -89,7 +89,7 @@ marketplaceAnalyticsRoutes.get("/me/insights", authMiddleware, async (c) => {
         ) as compatibility_count
       from parts p
       where p.seller_id = ?1
-      order by p.created_at desc
+      order by p.created_at desc, p.id desc
       limit 12
     `).bind(sellerId).all(),
   ]);
