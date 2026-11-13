@@ -10,7 +10,7 @@ import { shipmentTimeline, trackingUrl } from "../utils/carriers";
 import { runInBackground } from "../utils/whatsapp";
 import { notifySellersOfNewOrder } from "../utils/request-notifications";
 import { waClaimEvent, waOrderReceived } from "../utils/wa-events";
-import { cartHash, checkNewOrder, countOrder, existingAfterConflict, readIdempotencyKey } from "../utils/order-guard";
+import { ORDER_COLUMNS, cartHash, checkNewOrder, countOrder, existingAfterConflict, readIdempotencyKey } from "../utils/order-guard";
 import { ISSUE_REASONS, type IssueRow, canEscalate, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, reportWindow, updateIssue } from "../utils/issues";
 
 const MAX_REVIEW_LENGTH = 1000;
@@ -124,7 +124,7 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
   const guard = await checkNewOrder(c.env.DB, Number(buyerId), idempotencyKey, hash, addr.phone, maxOpen);
   if (guard.kind === "refused") return fail(c, guard.message, guard.status);
   if (guard.kind === "existing") {
-    const first = await dbFirst(c.env.DB, "SELECT * FROM orders WHERE reference = ?", [guard.reference]);
+    const first = await dbFirst(c.env.DB, `SELECT ${ORDER_COLUMNS} FROM orders WHERE reference = ?`, [guard.reference]);
     return c.json({ success: true, data: first, meta: { duplicate: guard.why } }, 200);
   }
 
@@ -258,7 +258,7 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
   }
   await countOrder(c.env.DB, Number(buyerId), addr.phone);
 
-  const order = await dbFirst<{ id: number }>(c.env.DB, "SELECT * FROM orders WHERE reference = ?", [ref]);
+  const order = await dbFirst<{ id: number }>(c.env.DB, `SELECT ${ORDER_COLUMNS} FROM orders WHERE reference = ?`, [ref]);
   // Each seller hears about the order on WhatsApp (after the response,
   // best-effort: utils/request-notifications.ts).
   if (order) runInBackground(c, notifySellersOfNewOrder(c.env, order.id));
@@ -271,7 +271,7 @@ commerceRoutes.get("/orders", authMiddleware, async (c) => {
   const buyerId = c.get("user_id");
   const orders = await dbAll(
     c.env.DB,
-    "SELECT * FROM orders WHERE buyer_id = ? ORDER BY created_at DESC, id DESC",
+    `SELECT ${ORDER_COLUMNS} FROM orders WHERE buyer_id = ? ORDER BY created_at DESC, id DESC`,
     [buyerId]
   );
   return ok(c, orders);
@@ -284,7 +284,7 @@ commerceRoutes.get("/orders/:reference", authMiddleware, async (c) => {
 
   const order = await dbFirst(
     c.env.DB,
-    "SELECT * FROM orders WHERE reference = ? AND buyer_id = ?",
+    `SELECT ${ORDER_COLUMNS} FROM orders WHERE reference = ? AND buyer_id = ?`,
     [ref, buyerId]
   );
   if (!order) return notFound(c, "Order");

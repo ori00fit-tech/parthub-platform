@@ -101,6 +101,7 @@ One API for web and apps (already so). React Native + Expo for buyer and seller,
 | P1.6 release hygiene | Versions 0.1.1, `/health` shows it, CHANGELOG, README corrected. Left to the owner: protect `main`, delete the merged branch `ccr-5e78bfde-687nv2`, tag `v0.1.1` after the release checks |
 | P2.1 account deletion | Done: owner chose to keep accounts as long as possible → closed at once, 30 days to come back, then personal data erased, business records kept anonymous (migration 0034, `account-deletion.test.mjs`). Store link for Google Play: `https://parthub.autos/delete-account` |
 | P2.4 E2E in CI | Done: workflow `E2E` (9 scenarios, about 30 s). It found and fixed a real defect: the checkout's labels were not linked to their fields (screen readers, autofill) |
+| P2.3 OpenAPI | Done: `/api/v1/openapi.json`, `openapi.test.mjs` (both-way coverage + real answers validated with ajv). Envelope unified (`success` and `ok`). Found and fixed: internal fields in buyer order answers, database error text in 16 error answers |
 | P0 (owner) | Admin password, Meta app secret rotation, Worker Logs: to confirm |
 
 ## 8. Second audit (external review of `main` at `52e0bfe`) — findings and fixes

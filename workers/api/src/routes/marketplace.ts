@@ -22,6 +22,7 @@ import { readPartValues } from "../utils/part-values";
 import { RATE_NOTICE_DAYS, accrueCommissions, commissionRateBps, currentPeriod, readPeriod, upcomingRates } from "../utils/commissions";
 import { invoicePayments, ledgerTotals, listInvoices } from "../utils/invoices";
 import { RETURN_WINDOW_DAYS } from "../utils/issues";
+import { internalError } from "../utils/response";
 
 export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -262,7 +263,7 @@ marketplaceRoutes.post("/parts", authMiddleware, sellerGuard, async (c) => {
     return c.json(
       failure(
         "CREATE_PART_FAILED",
-        error instanceof Error ? error.message : "Unknown create part error"
+        internalError(error)
       ),
       500
     );
@@ -302,7 +303,7 @@ marketplaceRoutes.get("/parts/:id", async (c) => {
     return c.json(
       failure(
         "GET_PART_FAILED",
-        error instanceof Error ? error.message : "Unknown get part error"
+        internalError(error)
       ),
       500
     );
@@ -407,7 +408,7 @@ marketplaceRoutes.put("/parts/:id", authMiddleware, sellerGuard, async (c) => {
     return c.json(
       failure(
         "UPDATE_PART_FAILED",
-        error instanceof Error ? error.message : "Unknown update error"
+        internalError(error)
       ),
       500
     );
@@ -504,7 +505,7 @@ marketplaceRoutes.post("/parts/:id/images", authMiddleware, sellerGuard, async (
     return c.json(
       failure(
         "ADD_IMAGE_FAILED",
-        error instanceof Error ? error.message : "Unknown add image error"
+        internalError(error)
       ),
       500
     );
@@ -565,7 +566,7 @@ marketplaceRoutes.put("/parts/:id/images/:imageId/feature", authMiddleware, sell
     return c.json(
       failure(
         "FEATURE_IMAGE_FAILED",
-        error instanceof Error ? error.message : "Unknown feature image error"
+        internalError(error)
       ),
       500
     );
@@ -620,7 +621,7 @@ marketplaceRoutes.delete("/parts/:id/images/:imageId", authMiddleware, sellerGua
     return c.json(
       failure(
         "DELETE_IMAGE_FAILED",
-        error instanceof Error ? error.message : "Unknown delete image error"
+        internalError(error)
       ),
       500
     );
@@ -1139,7 +1140,7 @@ marketplaceRoutes.post("/me/parts", authMiddleware, async (c) => {
     return c.json(
       failure(
         "CREATE_SELLER_PART_FAILED",
-        error instanceof Error ? error.message : "Unknown create seller part error"
+        internalError(error)
       ),
       500
     );
@@ -1173,7 +1174,7 @@ marketplaceRoutes.post("/me/parts/import", authMiddleware, async (c) => {
     const count = (a: string) => results.filter((r) => r.action === a).length;
     return c.json(success(results, { dry_run: dryRun, created: count("create"), updated: count("update"), errors: count("error") }));
   } catch (error) {
-    return c.json(failure("IMPORT_FAILED", error instanceof Error ? error.message : "Import failed"), 500);
+    return c.json(failure("IMPORT_FAILED", internalError(error)), 500);
   }
 });
 
@@ -1241,7 +1242,7 @@ marketplaceRoutes.get("/me/parts/:id", authMiddleware, async (c) => {
     return c.json(
       failure(
         "GET_SELLER_PART_FAILED",
-        error instanceof Error ? error.message : "Unknown get seller part error"
+        internalError(error)
       ),
       500
     );
@@ -1393,7 +1394,7 @@ marketplaceRoutes.put("/me/parts/:id", authMiddleware, async (c) => {
     return c.json(
       failure(
         "UPDATE_SELLER_PART_FAILED",
-        error instanceof Error ? error.message : "Unknown update seller part error"
+        internalError(error)
       ),
       500
     );
@@ -1856,7 +1857,7 @@ marketplaceRoutes.get("/me/reviews", authMiddleware, async (c) => {
     return c.json(
       failure(
         "GET_SELLER_REVIEWS_FAILED",
-        error instanceof Error ? error.message : "Unknown seller reviews error"
+        internalError(error)
       ),
       500
     );
@@ -1929,7 +1930,7 @@ marketplaceRoutes.get("/me/parts/:id/compatibility", authMiddleware, async (c) =
     return c.json(
       failure(
         "GET_COMPATIBILITY_FAILED",
-        error instanceof Error ? error.message : "Unknown compatibility error"
+        internalError(error)
       ),
       500
     );
@@ -2107,7 +2108,7 @@ marketplaceRoutes.post("/me/parts/:id/compatibility", authMiddleware, async (c) 
     return c.json(
       failure(
         "ADD_COMPATIBILITY_FAILED",
-        error instanceof Error ? error.message : "Unknown add compatibility error"
+        internalError(error)
       ),
       500
     );
@@ -2163,7 +2164,7 @@ marketplaceRoutes.delete("/me/parts/:id/compatibility/:compatibilityId", authMid
     return c.json(
       failure(
         "DELETE_COMPATIBILITY_FAILED",
-        error instanceof Error ? error.message : "Unknown delete compatibility error"
+        internalError(error)
       ),
       500
     );

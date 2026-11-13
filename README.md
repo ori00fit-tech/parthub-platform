@@ -90,8 +90,8 @@ scripts/            local / remote database helpers, checks (production ones ask
 ## The API in short
 
 All routes are under `/api/v1`. Responses are JSON:
-`{ "success": true, "data": …, "meta"?: … }` or
-`{ "success": false, "error": "English message", "request_id"? }`.
+`{ "success": true, "ok": true, "data": …, "meta"?: …, "pagination"?: … }` or
+`{ "success": false, "ok": false, "error": "English message" | { code, message }, "request_id"? }`.
 The sites translate the English messages (`packages/shared/src/i18n/server-messages.ts`).
 
 | Group | What |
@@ -120,7 +120,12 @@ Conventions:
 - **Errors**: unexpected ones return 500 with a `request_id`, also in the
   `X-Request-Id` header and the Worker logs.
 
-There is no OpenAPI file yet (planned before the mobile apps).
+**The contract for the apps**: `GET /api/v1/openapi.json` (OpenAPI 3.1,
+from `workers/api/src/openapi.ts`): every route the sites and the mobile
+apps use, not the admin nor the webhooks. `test/openapi.test.mjs` fails when
+a route is added without documenting it, when a documented route no longer
+exists, or when a real answer no longer matches its schema. Every answer
+carries both `success` and `ok` (same value).
 
 ## Local development
 

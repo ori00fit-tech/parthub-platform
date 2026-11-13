@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Env, HonoVariables } from "../types";
 import { normalizeNumber } from "../utils/part-numbers";
+import { internalError } from "../utils/response";
 
 export const searchRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -402,7 +403,7 @@ searchRoutes.get("/", async (c) => {
     );
   } catch (error) {
     return c.json(
-      fail(error instanceof Error ? error.message : "Unknown search error"),
+      fail(internalError(error)),
       500
     );
   }
@@ -439,7 +440,7 @@ searchRoutes.get("/suggestions", async (c) => {
     return c.json(ok((result.results || []).map((item: any) => item.title).filter(Boolean)));
   } catch (error) {
     return c.json(
-      fail(error instanceof Error ? error.message : "Unknown suggestions error"),
+      fail(internalError(error)),
       500
     );
   }

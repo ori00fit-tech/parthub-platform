@@ -37,3 +37,10 @@ export function fail(c: Context, error: string, status = 400) {
 export function notFound(c: Context, resource = "Resource") {
   return c.json({ success: false, error: `${resource} not found` }, 404);
 }
+
+// A 500's message for the client: never the database's own text (table
+// and column names); that goes to the Worker logs.
+export function internalError(error: unknown): string {
+  console.error(`[error] ${error instanceof Error ? error.stack || error.message : String(error)}`);
+  return "Something went wrong. Please try again.";
+}

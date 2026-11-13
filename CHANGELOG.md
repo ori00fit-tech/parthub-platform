@@ -41,6 +41,13 @@ known limits: `infra/docs/release-v0.1.1-readiness.md`.
 - 25 Utility templates and 1 Authentication template (reset code) in ar/fr/en, sent in each person's language with
   fallback; submitted to and synced from Meta from the admin.
 
+### API contract
+- OpenAPI 3.1 at `/api/v1/openapi.json` for the sites and the mobile apps
+  (≈95 operations), kept true by a test (coverage both ways, real answers
+  checked against the schemas). Every answer carries `success` and `ok`.
+- Buyer order answers no longer include internal guard fields; 500 answers
+  never carry the database's own error text.
+
 ### Security and operations
 - PBKDF2 passwords, session revocation, rate limits on sign-in, sign-up,
   password change and orders; password policy refusing known passwords;
