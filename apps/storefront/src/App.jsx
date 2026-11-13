@@ -7,6 +7,7 @@ import PartDetailsPage from "./pages/PartDetailsPage";
 import VehicleSelectorPage from "./pages/VehicleSelectorPage";
 import CartPage from "./pages/CartPage";
 import AuthPage from "./pages/AuthPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import CheckoutSuccessPage from "./pages/CheckoutSuccessPage";
 import ComparePage from "./pages/ComparePage";
@@ -41,6 +42,8 @@ export default function App() {
 
         <Route path="/cart" element={<CartPage />} />
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ForgotPasswordPage withLink />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
         <Route path="/compare" element={<ComparePage />} />

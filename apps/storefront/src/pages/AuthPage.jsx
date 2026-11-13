@@ -316,6 +316,11 @@ export default function AuthPage() {
                   {showPassword ? t("Hide") : t("Show")}
                 </button>
               </div>
+              {mode === "login" ? (
+                <Link to={`/forgot-password${form.email.trim() ? `?email=${encodeURIComponent(form.email.trim())}` : ""}`} className="mt-1.5 inline-block text-xs font-semibold text-link hover:underline">
+                  {t("Forgot your password?")}
+                </Link>
+              ) : null}
             </div>
 
             <button

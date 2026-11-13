@@ -32,7 +32,7 @@ Status words used below:
 | Area | Status | Evidence | Gaps |
 |---|---|---|---|
 | Architecture | IMPLEMENTED, WIRED, PROVEN | pnpm/turbo monorepo: 3 React/Vite sites on Pages, a Hono API on Workers, D1, R2. The API has 17 route files and ~150 endpoints. Shared package for icons, legal, brand, account form, API client and server-message translations. | No API contract file (OpenAPI). Business rules live in `utils/*` (good), but request validation is hand-written per route (no schema library). |
-| Auth and roles | TESTED, WIRED, PROVEN | PBKDF2 hashes, `token_version` revocation, role read from the database on every call, rate limits on login, register and password change. Password policy refuses known passwords. Change-password exists in all three apps. | **No forgot-password flow** (no e-mail or SMS sending at all). **No account deletion** (required by the App Store and Google Play). 7-day JWT in `localStorage`, no refresh token (enough for web, not for a mobile app). Whether the shared `admin@parthub.local` password was changed: **unverified, the owner must confirm.** |
+| Auth and roles | TESTED, WIRED, PROVEN | PBKDF2 hashes, `token_version` revocation, role read from the database on every call, rate limits on login, register and password change. Password policy refuses known passwords. Change-password exists in all three apps. | Forgot password: done (WhatsApp code, or a link from PartHub). **No account deletion** (required by the App Store and Google Play). 7-day JWT in `localStorage`, no refresh token (enough for web, not for a mobile app). Whether the shared `admin@parthub.local` password was changed: **unverified, the owner must confirm.** |
 | Orders (buyer → seller → delivery) | TESTED, WIRED, PROVEN | Multi-seller orders, stock held at once (no oversell: race test), pickup codes, per-seller lines, cancel and restock atomic, buyer receipt, claims. Prod: 3 orders. Done: idempotency key, one pending order per cart (unique index: race-proof), open-orders cap, limits per account and per phone (`order-guard.test.mjs`). The per-account / per-phone counters are read-then-write: under exact simultaneity one extra order can pass a limit (accepted: the unique indexes stop the duplicates). |
 | Prices, stock, commissions | TESTED, WIRED | Integer centimes, server-side totals, dated commission rates (0% now), invoices and payments, partial refunds. | — |
 | Vehicle catalog and compatibility | TESTED, WIRED, PROVEN | 35 makes, 263 models, 501 generations, 1,306 engines (verify step in production). | — |
@@ -94,7 +94,7 @@ One API for web and apps (already so). React Native + Expo for buyer and seller,
 | Item | State |
 |---|---|
 | P1.1 duplicate / fake orders | Done: idempotency key, same-cart window, open-orders cap, limits per account and phone (migration 0030, `order-guard.test.mjs`) |
-| P1.2 forgot password | Waiting for the owner's choice (e-mail or WhatsApp code) |
+| P1.2 forgot password | Done: WhatsApp code (template `parthub_reset_code`, Authentication, to submit to Meta) + one-time link from the admin's WhatsApp inbox (migration 0033, `password-reset.test.mjs`) |
 | P1.3 JSON error handler | Done: request id, no internals, 400 on bad JSON (`errors.test.mjs`) |
 | P1.4 admin audit log | Done: every admin change, Activity log page (migration 0031, `audit.test.mjs`) |
 | P1.5 backup / restore / rollback | Done: `d1-backup.yml` weekly, `operations-runbook.md` |

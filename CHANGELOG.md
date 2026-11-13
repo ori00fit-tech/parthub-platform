@@ -38,13 +38,17 @@ known limits: `infra/docs/release-v0.1.1-readiness.md`.
 ### WhatsApp
 - Webhook with signature check, delivery statuses, inbox (24-hour rule),
   STOP opt-out.
-- 25 Utility templates in ar/fr/en, sent in each person's language with
+- 25 Utility templates and 1 Authentication template (reset code) in ar/fr/en, sent in each person's language with
   fallback; submitted to and synced from Meta from the admin.
 
 ### Security and operations
 - PBKDF2 passwords, session revocation, rate limits on sign-in, sign-up,
   password change and orders; password policy refusing known passwords;
   change-password in all apps, weak-password warning for admins.
+- Forgot password: a 6-digit code on WhatsApp to the account's own
+  number (Authentication template), or a one-time link an admin creates
+  from the WhatsApp inbox; no account enumeration, limits, all devices
+  signed out after a reset.
 - CORS allow-list, security headers and HSTS, production guard on scripts.
 - JSON error handler with request id; admin audit log of every change.
 - CI: typecheck, lint, 40+ API test suites, builds. Deploy runs migrations

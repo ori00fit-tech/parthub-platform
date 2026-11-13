@@ -136,6 +136,7 @@ export async function notify(env: Env, n: Notice): Promise<boolean> {
 // its own shelf life ("out for delivery today" is wrong the next day).
 export const MAX_ATTEMPTS = 3;
 const SHELF_HOURS: Record<string, number> = {
+  password_code: 0.25, // the code expires after 15 minutes
   out_for_delivery: 8,
   delivery_attempt_failed: 24,
   order_received: 24,

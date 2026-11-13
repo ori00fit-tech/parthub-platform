@@ -752,3 +752,18 @@ CREATE INDEX IF NOT EXISTS idx_admin_audit_admin ON admin_audit_log(admin_id, cr
 -- See migrations/0032_reliability.sql
 CREATE UNIQUE INDEX IF NOT EXISTS uq_orders_buyer_cart_pending ON orders(buyer_id, cart_hash) WHERE status = 'pending' AND cart_hash IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_whatsapp_notifications_retry ON whatsapp_notifications(status, created_at);
+
+-- See migrations/0033_password_resets.sql
+CREATE TABLE IF NOT EXISTS password_resets (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  channel     TEXT NOT NULL CHECK (channel IN ('whatsapp', 'admin_link')),
+  secret_hash TEXT NOT NULL,              -- SHA-256 of the code or link token (with JWT_SECRET)
+  attempts    INTEGER NOT NULL DEFAULT 0,
+  expires_at  TEXT NOT NULL,
+  used_at     TEXT,
+  created_by  INTEGER REFERENCES users(id), -- the admin, for a link
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_password_resets_secret ON password_resets(secret_hash);

@@ -26,6 +26,9 @@ export const COMPANY = {
   cndp: "", // CNDP declaration / authorisation reference(s), once obtained
 };
 
+// PartHub's WhatsApp number (support, notifications): international digits.
+export const SUPPORT_WHATSAPP = "212751411879";
+
 // Without these, the company is treated as not registered yet.
 export const COMPANY_REQUIRED = ["name", "address", "city", "rc", "ice"];
 

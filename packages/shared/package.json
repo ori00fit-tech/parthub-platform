@@ -9,7 +9,7 @@
     "./icons": "./src/icons/index.jsx",
     "./legal": "./src/legal/content.js",
     "./brand": "./src/brand/index.jsx",
-    "./account": "./src/account/ChangePasswordForm.jsx"
+    "./account": "./src/account/index.js"
   },
   "dependencies": {
     "lucide-react": "0.460.0"

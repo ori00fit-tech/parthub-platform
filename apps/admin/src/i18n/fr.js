@@ -790,5 +790,8 @@ export default {
   "Done": "Fait",
   "Refused ({status})": "Refusé ({status})",
   "Nothing recorded yet.": "Rien d'enregistré pour l'instant.",
+  "Hello {name}, here is your link to choose a new PartHub password (valid 60 minutes, once):": "Bonjour {name}, voici votre lien pour choisir un nouveau mot de passe PartHub (valable 60 minutes, une seule fois) :",
+  "Password reset link": "Lien de réinitialisation",
+  "For someone who forgot their password and gets no code": "Pour qui a oublié son mot de passe et ne reçoit pas de code",
   "{n} without a matching order": "{n} sans commande correspondante",
 };

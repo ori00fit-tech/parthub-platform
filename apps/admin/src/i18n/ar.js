@@ -790,5 +790,8 @@ export default {
   "Done": "تم",
   "Refused ({status})": "مرفوض ({status})",
   "Nothing recorded yet.": "لا شيء مسجّل بعد.",
+  "Hello {name}, here is your link to choose a new PartHub password (valid 60 minutes, once):": "مرحباً {name}، هذا رابطك لاختيار كلمة مرور جديدة على PartHub (صالح 60 دقيقة، ولمرة واحدة):",
+  "Password reset link": "رابط استرجاع كلمة المرور",
+  "For someone who forgot their password and gets no code": "لمن نسي كلمة المرور ولم يصله رمز",
   "{n} without a matching order": "{n} بلا طلب مطابق",
 };

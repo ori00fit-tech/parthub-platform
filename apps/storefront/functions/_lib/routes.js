@@ -16,6 +16,8 @@ export const ROUTES = [
   "/vehicle-selector",
   "/cart",
   "/auth",
+  "/forgot-password",
+  "/reset-password",
   "/checkout",
   "/checkout/success",
   "/compare",

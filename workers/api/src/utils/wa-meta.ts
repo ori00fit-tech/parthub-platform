@@ -174,7 +174,9 @@ export async function templateCenter(env: Env) {
         legacy: Boolean(t.legacy),
         params: t.params,
         body: t.body,
-        button: t.button ? { text: t.button.text, url: `${urls[t.button.site]}/{{1}}`, example: t.button.example } : null,
+        button: t.button
+          ? { text: t.button.text, url: t.category === "AUTHENTICATION" ? "OTP — copy code" : `${urls[t.button.site]}/{{1}}`, example: t.button.example }
+          : null,
         versions,
         stats: {
           total: Number(s?.total || 0),

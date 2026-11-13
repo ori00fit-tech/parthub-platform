@@ -255,6 +255,11 @@ export default function AuthPage() {
                 placeholder="••••••••"
                 className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-500"
               />
+              {!isSignup ? (
+                <Link to={`/forgot-password${form.email.trim() ? `?email=${encodeURIComponent(form.email.trim())}` : ""}`} className="mt-1.5 inline-block text-xs font-semibold text-blue-700 hover:underline">
+                  {t("Forgot your password?")}
+                </Link>
+              ) : null}
             </div>
 
             <button

@@ -3,6 +3,7 @@ import SellerLayout from "./components/layout/SellerLayout";
 import ProtectedRoute from "./components/routing/ProtectedRoute";
 
 import AuthPage from "./pages/AuthPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import PartsPage from "./pages/PartsPage";
 import PartWizardPage from "./pages/PartWizardPage";
@@ -34,6 +35,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ForgotPasswordPage withLink />} />
       <Route path="/legal" element={<LegalPage />} />
       <Route path="/legal/:doc" element={<LegalPage />} />
 

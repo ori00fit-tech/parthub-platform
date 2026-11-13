@@ -10,6 +10,7 @@ import { notifyBackInStock } from "../utils/stock-alerts";
 import { runInBackground } from "../utils/whatsapp";
 import { auditAdminChanges } from "../utils/audit";
 import { retryWhatsApp } from "../utils/wa-notify";
+import { createResetLink, findAccount } from "../utils/password-reset";
 import { waClaimEvent, waOrderStepAllSellers, waPartsReviewed, waShipmentEvent, waStoreStatus } from "../utils/wa-events";
 import { TEMPLATE_STATUSES, submitTemplates, syncTemplates, templateCenter } from "../utils/wa-meta";
 import { WA_LANGS, WA_TEMPLATE_BY_NAME } from "../utils/wa-templates";
@@ -1187,6 +1188,21 @@ adminRoutes.patch("/whatsapp/templates/:name/:lang", async (c) => {
     ).bind(name, lang, status).run();
   }
   return ok(c, await templateCenter(c.env));
+});
+
+// POST /api/v1/admin/password-reset-link { identifier } — e-mail or phone.
+// For someone who gets no code (no WhatsApp on the account, template not
+// approved yet): a one-time link (60 min) to send them in the chat.
+// Never for an admin account. Logged in the activity log.
+adminRoutes.post("/password-reset-link", async (c) => {
+  const body = await c.req.json<{ identifier?: unknown }>().catch(() => ({}) as { identifier?: unknown });
+  const identifier = typeof body.identifier === "string" ? body.identifier.trim().slice(0, 200) : "";
+  if (!identifier) return fail(c, "Enter the e-mail or phone of the account");
+  const account = await findAccount(c.env, identifier);
+  if (!account) return fail(c, "No single active account matches", 404);
+  if (account.role === "admin") return fail(c, "Admins change their password themselves (My account)", 403);
+  const link = await createResetLink(c.env, account, Number(c.get("user_id")));
+  return ok(c, { ...link, name: account.name, email: account.email, role: account.role });
 });
 
 // GET /api/v1/admin/whatsapp/conversations — one row per number: last

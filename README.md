@@ -26,8 +26,9 @@ Release status, known limits and backlog:
 | Payment | Cash on delivery only (no online payment) |
 | Commission | Ledger and invoices ready; rate is 0% while selling is free |
 | Shipping | 12 Moroccan carriers; status by webhook or entered by hand; no carrier API contract signed yet |
-| WhatsApp | Webhook, inbox, 25 templates × 3 languages submitted to Meta (approval pending) |
-| Forgot password, account deletion | Not built yet (see the readiness document) |
+| WhatsApp | Webhook, inbox, 26 templates × 3 languages (approval at Meta pending), automatic retries |
+| Forgot password | Code on WhatsApp, or a one-time link from PartHub |
+| Account deletion | Not built yet (see the readiness document) |
 | Mobile apps | Planned after 0.1.1 (React Native + Expo, same API) |
 
 ## Architecture
@@ -95,7 +96,7 @@ The sites translate the English messages (`packages/shared/src/i18n/server-messa
 | Group | What |
 |---|---|
 | `/health` | Status, version, database check |
-| `/auth` | Register, login, me, logout, change password |
+| `/auth` | Register, login, me, logout, change password, forgot / reset password |
 | `/vehicles`, `/catalog`, `/search` | Vehicle catalog, categories, parts, search |
 | `/commerce` | Checkout, buyer orders, receipt, claims, reviews, fulfilment options |
 | `/marketplace` | Seller: store, parts, photos, import, orders, carrier updates, claims, statements |
