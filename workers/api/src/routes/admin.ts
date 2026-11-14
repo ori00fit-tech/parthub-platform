@@ -27,6 +27,7 @@ import { isWhatsAppConfigured, normalizeWhatsAppNumber, sendWhatsAppText } from 
 import { ADMIN_SHIPMENT_STATUSES, type ShipmentStatus, findShipment, listCarriers, loadCarrier, parseWebhook, readCarrierInput, recordManualEvent, secretName } from "../utils/carriers";
 import { LATE_DAYS, lateShipments } from "../utils/shipping-delays";
 import { PAYMENT_METHODS, cancelInvoice, invoiceDraft, invoicePayments, issueInvoice, ledgerTotals, listInvoices, readDay, readMad, recordPayment } from "../utils/invoices";
+import { syncMediaBackup } from "../utils/media";
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -1314,3 +1315,13 @@ adminRoutes.get("/kpis.csv", async (c) => {
   });
 });
 
+
+// POST /admin/media/backup-sync — copies one page of photos into the backup
+// bucket (MEDIA_BACKUP). Call again with the returned cursor until done.
+adminRoutes.post("/media/backup-sync", async (c) => {
+  const body = await c.req.json<{ cursor?: unknown }>().catch(() => ({} as { cursor?: unknown }));
+  const cursor = typeof body.cursor === "string" && body.cursor ? body.cursor : undefined;
+  const result = await syncMediaBackup(c.env, cursor);
+  if (!result) return fail(c, "No backup bucket is bound (MEDIA_BACKUP)", 409);
+  return ok(c, result);
+});
