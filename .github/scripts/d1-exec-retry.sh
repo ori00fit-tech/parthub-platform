@@ -9,7 +9,7 @@ set -uo pipefail
 attempts=4
 delay=5
 for i in $(seq 1 "$attempts"); do
-  out=$(npx --yes wrangler@4 d1 execute "$DB_NAME" --remote "$@" 2>&1)
+  out=$(npx --yes wrangler@4.152.0 d1 execute "$DB_NAME" --remote "$@" 2>&1)
   code=$?
   echo "$out"
   [ $code -eq 0 ] && exit 0

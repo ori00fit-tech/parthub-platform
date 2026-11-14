@@ -38,7 +38,7 @@ jobs:
       - name: Export the database
         run: |
           set -euo pipefail
-          npx --yes wrangler@4 d1 export "$DB_NAME" --remote --output=backup.sql
+          npx --yes wrangler@4.152.0 d1 export "$DB_NAME" --remote --output=backup.sql
           lines=$(wc -l < backup.sql)
           echo "rows of SQL: $lines"
           # An export without the core tables is not a backup: fail loudly.
@@ -53,6 +53,6 @@ jobs:
       - name: Store it in R2 (private)
         run: |
           set -euo pipefail
-          npx --yes wrangler@4 r2 object put "$BUCKET/$KEY" --file=backup.sql.gz --content-type=application/gzip --remote
+          npx --yes wrangler@4.152.0 r2 object put "$BUCKET/$KEY" --file=backup.sql.gz --content-type=application/gzip --remote
           echo "Stored $KEY ($(du -h backup.sql.gz | cut -f1))"
           rm -f backup.sql.gz

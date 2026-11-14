@@ -38,7 +38,7 @@ jobs:
       - name: Show tables before
         continue-on-error: true
         run: |
-          npx --yes wrangler@4 d1 execute "$DB_NAME" --remote \
+          npx --yes wrangler@4.152.0 d1 execute "$DB_NAME" --remote \
             --command "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
 
       # File imports keep working even when D1's daily read limit is hit,
