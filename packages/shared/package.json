@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./icons": "./src/icons/index.jsx",
     "./legal": "./src/legal/content.js",
+    "./company": "./src/legal/company.js",
     "./brand": "./src/brand/index.jsx",
     "./account": "./src/account/index.js"
   },

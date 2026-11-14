@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useMemo, useState, Suspense } from "react";
 import { useCart } from "../../features/cart/CartContext";
 import CartDrawer from "../../features/cart/CartDrawer";
 import { useAuth } from "../../features/auth/AuthContext";
@@ -9,6 +9,16 @@ import BrandMark, { Wordmark } from "../brand/BrandMark";
 import Footer from "./Footer";
 import { useT } from "../../i18n";
 import LanguageSwitcher from "./LanguageSwitcher";
+
+// Pages other than the first ones a visitor sees load on demand (smaller
+// first download); this shows while one loads.
+export function PageFallback() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center" role="status" aria-live="polite">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-gray-700" />
+    </div>
+  );
+}
 
 function getVehicleLabel(vehicle) {
   if (!vehicle) return "";
@@ -242,7 +252,9 @@ export default function MainLayout() {
       </header>
 
       <main className="mx-auto w-full max-w-[1380px] px-4 py-8 lg:px-6">
-        <Outlet />
+        <Suspense fallback={<PageFallback />}>
+          <Outlet />
+        </Suspense>
       </main>
 
       <Footer />

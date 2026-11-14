@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, Suspense } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useT } from "../../i18n";
@@ -6,6 +6,16 @@ import LanguageSwitcher from "../common/LanguageSwitcher";
 import { usePendingCounts } from "../../lib/pending";
 import { Icon } from "@parthub/shared/icons";
 import { LogoMark } from "@parthub/shared/brand";
+
+// Pages other than the first ones a visitor sees load on demand (smaller
+// first download); this shows while one loads.
+export function PageFallback() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center" role="status" aria-live="polite">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-gray-700" />
+    </div>
+  );
+}
 
 // Nav items whose badge shows how many items wait for moderation.
 const PENDING_KEY = { "/sellers": "sellers", "/parts": "parts", "/reviews": "reviews", "/issues": "issues", "/vehicles": "catalog", "/part-numbers": "numbers" };
@@ -212,7 +222,9 @@ export default function AdminLayout() {
           ) : null}
           <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
             <div className="mx-auto w-full max-w-7xl">
-              <Outlet />
+              <Suspense fallback={<PageFallback />}>
+                <Outlet />
+              </Suspense>
             </div>
           </div>
         </main>

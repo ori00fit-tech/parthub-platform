@@ -1,4 +1,4 @@
-import { companyLine } from "@parthub/shared/legal";
+import { companyLine } from "@parthub/shared/company";
 import { useEffect, useState } from "react";
 import { formatMoney } from "@parthub/shared";
 import { api } from "../lib/api";
