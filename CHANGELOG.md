@@ -90,8 +90,8 @@ known limits: `infra/docs/release-v0.1.1-readiness.md`.
   signed out after a reset.
 - Account deletion: closed at once, 30 days to change one's mind (signing
   in cancels it), then personal data erased while orders, invoices and
-  reviews stay without a name; refused while orders, claims, the returns
-  window or money owed are open. Public page `/delete-account` (app stores).
+  reviews stay without a name; refused while orders, claims or money owed
+  are open, and for a seller while a sold part is in its returns window. Public page `/delete-account` (app stores).
 - CORS allow-list, security headers and HSTS, production guard on scripts.
 - JSON error handler with request id; admin audit log of every change.
 - CI: typecheck, lint, 40+ API test suites, builds; browser E2E across the
@@ -100,3 +100,12 @@ known limits: `infra/docs/release-v0.1.1-readiness.md`.
 - Weekly D1 backup to private R2; runbook for restore, rollback and
   incidents (`infra/docs/operations-runbook.md`).
 - `/api/v1/health` reports the version and the database state.
+- Admin accounts cannot reset their password by code or link (a stolen
+  phone must not open the admin); `scripts/admin-set-password.sh` instead.
+- A seller can read only their own part (`GET /marketplace/parts/:id`
+  answered without a token); isolation suite: a second seller and a
+  second buyer try every route on someone else's records.
+- Photo backup: optional second R2 bucket written on each upload, read
+  fallback, copy of older photos from the admin.
+- One Wrangler version (4.152.0) everywhere, checked in CI.
+- Smaller first download: pages load on demand, React cached apart.
