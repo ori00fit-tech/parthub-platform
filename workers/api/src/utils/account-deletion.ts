@@ -23,6 +23,10 @@ const OPEN_ORDER = "('pending','confirmed','processing','shipped')";
 export type Blocker = "open_orders" | "open_claims" | "returns_window" | "money_owed" | "admin";
 
 // What stops the account from being deleted now (empty: nothing).
+// A buyer whose part is still in its 7-day returns window may ask: the
+// account only closes, the 30 days to change one's mind outlast the window,
+// and signing in to report a problem cancels the deletion. A seller may not
+// (the buyer could still report a problem to a store that is gone).
 export async function deletionBlockers(DB: D1Database, userId: number): Promise<Blocker[]> {
   const u = await DB.prepare("select u.role, s.id as seller_id from users u left join sellers s on s.user_id = u.id where u.id = ?1")
     .bind(userId).first<{ role: string; seller_id: number | null }>();
@@ -48,12 +52,13 @@ export async function deletionBlockers(DB: D1Database, userId: number): Promise<
 }
 
 export async function requestDeletion(DB: D1Database, userId: number, reason: string | null): Promise<void> {
-  const seller = await DB.prepare("select id, status from sellers where user_id = ?1").bind(userId).first<{ id: number; status: string }>();
+  const seller = await DB.prepare("select id, status, moderation_note from sellers where user_id = ?1").bind(userId).first<{ id: number; status: string; moderation_note: string | null }>();
   const stmts = [
     DB.prepare(
       "update users set deletion_requested_at = datetime('now'), token_version = token_version + 1, updated_at = datetime('now') where id = ?1"
     ).bind(userId),
-    DB.prepare("insert into account_deletions (user_id, reason, seller_status_before) values (?1, ?2, ?3)").bind(userId, reason, seller?.status ?? null),
+    DB.prepare("insert into account_deletions (user_id, reason, seller_status_before, seller_note_before) values (?1, ?2, ?3, ?4)")
+      .bind(userId, reason, seller?.status ?? null, seller?.moderation_note ?? null),
   ];
   if (seller) {
     stmts.push(
@@ -66,8 +71,8 @@ export async function requestDeletion(DB: D1Database, userId: number, reason: st
 // Signing in during the 30 days: the account comes back as it was.
 export async function cancelDeletion(DB: D1Database, userId: number): Promise<boolean> {
   const req = await DB.prepare(
-    "select id, seller_status_before from account_deletions where user_id = ?1 and cancelled_at is null and completed_at is null order by id desc limit 1"
-  ).bind(userId).first<{ id: number; seller_status_before: string | null }>();
+    "select id, seller_status_before, seller_note_before from account_deletions where user_id = ?1 and cancelled_at is null and completed_at is null order by id desc limit 1"
+  ).bind(userId).first<{ id: number; seller_status_before: string | null; seller_note_before: string | null }>();
   const stmts = [
     DB.prepare("update users set deletion_requested_at = null, updated_at = datetime('now') where id = ?1").bind(userId),
   ];
@@ -76,8 +81,8 @@ export async function cancelDeletion(DB: D1Database, userId: number): Promise<bo
     if (req.seller_status_before) {
       stmts.push(
         DB.prepare(
-          "update sellers set status = ?2, moderation_note = null, updated_at = datetime('now') where user_id = ?1 and moderation_note = 'Account deletion requested by the seller'"
-        ).bind(userId, req.seller_status_before)
+          "update sellers set status = ?2, moderation_note = ?3, updated_at = datetime('now') where user_id = ?1 and moderation_note = 'Account deletion requested by the seller'"
+        ).bind(userId, req.seller_status_before, req.seller_note_before)
       );
     }
   }

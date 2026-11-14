@@ -92,14 +92,23 @@ check("signin_cancels", st === 200 && r.data.deletion_cancelled === true && u().
   sql.prepare("select cancelled_at from account_deletions where user_id = 7").get().cancelled_at !== null, r);
 buyer = `Bearer ${r.data.access_token}`;
 
-// 5. Seller: store hidden at once, given back as it was on cancel.
+// 5. Seller: store hidden at once, given back as it was on cancel —
+// with the admin's earlier note (it used to be lost).
 sql.prepare("update order_items set status = 'delivered', delivered_at = datetime('now', '-10 days') where order_id = ?").run(o.data.id);
+sql.exec("update sellers set moderation_note = 'Photos à refaire pour 3 pièces' where id = 1");
 [st, r] = await call("POST", "/api/v1/auth/delete-account", seller, { password: "Riad-Fes-2026-x" });
 const store = () => sql.prepare("select * from sellers where id = 1").get();
 check("store_hidden", st === 200 && store().status === "suspended", [st, r, store().status]);
 [st, r] = await login("karim@x.ma");
-check("store_back", r.data.deletion_cancelled === true && store().status === "active" && store().moderation_note === null, store());
+check("store_back", r.data.deletion_cancelled === true && store().status === "active" && store().moderation_note === "Photos à refaire pour 3 pièces", store());
 seller = `Bearer ${r.data.access_token}`;
+
+// A buyer whose part is in its 7-day returns window may ask (the 30 days outlast it).
+sql.exec("INSERT INTO users (id,name,email,password_hash,role) VALUES (20,'Recent Buyer','recent@x.ma','" + pw + "','buyer')");
+sql.exec("INSERT INTO orders (id, reference, buyer_id, status, total) VALUES (900, 'PH-RECENT', 20, 'delivered', 1000); INSERT INTO order_items (order_id, part_id, seller_id, title, price, quantity, subtotal, status, delivered_at) VALUES (900, 1, 1, 'Pads', 1000, 1, 1000, 'delivered', datetime('now', '-2 days'))");
+const recent = `Bearer ${(await login("recent@x.ma"))[1].data.access_token}`;
+[st, r] = await call("GET", "/api/v1/auth/delete-account", recent);
+check("buyer_in_returns_window_may_ask", st === 200 && r.data.can_delete === true, r.data);
 
 // 6. Request again, 31 days pass, the daily job erases.
 await call("POST", "/api/v1/auth/delete-account", buyer, { password: "Riad-Fes-2026-x" });
