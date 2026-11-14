@@ -7,6 +7,8 @@ import {
   SERVABLE_IMAGE_TYPES,
   buildPartImageKey,
   readImageUpload,
+  readMedia,
+  storeMedia,
 } from "../utils/media";
 
 export const mediaRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
@@ -26,7 +28,7 @@ mediaRoutes.post("/upload", authMiddleware, sellerGuard, async (c) => {
 
   const key = buildPartImageKey((file as File).name, image.type);
 
-  await c.env.MEDIA.put(key, image.bytes, {
+  await storeMedia(c.env, key, image.bytes, {
     httpMetadata: { contentType: image.type.mime },
     customMetadata: { uploaded_by: String(c.get("user_id")) },
   });
@@ -48,7 +50,7 @@ mediaRoutes.get("/*", async (c) => {
     return c.json(uploadFail("Not found", "NOT_FOUND"), 404);
   }
 
-  const object = await c.env.MEDIA.get(key);
+  const object = await readMedia(c.env, key);
   if (!object) return c.json(uploadFail("Not found", "NOT_FOUND"), 404);
 
   const contentType = object.httpMetadata?.contentType || "";

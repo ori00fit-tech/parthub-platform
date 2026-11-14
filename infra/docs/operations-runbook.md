@@ -10,7 +10,7 @@ in `scripts/` that change production ask for `CONFIRM_PRODUCTION=parthub-db`.
 |---|---|---|
 | D1 database `parthub-db` | **Time Travel** (built into D1, always on): restore to any minute | 30 days (Workers Paid), 7 days (Free) |
 | D1 database | **Weekly export** (`.github/workflows/d1-backup.yml`): full SQL, **restored into a scratch database and checked** (tables, rows, integrity) before it is stored gzipped in R2 `parthub-media/backups/d1/` | As long as the files are kept (lifecycle rule below) |
-| R2 photos `parthub-media` | None automatic: deleting a photo deletes it. The API never deletes a stored file when a part is edited. | — |
+| R2 photos `parthub-media` | **Second bucket `parthub-media-backup`** once bound as `MEDIA_BACKUP` (below): every upload is written to both, a photo missing from the main bucket is served from the backup. The API never deletes a stored file. Until the binding exists: none. | Everything uploaded since the binding, plus what *Copy older photos* copied |
 | API Worker `parthub-api` | Cloudflare keeps the previous deployments: **rollback** in one command | Recent versions |
 | Sites (Pages) | Every deployment is kept: **rollback** in the dashboard | All deployments |
 | Code | Git (`main`, tags) | Everything |
@@ -19,6 +19,21 @@ in `scripts/` that change production ask for `CONFIRM_PRODUCTION=parthub-db`.
 Owner, once: in R2 › `parthub-media` › Settings, check **Public access is
 off** (no r2.dev URL, no custom domain on the bucket). Then add a
 **lifecycle rule**: delete objects under `backups/` after 180 days.
+
+### Turn on the photo backup (owner, once)
+
+1. Cloudflare › R2 › **Create bucket** `parthub-media-backup` (ideally
+   another location hint than `parthub-media`). Public access off.
+2. In `workers/api/wrangler.toml`, uncomment the `MEDIA_BACKUP` block and
+   merge: the next Deploy API binds it. From then on every new photo is
+   written to both buckets (a failed backup write never fails the upload).
+3. Admin › **My account** › *Photo backup* › **Copy older photos**: copies
+   everything already in `parthub-media` (100 per call, it continues by
+   itself; running it again only copies what is missing). This also copies
+   the weekly D1 exports, so they no longer live in one bucket only.
+4. Run it again after any incident on the main bucket. To restore the main
+   bucket from the backup, swap the two `bucket_name` values in
+   `wrangler.toml` and deploy, then run the copy the other way round.
 
 ## 2. Restore the database
 
@@ -80,7 +95,22 @@ good one › **Rollback to this deployment**.
 
 Then fix forward on a branch, merge, deploy as usual.
 
-## 4. Release steps
+## 4. An admin lost their password
+
+The WhatsApp code and PartHub's reset links refuse admin accounts (someone
+holding the admin's phone must not get the platform). From a computer with
+Cloudflare access:
+
+```bash
+bash scripts/admin-set-password.sh admin@parthub.autos   # asks for the new password twice
+```
+
+It asks to type `parthub-db`, hashes the password with the API's own code,
+sets it, and signs out every session of that admin. Another admin can also
+create a new admin account; with only one admin, keep this script's access
+(Cloudflare) safe.
+
+## 5. Release steps
 1. CI green on the pull request (typecheck, lint, API tests, 3 builds).
 2. Merge → Deploy API (runs the D1 migrations first, then the schema
    verify gate; a failed verify stops the deploy) → Deploy Pages.
@@ -89,7 +119,7 @@ Then fix forward on a branch, merge, deploy as usual.
 4. A release: bump the versions, CHANGELOG entry, tag `vX.Y.Z` on the
    merge commit.
 
-## 5. Incidents
+## 6. Incidents
 
 | Symptom | First look | Then |
 |---|---|---|

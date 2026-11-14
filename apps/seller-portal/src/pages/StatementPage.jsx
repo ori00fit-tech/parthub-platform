@@ -1,4 +1,4 @@
-import { companyLine } from "@parthub/shared/legal";
+import { companyLine } from "@parthub/shared/company";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatMoney } from "@parthub/shared";

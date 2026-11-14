@@ -1,4 +1,4 @@
-import { companyLine, companyRegistered } from "@parthub/shared/legal";
+import { companyLine, companyRegistered } from "@parthub/shared/company";
 import { Link } from "react-router-dom";
 import BrandMark, { Wordmark } from "../brand/BrandMark";
 import { useT } from "../../i18n";

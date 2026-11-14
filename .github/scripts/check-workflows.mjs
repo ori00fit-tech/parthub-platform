@@ -27,4 +27,22 @@ for (const f of readdirSync(dir).filter((x) => /\.ya?ml$/.test(x))) {
     console.log(`::error file=.github/workflows/${f}::${String(err.message).split("\n")[0]}`);
   }
 }
+// One Wrangler everywhere: the version the API's package pins (tests, E2E,
+// local) is the one every workflow and script runs (deploys, migrations).
+const pinned = JSON.parse(readFileSync(join(ROOT, "workers/api/package.json"), "utf8")).devDependencies.wrangler;
+if (!/^\d+\.\d+\.\d+$/.test(pinned)) {
+  bad.push("wrangler pin");
+  console.log(`::error file=workers/api/package.json::wrangler must be an exact version (found ${pinned})`);
+}
+for (const d of [dir, join(ROOT, ".github/scripts")]) {
+  for (const f of readdirSync(d)) {
+    const text = readFileSync(join(d, f), "utf8");
+    for (const m of text.matchAll(/wrangler@([\w.^~-]+)/g)) {
+      if (m[1] !== pinned) {
+        bad.push(f);
+        console.log(`::error file=${d.replace(ROOT + "/", "")}/${f}::wrangler@${m[1]} — use wrangler@${pinned} (workers/api/package.json)`);
+      }
+    }
+  }
+}
 if (bad.length) process.exit(1);

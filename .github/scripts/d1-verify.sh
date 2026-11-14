@@ -54,13 +54,14 @@ sql="SELECT
   $(tables "'sessions'" sessions_table),
   $(tables "'seller_carriers'" seller_carriers_table),
   $(has sellers free_delivery_over sellers_shipping_columns),
+  $(has account_deletions seller_note_before deletion_note_column),
   $(has users deletion_requested_at users_deletion_columns),
   $(has whatsapp_notifications payload whatsapp_retry_columns),
   $(has shipment_events applied_at shipment_events_applied_column),
   (SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='uq_orders_buyer_cart_pending') AS order_cart_index,
   (SELECT rate_bps FROM commission_rates WHERE cancelled_at IS NULL AND effective_from <= datetime('now') ORDER BY effective_from DESC, id DESC LIMIT 1) AS commission_rate_now_bps"
 
-out=$(npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --json --command "$sql" 2>&1)
+out=$(npx --yes wrangler@4.152.0 d1 execute "$DB_NAME" --remote --json --command "$sql" 2>&1)
 code=$?
 if [ $code -ne 0 ]; then
   echo "$out"

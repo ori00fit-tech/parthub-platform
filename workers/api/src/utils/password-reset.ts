@@ -8,6 +8,8 @@
 //  - Assisted: someone who gets no code writes to PartHub on WhatsApp; an
 //    admin creates a one-time link (60 minutes) and sends it in the chat.
 //    Not for admin accounts. Logged in the activity log.
+// Admin accounts: neither (an admin's phone or a colleague must not be enough
+// to take the platform); they use scripts/admin-set-password.sh.
 // The answer to "forgot" never says whether an account exists.
 // A reset changes the password and signs out every device.
 // ============================================================

@@ -27,6 +27,7 @@ import {
   MEDIA_URL_PREFIX,
   buildRequestImageKey,
   readImageUpload,
+  storeMedia,
   requestImagePrefix,
   utcDayBucket,
 } from "../utils/media";
@@ -138,7 +139,7 @@ requestsRoutes.post("/images", authMiddleware, async (c) => {
   }
 
   const key = buildRequestImageKey(userId, image.type);
-  await c.env.MEDIA.put(key, image.bytes, {
+  await storeMedia(c.env, key, image.bytes, {
     httpMetadata: { contentType: image.type.mime },
     customMetadata: { uploaded_by: String(userId), purpose: "part_request" },
   });

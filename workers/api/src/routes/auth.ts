@@ -273,7 +273,10 @@ authRoutes.post("/forgot", async (c) => {
   if (await blockedFor(c.env.DB, [ipKey])) return fail(c, TOO_MANY, 429);
   await recordAttempt(c.env.DB, ipKey, LIMITS.resetIp);
   const account = await findAccount(c.env, identifier);
-  if (account) {
+  // Never for an admin: whoever holds the admin's phone would take the whole
+  // platform. Admins recover from the command line (operations runbook).
+  // Same answer as for any other identifier.
+  if (account && account.role !== "admin") {
     const accountKey = `reset:account:${account.id}`;
     if (!(await blockedFor(c.env.DB, [accountKey]))) {
       await recordAttempt(c.env.DB, accountKey, LIMITS.resetAccount);
@@ -289,7 +292,7 @@ authRoutes.post("/reset", async (c) => {
   const identifier = typeof body.identifier === "string" ? body.identifier.trim().slice(0, 200) : "";
   const next = typeof body.new_password === "string" ? body.new_password : "";
   const account = identifier ? await findAccount(c.env, identifier) : null;
-  if (!account) return fail(c, "This code is wrong or has expired. Ask for a new one.");
+  if (!account || account.role === "admin") return fail(c, "This code is wrong or has expired. Ask for a new one.");
   const weak = passwordProblem(next, { email: account.email, name: account.name, role: account.role as "buyer" | "seller" | "admin" });
   if (weak) return fail(c, weak);
   const check = await checkCode(c.env, account, String(body.code ?? ""));
@@ -313,7 +316,7 @@ authRoutes.post("/reset-link", async (c) => {
   const user = await dbFirst<{ id: number; name: string; email: string; role: "buyer" | "seller" | "admin"; token_version: number }>(
     c.env.DB, "SELECT id, name, email, role, token_version FROM users WHERE id = ?", [link.userId]
   );
-  if (!user) return fail(c, "This link is not valid any more. Ask PartHub for a new one.");
+  if (!user || user.role === "admin") return fail(c, "This link is not valid any more. Ask PartHub for a new one.");
   const weak = passwordProblem(next, { email: user.email, name: user.name, role: user.role });
   if (weak) return fail(c, weak);
   if (!(await applyReset(c.env, link.resetId, user.id, next))) return fail(c, "This link is not valid any more. Ask PartHub for a new one.");

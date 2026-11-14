@@ -134,3 +134,25 @@ moderation). **The order lifecycle is PROVEN in production.**
 | The shared test accounts (admin, buyer, seller) still work with their known passwords | **P0 open (owner)** | Change them or deactivate them before inviting anyone |
 | The pilot order and review are test data in production | Note | They count in the investor metrics: cancel or note them once the real sellers start |
 | 12 public parts, 56 waiting for photos | Content (owner) | Photos per part (`/parts/photos`), then bulk approval |
+
+## 10. Third audit (phase 3, 14 Nov 2026) — findings and fixes
+
+Verdict of the audit: **CONDITIONAL PRIVATE BETA**. Every code finding
+was checked against the code and production before fixing.
+
+| Finding | Verdict | Fix |
+|---|---|---|
+| A seller part could be read by anyone: `GET /marketplace/parts/:id` had no sign-in (status, seller, gallery of any part) | **True, security** | Seller sign-in and ownership, 404 otherwise; `isolation.test.mjs` (19 seller routes, 8 buyer routes, anonymous) |
+| Admin accounts could reset their password by WhatsApp code or link | True | Refused for admins (same answer as for anyone); `scripts/admin-set-password.sh` (production guard, hashed locally, all devices signed out); runbook §4 |
+| A seller who cancels their deletion lost their moderation note | True | Note kept and restored (migration 0038) |
+| A buyer inside the 7-day returns window can ask for deletion | True, by design | Kept: orders and claims stay linked to the order, not the name; documented in `account-deletion.ts` |
+| No backup of the photos (R2) | True | Optional `MEDIA_BACKUP` bucket: dual write, read fallback, *Copy older photos*; runbook §1 (owner creates the bucket) |
+| Wrangler 3 in deploys, 4 locally | True | 4.152.0 pinned everywhere; `check-workflows.mjs` refuses a mismatch |
+| JS files over 500 KB | True (692 / 654 / 525 KB) | 342 / 284 / 190 KB + React 163 KB cached apart |
+
+Still for the owner (not code): change or deactivate the shared test
+accounts and rotate the Meta app secret (**P0**); branch protection on
+`main` with CI and E2E required; Worker Logs on; one real D1 restore
+drill; legal review (CNDP declaration, law 09-08); photos and approvals
+for the 56 waiting parts; create `parthub-media-backup` and uncomment
+the binding.

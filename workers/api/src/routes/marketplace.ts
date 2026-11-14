@@ -272,11 +272,20 @@ marketplaceRoutes.post("/parts", authMiddleware, sellerGuard, async (c) => {
   }
 });
 
-marketplaceRoutes.get("/parts/:id", async (c) => {
+// GET /api/v1/marketplace/parts/:id — a part as its seller (or PartHub)
+// sees it, any status. It had no sign-in check at all: anyone could read
+// any part, unpublished or rejected, with PartHub's notes (phase-3 audit,
+// test/isolation.test.mjs). Buyers use /catalog/parts/:slug.
+marketplaceRoutes.get("/parts/:id", authMiddleware, sellerGuard, async (c) => {
   try {
+    const actor = await resolveActor(c);
+    if (!actor.ok) return c.json(failure(actor.code, actor.message), actor.status);
     const id = Number(c.req.param("id"));
     if (Number.isNaN(id)) {
       return c.json(failure("INVALID_ID", "Invalid part id"), 400);
+    }
+    if (!(await findOwnedPart(c.env.DB, id, actor))) {
+      return c.json(failure("NOT_FOUND", "Part not found"), 404);
     }
 
     const part = await getPartById(c.env.DB, id);

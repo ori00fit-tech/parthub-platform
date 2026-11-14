@@ -780,6 +780,7 @@ CREATE TABLE IF NOT EXISTS account_deletions (
   requested_at         TEXT NOT NULL DEFAULT (datetime('now')),
   reason               TEXT,
   seller_status_before TEXT,               -- the store's status, given back on cancel
+  seller_note_before   TEXT,               -- and its moderation note (migrations/0038)
   cancelled_at         TEXT,
   completed_at         TEXT
 );

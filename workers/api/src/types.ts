@@ -1,6 +1,7 @@
 export type Env = {
   DB: D1Database;
   MEDIA: R2Bucket;
+  MEDIA_BACKUP?: R2Bucket; // optional second bucket: every photo is written to both (utils/media.ts storeMedia)
   APP_ENV?: string;
   JWT_EXPIRES_IN?: string;
   JWT_SECRET: string;

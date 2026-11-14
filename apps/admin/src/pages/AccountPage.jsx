@@ -2,6 +2,7 @@ import ChangePasswordForm, { DevicesList } from "@parthub/shared/account";
 import { ADMIN_TOKEN_KEY } from "@parthub/shared";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { useState } from "react";
 import { useT } from "../i18n";
 
 // The signed-in admin's account: e-mail and password change (API: POST
@@ -41,6 +42,49 @@ export default function AccountPage() {
           <DevicesList t={t} tone="dark" get={(p) => api.get(p).then((r) => r?.data)} del={(p) => api.delete(p)} post={(p, b) => api.post(p, b)} onEverywhere={logout} />
         </div>
       </div>
+      <PhotoBackup t={t} />
     </section>
+  );
+}
+
+// Copies photos uploaded before the backup bucket existed (API: POST
+// /api/v1/admin/media/backup-sync, one page per call, until done).
+function PhotoBackup({ t }) {
+  const [state, setState] = useState({ busy: false, copied: 0, skipped: 0, done: false, error: "" });
+  async function run() {
+    setState({ busy: true, copied: 0, skipped: 0, done: false, error: "" });
+    let cursor = null;
+    let copied = 0;
+    let skipped = 0;
+    try {
+      for (;;) {
+        const r = await api.post("/api/v1/admin/media/backup-sync", cursor ? { cursor } : {});
+        const d = r?.data;
+        if (!d) throw new Error(r?.error || "failed");
+        copied += d.copied;
+        skipped += d.skipped;
+        setState({ busy: !d.done, copied, skipped, done: d.done, error: "" });
+        if (d.done) break;
+        cursor = d.cursor;
+      }
+    } catch (err) {
+      setState({ busy: false, copied, skipped, done: false, error: String(err?.message || err) });
+    }
+  }
+  return (
+    <div className="rounded-3xl border border-gray-800 bg-gray-900 p-6">
+      <h2 className="text-lg font-bold text-white">{t("Photo backup")}</h2>
+      <p className="mt-1 text-sm text-gray-400">{t("New photos are copied to the backup bucket on upload. Run this once to copy the older ones.")}</p>
+      <button type="button" disabled={state.busy} onClick={run} className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-900 disabled:opacity-50">
+        {state.busy ? t("Copying…") : t("Copy older photos")}
+      </button>
+      {(state.copied > 0 || state.skipped > 0 || state.done) && (
+        <p className="mt-3 text-sm text-gray-300">
+          {t("Copied")}: {state.copied} · {t("Already there")}: {state.skipped}
+          {state.done ? ` · ${t("Done")}` : ""}
+        </p>
+      )}
+      {state.error && <p className="mt-3 text-sm text-red-400">{state.error}</p>}
+    </div>
   );
 }

@@ -26,6 +26,13 @@ database_id = "d0adb5e3-5e96-4bed-bbab-304b1e61fa91"
 binding = "MEDIA"
 bucket_name = "parthub-media"
 
+# Photo backup (infra/docs/operations-runbook.md §1): create the bucket
+# parthub-media-backup in Cloudflare first, then uncomment. Deploying with
+# the block uncommented before the bucket exists fails.
+#[[r2_buckets]]
+#binding = "MEDIA_BACKUP"
+#bucket_name = "parthub-media-backup"
+
 #[[kv_namespaces]]
 #binding = "KV"
 #id = "REPLACE_WITH_YOUR_KV_ID"

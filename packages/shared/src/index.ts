@@ -18,6 +18,7 @@ export * from "./lib/money";
 export * from "./lib/issues";
 export * from "./lib/shipments";
 export * from "./lib/images";
+export { lazyPage } from "./lib/lazy-page.js";
 
 // API
 export * from "./api/client";

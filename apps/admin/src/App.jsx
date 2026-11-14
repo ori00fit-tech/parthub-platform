@@ -1,29 +1,32 @@
+import { Suspense } from "react";
+import { lazyPage } from "@parthub/shared";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import AdminLayout from "./components/layout/AdminLayout";
+import AdminLayout, { PageFallback } from "./components/layout/AdminLayout";
 
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
-import SellersPage from "./pages/SellersPage";
-import SellerDetailsPage from "./pages/SellerDetailsPage";
-import PartsPage from "./pages/PartsPage";
-import PartDetailsPage from "./pages/PartDetailsPage";
-import CategoriesPage from "./pages/CategoriesPage";
-import VehiclesPage from "./pages/VehiclesPage";
-import OrdersPage from "./pages/OrdersPage";
-import IssuesPage from "./pages/IssuesPage";
-import PartNumbersPage from "./pages/PartNumbersPage";
-import ReviewsPage from "./pages/ReviewsPage";
-import AnalyticsPage from "./pages/AnalyticsPage";
-import NotFoundPage from "./pages/NotFoundPage";
-import RevenuePage from "./pages/RevenuePage";
-import InvoicesPage from "./pages/InvoicesPage";
-import CarriersPage from "./pages/CarriersPage";
-import WhatsAppPage from "./pages/WhatsAppPage";
-import WhatsAppTemplatesPage from "./pages/WhatsAppTemplatesPage";
-import AuditLogPage from "./pages/AuditLogPage";
-import InvestorPage from "./pages/InvestorPage";
-import AccountPage from "./pages/AccountPage";
+const SellersPage = lazyPage(() => import("./pages/SellersPage"));
+const SellerDetailsPage = lazyPage(() => import("./pages/SellerDetailsPage"));
+const PartsPage = lazyPage(() => import("./pages/PartsPage"));
+const PartDetailsPage = lazyPage(() => import("./pages/PartDetailsPage"));
+const CategoriesPage = lazyPage(() => import("./pages/CategoriesPage"));
+const VehiclesPage = lazyPage(() => import("./pages/VehiclesPage"));
+const OrdersPage = lazyPage(() => import("./pages/OrdersPage"));
+const IssuesPage = lazyPage(() => import("./pages/IssuesPage"));
+const PartNumbersPage = lazyPage(() => import("./pages/PartNumbersPage"));
+const ReviewsPage = lazyPage(() => import("./pages/ReviewsPage"));
+const AnalyticsPage = lazyPage(() => import("./pages/AnalyticsPage"));
+const NotFoundPage = lazyPage(() => import("./pages/NotFoundPage"));
+const RevenuePage = lazyPage(() => import("./pages/RevenuePage"));
+const InvoicesPage = lazyPage(() => import("./pages/InvoicesPage"));
+const CarriersPage = lazyPage(() => import("./pages/CarriersPage"));
+const WhatsAppPage = lazyPage(() => import("./pages/WhatsAppPage"));
+const WhatsAppTemplatesPage = lazyPage(() => import("./pages/WhatsAppTemplatesPage"));
+const AuditLogPage = lazyPage(() => import("./pages/AuditLogPage"));
+const InvestorPage = lazyPage(() => import("./pages/InvestorPage"));
+const AccountPage = lazyPage(() => import("./pages/AccountPage"));
+
 
 function PrivateRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -37,32 +40,34 @@ function PrivateRoute({ children }) {
 
 function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/auth" element={<AuthPage />} />
-      <Route element={<PrivateRoute><AdminLayout /></PrivateRoute>}>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/sellers" element={<SellersPage />} />
-        <Route path="/sellers/:id" element={<SellerDetailsPage />} />
-        <Route path="/parts" element={<PartsPage />} />
-        <Route path="/parts/:id" element={<PartDetailsPage />} />
-        <Route path="/categories" element={<CategoriesPage />} />
-        <Route path="/vehicles" element={<VehiclesPage />} />
-        <Route path="/orders" element={<OrdersPage />} />
-        <Route path="/reviews" element={<ReviewsPage />} />
-        <Route path="/issues" element={<IssuesPage />} />
-        <Route path="/part-numbers" element={<PartNumbersPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
-        <Route path="/revenue" element={<RevenuePage />} />
-        <Route path="/invoices" element={<InvoicesPage />} />
-        <Route path="/carriers" element={<CarriersPage />} />
-        <Route path="/whatsapp" element={<WhatsAppPage />} />
-        <Route path="/whatsapp/templates" element={<WhatsAppTemplatesPage />} />
-        <Route path="/audit-log" element={<AuditLogPage />} />
-        <Route path="/investor" element={<InvestorPage />} />
-        <Route path="/account" element={<AccountPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Route>
-    </Routes>
+    <Suspense fallback={<PageFallback />}>
+      <Routes>
+        <Route path="/auth" element={<AuthPage />} />
+        <Route element={<PrivateRoute><AdminLayout /></PrivateRoute>}>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/sellers" element={<SellersPage />} />
+          <Route path="/sellers/:id" element={<SellerDetailsPage />} />
+          <Route path="/parts" element={<PartsPage />} />
+          <Route path="/parts/:id" element={<PartDetailsPage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/vehicles" element={<VehiclesPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/reviews" element={<ReviewsPage />} />
+          <Route path="/issues" element={<IssuesPage />} />
+          <Route path="/part-numbers" element={<PartNumbersPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/revenue" element={<RevenuePage />} />
+          <Route path="/invoices" element={<InvoicesPage />} />
+          <Route path="/carriers" element={<CarriersPage />} />
+          <Route path="/whatsapp" element={<WhatsAppPage />} />
+          <Route path="/whatsapp/templates" element={<WhatsAppTemplatesPage />} />
+          <Route path="/audit-log" element={<AuditLogPage />} />
+          <Route path="/investor" element={<InvestorPage />} />
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
 

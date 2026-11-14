@@ -85,3 +85,45 @@ export async function readImageUpload(file: unknown): Promise<ImageCheck> {
   }
   return { ok: true, bytes, type };
 }
+
+// ── Photo backup ─────────────────────────────────────────────
+// Photos live only in R2. When a second bucket is bound as MEDIA_BACKUP,
+// each upload is written there too, reads fall back to it, and the admin
+// route POST /admin/media/backup-sync copies photos uploaded before.
+type MediaEnv = { MEDIA: R2Bucket; MEDIA_BACKUP?: R2Bucket };
+
+export async function storeMedia(env: MediaEnv, key: string, bytes: ArrayBuffer, options: R2PutOptions) {
+  await env.MEDIA.put(key, bytes, options);
+  if (!env.MEDIA_BACKUP) return;
+  try {
+    await env.MEDIA_BACKUP.put(key, bytes, options);
+  } catch (err) {
+    // The upload already succeeded; backup-sync catches the gap later.
+    console.error("media backup write failed", key, err);
+  }
+}
+
+export async function readMedia(env: MediaEnv, key: string) {
+  const object = await env.MEDIA.get(key);
+  if (object || !env.MEDIA_BACKUP) return object;
+  return env.MEDIA_BACKUP.get(key);
+}
+
+// Copies one page of MEDIA into MEDIA_BACKUP, skipping keys already there.
+export async function syncMediaBackup(env: MediaEnv, cursor?: string, limit = 100) {
+  if (!env.MEDIA_BACKUP) return null;
+  const page = await env.MEDIA.list(cursor ? { cursor, limit } : { limit });
+  let copied = 0;
+  let skipped = 0;
+  for (const item of page.objects) {
+    if (await env.MEDIA_BACKUP.head(item.key)) { skipped++; continue; }
+    const object = await env.MEDIA.get(item.key);
+    if (!object) continue;
+    const options: R2PutOptions = {};
+    if (object.httpMetadata) options.httpMetadata = object.httpMetadata;
+    if (object.customMetadata) options.customMetadata = object.customMetadata;
+    await env.MEDIA_BACKUP.put(item.key, await object.arrayBuffer(), options);
+    copied++;
+  }
+  return { copied, skipped, done: !page.truncated, cursor: page.truncated ? page.cursor : null };
+}

@@ -38,7 +38,7 @@ jobs:
       - name: Show tables before
         continue-on-error: true
         run: |
-          npx --yes wrangler@4 d1 execute "$DB_NAME" --remote \
+          npx --yes wrangler@4.152.0 d1 execute "$DB_NAME" --remote \
             --command "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
 
       # File imports keep working even when D1's daily read limit is hit,
@@ -157,6 +157,9 @@ jobs:
 
       - name: 0037 seller shipping choices (carriers, free delivery, delivery times)
         run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0037_seller_shipping.sql"
+
+      - name: "0038 account deletion keeps the store's moderation note"
+        run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0038_deletion_note.sql"
 
       # Fails the job (and the API deploy waiting for it) when the schema is
       # not what the API needs; only warns while D1's daily read limit is hit.
