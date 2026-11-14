@@ -27,6 +27,10 @@ const DB = {
   },
 };
 
+// R2's etag of a single-part upload is the MD5 of the bytes.
+import { createHash } from "node:crypto";
+const etag = (bytes) => createHash("md5").update(bytes).digest("hex");
+
 // In-memory R2 bucket (with list cursors and head) the backup code uses.
 function bucket({ failPut = false } = {}) {
   const store = new Map();
@@ -36,7 +40,7 @@ function bucket({ failPut = false } = {}) {
       if (failPut) throw new Error("backup down");
       store.set(key, { bytes: new Uint8Array(value), httpMetadata: opts?.httpMetadata || {}, customMetadata: opts?.customMetadata || {} });
     },
-    async head(key) { return store.has(key) ? { key } : null; },
+    async head(key) { const o = store.get(key); return o ? { key, size: o.bytes.length, etag: etag(o.bytes) } : null; },
     async get(key) {
       const o = store.get(key);
       if (!o) return null;
@@ -47,7 +51,7 @@ function bucket({ failPut = false } = {}) {
       const start = cursor ? Number(cursor) : 0;
       const slice = keys.slice(start, start + limit);
       const truncated = start + limit < keys.length;
-      return { objects: slice.map((key) => ({ key })), truncated, cursor: truncated ? String(start + limit) : undefined };
+      return { objects: slice.map((key) => ({ key, size: store.get(key).bytes.length, etag: etag(store.get(key).bytes) })), truncated, cursor: truncated ? String(start + limit) : undefined };
     },
   };
 }
@@ -118,20 +122,24 @@ async function post(env, path, auth, body) {
   const MEDIA = bucket(), MEDIA_BACKUP = bucket();
   const env = { DB, MEDIA, MEDIA_BACKUP, JWT_SECRET: "s" };
   for (let i = 0; i < 250; i++) await MEDIA.put(`uploads/parts/old-${String(i).padStart(3, "0")}.png`, PNG, { httpMetadata: { contentType: "image/png" } });
-  await MEDIA_BACKUP.put("uploads/parts/old-000.png", PNG, {});
+  await MEDIA_BACKUP.put("uploads/parts/old-000.png", PNG, { httpMetadata: { contentType: "image/png" } });
+  // A damaged copy (other bytes, same key) must be written again.
+  await MEDIA_BACKUP.put("uploads/parts/old-001.png", new Uint8Array([1, 2, 3]), {});
 
   const [sDenied] = await post(env, "/api/v1/admin/media/backup-sync", seller);
   check("seller cannot run the sync", sDenied === 403, sDenied);
 
   let cursor = null, copied = 0, skipped = 0, pages = 0, done = false;
-  while (!done && pages < 10) {
+  while (!done && pages < 20) {
     const [s, b] = await post(env, "/api/v1/admin/media/backup-sync", admin, cursor ? { cursor } : {});
     if (s !== 200) { check("sync page", false, [s, b]); break; }
     copied += b.data.copied; skipped += b.data.skipped; cursor = b.data.cursor; done = b.data.done; pages++;
   }
-  check("sync copies everything in pages", done && pages === 3 && copied === 249 && skipped === 1 && MEDIA_BACKUP.store.size === 250, { pages, copied, skipped });
+  check("sync copies everything in pages of 25", done && pages === 10 && copied === 249 && skipped === 1 && MEDIA_BACKUP.store.size === 250, { pages, copied, skipped });
+  check("damaged copy replaced", etag(MEDIA_BACKUP.store.get("uploads/parts/old-001.png").bytes) === etag(PNG));
+  check("every copy identical, with its type", [...MEDIA.store].every(([k, o]) => { const b = MEDIA_BACKUP.store.get(k); return b && etag(b.bytes) === etag(o.bytes) && b.httpMetadata.contentType === "image/png"; }));
   const [, again] = await post(env, "/api/v1/admin/media/backup-sync", admin);
-  check("second run copies nothing", again.data.copied === 0 && again.data.skipped === 100, again.data);
+  check("second run copies nothing", again.data.copied === 0 && again.data.skipped === 25, again.data);
 }
 
 console.log(JSON.stringify(results, null, 2));
