@@ -10,7 +10,7 @@ in `scripts/` that change production ask for `CONFIRM_PRODUCTION=parthub-db`.
 |---|---|---|
 | D1 database `parthub-db` | **Time Travel** (built into D1, always on): restore to any minute | 30 days (Workers Paid), 7 days (Free) |
 | D1 database | **Weekly export** (`.github/workflows/d1-backup.yml`): full SQL, **restored into a scratch database and checked** (tables, rows, integrity) before it is stored gzipped in R2 `parthub-media/backups/d1/` | As long as the files are kept (lifecycle rule below) |
-| R2 photos `parthub-media` | **Second bucket `parthub-media-backup`** once bound as `MEDIA_BACKUP` (below): every upload is written to both, a photo missing from the main bucket is served from the backup. The API never deletes a stored file. Until the binding exists: none. | Everything uploaded since the binding, plus what *Copy older photos* copied |
+| R2 photos `parthub-media` | **Second bucket `parthub-media-backup`**, bound as `MEDIA_BACKUP` (since 14 Nov 2026): every upload is written to both, a photo missing from the main bucket is served from the backup. The API never deletes a stored file. | Everything uploaded since the binding, plus what *Copy older photos* copied |
 | API Worker `parthub-api` | Cloudflare keeps the previous deployments: **rollback** in one command | Recent versions |
 | Sites (Pages) | Every deployment is kept: **rollback** in the dashboard | All deployments |
 | Code | Git (`main`, tags) | Everything |
