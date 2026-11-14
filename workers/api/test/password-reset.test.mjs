@@ -152,6 +152,22 @@ await call("POST", "/api/v1/admin/password-reset-link", admin, { identifier: "al
 [st] = await call("POST", "/api/v1/auth/reset-link", null, { token: first, new_password: "Riad-Fes-2026-v" });
 check("older_link_dead", st === 400);
 
+// 7. Admins: no WhatsApp code, no code accepted, no link (command line only).
+sql.exec("delete from auth_attempts");
+const adminCodes = codes().length;
+[st, r] = await call("POST", "/api/v1/auth/forgot", null, { identifier: "admin@x.ma" });
+await tick();
+const [, other] = await call("POST", "/api/v1/auth/forgot", null, { identifier: "nobody-else@x.ma" });
+check("admin_no_code_same_answer", st === 200 && codes().length === adminCodes && r.data.message === other.data.message, [codes().length, adminCodes]);
+[st, r] = await call("POST", "/api/v1/auth/forgot", null, { identifier: "0600000001" });
+await tick();
+check("admin_by_phone_no_code", codes().length === adminCodes);
+// Even with a reset row planted for the admin, /reset refuses.
+const { hashPassword: hp } = await import("./.build/auth.mjs");
+sql.prepare("insert into password_resets (user_id, channel, secret_hash, expires_at) values (1, 'whatsapp', 'x', datetime('now', '+10 minutes'))").run();
+[st, r] = await call("POST", "/api/v1/auth/reset", null, { identifier: "admin@x.ma", code: "123456", new_password: "Riad-Fes-2026-adm1n" });
+check("admin_reset_refused", st === 400, r);
+
 console.log(results);
 const fails = Object.values(results).filter((v) => v !== "PASS").length;
 console.log(fails ? `${fails} FAIL` : "ALL PASS");

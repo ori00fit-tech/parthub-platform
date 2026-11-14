@@ -80,7 +80,22 @@ good one › **Rollback to this deployment**.
 
 Then fix forward on a branch, merge, deploy as usual.
 
-## 4. Release steps
+## 4. An admin lost their password
+
+The WhatsApp code and PartHub's reset links refuse admin accounts (someone
+holding the admin's phone must not get the platform). From a computer with
+Cloudflare access:
+
+```bash
+bash scripts/admin-set-password.sh admin@parthub.autos   # asks for the new password twice
+```
+
+It asks to type `parthub-db`, hashes the password with the API's own code,
+sets it, and signs out every session of that admin. Another admin can also
+create a new admin account; with only one admin, keep this script's access
+(Cloudflare) safe.
+
+## 5. Release steps
 1. CI green on the pull request (typecheck, lint, API tests, 3 builds).
 2. Merge → Deploy API (runs the D1 migrations first, then the schema
    verify gate; a failed verify stops the deploy) → Deploy Pages.
@@ -89,7 +104,7 @@ Then fix forward on a branch, merge, deploy as usual.
 4. A release: bump the versions, CHANGELOG entry, tag `vX.Y.Z` on the
    merge commit.
 
-## 5. Incidents
+## 6. Incidents
 
 | Symptom | First look | Then |
 |---|---|---|
