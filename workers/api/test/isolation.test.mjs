@@ -137,6 +137,25 @@ check("owner_can_list_images", (await call("GET", "/api/v1/marketplace/parts/1/i
 check("buyer_can_read_own", (await call("GET", `/api/v1/commerce/orders/${ref}`, buyerA))[0] === 200);
 check("checked_enough", reqId && offerId && issueId, [reqId, offerId, issueId]);
 
+// Suspended, unfinished and deactivated accounts lose the seller part route.
+sql.exec(`
+  INSERT INTO users (id,name,email,password_hash,role,is_active) VALUES (4,'Seller C','c@x','x','seller',1),(5,'Seller D','d@x','x','seller',1),(6,'Seller E','e@x','x','seller',0);
+  INSERT INTO sellers (id,user_id,name,slug,status) VALUES (3,4,'Shop C','shop-c','suspended'),(4,5,'Shop D','shop-d','pending'),(5,6,'Shop E','shop-e','active');
+  INSERT INTO parts (id,seller_id,category_id,title,slug,price,quantity,status) VALUES (3,3,1,'C part','c-part',1000,1,'active'),(4,4,1,'D part','d-part',1000,1,'draft'),(5,5,1,'E part','e-part',1000,1,'active');
+  UPDATE parts SET status = 'pending' WHERE id = 2;
+`);
+const C = await tok({ user_id: 4, role: "seller", seller_id: 3 });
+const D = await tok({ user_id: 5, role: "seller", seller_id: 4 });
+const E = await tok({ user_id: 6, role: "seller", seller_id: 5 });
+check("suspended_seller_refused", (await call("GET", "/api/v1/marketplace/parts/3", C))[0] === 403);
+check("pending_seller_refused", (await call("GET", "/api/v1/marketplace/parts/4", D))[0] === 403);
+check("deactivated_user_refused", (await call("GET", "/api/v1/marketplace/parts/5", E))[0] === 401);
+// The public part page is a different route: published parts of active stores only.
+check("public_page_shows_published", (await call("GET", "/api/v1/catalog/parts/a-pads", null))[0] === 200);
+check("public_page_hides_pending", (await call("GET", "/api/v1/catalog/parts/b-disc", null))[0] === 404);
+check("public_page_hides_draft", (await call("GET", "/api/v1/catalog/parts/d-part", null))[0] === 404);
+check("public_page_hides_suspended_store", (await call("GET", "/api/v1/catalog/parts/c-part", null))[0] === 404);
+
 console.log(results);
 const fails = Object.values(results).filter((v) => v !== "PASS").length;
 console.log(fails ? `${fails} FAIL` : "ALL PASS");

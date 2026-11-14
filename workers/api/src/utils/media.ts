@@ -109,14 +109,20 @@ export async function readMedia(env: MediaEnv, key: string) {
   return env.MEDIA_BACKUP.get(key);
 }
 
-// Copies one page of MEDIA into MEDIA_BACKUP, skipping keys already there.
-export async function syncMediaBackup(env: MediaEnv, cursor?: string, limit = 100) {
+// Copies one page of MEDIA into MEDIA_BACKUP. A copy already there with the
+// same size and checksum (etag) is skipped; a missing or different one is
+// written again. 25 objects per call: at most 76 R2 operations and one
+// 5 MB photo in memory at a time, well inside a Worker request's limits.
+export const BACKUP_SYNC_PAGE = 25;
+
+export async function syncMediaBackup(env: MediaEnv, cursor?: string, limit = BACKUP_SYNC_PAGE) {
   if (!env.MEDIA_BACKUP) return null;
   const page = await env.MEDIA.list(cursor ? { cursor, limit } : { limit });
   let copied = 0;
   let skipped = 0;
   for (const item of page.objects) {
-    if (await env.MEDIA_BACKUP.head(item.key)) { skipped++; continue; }
+    const copy = await env.MEDIA_BACKUP.head(item.key);
+    if (copy && copy.size === item.size && (!item.etag || copy.etag === item.etag)) { skipped++; continue; }
     const object = await env.MEDIA.get(item.key);
     if (!object) continue;
     const options: R2PutOptions = {};
