@@ -218,6 +218,8 @@ export default function SellerDetailsPage() {
         </div>
 
         <aside className="space-y-6">
+          <VerificationCard seller={seller} onChanged={loadSeller} />
+
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-bold text-gray-900">{t("Moderation guidance")}</h2>
             <div className="mt-4 space-y-3 text-sm text-gray-600">
@@ -260,5 +262,65 @@ export default function SellerDetailsPage() {
       </div>
       {reasonDialog}
     </section>
+  );
+}
+
+// "Verified seller" badge (API: PUT /api/v1/admin/sellers/:id/verification).
+// Given only after a real check; the note stays inside PartHub.
+function VerificationCard({ seller, onChanged }) {
+  const t = useT();
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const verified = !!seller.verified_at;
+
+  async function save(next) {
+    try {
+      setBusy(true);
+      setMessage("");
+      await api.put(`/api/v1/admin/sellers/${seller.id}/verification`, next ? { verified: true, note } : { verified: false });
+      setNote("");
+      await onChanged();
+    } catch (err) {
+      setMessage(err?.message || t("Could not save"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+      <h2 className="text-xl font-bold text-gray-900">{t("Verified seller")}</h2>
+      {verified ? (
+        <div className="mt-3 space-y-3 text-sm text-gray-600">
+          <p className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-green-800">
+            {t("Verified on {date}", { date: seller.verified_at })}
+          </p>
+          {seller.verification_note ? <p><span className="font-semibold text-gray-900">{t("Checked:")}</span> {seller.verification_note}</p> : null}
+          <button type="button" disabled={busy} onClick={() => save(false)} className="inline-flex h-10 items-center rounded-2xl border border-gray-300 px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60">
+            {t("Remove the badge")}
+          </button>
+        </div>
+      ) : (
+        <div className="mt-3 space-y-3 text-sm text-gray-600">
+          <p>{t("Buyers see the badge on the store and its parts. Give it only after checking the trade register (RC / ICE) or visiting the shop.")}</p>
+          <label htmlFor="verification-note" className="block font-semibold text-gray-900">{t("What did you check?")}</label>
+          <textarea
+            id="verification-note"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={3}
+            maxLength={500}
+            placeholder={t("e.g. RC 123456 and ICE checked, shop visited on 14/11")}
+            className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm text-gray-900"
+          />
+          <button type="button" disabled={busy || seller.status !== "active" || note.trim().length < 5} onClick={() => save(true)} className="inline-flex h-10 items-center rounded-2xl bg-green-600 px-4 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60">
+            {t("Mark as verified")}
+          </button>
+          {seller.status !== "active" ? <p className="text-amber-700">{t("Approve the store first.")}</p> : null}
+        </div>
+      )}
+      {message ? <p className="mt-3 text-sm text-red-700">{message}</p> : null}
+    </div>
   );
 }

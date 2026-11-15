@@ -1198,4 +1198,6 @@ export default {
   "{local} day(s) in {city}, {national} elsewhere": "{local} يوم في {city}، و{national} في باقي المدن",
   "Delivered in about {n} day(s)": "التوصيل خلال {n} يوم تقريباً",
   "{n} failed attempt(s)": "{n} محاولة فاشلة",
+  "Verified seller": "بائع موثّق",
+  "PartHub checked this store: trade register or a visit to the shop.": "تحقق PartHub من هذا المتجر: السجل التجاري أو زيارة المحل.",
 };

@@ -60,7 +60,7 @@ const schemas: Record<string, Schema> = {
       price: { ...int, description: "Centimes (MAD × 100)." }, compare_price: nul(int),
       condition: { enum: ["new", "used", "refurbished"] }, quantity: int, status: str,
       brand_name: nul(str), category_name: nul(str), category_slug: nul(str),
-      seller_name: str, seller_slug: str, seller_location: nul(str), image_url: nul(str), compatibility_count: int,
+      seller_name: str, seller_slug: str, seller_location: nul(str), seller_verified: { ...flag, description: "1 when PartHub checked the store (trade register, visit)." }, image_url: nul(str), compatibility_count: int,
     },
     ["id", "slug", "title", "price", "condition", "quantity", "seller_name"]
   ),

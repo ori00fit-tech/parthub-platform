@@ -474,6 +474,11 @@ export default function PartDetailsPage() {
                   ) : (
                     part.seller_name || t("Unknown seller")
                   )}
+                  {Number(part.seller_verified) === 1 ? (
+                    <span className="ms-2 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800" title={t("PartHub checked this store: trade register or a visit to the shop.")}>
+                      {t("Verified seller")}
+                    </span>
+                  ) : null}
                 </p>
               </div>
             </div>
@@ -619,6 +624,11 @@ export default function PartDetailsPage() {
                 ) : (
                   part.seller_name || t("Unknown")
                 )}
+                {Number(part.seller_verified) === 1 ? (
+                  <span className="ms-2 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800" title={t("PartHub checked this store: trade register or a visit to the shop.")}>
+                    {t("Verified seller")}
+                  </span>
+                ) : null}
               </p>
               <p className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold text-ink">{t("Seller rating:")}</span>

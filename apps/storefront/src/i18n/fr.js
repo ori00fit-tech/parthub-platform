@@ -1196,4 +1196,6 @@ export default {
   "{local} day(s) in {city}, {national} elsewhere": "{local} jour(s) à {city}, {national} ailleurs",
   "Delivered in about {n} day(s)": "Livré en {n} jour(s) environ",
   "{n} failed attempt(s)": "{n} tentative(s) échouée(s)",
+  "Verified seller": "Vendeur vérifié",
+  "PartHub checked this store: trade register or a visit to the shop.": "PartHub a vérifié cette boutique : registre de commerce ou visite du magasin.",
 };
