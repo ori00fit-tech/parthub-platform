@@ -1200,4 +1200,9 @@ export default {
   "{n} failed attempt(s)": "{n} محاولة فاشلة",
   "Verified seller": "بائع موثّق",
   "PartHub checked this store: trade register or a visit to the shop.": "تحقق PartHub من هذا المتجر: السجل التجاري أو زيارة المحل.",
+  "Choose my vehicle": "اختيار سيارتي",
+  "My cart": "سلتي",
+  "My orders": "طلباتي",
+  "Forgot password": "نسيت كلمة السر",
+  "Help & FAQ": "المساعدة والأسئلة الشائعة",
 };

@@ -1198,4 +1198,9 @@ export default {
   "{n} failed attempt(s)": "{n} tentative(s) échouée(s)",
   "Verified seller": "Vendeur vérifié",
   "PartHub checked this store: trade register or a visit to the shop.": "PartHub a vérifié cette boutique : registre de commerce ou visite du magasin.",
+  "Choose my vehicle": "Choisir mon véhicule",
+  "My cart": "Mon panier",
+  "My orders": "Mes commandes",
+  "Forgot password": "Mot de passe oublié",
+  "Help & FAQ": "Aide et FAQ",
 };

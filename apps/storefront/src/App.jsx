@@ -22,6 +22,7 @@ const RequestPartPage = lazyPage(() => import("./pages/RequestPartPage"));
 const MyRequestsPage = lazyPage(() => import("./pages/MyRequestsPage"));
 const RequestDetailsPage = lazyPage(() => import("./pages/RequestDetailsPage"));
 const LegalPage = lazyPage(() => import("./pages/LegalPage"));
+const HelpPage = lazyPage(() => import("./pages/HelpPage"));
 const SellPage = lazyPage(() => import("./pages/SellPage"));
 const LandingPage = lazyPage(() => import("./pages/LandingPage"));
 const NotFoundPage = lazyPage(() => import("./pages/NotFoundPage"));
@@ -40,6 +41,7 @@ export default function App() {
           <Route path="/voiture/:make" element={<LandingPage />} />
           <Route path="/voiture/:make/:model" element={<LandingPage />} />
           <Route path="/voiture/:make/:model/:category" element={<LandingPage />} />
+          <Route path="/help" element={<HelpPage />} />
           <Route path="/legal" element={<LegalPage />} />
           <Route path="/legal/:doc" element={<LegalPage />} />
 
