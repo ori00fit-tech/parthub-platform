@@ -61,6 +61,7 @@ const schemas: Record<string, Schema> = {
       condition: { enum: ["new", "used", "refurbished"] }, quantity: int, status: str,
       brand_name: nul(str), category_name: nul(str), category_slug: nul(str),
       seller_name: str, seller_slug: str, seller_location: nul(str), seller_verified: { ...flag, description: "1 when PartHub checked the store (trade register, visit)." }, image_url: nul(str), compatibility_count: int,
+      has_pro_price: { ...flag, description: "1 when the seller set a lower price for approved pro buyers." }, pro_price: { ...int, description: "Centimes. Only for an approved pro buyer (signed in); they pay it at checkout." },
     },
     ["id", "slug", "title", "price", "condition", "quantity", "seller_name"]
   ),
@@ -247,6 +248,8 @@ const P: Record<string, Partial<Record<"get" | "post" | "put" | "patch" | "delet
   // Part requests
   "/api/v1/requests": { post: { tag: "Requests", summary: "Ask sellers for a part", auth: true, status: 201, body: anyObj, data: anyObj } },
   "/api/v1/requests/images": { post: { tag: "Requests", summary: "Upload a photo for a request", auth: true, body: "multipart", data: anyObj } },
+  "/api/v1/pro/me": { get: { tag: "Account", summary: "My professional account (garage, mechanic): status null | pending | approved | rejected", auth: true, data: anyObj } },
+  "/api/v1/pro/request": { post: { tag: "Account", summary: "Ask for a professional account (buyers). PartHub checks it; approved pros see and pay pro prices.", auth: true, body: obj({ business_name: str, city: str, ice: { ...str, description: "15 digits, optional" } }, ["business_name", "city"]), data: anyObj } },
   "/api/v1/requests/mine": { get: { tag: "Requests", summary: "My requests", auth: true, data: arr(anyObj) } },
   "/api/v1/requests/mine/:id": { get: { tag: "Requests", summary: "One request and its offers", auth: true, data: anyObj } },
   "/api/v1/requests/mine/:id/accept/:offerId": { post: { tag: "Requests", summary: "Accept an offer", auth: true, data: anyObj } },
@@ -308,6 +311,7 @@ const P: Record<string, Partial<Record<"get" | "post" | "put" | "patch" | "delet
     put: { tag: "Selling", summary: "Set part numbers", auth: true, body: anyObj, data: anyObj },
   },
   "/api/v1/marketplace/me/parts/:id/fulfillment": { put: { tag: "Selling", summary: "Delivery available for this part", auth: true, body: anyObj, data: anyObj } },
+  "/api/v1/marketplace/me/parts/:id/pro-price": { put: { tag: "Selling", summary: "Price for approved pro buyers (garages): below the price; null removes it", auth: true, body: obj({ pro_price: nul(int) }, ["pro_price"]), data: anyObj } },
   "/api/v1/marketplace/parts": { post: { tag: "Selling", summary: "Create a part (goes to review)", auth: true, status: 201, body: anyObj, data: anyObj } },
   "/api/v1/marketplace/parts/:id": {
     get: { tag: "Selling", summary: "A part (seller view)", auth: true, data: anyObj },

@@ -1091,4 +1091,10 @@ export default {
   "If an account matches, a 6-digit code was sent on WhatsApp to its number. It works for 15 minutes.": "إذا كان هناك حساب مطابق، فقد أُرسل رمز من 6 أرقام عبر واتساب إلى رقمه. صالح لمدة 15 دقيقة.",
   "Not a seller account": "هذا ليس حساب بائع",
   "Sign-in failed": "تعذّر الدخول",
+  "Pro price (garages, mechanics)": "سعر المحترفين (الكراجات، الميكانيكيون)",
+  "Optional. Lower than your price ({price}). Only professional buyers approved by PartHub see and pay it.": "اختياري. أقل من سعرك ({price}). لا يراه ولا يدفعه إلا المشترون المحترفون الذين وافق عليهم PartHub.",
+  "Pro price (MAD)": "سعر المحترفين (درهم)",
+  "Save pro price": "حفظ سعر المحترفين",
+  "Saved": "تم الحفظ",
+  "Enter an amount, e.g. 85 or 85.50": "أدخل مبلغاً، مثل 85 أو 85.50",
 };

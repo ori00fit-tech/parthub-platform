@@ -1040,6 +1040,26 @@ marketplaceRoutes.put("/me/parts/:id/fulfillment", authMiddleware, async (c) => 
   return c.json(success({ id: partId, delivery_available: deliverable }));
 });
 
+// PUT /api/v1/marketplace/me/parts/:id/pro-price { pro_price: centimes | null }
+// The price for approved pro buyers (utils/pro.ts): below the public price;
+// null removes it.
+marketplaceRoutes.put("/me/parts/:id/pro-price", authMiddleware, async (c) => {
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const partId = Number(c.req.param("id"));
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const part = await c.env.DB.prepare("select id, price from parts where id = ?1 and seller_id = ?2").bind(partId, sellerId).first<{ id: number; price: number }>();
+  if (!part) return c.json(failure("PART_NOT_FOUND", "Part not found for this seller"), 404);
+  let proPrice: number | null = null;
+  if (body.pro_price !== null && body.pro_price !== undefined && body.pro_price !== "") {
+    proPrice = Number(body.pro_price);
+    if (!Number.isInteger(proPrice) || proPrice <= 0) return c.json(failure("INVALID_PRO_PRICE", "The pro price must be a whole number of centimes, more than 0"), 400);
+    if (proPrice >= Number(part.price)) return c.json(failure("PRO_PRICE_TOO_HIGH", "The pro price must be lower than the price"), 400);
+  }
+  await c.env.DB.prepare("update parts set pro_price = ?1, updated_at = datetime('now') where id = ?2 and seller_id = ?3").bind(proPrice, partId, sellerId).run();
+  return c.json(success({ id: partId, pro_price: proPrice }));
+});
+
 // GET /api/v1/marketplace/me/statement?month=YYYY-MM — the seller's sales
 // delivered that month and the commission on each (utils/commissions.ts):
 // "pending" while the returns window is open, then accrued or waived; and
@@ -1260,6 +1280,7 @@ marketplaceRoutes.get("/me/parts/:id", authMiddleware, async (c) => {
         p.sku,
         p.price,
         p.compare_price,
+        p.pro_price,
         p.condition,
         p.quantity,
         p.weight_kg,

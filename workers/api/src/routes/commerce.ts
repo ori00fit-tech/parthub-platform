@@ -12,6 +12,7 @@ import { notifySellersOfNewOrder } from "../utils/request-notifications";
 import { waClaimEvent, waOrderReceived } from "../utils/wa-events";
 import { ORDER_COLUMNS, cartHash, checkNewOrder, countOrder, existingAfterConflict, readIdempotencyKey } from "../utils/order-guard";
 import { ISSUE_REASONS, type IssueRow, canEscalate, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, reportWindow, updateIssue } from "../utils/issues";
+import { isApprovedPro, priceFor, viewerIsPro } from "../utils/pro";
 
 const MAX_REVIEW_LENGTH = 1000;
 
@@ -57,17 +58,19 @@ commerceRoutes.get("/fulfillment-options", async (c) => {
   }
   const ids = [...qty.keys()].slice(0, MAX_ORDER_LINES);
   if (!ids.length) return ok(c, []);
-  const parts = await dbAll<{ id: number; seller_id: number; delivery_available: number; price: number }>(
+  const parts = await dbAll<{ id: number; seller_id: number; delivery_available: number; price: number; pro_price: number | null }>(
     c.env.DB,
-    `SELECT id, seller_id, delivery_available, price FROM parts WHERE id IN (${ids.map(() => "?").join(",")})`,
+    `SELECT id, seller_id, delivery_available, price, pro_price FROM parts WHERE id IN (${ids.map(() => "?").join(",")})`,
     ids
   );
+  // An approved pro's subtotal counts the pro prices (free delivery threshold).
+  const pro = await viewerIsPro(c.env, c.req.header("Authorization"));
   const sellers = await loadSellerFulfillment(c.env.DB, parts.map((p) => p.seller_id));
   const city = String(c.req.query("city") || "").slice(0, 80);
   const flat = shippingFee(c.env);
   const groups = [...sellers.values()].map((s) => {
     const mine = parts.filter((p) => p.seller_id === s.id);
-    const subtotal = mine.reduce((sum, p) => sum + Number(p.price) * (qty.get(p.id) || 1), 0);
+    const subtotal = mine.reduce((sum, p) => sum + priceFor(p, pro) * (qty.get(p.id) || 1), 0);
     return {
       delivery_fee: deliveryFee(s, city, flat, subtotal),
       free_delivery_over: s.free_delivery_over ?? null,
@@ -143,12 +146,15 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
     price: number; quantity: number; subtotal: number; delivery_available: number;
   }> = [];
 
+  // An approved pro pays the pro price where the seller set one (utils/pro.ts);
+  // the line records the price actually charged.
+  const pro = await isApprovedPro(c.env.DB, buyerId);
   for (const [partId, quantity] of requested) {
     const part = await dbFirst<{
-      id: number; seller_id: number; title: string; price: number; quantity: number; status: string; delivery_available: number;
+      id: number; seller_id: number; title: string; price: number; pro_price: number | null; quantity: number; status: string; delivery_available: number;
     }>(
       c.env.DB,
-      `SELECT p.id, p.seller_id, p.title, p.price, p.quantity, p.delivery_available,
+      `SELECT p.id, p.seller_id, p.title, p.price, p.pro_price, p.quantity, p.delivery_available,
               CASE WHEN s.status = 'active' THEN p.status ELSE 'store_inactive' END AS status
        FROM parts p JOIN sellers s ON s.id = p.seller_id WHERE p.id = ?`,
       [partId]
@@ -157,11 +163,12 @@ commerceRoutes.post("/orders", authMiddleware, async (c) => {
     if (!part || part.status !== "active") return fail(c, `Part ${partId} not available`);
     if (part.quantity < quantity) return fail(c, `Insufficient stock for: ${part.title}`);
 
-    const lineTotal = part.price * quantity;
+    const unitPrice = priceFor(part, pro);
+    const lineTotal = unitPrice * quantity;
     subtotal += lineTotal;
     resolvedItems.push({
       part_id: part.id, seller_id: part.seller_id,
-      title: part.title, price: part.price,
+      title: part.title, price: unitPrice,
       quantity, subtotal: lineTotal, delivery_available: part.delivery_available,
     });
   }

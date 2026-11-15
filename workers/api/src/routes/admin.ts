@@ -88,13 +88,14 @@ adminRoutes.get("/dashboard", async (c) => {
 
 // GET /api/v1/admin/pending-counts — what is waiting for moderation (sidebar badges).
 adminRoutes.get("/pending-counts", async (c) => {
-  const [sellers, parts, reviews, issues, catalog, numbers] = await Promise.all([
+  const [sellers, parts, reviews, issues, catalog, numbers, pro] = await Promise.all([
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM sellers WHERE status = 'pending'"),
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM parts WHERE status = 'pending'"),
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM reviews WHERE status = 'pending'"),
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM order_issues WHERE status = 'escalated'"),
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM catalog_suggestions WHERE status = 'pending'"),
     dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM part_number_links WHERE verification = 'unverified'"),
+    dbFirst<{ n: number }>(c.env.DB, "SELECT COUNT(*) as n FROM pro_accounts WHERE status = 'pending'"),
   ]);
   return ok(c, {
     sellers: sellers?.n ?? 0,
@@ -103,6 +104,7 @@ adminRoutes.get("/pending-counts", async (c) => {
     issues: issues?.n ?? 0,
     catalog: catalog?.n ?? 0,
     numbers: numbers?.n ?? 0,
+    pro: pro?.n ?? 0,
   });
 });
 
@@ -298,6 +300,42 @@ adminRoutes.put("/sellers/:id/verification", async (c) => {
     c.env.DB, "SELECT verified_at, verification_note FROM sellers WHERE id = ?", [id]
   );
   return ok(c, { verified: !!row?.verified_at, verified_at: row?.verified_at ?? null, verification_note: row?.verification_note ?? null });
+});
+
+// GET /api/v1/admin/pro-accounts?status=pending|approved|rejected|all
+// Professional accounts (utils/pro.ts): garages and mechanics who asked.
+adminRoutes.get("/pro-accounts", async (c) => {
+  const status = c.req.query("status") || "pending";
+  const where = ["pending", "approved", "rejected"].includes(status) ? "WHERE p.status = ?" : "";
+  const rows = await dbAll(
+    c.env.DB,
+    `SELECT p.user_id, p.business_name, p.city, p.ice, p.status, p.note, p.requested_at, p.reviewed_at,
+            u.name, u.email, u.phone,
+            (SELECT COUNT(*) FROM orders o WHERE o.buyer_id = p.user_id) AS orders_count
+     FROM pro_accounts p JOIN users u ON u.id = p.user_id ${where}
+     ORDER BY p.requested_at DESC, p.user_id DESC LIMIT 200`,
+    where ? [status] : []
+  );
+  return ok(c, rows);
+});
+
+// PUT /api/v1/admin/pro-accounts/:userId { approve: boolean, note? }
+// A refusal needs the reason (the buyer sees it and can ask again).
+adminRoutes.put("/pro-accounts/:userId", async (c) => {
+  const userId = Number(c.req.param("userId"));
+  if (!Number.isInteger(userId) || userId <= 0) return fail(c, "Invalid user id");
+  const body = await c.req.json<{ approve?: unknown; note?: unknown }>().catch(() => ({}) as { approve?: unknown; note?: unknown });
+  if (typeof body.approve !== "boolean") return fail(c, "approve must be true or false");
+  const note = typeof body.note === "string" ? body.note.trim().slice(0, 500) : "";
+  if (!body.approve && note.length < 3) return fail(c, "Give the reason (the buyer sees it)");
+  const row = await dbFirst<{ status: string }>(c.env.DB, "SELECT status FROM pro_accounts WHERE user_id = ?", [userId]);
+  if (!row) return fail(c, "No pro request for this account", 404);
+  await dbRun(
+    c.env.DB,
+    "UPDATE pro_accounts SET status = ?, note = ?, reviewed_at = datetime('now'), reviewed_by = ? WHERE user_id = ?",
+    [body.approve ? "approved" : "rejected", body.approve ? null : note, c.get("user_id"), userId]
+  );
+  return ok(c, { user_id: userId, status: body.approve ? "approved" : "rejected" });
 });
 
 // POST /api/v1/admin/sellers/bulk-status  { ids: number[], status, reason? }

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { Env, HonoVariables } from "../types";
 import { normalizeNumber } from "../utils/part-numbers";
 import { internalError } from "../utils/response";
+import { showProPrice, viewerIsPro } from "../utils/pro";
 
 export const searchRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -294,6 +295,7 @@ searchRoutes.get("/", async (c) => {
         p.sku,
         p.price,
         p.compare_price,
+        p.pro_price,
         p.condition,
         p.quantity,
         p.status,
@@ -376,8 +378,9 @@ searchRoutes.get("/", async (c) => {
       .run()
       .catch(() => null);
 
+    const pro = await viewerIsPro(c.env, c.req.header("Authorization"));
     return c.json(
-      ok(result.results || [], {
+      ok((result.results || []).map((row: Record<string, unknown>) => showProPrice(row, pro)), {
         pagination: {
           page,
           limit,

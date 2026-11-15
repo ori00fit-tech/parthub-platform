@@ -6,6 +6,7 @@ import { useCart } from "../features/cart/CartContext";
 import { useSelectedVehicle } from "../features/vehicles/SelectedVehicleContext";
 import { useT } from "../i18n";
 import StockAlertsList from "../features/stock/StockAlertsList";
+import ProAccountCard from "../features/pro/ProAccountCard";
 
 export default function AccountPage() {
   const t = useT();
@@ -215,6 +216,7 @@ export default function AccountPage() {
 
         </div>
       </div>
+      {user?.role === "buyer" || !user?.role ? <ProAccountCard /> : null}
       <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
         <h2 className="text-lg font-bold text-ink">{t("Password")}</h2>
         <div className="mt-3">

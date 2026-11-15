@@ -333,7 +333,7 @@ export default function PartsPage() {
         setError("");
 
         const query = buildApiQuery(filters, selectedVehicle);
-        const response = await apiGet(`/api/v1/search?${query}`);
+        const response = await apiGet(`/api/v1/search?${query}`, undefined, { auth: true });
 
         if (!active) return;
 
@@ -1072,7 +1072,15 @@ export default function PartsPage() {
                             {part.compare_price ? (
                               <s className="mb-1 block text-xs text-faint">{formatPrice(part.compare_price)}</s>
                             ) : null}
-                            <span className="text-[22px] font-semibold leading-none text-ink">{formatPrice(part.price)}</span>
+                            {part.pro_price ? (
+                              <>
+                                <s className="mb-1 block text-xs text-faint">{formatPrice(part.price)}</s>
+                                <span className="text-[22px] font-semibold leading-none text-emerald-800" title={t("Pro price")}>{formatPrice(part.pro_price)}</span>
+                                <span className="mt-1 block font-sans text-[11px] font-semibold text-emerald-800">{t("Pro price")}</span>
+                              </>
+                            ) : (
+                              <span className="text-[22px] font-semibold leading-none text-ink">{formatPrice(part.price)}</span>
+                            )}
                           </div>
 
                           <div className="relative z-10 flex items-center gap-1.5">
@@ -1103,7 +1111,7 @@ export default function PartsPage() {
                                   title: part.title,
                                   thumbnail: part.image_url || null,
                                   seller_name: part.seller_name || "",
-                                  price: part.price,
+                                  price: part.pro_price ?? part.price,
                                 })
                               }
                               className="btn-cta h-[42px] rounded-xl px-3.5 text-sm"

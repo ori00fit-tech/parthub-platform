@@ -72,7 +72,7 @@ export default function HomePage() {
   // Live catalog: newest/featured active parts (not logged as search demand).
   useEffect(() => {
     let active = true;
-    apiGet("/api/v1/catalog/parts")
+    apiGet("/api/v1/catalog/parts", undefined, { auth: true })
       .then((res) => active && setCatalog({ loading: false, parts: Array.isArray(res?.data) ? res.data : [] }))
       .catch(() => active && setCatalog({ loading: false, parts: [] }));
     return () => {

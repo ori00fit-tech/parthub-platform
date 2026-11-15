@@ -18,11 +18,12 @@ export function PageFallback() {
 }
 
 // Nav items whose badge shows how many items wait for moderation.
-const PENDING_KEY = { "/sellers": "sellers", "/parts": "parts", "/reviews": "reviews", "/issues": "issues", "/vehicles": "catalog", "/part-numbers": "numbers" };
+const PENDING_KEY = { "/sellers": "sellers", "/parts": "parts", "/reviews": "reviews", "/issues": "issues", "/vehicles": "catalog", "/part-numbers": "numbers", "/pro-accounts": "pro" };
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: "dashboard" },
   { to: "/sellers", label: "Sellers", icon: "sellers" },
+  { to: "/pro-accounts", label: "Pro accounts", icon: "garage" },
   { to: "/parts", label: "Parts", icon: "parts" },
   { to: "/categories", label: "Categories", icon: "categories" },
   { to: "/vehicles", label: "Vehicles", icon: "vehicles" },

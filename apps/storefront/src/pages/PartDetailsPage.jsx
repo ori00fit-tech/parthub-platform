@@ -233,7 +233,7 @@ export default function PartDetailsPage() {
         setError("");
         setAdded(false);
 
-        const response = await apiGet(`/api/v1/catalog/parts/${slug}`);
+        const response = await apiGet(`/api/v1/catalog/parts/${slug}`, undefined, { auth: true });
         if (!active) return;
 
         const nextPart = response?.data || null;
@@ -310,7 +310,8 @@ export default function PartDetailsPage() {
           thumbnail: activeImage?.url || part.image_url || null,
           image_url: activeImage?.url || part.image_url || null,
           seller_name: part.seller_name || "",
-          price: part.price,
+          // An approved pro pays the pro price (the API checks it again).
+          price: part.pro_price ?? part.price,
         },
         quantity
       );
@@ -450,9 +451,24 @@ export default function PartDetailsPage() {
 
             <div className="mt-5 flex items-end justify-between gap-4">
               <div>
-                <p className="text-3xl font-bold text-ink">
-                  {formatPrice(part.price)}
-                </p>
+                {part.pro_price ? (
+                  <>
+                    <p className="text-3xl font-bold text-emerald-800">
+                      {formatPrice(part.pro_price)}
+                      <span className="ms-2 rounded-full bg-emerald-50 px-2 py-0.5 align-middle text-xs font-semibold text-emerald-800">{t("Pro price")}</span>
+                    </p>
+                    <p className="text-sm text-muted">{t("Public price:")} {formatPrice(part.price)}</p>
+                  </>
+                ) : (
+                  <p className="text-3xl font-bold text-ink">
+                    {formatPrice(part.price)}
+                  </p>
+                )}
+                {!part.pro_price && Number(part.has_pro_price) === 1 ? (
+                  <Link to="/account#pro" className="mt-1 inline-block text-xs font-semibold text-emerald-800 hover:underline">
+                    {t("Garage or mechanic? A pro price is available")}
+                  </Link>
+                ) : null}
                 {part.compare_price ? (
                   <p className="text-sm text-faint line-through">
                     {formatPrice(part.compare_price)}
