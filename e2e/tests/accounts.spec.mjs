@@ -9,7 +9,7 @@ test("a wrong password is refused with a clear message", async ({ page }) => {
   await page.goto(`${URLS.store}/auth`);
   await page.getByPlaceholder("you@example.com").fill(ACCOUNTS.seller.email);
   await page.locator('input[type="password"]').fill("not-the-password-1");
-  await page.getByRole("button", { name: "Sign in" }).last().click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).last().click();
   await expect(page.getByText(/Invalid credentials|wrong/i).first()).toBeVisible();
 });
 
@@ -49,6 +49,6 @@ test("a buyer cannot use the seller portal", async ({ page, request }) => {
   await page.goto(`${URLS.seller}/auth`);
   await page.getByPlaceholder(/@/).fill(email);
   await page.locator('input[type="password"]').fill("Riad-Fes-2026-two");
-  await page.getByRole("button", { name: /^Sign in/ }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/auth/);
 });

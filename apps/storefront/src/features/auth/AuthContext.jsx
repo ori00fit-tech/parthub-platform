@@ -89,6 +89,18 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // A session from another way of signing in (WhatsApp code: the same data
+  // as /auth/login).
+  function acceptSession(data) {
+    const nextToken = data?.access_token || data?.token || "";
+    const nextUser = data?.user || null;
+    if (!nextToken || !nextUser) throw new Error("Sign-in failed");
+    persistSession(nextToken, nextUser);
+    setToken(nextToken);
+    setUser(nextUser);
+    noteDeletionCancelled(data);
+  }
+
   async function register(form) {
     setLoading(true);
     try {
@@ -137,6 +149,7 @@ export function AuthProvider({ children }) {
       loading,
       isAuthenticated: Boolean(token),
       login,
+      acceptSession,
       register,
       logout,
       refreshMe,
