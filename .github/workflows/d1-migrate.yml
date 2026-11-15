@@ -164,6 +164,9 @@ jobs:
       - name: "0039 verified sellers"
         run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0039_seller_verification.sql"
 
+      - name: "0040 professional accounts and pro prices"
+        run: ../../.github/scripts/d1-apply-add-columns.sh "$MIGRATIONS/0040_pro_accounts.sql"
+
       # Fails the job (and the API deploy waiting for it) when the schema is
       # not what the API needs; only warns while D1's daily read limit is hit.
       - name: Verify

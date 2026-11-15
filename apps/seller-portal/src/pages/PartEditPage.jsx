@@ -7,6 +7,7 @@ import PartPhotos from "../components/parts/PartPhotos";
 import CompatibilityEditor from "../components/parts/CompatibilityEditor";
 import { PartNumbersEditor } from "../components/parts/PartNumbersFields";
 import PickupOnlyToggle from "../components/parts/PickupOnlyToggle";
+import ProPriceField from "../components/parts/ProPriceField";
 
 function slugify(value) {
   return String(value || "")
@@ -894,6 +895,7 @@ export default function PartEditPage() {
               brandName={brands.find((b) => String(b.id) === String(form.brand_id))?.name || ""}
             />
             <CompatibilityEditor partId={id} />
+            <ProPriceField partId={id} />
             <PickupOnlyToggle partId={id} />
           </div>
         </div>

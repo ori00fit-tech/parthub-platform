@@ -3,6 +3,7 @@ import type { Env, HonoVariables } from "../types";
 import { partRating, partReviews, sellerRating } from "../utils/reviews";
 import { listingNumbers, otherOffers } from "../utils/part-numbers";
 import { landingData, landingIndex, resolveLanding } from "../utils/landing";
+import { showProPrice, viewerIsPro } from "../utils/pro";
 
 export const catalogRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -85,6 +86,7 @@ catalogRoutes.get("/parts", async (c) => {
       p.sku,
       p.price,
       p.compare_price,
+      p.pro_price,
       p.condition,
       p.quantity,
       p.status,
@@ -123,9 +125,11 @@ catalogRoutes.get("/parts", async (c) => {
 
   const stmt = c.env.DB.prepare(sql);
   const result = bindings.length ? await stmt.bind(...bindings).all() : await stmt.all();
+  // The pro price only for an approved pro (utils/pro.ts).
+  const pro = await viewerIsPro(c.env, c.req.header("Authorization"));
 
   return c.json(
-    ok(result.results || [], {
+    ok((result.results || []).map((row) => showProPrice(row as Record<string, unknown>, pro)), {
       currency: "MAD",
       locale: "fr-MA",
       market: "Morocco",
@@ -158,6 +162,7 @@ catalogRoutes.get("/parts/:slug", async (c) => {
       p.sku,
       p.price,
       p.compare_price,
+      p.pro_price,
       p.condition,
       p.quantity,
       p.status,
@@ -257,15 +262,16 @@ catalogRoutes.get("/parts/:slug", async (c) => {
     otherOffers(c.env.DB, Number(part.id)),
   ]);
 
+  const pro = await viewerIsPro(c.env, c.req.header("Authorization"));
   return c.json(
     ok(
       {
-        ...part,
+        ...showProPrice(part as Record<string, unknown>, pro),
         images: images.results ?? [],
         media: images.results ?? [],
         specs: specs.results ?? [],
         compatibility: compatibilityResults,
-        related_parts: relatedParts.results ?? [],
+        related_parts: (relatedParts.results ?? []).map((row) => showProPrice(row as Record<string, unknown>, pro)),
         compatibility_count: compatibilityResults.length,
         rating,
         reviews,

@@ -1091,4 +1091,10 @@ export default {
   "If an account matches, a 6-digit code was sent on WhatsApp to its number. It works for 15 minutes.": "Si un compte correspond, un code à 6 chiffres a été envoyé sur WhatsApp à son numéro. Il est valable 15 minutes.",
   "Not a seller account": "Ce n’est pas un compte vendeur",
   "Sign-in failed": "Connexion impossible",
+  "Pro price (garages, mechanics)": "Prix pro (garages, mécaniciens)",
+  "Optional. Lower than your price ({price}). Only professional buyers approved by PartHub see and pay it.": "Facultatif. Inférieur à votre prix ({price}). Seuls les acheteurs professionnels validés par PartHub le voient et le paient.",
+  "Pro price (MAD)": "Prix pro (MAD)",
+  "Save pro price": "Enregistrer le prix pro",
+  "Saved": "Enregistré",
+  "Enter an amount, e.g. 85 or 85.50": "Entrez un montant, ex. 85 ou 85,50",
 };

@@ -41,7 +41,7 @@ export default function PartsForYourVehicle() {
     if (!selectedVehicle || !make) return undefined;
     let active = true;
     setLoading(true);
-    apiGet(`/api/v1/search?${query}&fit=only`)
+    apiGet(`/api/v1/search?${query}&fit=only`, undefined, { auth: true })
       .then((res) => {
         if (!active) return;
         const list = Array.isArray(res?.data) ? res.data : [];

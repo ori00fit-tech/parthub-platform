@@ -119,6 +119,7 @@ CREATE TABLE IF NOT EXISTS parts (
   sku            TEXT,
   price          INTEGER NOT NULL,            -- cents
   compare_price  INTEGER,                     -- cents
+  pro_price      INTEGER,                     -- centimes, for approved pro buyers (migrations/0040)
   condition      TEXT NOT NULL DEFAULT 'new' CHECK (condition IN ('new','used','refurbished')),
   quantity       INTEGER NOT NULL DEFAULT 1,
   weight_kg      REAL,
@@ -818,3 +819,17 @@ CREATE TABLE IF NOT EXISTS seller_carriers (
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (seller_id, carrier)
 );
+
+-- ── Professional accounts (migrations/0040) ───────────────────
+CREATE TABLE IF NOT EXISTS pro_accounts (
+  user_id       INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  business_name TEXT NOT NULL,
+  city          TEXT NOT NULL,
+  ice           TEXT,
+  status        TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
+  note          TEXT,
+  requested_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  reviewed_at   TEXT,
+  reviewed_by   INTEGER REFERENCES users(id)
+);
+CREATE INDEX IF NOT EXISTS idx_pro_accounts_status ON pro_accounts(status, requested_at);

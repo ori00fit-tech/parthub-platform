@@ -7,6 +7,7 @@ import AdminLayout, { PageFallback } from "./components/layout/AdminLayout";
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 const SellersPage = lazyPage(() => import("./pages/SellersPage"));
+const ProAccountsPage = lazyPage(() => import("./pages/ProAccountsPage"));
 const SellerDetailsPage = lazyPage(() => import("./pages/SellerDetailsPage"));
 const PartsPage = lazyPage(() => import("./pages/PartsPage"));
 const PartDetailsPage = lazyPage(() => import("./pages/PartDetailsPage"));
@@ -46,6 +47,7 @@ function AppRoutes() {
         <Route element={<PrivateRoute><AdminLayout /></PrivateRoute>}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/sellers" element={<SellersPage />} />
+          <Route path="/pro-accounts" element={<ProAccountsPage />} />
           <Route path="/sellers/:id" element={<SellerDetailsPage />} />
           <Route path="/parts" element={<PartsPage />} />
           <Route path="/parts/:id" element={<PartDetailsPage />} />
