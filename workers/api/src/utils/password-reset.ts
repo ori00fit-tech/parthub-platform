@@ -1,5 +1,5 @@
 // ============================================================
-// Forgot password (migrations/0033).
+// Forgot password (migrations/0033), and signing in with a code.
 //  - Self-service: the person gives their e-mail or phone; a 6-digit code
 //    goes on WhatsApp to the account's OWN number (users.phone, or the
 //    store's WhatsApp / phone for a seller) — never to an order address,
@@ -10,6 +10,10 @@
 //    Not for admin accounts. Logged in the activity log.
 // Admin accounts: neither (an admin's phone or a colleague must not be enough
 // to take the platform); they use scripts/admin-set-password.sh.
+// Signing in with a code (no password): the same 6-digit WhatsApp code,
+// POST /auth/login-code then /auth/login-code/verify. A code proves the same
+// thing for both (the person holds the account's own number), so one code
+// table serves both; each code works once.
 // The answer to "forgot" never says whether an account exists.
 // A reset changes the password and signs out every device.
 // ============================================================
@@ -136,6 +140,12 @@ export async function checkLink(env: Env, token: string): Promise<{ resetId: num
      where r.secret_hash = ?1 and r.channel = 'admin_link' and r.used_at is null and r.expires_at > datetime('now') and u.is_active = 1`
   ).bind(await secretHash(env, token)).first<{ id: number; user_id: number }>();
   return row ? { resetId: row.id, userId: row.user_id } : null;
+}
+
+// Uses a code for signing in (POST /auth/login-code/verify): once only.
+export async function useCode(env: Env, resetId: number): Promise<boolean> {
+  const used = await env.DB.prepare("update password_resets set used_at = datetime('now') where id = ?1 and used_at is null").bind(resetId).run();
+  return Number(used.meta?.changes) > 0;
 }
 
 // Sets the new password (already checked by the policy), uses the reset,

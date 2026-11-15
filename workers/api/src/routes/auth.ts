@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import type { Context } from "hono";
 import type { Env, HonoVariables } from "../types";
 import { authMiddleware } from "../middlewares/auth";
 import { ok, fail, created } from "../utils/response";
@@ -8,7 +9,7 @@ import { LEGAL_VERSION } from "../utils/legal";
 import { passwordProblem } from "../utils/password-policy";
 import { runInBackground } from "../utils/whatsapp";
 import { waPasswordChanged } from "../utils/wa-events";
-import { applyReset, checkCode, checkLink, findAccount, sendResetCode } from "../utils/password-reset";
+import { applyReset, checkCode, checkLink, findAccount, sendResetCode, useCode } from "../utils/password-reset";
 import { GRACE_DAYS, cancelDeletion, deletionBlockers, requestDeletion } from "../utils/account-deletion";
 import { accessToken, listSessions, refreshSession, revokeSession, startSession } from "../utils/sessions";
 import { LIMITS, blockedFor, clearAttempts, clientIp, pruneAttempts, recordAttempt } from "../utils/rate-limit";
@@ -115,8 +116,6 @@ authRoutes.post("/login", async (c) => {
   if (!valid) return failed();
   await clearAttempts(c.env.DB, emailKey);
   if (!user.is_active) return fail(c, "Account suspended", 403);
-  // Signing in during the 30 days cancels the account's deletion.
-  const deletionCancelled = user.deletion_requested_at ? await cancelDeletion(c.env.DB, user.id) : false;
 
   // Transparently upgrade legacy (unsalted SHA-256) hashes to PBKDF2.
   if (needsRehash(user.password_hash)) {
@@ -126,23 +125,39 @@ authRoutes.post("/login", async (c) => {
     ]);
   }
 
+  // The password still works but would be refused today (e.g. an old
+  // sample password): the apps ask to change it.
+  const passwordWeak = Boolean(passwordProblem(body.password, { email: user.email, name: user.name, role: user.role }));
+  return finishSignIn(c, user, body, passwordWeak);
+});
+
+type SignInUser = {
+  id: number; name: string; email: string; phone: string | null; role: "buyer" | "seller" | "admin";
+  token_version: number; deletion_requested_at: string | null; seller_id: number | null;
+};
+
+// After the password or a WhatsApp code: cancels a pending deletion, starts
+// this device's session (utils/sessions.ts: the sites get a 7-day token, an
+// app (client: "app") a 15-minute token and a refresh token), same answer.
+async function finishSignIn(
+  c: Context<{ Bindings: Env; Variables: HonoVariables }>,
+  user: SignInUser,
+  device: { client?: string; device_name?: string; platform?: string },
+  passwordWeak: boolean
+) {
   if (!c.env.JWT_SECRET) {
     return fail(c, "JWT_SECRET is not configured", 500);
   }
-
-  // A session for this device (utils/sessions.ts): the sites get a 7-day
-  // token; an app (client: "app") a 15-minute token and a refresh token.
+  // Signing in during the 30 days cancels the account's deletion.
+  const deletionCancelled = user.deletion_requested_at ? await cancelDeletion(c.env.DB, user.id) : false;
   const session = await startSession(
     c.env,
     { id: user.id, role: user.role, seller_id: user.seller_id, token_version: Number(user.token_version || 0) },
-    { client: body.client === "app" ? "app" : "web", deviceName: body.device_name, platform: body.platform, userAgent: c.req.header("User-Agent"), ip: clientIp(c.req.raw.headers) }
+    { client: device.client === "app" ? "app" : "web", deviceName: device.device_name, platform: device.platform, userAgent: c.req.header("User-Agent"), ip: clientIp(c.req.raw.headers) }
   );
-
   return ok(c, {
     ...session,
-    // The password still works but would be refused today (e.g. an old
-    // sample password): the apps ask to change it.
-    password_weak: Boolean(passwordProblem(body.password, { email: user.email, name: user.name, role: user.role })),
+    password_weak: passwordWeak,
     ...(deletionCancelled ? { deletion_cancelled: true, message: "Welcome back: your account will not be deleted." } : {}),
     user: {
       id: user.id,
@@ -153,7 +168,7 @@ authRoutes.post("/login", async (c) => {
       seller_id: user.seller_id,
     },
   });
-});
+}
 
 authRoutes.get("/me", authMiddleware, async (c) => {
   const userId = c.get("user_id");
@@ -284,6 +299,66 @@ authRoutes.post("/forgot", async (c) => {
     }
   }
   return ok(c, { message: FORGOT_ANSWER });
+});
+
+// ── Sign in with a WhatsApp code (no password) ─────────────────────────
+const LOGIN_CODE_ANSWER =
+  "If an account matches, a 6-digit code was sent on WhatsApp to its number. It works for 15 minutes.";
+const LOGIN_CODE_WRONG = "This code is wrong or has expired. Ask for a new one.";
+
+// POST /api/v1/auth/login-code { identifier } — phone (or e-mail). Same
+// answer whether an account exists or not; never for an admin.
+authRoutes.post("/login-code", async (c) => {
+  const body = await c.req.json<{ identifier?: unknown }>().catch(() => ({}) as { identifier?: unknown });
+  const identifier = typeof body.identifier === "string" ? body.identifier.trim().slice(0, 200) : "";
+  if (!identifier) return fail(c, "Enter your phone number");
+  const ipKey = `reset:ip:${clientIp(c.req.raw.headers)}`;
+  if (await blockedFor(c.env.DB, [ipKey])) return fail(c, TOO_MANY, 429);
+  await recordAttempt(c.env.DB, ipKey, LIMITS.resetIp);
+  const account = await findAccount(c.env, identifier);
+  if (account && account.role !== "admin") {
+    const accountKey = `reset:account:${account.id}`;
+    if (!(await blockedFor(c.env.DB, [accountKey]))) {
+      await recordAttempt(c.env.DB, accountKey, LIMITS.resetAccount);
+      await sendResetCode(c.env, account);
+    }
+  }
+  return ok(c, { message: LOGIN_CODE_ANSWER });
+});
+
+// POST /api/v1/auth/login-code/verify { identifier, code, client?, device_name?, platform? }
+// The right code signs this device in (same answer as /login); 5 wrong
+// codes and the code stops working.
+authRoutes.post("/login-code/verify", async (c) => {
+  const body = await c.req.json<{ identifier?: unknown; code?: unknown; client?: string; device_name?: string; platform?: string }>()
+    .catch(() => ({}) as Record<string, never>);
+  const identifier = typeof body.identifier === "string" ? body.identifier.trim().slice(0, 200) : "";
+  const ipKey = `login:ip:${clientIp(c.req.raw.headers)}`;
+  const wait = await blockedFor(c.env.DB, [ipKey]);
+  if (wait) {
+    c.header("Retry-After", String(wait * 60));
+    return fail(c, TOO_MANY, 429);
+  }
+  const account = identifier ? await findAccount(c.env, identifier) : null;
+  if (!account || account.role === "admin") {
+    await recordAttempt(c.env.DB, ipKey, LIMITS.loginIp);
+    return fail(c, LOGIN_CODE_WRONG, 401);
+  }
+  const check = await checkCode(c.env, account, String(body.code ?? ""));
+  if (!check.ok) {
+    await recordAttempt(c.env.DB, ipKey, LIMITS.loginIp);
+    return fail(c, check.error, 401);
+  }
+  if (!(await useCode(c.env, check.resetId))) return fail(c, LOGIN_CODE_WRONG, 401);
+  const user = await dbFirst<SignInUser & { is_active: number }>(
+    c.env.DB,
+    `SELECT u.id, u.name, u.email, u.phone, u.role, u.is_active, u.token_version, u.deletion_requested_at, s.id as seller_id
+     FROM users u LEFT JOIN sellers s ON s.user_id = u.id WHERE u.id = ?`,
+    [account.id]
+  );
+  if (!user || !user.is_active) return fail(c, "Account suspended", 403);
+  await clearAttempts(c.env.DB, `login:email:${user.email.trim().toLowerCase()}`);
+  return finishSignIn(c, user, body, false);
 });
 
 // POST /api/v1/auth/reset { identifier, code, new_password }

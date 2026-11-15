@@ -33,6 +33,17 @@ export function AuthProvider({ children }) {
     noteDeletionCancelled(res.data);
   }
 
+  // A session from the WhatsApp code (same data as /auth/login).
+  function acceptSession(data) {
+    if (data?.user?.role !== "seller") {
+      revokeOnServer(BASE_URL, data?.access_token);
+      throw new Error("Not a seller account");
+    }
+    localStorage.setItem(SELLER_TOKEN_KEY, data.access_token);
+    setUser(data.user);
+    noteDeletionCancelled(data);
+  }
+
   // Seller sign-up: create the account as a seller, then sign in.
   async function register({ name, email, phone, password }) {
     // The sign-up form shows the terms notice.
@@ -58,7 +69,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, setSessionToken, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, loading, login, acceptSession, register, setSessionToken, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

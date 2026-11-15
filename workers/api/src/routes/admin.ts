@@ -272,6 +272,34 @@ adminRoutes.patch("/sellers/:id/status", async (c) => {
   return ok(c, { message: `Seller ${status}`, status, moderation_note: status === "active" ? null : reason });
 });
 
+// PUT /api/v1/admin/sellers/:id/verification  { verified: boolean, note? }
+// "Verified seller" badge. Verifying needs a note saying what was checked
+// (trade register / ICE, a visit to the shop…); it stays admin-only.
+adminRoutes.put("/sellers/:id/verification", async (c) => {
+  const id = Number(c.req.param("id"));
+  if (!Number.isInteger(id) || id <= 0) return fail(c, "Invalid seller id");
+  const body = await c.req.json<{ verified?: unknown; note?: unknown }>().catch(() => ({}) as { verified?: unknown; note?: unknown });
+  if (typeof body.verified !== "boolean") return fail(c, "verified must be true or false");
+  const note = typeof body.note === "string" ? body.note.trim().slice(0, 500) : "";
+  if (body.verified && note.length < 5) return fail(c, "Say what was checked (trade register, ICE, visit…)");
+  const seller = await dbFirst<{ id: number; status: string }>(c.env.DB, "SELECT id, status FROM sellers WHERE id = ?", [id]);
+  if (!seller) return fail(c, "Seller not found", 404);
+  if (body.verified && seller.status !== "active") return fail(c, "Approve the store before verifying it", 409);
+  if (body.verified) {
+    await dbRun(
+      c.env.DB,
+      "UPDATE sellers SET verified_at = datetime('now'), verified_by = ?, verification_note = ?, updated_at = datetime('now') WHERE id = ?",
+      [c.get("user_id"), note, id]
+    );
+  } else {
+    await dbRun(c.env.DB, "UPDATE sellers SET verified_at = NULL, verified_by = NULL, verification_note = NULL, updated_at = datetime('now') WHERE id = ?", [id]);
+  }
+  const row = await dbFirst<{ verified_at: string | null; verification_note: string | null }>(
+    c.env.DB, "SELECT verified_at, verification_note FROM sellers WHERE id = ?", [id]
+  );
+  return ok(c, { verified: !!row?.verified_at, verified_at: row?.verified_at ?? null, verification_note: row?.verification_note ?? null });
+});
+
 // POST /api/v1/admin/sellers/bulk-status  { ids: number[], status, reason? }
 // Same rules as one by one; the reason (when needed) is sent to every seller.
 adminRoutes.post("/sellers/bulk-status", async (c) => {

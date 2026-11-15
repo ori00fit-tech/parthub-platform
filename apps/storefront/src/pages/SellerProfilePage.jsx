@@ -24,10 +24,15 @@ function getSellerBadges(seller) {
     });
   }
 
-  badges.push({
-    label: t("Active seller"),
-    className: "bg-amber-400/10 text-amber-700",
-  });
+  // Only after PartHub checked the store (trade register, a visit): see
+  // PUT /admin/sellers/:id/verification. No badge for merely being listed.
+  if (Number(seller?.verified) === 1) {
+    badges.unshift({
+      label: t("Verified seller"),
+      className: "bg-emerald-50 text-emerald-800",
+      title: t("PartHub checked this store: trade register or a visit to the shop."),
+    });
+  }
 
   return badges.slice(0, 3);
 }
@@ -166,6 +171,7 @@ export default function SellerProfilePage() {
               {sellerBadges.map((badge) => (
                 <span
                   key={badge.label}
+                  title={badge.title}
                   className={[
                     "rounded-full px-3 py-1 text-xs font-semibold",
                     badge.className,

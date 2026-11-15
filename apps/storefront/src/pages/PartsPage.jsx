@@ -201,10 +201,11 @@ function getSellerBadges(part) {
     });
   }
 
-  if (Number(part?.featured || 0) === 1) {
-    badges.push({
-      label: t("Trusted seller"),
-      className: "bg-amber-400/10 text-amber-700",
+  // A trust badge only when PartHub checked the store (sellers.verified_at).
+  if (Number(part?.seller_verified || 0) === 1) {
+    badges.unshift({
+      label: t("Verified seller"),
+      className: "bg-emerald-50 text-emerald-800",
     });
   }
 

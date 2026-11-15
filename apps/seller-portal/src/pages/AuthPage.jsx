@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import { useT } from "../i18n";
 import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import { LinkedText } from "../components/legal/LegalDocument";
+import { CodeSignIn } from "@parthub/shared/account";
+import { api } from "../lib/api";
 
 function getRedirectPath(location) {
   const params = new URLSearchParams(location.search);
@@ -15,7 +17,9 @@ export default function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const redirectTo = useMemo(() => getRedirectPath(location), [location]);
-  const { login, register, loading, isAuthenticated, user } = useAuth();
+  const { login, acceptSession, register, loading, isAuthenticated, user } = useAuth();
+  // Sign in with a WhatsApp code instead of the password.
+  const [withCode, setWithCode] = useState(false);
 
   const [mode, setMode] = useState(() =>
     new URLSearchParams(location.search).get("mode") === "signup" ? "signup" : "signin"
@@ -199,6 +203,24 @@ export default function AuthPage() {
             </div>
           ) : null}
 
+          {!isSignup && withCode ? (
+            <div className="mt-6">
+              <CodeSignIn
+                t={t}
+                post={(path, body) => api.post(path, body).then((r) => r?.data)}
+                onSession={(data) => {
+                  try {
+                    acceptSession(data);
+                    navigate(redirectTo);
+                  } catch (err) {
+                    throw new Error(t(err?.message || "Sign-in failed"));
+                  }
+                }}
+                onCancel={() => setWithCode(false)}
+              />
+            </div>
+          ) : (
+          <>
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             {isSignup ? (
               <>
@@ -278,6 +300,17 @@ export default function AuthPage() {
               </p>
             ) : null}
           </form>
+          {!isSignup ? (
+            <button
+              type="button"
+              onClick={() => setWithCode(true)}
+              className="mt-3 inline-flex h-12 w-full items-center justify-center rounded-2xl border border-emerald-600/40 bg-white px-5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50"
+            >
+              {t("Sign in with a WhatsApp code")}
+            </button>
+          ) : null}
+          </>
+          )}
         </div>
       </div>
     </section>

@@ -9,7 +9,7 @@ test("the seller sets carriers, free delivery and times; the buyer sees them", a
   await page.goto(`${URLS.seller}/auth`);
   await page.getByPlaceholder(/@/).fill(ACCOUNTS.seller.email);
   await page.locator('input[type="password"]').fill(PASSWORD);
-  await page.getByRole("button", { name: /^Sign in/ }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.waitForURL((u) => !u.pathname.startsWith("/auth"));
 
   await page.goto(`${URLS.seller}/store-settings`);

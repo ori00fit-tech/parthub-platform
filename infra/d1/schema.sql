@@ -49,6 +49,9 @@ CREATE TABLE IF NOT EXISTS sellers (
   free_delivery_over INTEGER,               -- free delivery from this amount (migrations/0037)
   delivery_days_local INTEGER,              -- days to deliver: in the seller's city
   delivery_days_national INTEGER,           -- elsewhere in Morocco
+  verified_at TEXT,                         -- "Verified seller", set by PartHub after a check (migrations/0039)
+  verified_by INTEGER,                      -- the admin who checked
+  verification_note TEXT,                   -- what was checked (admin only)
   status      TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','active','suspended','rejected')),
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at  TEXT NOT NULL DEFAULT (datetime('now'))

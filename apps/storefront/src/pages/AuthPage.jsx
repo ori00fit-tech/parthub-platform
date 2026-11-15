@@ -5,6 +5,8 @@ import { useCart } from "../features/cart/CartContext";
 import { useT } from "../i18n";
 import { Icon } from "@parthub/shared/icons";
 import LegalConsent from "../features/legal/LegalConsent";
+import { CodeSignIn } from "@parthub/shared/account";
+import { apiPost } from "../lib/api";
 
 function getRedirectPath(location) {
   const params = new URLSearchParams(location.search);
@@ -17,7 +19,9 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const redirectTo = useMemo(() => getRedirectPath(location), [location]);
 
-  const { login, register, loading, isAuthenticated, user } = useAuth();
+  const { login, acceptSession, register, loading, isAuthenticated, user } = useAuth();
+  // Sign in with a WhatsApp code instead of the password.
+  const [withCode, setWithCode] = useState(false);
   const { totalItems } = useCart();
 
   const [mode, setMode] = useState("login");
@@ -243,6 +247,17 @@ export default function AuthPage() {
             </div>
           ) : null}
 
+          {mode === "login" && withCode ? (
+            <div className="mt-6">
+              <CodeSignIn
+                t={t}
+                post={(path, body) => apiPost(path, body).then((r) => r?.data)}
+                onSession={(data) => { acceptSession(data); navigate(redirectTo); }}
+                onCancel={() => setWithCode(false)}
+              />
+            </div>
+          ) : (
+          <>
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             {mode === "register" ? (
               <div>
@@ -336,6 +351,17 @@ export default function AuthPage() {
             </button>
             {mode !== "login" ? <LegalConsent kind="account" className="text-center" /> : null}
           </form>
+          {mode === "login" ? (
+            <button
+              type="button"
+              onClick={() => { setWithCode(true); setError(""); }}
+              className="mt-3 inline-flex h-12 w-full items-center justify-center rounded-2xl border border-emerald-600/40 bg-surface px-5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50"
+            >
+              {t("Sign in with a WhatsApp code")}
+            </button>
+          ) : null}
+          </>
+          )}
 
           <div className="mt-6 rounded-2xl bg-surface-2 p-4 text-sm text-muted">
             {mode === "login" ? (

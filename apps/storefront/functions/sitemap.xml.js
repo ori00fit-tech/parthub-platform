@@ -5,7 +5,7 @@ import { api, origin } from "./_lib/seo.js";
 import { companyRegistered } from "../../../packages/shared/src/legal/company.js";
 
 // The legal notice is a page only once the company is registered (company.js).
-const STATIC = ["/", "/parts", "/sell", "/request-part", "/legal/terms", "/legal/returns", "/legal/privacy", "/legal/seller", ...(companyRegistered() ? ["/legal/notice"] : [])];
+const STATIC = ["/", "/parts", "/sell", "/request-part", "/help", "/legal/terms", "/legal/returns", "/legal/privacy", "/legal/seller", ...(companyRegistered() ? ["/legal/notice"] : [])];
 
 const xmlEscape = (s) => String(s).replace(/[<>&'"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" })[c]);
 const day = (value) => {

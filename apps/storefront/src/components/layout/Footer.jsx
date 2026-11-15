@@ -72,6 +72,7 @@ export default function Footer() {
         </FooterColumn>
 
         <FooterColumn title={t("Policies")}>
+          <Link to="/help" className={linkClass}>{t("Help & FAQ")}</Link>
           <Link to="/legal/terms" className={linkClass}>{t("Terms of use")}</Link>
           <Link to="/legal/returns" className={linkClass}>{t("Returns policy")}</Link>
           <Link to="/legal/privacy" className={linkClass}>{t("Privacy policy")}</Link>

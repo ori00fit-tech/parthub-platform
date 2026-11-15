@@ -38,7 +38,7 @@ test("the seller confirms, ships, records the carrier's update, delivers", async
   await page.goto(`${URLS.seller}/auth`);
   await page.getByPlaceholder(/@/).fill(ACCOUNTS.seller.email);
   await page.locator('input[type="password"]').fill(PASSWORD);
-  await page.getByRole("button", { name: /^Sign in/ }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.waitForURL((u) => !u.pathname.startsWith("/auth"));
 
   await page.goto(`${URLS.seller}/orders`);
@@ -65,7 +65,7 @@ test("the buyer sees the order delivered, with its history", async ({ page }) =>
   await page.goto(`${URLS.store}/auth`);
   await page.getByPlaceholder("you@example.com").fill(BUYER.email);
   await page.locator('input[type="password"]').fill(BUYER.password);
-  await page.getByRole("button", { name: "Sign in" }).last().click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).last().click();
   await page.waitForURL((u) => !u.pathname.startsWith("/auth"));
   await page.goto(`${URLS.store}/orders/${reference}/tracking`);
   await expect(page.getByText("Delivered").first()).toBeVisible();

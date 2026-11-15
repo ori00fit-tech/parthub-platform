@@ -20,6 +20,7 @@ storefrontSellersRoutes.get("/:slug", async (c) => {
       s.seller_type,
       s.status,
       s.created_at,
+      case when s.verified_at is not null then 1 else 0 end as verified,
       (
         select count(*)
         from parts p

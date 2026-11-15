@@ -55,6 +55,7 @@ sql="SELECT
   $(tables "'seller_carriers'" seller_carriers_table),
   $(has sellers free_delivery_over sellers_shipping_columns),
   $(has account_deletions seller_note_before deletion_note_column),
+  $(has sellers verified_at sellers_verified_column),
   $(has users deletion_requested_at users_deletion_columns),
   $(has whatsapp_notifications payload whatsapp_retry_columns),
   $(has shipment_events applied_at shipment_events_applied_column),

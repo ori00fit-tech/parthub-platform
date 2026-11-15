@@ -309,6 +309,7 @@ searchRoutes.get("/", async (c) => {
         s.name as seller_name,
         s.slug as seller_slug,
         s.location as seller_location,
+        case when s.verified_at is not null then 1 else 0 end as seller_verified,
         s.seller_type,
         (
           select pi.url
