@@ -133,6 +133,9 @@ export default function MainLayout() {
           <Link to="/sell" className="font-semibold text-white hover:text-navy-ink">
             {t("Sell on PartHub")}
           </Link>
+          <Link to="/favorites" className="hover:text-white">
+            ♥ <span className="hidden sm:inline">{t("Saved parts")}</span>
+          </Link>
           <Link to="/orders" className="hidden hover:text-white sm:inline">
             {t("Track order")}
           </Link>

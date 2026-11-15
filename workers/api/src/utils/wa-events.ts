@@ -370,3 +370,37 @@ export async function waPasswordChanged(env: Env, userId: number, tokenVersion: 
     params: [u.name.split(" ")[0] || u.name, moroccoDate(new Date(), true)],
   });
 }
+
+// ── Questions about an order (utils/order-messages.ts) ─────────────────
+// The message in a template parameter: one line, at most 200 characters
+// (Meta refuses line breaks and long runs of spaces in parameters).
+function messageParam(text: string): string {
+  const one = text.replace(/\s+/g, " ").trim();
+  return one.length > 200 ? `${one.slice(0, 199)}…` : one;
+}
+
+// The buyer asked: tell the seller (template parthub_order_question).
+export async function waOrderQuestion(env: Env, messageId: number): Promise<boolean> {
+  const m = await env.DB.prepare("select id, order_id, seller_id, body from order_messages where id = ?1")
+    .bind(messageId).first<{ id: number; order_id: number; seller_id: number; body: string }>();
+  if (!m) return false;
+  const o = await orderSide(env, m.order_id, m.seller_id);
+  if (!o) return false;
+  return notify(env, {
+    kind: "order_question", refId: m.id, recipient: `seller:${o.seller_id}`, phone: o.seller_contact, locale: o.seller_locale,
+    template: "parthub_order_question", params: [o.reference, messageParam(m.body)], buttonPath: `orders/${o.order_id}`,
+  });
+}
+
+// The seller answered: tell the buyer (template parthub_order_answer).
+export async function waOrderAnswer(env: Env, messageId: number): Promise<boolean> {
+  const m = await env.DB.prepare("select id, order_id, seller_id, body from order_messages where id = ?1")
+    .bind(messageId).first<{ id: number; order_id: number; seller_id: number; body: string }>();
+  if (!m) return false;
+  const o = await orderSide(env, m.order_id, m.seller_id);
+  if (!o) return false;
+  return notify(env, {
+    kind: "order_answer", refId: m.id, recipient: `buyer:${o.buyer_id}`, phone: o.buyer_phone, locale: o.buyer_locale,
+    template: "parthub_order_answer", params: [o.reference, o.seller_name, messageParam(m.body)], buttonPath: trackPath(o.reference),
+  });
+}

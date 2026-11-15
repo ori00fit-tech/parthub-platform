@@ -6,6 +6,7 @@ import { api } from "../lib/api";
 import { mediaUrl } from "../lib/requests";
 import { dateLocale, statusLabel, useT } from "../i18n";
 import IssueCard from "../components/issues/IssueCard";
+import BuyerQuestions from "../components/orders/BuyerQuestions";
 
 export function badgeClasses(status) {
   switch (String(status || "").toLowerCase()) {
@@ -669,6 +670,7 @@ export default function OrderDetailsPage() {
           </p>
         </aside>
       </div>
+      <BuyerQuestions orderId={id} buyerName={order.ship_name || order.buyer_name} />
     </section>
   );
 }

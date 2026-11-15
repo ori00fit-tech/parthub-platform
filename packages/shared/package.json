@@ -10,7 +10,8 @@
     "./legal": "./src/legal/content.js",
     "./company": "./src/legal/company.js",
     "./brand": "./src/brand/index.jsx",
-    "./account": "./src/account/index.js"
+    "./account": "./src/account/index.js",
+    "./messages": "./src/messages/MessageThread.jsx"
   },
   "dependencies": {
     "lucide-react": "0.460.0"

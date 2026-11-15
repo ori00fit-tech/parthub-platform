@@ -365,6 +365,40 @@ export const WA_TEMPLATES: WaTemplate[] = [
   },
 
   // ── Returns and claims ────────────────────────────────────────────────
+  // ── Questions about an order (utils/order-messages.ts) ──────────────────
+  {
+    name: "parthub_order_question",
+    audience: "seller",
+    category: "UTILITY",
+    trigger: "A buyer asks the store a question about their order",
+    params: [
+      { name: "reference", example: "PH-2026-00042" },
+      { name: "message", example: "Est-ce que la pièce est d’origine ?" },
+    ],
+    body: {
+      ar: "سؤال من الزبون حول الطلب *{{1}}*:\n«{{2}}»\nأجب من صفحة الطلب.",
+      fr: "Question du client sur la commande *{{1}}* :\n« {{2}} »\nRépondez depuis la page de la commande.",
+      en: "Question from the buyer about order *{{1}}*:\n“{{2}}”\nAnswer from the order page.",
+    },
+    button: { site: "seller", text: SELLER_ORDER, example: "orders/42" },
+  },
+  {
+    name: "parthub_order_answer",
+    audience: "buyer",
+    category: "UTILITY",
+    trigger: "The store answers the buyer's question about their order",
+    params: [
+      { name: "reference", example: "PH-2026-00042" },
+      { name: "seller", example: "Chafik Auto Parts" },
+      { name: "message", example: "Oui, pièce d’origine Renault." },
+    ],
+    body: {
+      ar: "ردّ *{{2}}* على سؤالك حول الطلب *{{1}}*:\n«{{3}}»",
+      fr: "Réponse de *{{2}}* à votre question sur la commande *{{1}}* :\n« {{3}} »",
+      en: "Reply from *{{2}}* to your question about order *{{1}}*:\n“{{3}}”",
+    },
+    button: { site: "storefront", text: TRACK, example: "orders/PH-2026-00042/tracking" },
+  },
   {
     name: "parthub_claim_opened",
     audience: "seller",

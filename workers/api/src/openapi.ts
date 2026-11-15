@@ -248,6 +248,21 @@ const P: Record<string, Partial<Record<"get" | "post" | "put" | "patch" | "delet
   // Part requests
   "/api/v1/requests": { post: { tag: "Requests", summary: "Ask sellers for a part", auth: true, status: 201, body: anyObj, data: anyObj } },
   "/api/v1/requests/images": { post: { tag: "Requests", summary: "Upload a photo for a request", auth: true, body: "multipart", data: anyObj } },
+  "/api/v1/commerce/orders/:reference/messages": {
+    get: { tag: "Orders", summary: "Questions about my order: one conversation per seller (opening marks the seller's answers read)", auth: true, data: arr(anyObj) },
+    post: { tag: "Orders", summary: "Ask a seller of my order a question (1–1000 characters; the seller gets it on WhatsApp)", auth: true, body: obj({ seller_id: int, body: str }, ["seller_id", "body"]), data: anyObj },
+  },
+  "/api/v1/marketplace/me/orders/:id/messages": {
+    get: { tag: "Selling", summary: "The buyer's questions about this order (opening marks them read)", auth: true, data: arr(anyObj) },
+    post: { tag: "Selling", summary: "Answer the buyer (the buyer gets it on WhatsApp)", auth: true, body: obj({ body: str }, ["body"]), data: anyObj },
+  },
+  "/api/v1/marketplace/me/messages/unread": { get: { tag: "Selling", summary: "Orders with unread buyer questions", auth: true, data: arr(anyObj) } },
+  "/api/v1/favorites": { get: { tag: "Account", summary: "My saved parts (available: 0 when no longer on sale)", auth: true, data: arr(anyObj) } },
+  "/api/v1/favorites/ids": { get: { tag: "Account", summary: "Ids of my saved parts", auth: true, data: arr(int) } },
+  "/api/v1/favorites/:partId": {
+    put: { tag: "Account", summary: "Save a part (at most 200)", auth: true, data: anyObj },
+    delete: { tag: "Account", summary: "Remove a saved part", auth: true, data: anyObj },
+  },
   "/api/v1/pro/me": { get: { tag: "Account", summary: "My professional account (garage, mechanic): status null | pending | approved | rejected", auth: true, data: anyObj } },
   "/api/v1/pro/request": { post: { tag: "Account", summary: "Ask for a professional account (buyers). PartHub checks it; approved pros see and pay pro prices.", auth: true, body: obj({ business_name: str, city: str, ice: { ...str, description: "15 digits, optional" } }, ["business_name", "city"]), data: anyObj } },
   "/api/v1/requests/mine": { get: { tag: "Requests", summary: "My requests", auth: true, data: arr(anyObj) } },

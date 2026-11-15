@@ -13,6 +13,7 @@ import { BASE_URL } from "./lib/api";
 configureImages({ apiBase: BASE_URL, resize: import.meta.env.VITE_IMAGE_RESIZING === "1" });
 import { SelectedVehicleProvider } from "./features/vehicles/SelectedVehicleContext";
 import { CartProvider } from "./features/cart/CartContext";
+import { FavoritesProvider } from "./features/favorites/FavoritesContext";
 import { AuthProvider } from "./features/auth/AuthContext";
 import { I18nProvider } from "./i18n";
 
@@ -24,7 +25,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <AuthProvider>
         <SelectedVehicleProvider>
           <CartProvider>
-            <App />
+            <FavoritesProvider>
+              <App />
+            </FavoritesProvider>
           </CartProvider>
         </SelectedVehicleProvider>
       </AuthProvider>

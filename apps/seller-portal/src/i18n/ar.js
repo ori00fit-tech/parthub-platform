@@ -1097,4 +1097,12 @@ export default {
   "Save pro price": "حفظ سعر المحترفين",
   "Saved": "تم الحفظ",
   "Enter an amount, e.g. 85 or 85.50": "أدخل مبلغاً، مثل 85 أو 85.50",
+  "Messages": "الرسائل",
+  "You": "أنت",
+  "Your message": "رسالتك",
+  "Buyer's questions": "أسئلة الزبون",
+  "Answer here: the buyer gets your answer on WhatsApp.": "أجب هنا: يصل ردك إلى الزبون على واتساب.",
+  "No question yet. You can write to the buyer here too.": "لا توجد أسئلة بعد. يمكنك أيضاً مراسلة الزبون من هنا.",
+  "Buyers are waiting for your answer": "زبائن ينتظرون ردك",
+  "{n} new": "{n} جديدة",
 };

@@ -833,3 +833,29 @@ CREATE TABLE IF NOT EXISTS pro_accounts (
   reviewed_by   INTEGER REFERENCES users(id)
 );
 CREATE INDEX IF NOT EXISTS idx_pro_accounts_status ON pro_accounts(status, requested_at);
+
+-- ── Favorites (migrations/0041) ───────────────────────────────
+CREATE TABLE IF NOT EXISTS favorites (
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  part_id    INTEGER NOT NULL REFERENCES parts(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, part_id)
+);
+CREATE INDEX IF NOT EXISTS idx_favorites_part ON favorites(part_id);
+
+-- ── Order messages (migrations/0042) ──────────────────────────
+-- Questions about an order, between the buyer and each seller of
+-- that order (one conversation per order and seller). PartHub can read
+-- them (disputes). read_at: when the other side opened the conversation.
+CREATE TABLE IF NOT EXISTS order_messages (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id   INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  seller_id  INTEGER NOT NULL REFERENCES sellers(id),
+  sender     TEXT NOT NULL CHECK (sender IN ('buyer', 'seller', 'admin')),
+  sender_id  INTEGER REFERENCES users(id),
+  body       TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  read_at    TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_order_messages_thread ON order_messages(order_id, seller_id, id);
+CREATE INDEX IF NOT EXISTS idx_order_messages_unread ON order_messages(seller_id, sender, read_at);

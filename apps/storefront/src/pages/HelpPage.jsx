@@ -9,12 +9,13 @@ import { useI18n } from "../i18n";
 
 // Where each section's answers lead (labels are translated with t()).
 const LINKS = {
-  order: [["/vehicle-selector", "Choose my vehicle"], ["/request-part", "Request a part"]],
   pay: [["/cart", "My cart"]],
   track: [["/orders", "My orders"]],
   returns: [["/orders", "My orders"], ["/legal/returns", "Returns policy"]],
   trust: [["/parts", "Browse parts"]],
   account: [["/forgot-password", "Forgot password"], ["/delete-account", "Delete my account"]],
+  pro: [["/account#pro", "Professional account"]],
+  order: [["/vehicle-selector", "Choose my vehicle"], ["/request-part", "Request a part"], ["/favorites", "Saved parts"]],
   sell: [["/sell", "Sell on PartHub"], ["/legal/seller", "Seller agreement"]],
 };
 
