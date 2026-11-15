@@ -1226,4 +1226,13 @@ export default {
   "Garage or workshop name": "Nom du garage ou de l’atelier",
   "ICE (optional, 15 digits)": "ICE (facultatif, 15 chiffres)",
   "Ask for a pro account": "Demander un compte pro",
+  "Saved parts": "Pièces enregistrées",
+  "Remove from saved parts": "Retirer des pièces enregistrées",
+  "Save this part": "Enregistrer cette pièce",
+  "Saved": "Enregistrée",
+  "Save": "Enregistrer",
+  "Parts you saved to come back to, on every device you sign in with.": "Les pièces que vous gardez pour plus tard, sur tous les appareils où vous êtes connecté.",
+  "No saved parts yet. Tap ♥ on a part to find it here.": "Aucune pièce enregistrée. Touchez ♥ sur une pièce pour la retrouver ici.",
+  "No longer available": "Plus disponible",
+  "Loading...": "Chargement...",
 };

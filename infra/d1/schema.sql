@@ -833,3 +833,12 @@ CREATE TABLE IF NOT EXISTS pro_accounts (
   reviewed_by   INTEGER REFERENCES users(id)
 );
 CREATE INDEX IF NOT EXISTS idx_pro_accounts_status ON pro_accounts(status, requested_at);
+
+-- ── Favorites (migrations/0041) ───────────────────────────────
+CREATE TABLE IF NOT EXISTS favorites (
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  part_id    INTEGER NOT NULL REFERENCES parts(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, part_id)
+);
+CREATE INDEX IF NOT EXISTS idx_favorites_part ON favorites(part_id);

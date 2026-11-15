@@ -23,6 +23,7 @@ const MyRequestsPage = lazyPage(() => import("./pages/MyRequestsPage"));
 const RequestDetailsPage = lazyPage(() => import("./pages/RequestDetailsPage"));
 const LegalPage = lazyPage(() => import("./pages/LegalPage"));
 const HelpPage = lazyPage(() => import("./pages/HelpPage"));
+const FavoritesPage = lazyPage(() => import("./pages/FavoritesPage"));
 const SellPage = lazyPage(() => import("./pages/SellPage"));
 const LandingPage = lazyPage(() => import("./pages/LandingPage"));
 const NotFoundPage = lazyPage(() => import("./pages/NotFoundPage"));
@@ -64,6 +65,7 @@ export default function App() {
 
           <Route path="/account" element={<AccountPage />} />
           <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/orders/:orderNumber/tracking" element={<OrderTrackingPage />} />
 
           <Route path="*" element={<NotFoundPage />} />

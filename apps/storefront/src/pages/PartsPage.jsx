@@ -12,6 +12,7 @@ import { conditionLabel, t, useT } from "../i18n";
 import StockBadge from "../features/stock/StockBadge";
 import { Icon } from "@parthub/shared/icons";
 import { usePageMeta } from "../lib/pageMeta";
+import { FavoriteButton } from "../features/favorites/FavoritesContext";
 
 function normalizeList(payload, fallbackKey) {
   const list =
@@ -1084,6 +1085,7 @@ export default function PartsPage() {
                           </div>
 
                           <div className="relative z-10 flex items-center gap-1.5">
+                            <FavoriteButton partId={part.id} className="h-[42px] w-[42px]" />
                             <button
                               type="button"
                               onClick={() => toggleShortlist(part)}

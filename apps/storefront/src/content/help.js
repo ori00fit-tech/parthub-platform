@@ -17,6 +17,7 @@ export const HELP = {
           { q: "كيف أجد القطعة المناسبة لسيارتي؟", a: "اختر سيارتك (الشركة، الموديل، السنة، والمحرك إن أمكن) ثم ابحث باسم القطعة أو برقمها الأصلي (OEM). تظهر لك القطع المتوافقة مع سيارتك، ويمكنك حفظ سيارتك لتجدها في كل زيارة." },
           { q: "لم أجد القطعة، ماذا أفعل؟", a: "أرسل «طلب قطعة» مع معلومات سيارتك وصور إن أمكن. يصل طلبك إلى المحلات المناسبة، فترسل لك عروضها بالسعر والحالة، وتختار العرض الذي يناسبك." },
           { q: "هل أحتاج حساباً للطلب؟", a: "نعم، يُنشأ حسابك في نفس صفحة الطلب ببريدك وكلمة سر. الحساب يسمح لك بمتابعة طلباتك وطلب الإرجاع." },
+          { q: "كيف أحفظ قطعة لأعود إليها؟", a: "اضغط ♥ في صفحة القطعة. تجدها في «القطع المحفوظة» على كل جهاز تدخل منه بحسابك." },
         ],
       },
       {
@@ -58,6 +59,15 @@ export const HELP = {
         items: [
           { q: "نسيت كلمة السر.", a: "في صفحة الدخول اختر «نسيت كلمة السر» وأدخل بريدك أو رقم هاتفك: يصلك كود على WhatsApp." },
           { q: "كيف أحذف حسابي؟", a: "من صفحة «حذف الحساب». يُغلق حسابك فوراً، ولديك 30 يوماً للتراجع، ثم تُحذف معلوماتك الشخصية." },
+          { q: "هل يمكنني الدخول دون كلمة سر؟", a: "نعم، اختر «الدخول برمز واتساب» وأدخل رقم هاتف حسابك: يصلك رمز من 6 أرقام صالح 15 دقيقة." },
+        ],
+      },
+      {
+        id: "pro",
+        title: "الكراجات والميكانيكيون",
+        items: [
+          { q: "ما هو الحساب المحترف؟", a: "حساب للكراجات والميكانيكيين. بعد تحقق PartHub منه، ترى أسعار المحترفين المخفّضة التي يقدمها بعض البائعين وتدفعها في طلباتك." },
+          { q: "كيف أطلبه؟", a: "من صفحة «حسابي»: أدخل اسم الكراج والمدينة (ورقم ICE إن وجد). يتحقق PartHub من طلبك ويرد عليك؛ إن رُفض ترى السبب ويمكنك الطلب من جديد." },
         ],
       },
       {
@@ -82,6 +92,7 @@ export const HELP = {
           { q: "Comment trouver la bonne pièce pour ma voiture ?", a: "Choisissez votre véhicule (marque, modèle, année, et motorisation si possible), puis cherchez par nom de pièce ou par référence d’origine (OEM). Les pièces compatibles s’affichent, et vous pouvez enregistrer votre véhicule pour vos prochaines visites." },
           { q: "Je ne trouve pas la pièce, que faire ?", a: "Envoyez une « demande de pièce » avec votre véhicule et des photos si possible. Elle arrive aux magasins concernés, qui vous envoient leurs offres (prix, état) ; vous choisissez celle qui vous convient." },
           { q: "Faut-il un compte pour commander ?", a: "Oui : il se crée sur la page de commande, avec votre e-mail et un mot de passe. Il vous permet de suivre vos commandes et de demander un retour." },
+          { q: "Comment garder une pièce pour plus tard ?", a: "Touchez ♥ sur la page de la pièce. Vous la retrouvez dans « Pièces enregistrées », sur tous les appareils où vous êtes connecté." },
         ],
       },
       {
@@ -123,6 +134,15 @@ export const HELP = {
         items: [
           { q: "J’ai oublié mon mot de passe.", a: "Sur la page de connexion, choisissez « Mot de passe oublié » et entrez votre e-mail ou votre téléphone : vous recevez un code sur WhatsApp." },
           { q: "Comment supprimer mon compte ?", a: "Depuis la page « Supprimer mon compte ». Il est fermé tout de suite ; vous avez 30 jours pour changer d’avis, puis vos données personnelles sont effacées." },
+          { q: "Puis-je me connecter sans mot de passe ?", a: "Oui : choisissez « Se connecter avec un code WhatsApp » et entrez le téléphone de votre compte. Vous recevez un code à 6 chiffres valable 15 minutes." },
+        ],
+      },
+      {
+        id: "pro",
+        title: "Garages et mécaniciens",
+        items: [
+          { q: "Qu’est-ce qu’un compte pro ?", a: "Un compte pour les garages et mécaniciens. Une fois vérifié par PartHub, vous voyez et payez les prix pro plus bas que proposent certains vendeurs." },
+          { q: "Comment le demander ?", a: "Depuis « Mon compte » : nom du garage, ville (et ICE si vous en avez un). PartHub vérifie et vous répond ; en cas de refus, vous voyez le motif et pouvez redemander." },
         ],
       },
       {
@@ -147,6 +167,7 @@ export const HELP = {
           { q: "How do I find the right part for my car?", a: "Choose your vehicle (make, model, year, and engine if you can), then search by part name or by original part number (OEM). Compatible parts are shown, and you can save your vehicle for your next visits." },
           { q: "I can’t find the part. What can I do?", a: "Send a “part request” with your vehicle and photos if you have them. It reaches the matching shops, which send you offers (price, condition); you pick the one that suits you." },
           { q: "Do I need an account to order?", a: "Yes. It is created on the order page with your e-mail and a password, and lets you follow your orders and ask for a return." },
+          { q: "How do I keep a part for later?", a: "Tap ♥ on the part’s page. You find it in “Saved parts”, on every device you sign in with." },
         ],
       },
       {
@@ -188,6 +209,15 @@ export const HELP = {
         items: [
           { q: "I forgot my password.", a: "On the sign-in page choose “Forgot password” and enter your e-mail or phone: you get a code on WhatsApp." },
           { q: "How do I delete my account?", a: "From the “Delete account” page. It is closed at once; you have 30 days to change your mind, then your personal data is erased." },
+          { q: "Can I sign in without a password?", a: "Yes: choose “Sign in with a WhatsApp code” and enter your account’s phone. You get a 6-digit code that works for 15 minutes." },
+        ],
+      },
+      {
+        id: "pro",
+        title: "Garages and mechanics",
+        items: [
+          { q: "What is a pro account?", a: "An account for garages and mechanics. Once PartHub has checked it, you see and pay the lower pro prices some sellers offer." },
+          { q: "How do I ask for one?", a: "From “My account”: your garage’s name and city (and ICE if you have one). PartHub checks it and answers; if it is refused, you see why and can ask again." },
         ],
       },
       {

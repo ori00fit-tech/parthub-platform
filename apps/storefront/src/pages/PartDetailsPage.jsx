@@ -13,6 +13,7 @@ import { usePageMeta } from "../lib/pageMeta";
 import { OtherOffers, PartNumbersList } from "../features/parts/PartNumbers";
 import { Icon } from "@parthub/shared/icons";
 import { mediaUrl } from "../lib/media";
+import { FavoriteButton } from "../features/favorites/FavoritesContext";
 
 function normalizeGallery(part) {
   const candidates = [
@@ -599,6 +600,8 @@ export default function PartDetailsPage() {
                   >
                     {t("Cart ({n})", { n: totalItems })}
                   </Link>
+
+                  <FavoriteButton partId={part.id} withLabel className="h-12 px-4" />
                 </div>
               ) : (
                 <NotifyWhenAvailable part={part} />

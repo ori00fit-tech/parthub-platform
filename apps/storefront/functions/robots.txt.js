@@ -10,6 +10,7 @@ export function onRequestGet({ request }) {
     "Disallow: /checkout",
     "Disallow: /account",
     "Disallow: /orders",
+    "Disallow: /favorites",
     "Disallow: /requests",
     "Disallow: /auth",
     "Disallow: /forgot-password",

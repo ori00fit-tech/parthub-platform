@@ -1228,4 +1228,13 @@ export default {
   "Garage or workshop name": "اسم الكراج أو الورشة",
   "ICE (optional, 15 digits)": "ICE (اختياري، 15 رقماً)",
   "Ask for a pro account": "طلب حساب محترف",
+  "Saved parts": "القطع المحفوظة",
+  "Remove from saved parts": "إزالة من القطع المحفوظة",
+  "Save this part": "حفظ هذه القطعة",
+  "Saved": "محفوظة",
+  "Save": "حفظ",
+  "Parts you saved to come back to, on every device you sign in with.": "القطع التي حفظتها لتعود إليها، على كل جهاز تدخل منه بحسابك.",
+  "No saved parts yet. Tap ♥ on a part to find it here.": "لا توجد قطع محفوظة بعد. اضغط ♥ على قطعة لتجدها هنا.",
+  "No longer available": "لم تعد متوفرة",
+  "Loading...": "جارٍ التحميل...",
 };

@@ -113,6 +113,7 @@ export async function eraseAccount(DB: D1Database, userId: number): Promise<void
     DB.prepare("delete from stock_alerts where user_id = ?1").bind(userId),
     DB.prepare("delete from password_resets where user_id = ?1").bind(userId),
     DB.prepare("delete from pro_accounts where user_id = ?1").bind(userId), // garage name, ICE (migrations/0040)
+    DB.prepare("delete from favorites where user_id = ?1").bind(userId),
     DB.prepare("update whatsapp_notifications set payload = null where recipient in (?1, ?2)").bind(`buyer:${userId}`, `user:${userId}`),
     DB.prepare("update account_deletions set completed_at = datetime('now') where user_id = ?1 and cancelled_at is null and completed_at is null").bind(userId),
   ];
