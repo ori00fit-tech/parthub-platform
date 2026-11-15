@@ -28,6 +28,7 @@ import { ADMIN_SHIPMENT_STATUSES, type ShipmentStatus, findShipment, listCarrier
 import { LATE_DAYS, lateShipments } from "../utils/shipping-delays";
 import { PAYMENT_METHODS, cancelInvoice, invoiceDraft, invoicePayments, issueInvoice, ledgerTotals, listInvoices, readDay, readMad, recordPayment } from "../utils/invoices";
 import { syncMediaBackup } from "../utils/media";
+import { thread } from "../utils/order-messages";
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -300,6 +301,19 @@ adminRoutes.put("/sellers/:id/verification", async (c) => {
     c.env.DB, "SELECT verified_at, verification_note FROM sellers WHERE id = ?", [id]
   );
   return ok(c, { verified: !!row?.verified_at, verified_at: row?.verified_at ?? null, verification_note: row?.verification_note ?? null });
+});
+
+// GET /api/v1/admin/orders/:id/messages — the buyer's conversations with
+// each seller of the order (read only: disputes). Does not mark them read.
+adminRoutes.get("/orders/:id/messages", async (c) => {
+  const orderId = Number(c.req.param("id"));
+  if (!Number.isInteger(orderId) || orderId <= 0) return fail(c, "Invalid order id");
+  const sellers = await dbAll<{ id: number; name: string }>(
+    c.env.DB, "SELECT DISTINCT s.id, s.name FROM order_items oi JOIN sellers s ON s.id = oi.seller_id WHERE oi.order_id = ? ORDER BY s.name", [orderId]
+  );
+  const threads = [];
+  for (const s of sellers) threads.push({ seller_id: s.id, seller_name: s.name, messages: await thread(c.env.DB, orderId, s.id) });
+  return ok(c, threads);
 });
 
 // GET /api/v1/admin/pro-accounts?status=pending|approved|rejected|all

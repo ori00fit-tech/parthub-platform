@@ -5,6 +5,7 @@ import { statusLabel, useT } from "../i18n";
 import { Icon } from "@parthub/shared/icons";
 import { formatMoney } from "@parthub/shared";
 import { formatOrderDate as formatDate } from "./OrderDetailsPage";
+import UnreadQuestions from "../components/orders/UnreadQuestions";
 
 function normalizeOrders(payload) {
   const list =
@@ -135,6 +136,7 @@ export default function OrdersPage() {
 
   return (
     <section className="space-y-6">
+      <UnreadQuestions />
       <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-lg sm:p-8">
         <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">

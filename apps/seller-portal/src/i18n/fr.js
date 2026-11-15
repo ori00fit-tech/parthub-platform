@@ -1097,4 +1097,12 @@ export default {
   "Save pro price": "Enregistrer le prix pro",
   "Saved": "Enregistré",
   "Enter an amount, e.g. 85 or 85.50": "Entrez un montant, ex. 85 ou 85,50",
+  "Messages": "Messages",
+  "You": "Vous",
+  "Your message": "Votre message",
+  "Buyer's questions": "Questions du client",
+  "Answer here: the buyer gets your answer on WhatsApp.": "Répondez ici : le client reçoit votre réponse sur WhatsApp.",
+  "No question yet. You can write to the buyer here too.": "Pas encore de question. Vous pouvez aussi écrire au client ici.",
+  "Buyers are waiting for your answer": "Des clients attendent votre réponse",
+  "{n} new": "{n} nouveau(x)",
 };

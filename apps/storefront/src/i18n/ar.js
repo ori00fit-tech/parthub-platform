@@ -1237,4 +1237,10 @@ export default {
   "No saved parts yet. Tap ♥ on a part to find it here.": "لا توجد قطع محفوظة بعد. اضغط ♥ على قطعة لتجدها هنا.",
   "No longer available": "لم تعد متوفرة",
   "Loading...": "جارٍ التحميل...",
+  "Messages": "الرسائل",
+  "You": "أنت",
+  "Your message": "رسالتك",
+  "Send": "إرسال",
+  "Questions to the seller": "أسئلة إلى البائع",
+  "Ask about the part, the delivery or a return. The seller gets your message on WhatsApp and answers here.": "اسأل عن القطعة أو التوصيل أو الإرجاع. تصل رسالتك إلى البائع على واتساب ويجيبك هنا.",
 };

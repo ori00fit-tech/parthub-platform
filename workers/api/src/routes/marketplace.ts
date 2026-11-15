@@ -24,6 +24,7 @@ import { RATE_NOTICE_DAYS, accrueCommissions, commissionRateBps, currentPeriod, 
 import { invoicePayments, ledgerTotals, listInvoices } from "../utils/invoices";
 import { RETURN_WINDOW_DAYS } from "../utils/issues";
 import { internalError } from "../utils/response";
+import { markRead, postMessage, readBody, thread } from "../utils/order-messages";
 
 export const marketplaceRoutes = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -1651,6 +1652,49 @@ marketplaceRoutes.get("/me/orders/:id", authMiddleware, async (c) => {
   const order = await loadSellerOrder(c.env.DB, sellerId, orderId);
   if (!order) return c.json(failure("NOT_FOUND", "Order not found"), 404);
   return c.json(success(order));
+});
+
+// Questions from buyers about an order (utils/order-messages.ts).
+// GET  /api/v1/marketplace/me/orders/:id/messages
+// POST /api/v1/marketplace/me/orders/:id/messages { body }
+// GET  /api/v1/marketplace/me/messages/unread — orders with unread questions
+async function sellerHasOrder(DB: D1Database, sellerId: number, orderId: number) {
+  return !!(await DB.prepare("select 1 as x from order_items where order_id = ?1 and seller_id = ?2 limit 1").bind(orderId, sellerId).first());
+}
+
+marketplaceRoutes.get("/me/orders/:id/messages", authMiddleware, async (c) => {
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const orderId = Number(c.req.param("id"));
+  if (!Number.isInteger(orderId) || !(await sellerHasOrder(c.env.DB, sellerId, orderId))) return c.json(failure("NOT_FOUND", "Order not found"), 404);
+  const messages = await thread(c.env.DB, orderId, sellerId);
+  await markRead(c.env.DB, orderId, sellerId, "seller");
+  return c.json(success(messages));
+});
+
+marketplaceRoutes.post("/me/orders/:id/messages", authMiddleware, async (c) => {
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const orderId = Number(c.req.param("id"));
+  if (!Number.isInteger(orderId) || !(await sellerHasOrder(c.env.DB, sellerId, orderId))) return c.json(failure("NOT_FOUND", "Order not found"), 404);
+  const body = await c.req.json<{ body?: unknown }>().catch(() => ({}) as { body?: unknown });
+  const text = readBody(body.body);
+  if (!text.ok) return c.json(failure("INVALID_MESSAGE", text.error), 400);
+  const res = await postMessage(c.env, { orderId, sellerId, sender: "seller", senderId: Number(c.get("user_id")), body: text.body }, (p) => runInBackground(c, p));
+  if (!res.ok) return c.json(failure("TOO_MANY_MESSAGES", res.error), res.status);
+  return c.json(success(res.message));
+});
+
+marketplaceRoutes.get("/me/messages/unread", authMiddleware, async (c) => {
+  const sellerId = await ownSellerId(c);
+  if (!sellerId) return c.json(failure("NOT_SELLER", "Seller account required"), 403);
+  const rows = await c.env.DB.prepare(
+    `select m.order_id, o.reference, count(*) as unread, max(m.created_at) as last_at
+     from order_messages m join orders o on o.id = m.order_id
+     where m.seller_id = ?1 and m.sender = 'buyer' and m.read_at is null
+     group by m.order_id, o.reference order by last_at desc limit 50`
+  ).bind(sellerId).all();
+  return c.json(success(rows.results || []));
 });
 
 // POST /api/v1/marketplace/me/catalog-suggestions — a seller asks PartHub to

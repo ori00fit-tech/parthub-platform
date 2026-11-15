@@ -13,6 +13,7 @@ import { waClaimEvent, waOrderReceived } from "../utils/wa-events";
 import { ORDER_COLUMNS, cartHash, checkNewOrder, countOrder, existingAfterConflict, readIdempotencyKey } from "../utils/order-guard";
 import { ISSUE_REASONS, type IssueRow, canEscalate, cleanNote, issuesForOrder, loadIssue, nowText, publicIssue, reportWindow, updateIssue } from "../utils/issues";
 import { isApprovedPro, priceFor, viewerIsPro } from "../utils/pro";
+import { markRead, postMessage, readBody, thread } from "../utils/order-messages";
 
 const MAX_REVIEW_LENGTH = 1000;
 
@@ -292,6 +293,45 @@ commerceRoutes.get("/orders", authMiddleware, async (c) => {
     [buyerId]
   );
   return ok(c, orders);
+});
+
+// Questions about the order (utils/order-messages.ts): one conversation per
+// seller of the order.
+// GET  /api/v1/commerce/orders/:reference/messages
+// POST /api/v1/commerce/orders/:reference/messages { seller_id, body }
+async function buyerOrderSellers(DB: D1Database, ref: string, buyerId: number) {
+  const order = await DB.prepare("select id from orders where reference = ?1 and buyer_id = ?2").bind(ref, buyerId).first<{ id: number }>();
+  if (!order) return null;
+  const sellers = await DB.prepare(
+    "select distinct s.id, s.name from order_items oi join sellers s on s.id = oi.seller_id where oi.order_id = ?1 order by s.name"
+  ).bind(order.id).all<{ id: number; name: string }>();
+  return { orderId: order.id, sellers: sellers.results || [] };
+}
+
+commerceRoutes.get("/orders/:reference/messages", authMiddleware, async (c) => {
+  const found = await buyerOrderSellers(c.env.DB, c.req.param("reference"), c.get("user_id"));
+  if (!found) return notFound(c, "Order");
+  const threads = [];
+  for (const s of found.sellers) {
+    const messages = await thread(c.env.DB, found.orderId, s.id);
+    await markRead(c.env.DB, found.orderId, s.id, "buyer");
+    threads.push({ seller_id: s.id, seller_name: s.name, messages });
+  }
+  return ok(c, threads);
+});
+
+commerceRoutes.post("/orders/:reference/messages", authMiddleware, async (c) => {
+  const buyerId = c.get("user_id");
+  const found = await buyerOrderSellers(c.env.DB, c.req.param("reference"), buyerId);
+  if (!found) return notFound(c, "Order");
+  const body = await c.req.json<{ seller_id?: unknown; body?: unknown }>().catch(() => ({}) as { seller_id?: unknown; body?: unknown });
+  const sellerId = Number(body.seller_id);
+  if (!found.sellers.some((s) => s.id === sellerId)) return fail(c, "This seller is not in the order");
+  const text = readBody(body.body);
+  if (!text.ok) return fail(c, text.error);
+  const res = await postMessage(c.env, { orderId: found.orderId, sellerId, sender: "buyer", senderId: buyerId, body: text.body }, (p) => runInBackground(c, p));
+  if (!res.ok) return fail(c, res.error, res.status);
+  return ok(c, res.message);
 });
 
 // GET /api/v1/commerce/orders/:reference

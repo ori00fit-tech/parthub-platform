@@ -35,6 +35,7 @@ export const HELP = {
         items: [
           { q: "كيف أتابع طلبي؟", a: "من «طلباتي» في حسابك. تصلك أيضاً رسالة WhatsApp عند كل مرحلة: الطلب، التأكيد، الشحن مع رقم التتبع، والتسليم." },
           { q: "البائع لم يؤكد طلبي، ماذا أفعل؟", a: "ينتظر الطلب تأكيد البائع. إذا تأخر، تواصل معنا وسنتابع الأمر مع البائع." },
+          { q: "هل يمكنني طرح سؤال على البائع؟", a: "نعم، من صفحة تتبع الطلب، قسم «أسئلة إلى البائع». تصل رسالتك إلى البائع على واتساب، ويصلك رده على واتساب أيضاً." },
         ],
       },
       {
@@ -110,6 +111,7 @@ export const HELP = {
         items: [
           { q: "Comment suivre ma commande ?", a: "Dans « Mes commandes ». Vous recevez aussi un message WhatsApp à chaque étape : commande, confirmation, expédition avec numéro de suivi, livraison." },
           { q: "Le vendeur n’a pas confirmé ma commande.", a: "La commande attend la confirmation du vendeur. Si cela tarde, contactez-nous : nous relançons le vendeur." },
+          { q: "Puis-je poser une question au vendeur ?", a: "Oui, depuis la page de suivi de la commande, rubrique « Questions au vendeur ». Le vendeur reçoit votre message sur WhatsApp, et vous recevez sa réponse sur WhatsApp aussi." },
         ],
       },
       {
@@ -185,6 +187,7 @@ export const HELP = {
         items: [
           { q: "How do I follow my order?", a: "In “My orders”. You also get a WhatsApp message at each step: order, confirmation, shipping with tracking number, delivery." },
           { q: "The seller hasn’t confirmed my order.", a: "The order is waiting for the seller. If it takes too long, contact us and we will follow up with the seller." },
+          { q: "Can I ask the seller a question?", a: "Yes, from the order tracking page, under “Questions to the seller”. The seller gets your message on WhatsApp, and you get the answer on WhatsApp too." },
         ],
       },
       {

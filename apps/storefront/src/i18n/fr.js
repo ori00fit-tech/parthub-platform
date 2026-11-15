@@ -1235,4 +1235,10 @@ export default {
   "No saved parts yet. Tap ♥ on a part to find it here.": "Aucune pièce enregistrée. Touchez ♥ sur une pièce pour la retrouver ici.",
   "No longer available": "Plus disponible",
   "Loading...": "Chargement...",
+  "Messages": "Messages",
+  "You": "Vous",
+  "Your message": "Votre message",
+  "Send": "Envoyer",
+  "Questions to the seller": "Questions au vendeur",
+  "Ask about the part, the delivery or a return. The seller gets your message on WhatsApp and answers here.": "Posez votre question sur la pièce, la livraison ou un retour. Le vendeur la reçoit sur WhatsApp et vous répond ici.",
 };

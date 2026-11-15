@@ -10,6 +10,7 @@ import { Icon } from "@parthub/shared/icons";
 import { shipmentStatusLabel } from "@parthub/shared";
 import { ItemReview } from "../features/reviews/Reviews";
 import ItemIssue from "../features/issues/ItemIssue";
+import OrderQuestions from "../features/orders/OrderQuestions";
 
 // Order lifecycle as stored on the order (orders.status).
 const STEPS = [
@@ -406,6 +407,7 @@ export default function OrderTrackingPage() {
           </div>
         </aside>
       </div>
+      <OrderQuestions reference={order.reference} />
     </section>
   );
 }
