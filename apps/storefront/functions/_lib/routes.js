@@ -7,6 +7,7 @@ export const ROUTES = [
   "/parts",
   "/parts/:slug",
   "/sell",
+  "/help",
   "/pieces/:category",
   "/voiture/:make",
   "/voiture/:make/:model",
