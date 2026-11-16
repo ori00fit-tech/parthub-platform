@@ -5,7 +5,13 @@ import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 
 const file = process.argv[2];
-const db = new DatabaseSync(":memory:");
+// D1's export lists tables in its own order: a table can come (with its
+// rows) before a table it references. node:sqlite enforces foreign keys by
+// default, which refuses such a file ("no such table: main.users" /
+// "main.vehicle_engines") although nothing is wrong with it. So load the
+// way a restore does — foreign keys off — then check every reference once
+// everything is in (PRAGMA foreign_key_check below).
+const db = new DatabaseSync(":memory:", { enableForeignKeyConstraints: false });
 try {
   db.exec(readFileSync(file, "utf8"));
 } catch (err) {
@@ -16,12 +22,19 @@ const one = (sql) => Object.values(db.prepare(sql).get())[0];
 const tables = one("select count(*) from sqlite_master where type = 'table'");
 const counts = Object.fromEntries(["users", "sellers", "parts", "orders", "vehicle_generations", "vehicle_engines"].map((t) => [t, one(`select count(*) from ${t}`)]));
 const integrity = one("PRAGMA integrity_check");
-console.log(JSON.stringify({ tables, ...counts, integrity }));
+// Rows pointing at a row that is not in the file (a broken backup, or data
+// already broken in production): listed per table.
+const orphans = db.prepare("PRAGMA foreign_key_check").all();
+const orphanTables = [...new Set(orphans.map((o) => `${o.table}→${o.parent}`))];
+console.log(JSON.stringify({ tables, ...counts, integrity, orphan_rows: orphans.length }));
 const bad = [];
 if (tables < 40) bad.push(`only ${tables} tables`);
 if (counts.users < 1) bad.push("no users");
 if (counts.vehicle_generations < 400) bad.push("vehicle catalog missing");
 if (integrity !== "ok") bad.push(`integrity: ${integrity}`);
+// A warning, not a failure: the copy is still worth keeping (it is what
+// production holds), and the run shows what to repair.
+if (orphans.length) console.log(`::warning::${orphans.length} rows point to missing rows (${orphanTables.slice(0, 8).join(", ")}): the same in production; repair them there`);
 if (bad.length) {
   console.log(`::error::the export does not restore to a usable database: ${bad.join(", ")}`);
   process.exit(1);
